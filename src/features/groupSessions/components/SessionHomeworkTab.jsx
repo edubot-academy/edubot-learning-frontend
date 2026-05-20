@@ -41,7 +41,7 @@ const getReviewStateMeta = (item, getSubmissionStatusMeta, t) => {
     if (item.reviewState === 'needs_review') {
         return { label: t('groupSessions.homeworkTab.reviewStates.needsReview'), tone: 'amber' };
     }
-    const statusMeta = getSubmissionStatusMeta(item.status);
+    const statusMeta = getSubmissionStatusMeta(item.status, t);
     if (item.status === 'approved') {
         return { ...statusMeta, label: t('groupSessions.homeworkTab.reviewStates.approved'), tone: 'green' };
     }

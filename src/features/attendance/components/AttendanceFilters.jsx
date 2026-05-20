@@ -1,8 +1,11 @@
 import { useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import { FiFilter, FiSearch, FiX } from 'react-icons/fi';
 import { SESSION_ATTENDANCE_STATUS } from '@shared/contracts';
 import { DashboardFilterBar } from '../../../components/ui/dashboard';
+
+const getStatusTranslationKey = (status) => (status === 'not_scheduled' ? 'notScheduled' : status);
 
 /**
  * Advanced Attendance Filters Component
@@ -15,25 +18,42 @@ const AttendanceFilters = ({
   className = '',
   showAdvancedFilters = false,
 }) => {
-  const statusOptions = [
-    { value: 'all', label: 'Баары', color: 'gray' },
-    { value: SESSION_ATTENDANCE_STATUS.PRESENT, label: 'Катышты', color: 'green' },
-    { value: SESSION_ATTENDANCE_STATUS.LATE, label: 'Кечикти', color: 'amber' },
-    { value: SESSION_ATTENDANCE_STATUS.ABSENT, label: 'Келген жок', color: 'red' },
-    { value: SESSION_ATTENDANCE_STATUS.EXCUSED, label: 'Себептүү', color: 'blue' },
-    { value: 'not_scheduled', label: 'Пландалган эмес', color: 'gray' },
-  ];
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage || i18n.language || undefined;
+
+  const statusOptions = useMemo(() => [
+    { value: 'all', label: t('attendance.filters.all'), color: 'gray' },
+    ...[
+      SESSION_ATTENDANCE_STATUS.PRESENT,
+      SESSION_ATTENDANCE_STATUS.LATE,
+      SESSION_ATTENDANCE_STATUS.ABSENT,
+      SESSION_ATTENDANCE_STATUS.EXCUSED,
+      'not_scheduled',
+    ].map((value) => ({
+      value,
+      label: t(`attendance.status.${getStatusTranslationKey(value)}`),
+      color: value === SESSION_ATTENDANCE_STATUS.PRESENT
+        ? 'green'
+        : value === SESSION_ATTENDANCE_STATUS.LATE
+          ? 'amber'
+          : value === SESSION_ATTENDANCE_STATUS.ABSENT
+            ? 'red'
+            : value === SESSION_ATTENDANCE_STATUS.EXCUSED
+              ? 'blue'
+              : 'gray',
+    })),
+  ], [t]);
 
   const attendanceRateRanges = useMemo(() => {
     return [
-      { value: 'all', label: 'Баары' },
+      { value: 'all', label: t('attendance.filters.all') },
       { value: 'perfect', label: '100%', min: 100, max: 100 },
       { value: 'excellent', label: '90-100%', min: 90, max: 100 },
       { value: 'good', label: '75-90%', min: 75, max: 90 },
       { value: 'fair', label: '50-75%', min: 50, max: 75 },
-      { value: 'poor', label: '50%дан аз', min: 0, max: 50 },
+      { value: 'poor', label: t('attendance.filters.rateBelow50'), min: 0, max: 50 },
     ];
-  }, []);
+  }, [t]);
 
   const handleFilterChange = useCallback(
     (key, value) => {
@@ -95,17 +115,17 @@ const AttendanceFilters = ({
     return count;
   }, [filters]);
 
-  const formatSessionDate = (startsAt) => {
-    if (!startsAt) return 'Күнү жок';
+  const formatSessionDate = useCallback((startsAt) => {
+    if (!startsAt) return t('attendance.fallbacks.noDate');
 
     const date = new Date(startsAt);
-    if (Number.isNaN(date.getTime())) return 'Күнү белгисиз';
+    if (Number.isNaN(date.getTime())) return t('attendance.fallbacks.unknownDate');
 
-    return date.toLocaleDateString('ky-KG', {
+    return date.toLocaleDateString(language, {
       month: 'short',
       day: 'numeric',
     });
-  };
+  }, [language, t]);
 
   const quickFilterClasses = {
     absent:
@@ -134,12 +154,12 @@ const AttendanceFilters = ({
         <div className="relative min-w-0 w-full">
           <FiSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
-            type="text"
-            value={filters.searchQuery || ''}
-            onChange={(e) => handleFilterChange('searchQuery', e.target.value)}
-            placeholder="Студент издөө..."
-            className="dashboard-field dashboard-field-icon min-h-12 w-full pl-10"
-          />
+	            type="text"
+	            value={filters.searchQuery || ''}
+	            onChange={(e) => handleFilterChange('searchQuery', e.target.value)}
+	            placeholder={t('attendance.filters.searchStudent')}
+	            className="dashboard-field dashboard-field-icon min-h-12 w-full pl-10"
+	          />
           {filters.searchQuery && (
             <button
               type="button"
@@ -179,27 +199,27 @@ const AttendanceFilters = ({
           <button
             type="button"
             onClick={clearAllFilters}
-            className="dashboard-button-secondary flex min-h-12 min-w-0 items-center justify-center gap-2 whitespace-nowrap"
-          >
-            <FiX />
-            Тазалоо ({activeFilterCount})
-          </button>
+	            className="dashboard-button-secondary flex min-h-12 min-w-0 items-center justify-center gap-2 whitespace-nowrap"
+	          >
+	            <FiX />
+	            {t('attendance.filters.clearWithCount', { count: activeFilterCount })}
+	          </button>
         )}
       </DashboardFilterBar>
 
       {showAdvancedFilters && (
         <div className="dashboard-panel-muted space-y-4 rounded-2xl p-4">
-          <div className="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
-            <FiFilter />
-            Кеңейтилген фильтрлер
-          </div>
+	          <div className="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
+	            <FiFilter />
+	            {t('attendance.filters.advanced')}
+	          </div>
 
           <div className="grid gap-4 lg:grid-cols-2">
             {filters.dateRange === 'custom' && (
               <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                  Ыңгайлаштырылган күн аралыгы
-                </label>
+	                <label className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+	                  {t('attendance.filters.customDateRange')}
+	                </label>
                 <div className="flex gap-2">
                   <input
                     type="date"
@@ -219,20 +239,20 @@ const AttendanceFilters = ({
 
             {sessions.length > 0 && (
               <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                  Сессия фильтри
-                </label>
+	                <label className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+	                  {t('attendance.filters.sessionFilter')}
+	                </label>
                 <select
                   value={filters.sessionFilter || 'all'}
                   onChange={(e) => handleFilterChange('sessionFilter', e.target.value)}
                   className="dashboard-select text-sm"
                 >
-                  <option value="all">Бардык сессиялар</option>
-                  {sessions.map((session) => (
-                    <option key={session.id} value={session.id}>
-                      {session.title || `Сессия ${session.sessionIndex}`}
-                      {' - '}
-                      {formatSessionDate(session.startsAt)}
+	                  <option value="all">{t('attendance.filters.allSessions')}</option>
+	                  {sessions.map((session) => (
+	                    <option key={session.id} value={session.id}>
+	                      {session.title || t('attendance.fallbacks.sessionWithId', { id: session.sessionIndex })}
+	                      {' - '}
+	                      {formatSessionDate(session.startsAt)}
                     </option>
                   ))}
                 </select>
@@ -241,9 +261,9 @@ const AttendanceFilters = ({
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-              Тез фильтрлер
-            </label>
+	            <label className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+	              {t('attendance.filters.quickFilters')}
+	            </label>
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
@@ -252,7 +272,7 @@ const AttendanceFilters = ({
                 }
                 className={`dashboard-button-secondary px-3 py-1 text-xs ${quickFilterClasses.absent}`}
               >
-                Келген жокторду гана көрсөт
+	                {t('attendance.filters.onlyAbsent')}
               </button>
 
               <button
@@ -260,7 +280,7 @@ const AttendanceFilters = ({
                 onClick={() => handleFilterChange('attendanceRateFilter', 'poor')}
                 className={`dashboard-button-secondary px-3 py-1 text-xs ${quickFilterClasses.poor}`}
               >
-                Төмөн катышуу %
+	                {t('attendance.filters.lowAttendance')}
               </button>
 
               <button
@@ -268,7 +288,7 @@ const AttendanceFilters = ({
                 onClick={() => handleFilterChange('dateRange', 'this_week')}
                 className={`dashboard-button-secondary px-3 py-1 text-xs ${quickFilterClasses.thisWeek}`}
               >
-                Бул жумадагы
+	                {t('attendance.filters.thisWeek')}
               </button>
 
               <button
@@ -278,7 +298,7 @@ const AttendanceFilters = ({
                 }
                 className={`dashboard-button-secondary px-3 py-1 text-xs ${quickFilterClasses.present}`}
               >
-                Катышкандарды гана көрсөт
+	                {t('attendance.filters.onlyPresent')}
               </button>
             </div>
           </div>

@@ -165,11 +165,11 @@ const LessonQuizPlayer = ({
             <div className="mb-6 rounded-lg shadow-md p-6 space-y-4 bg-white dark:bg-gray-800">
                 <div className="flex flex-col items-center gap-3 text-center">
                     {result.passed ? (
-                        <img src={grade_A} alt="grade" className="w-24" />
+                        <img src={grade_A} alt={t('courseLearning.quiz.gradeAlt.passed')} className="w-24" />
                     ) : result.score >= 70 ? (
-                        <img src={grade_B} alt="grade" className="w-24" />
+                        <img src={grade_B} alt={t('courseLearning.quiz.gradeAlt.nearlyPassed')} className="w-24" />
                     ) : (
-                        <img src={grade_C} alt="grade" className="w-24" />
+                        <img src={grade_C} alt={t('courseLearning.quiz.gradeAlt.failed')} className="w-24" />
                     )}
 
                     <p className="text-2xl font-bold text-gray-900 dark:text-white">

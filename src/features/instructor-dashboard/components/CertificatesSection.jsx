@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
     FiActivity,
     FiAward,
@@ -33,21 +34,26 @@ import {
     PreviewTundukSeal,
 } from './CertificatePreviewArt';
 import { isPlatformAdmin } from '@shared/utils/roles';
+import { getCertificateStatusLabel, getPageOrientationLabel } from '@shared/i18n/enumLabels';
 
-const formatDate = (value) => {
+const formatDate = (value, language = 'ky') => {
     if (!value) return '—';
     const date = new Date(value);
+    const locale = language === 'ru' ? 'ru-RU' : language === 'en' ? 'en-US' : 'ky-KG';
     return Number.isNaN(date.getTime())
         ? '—'
-        : date.toLocaleDateString('ky-KG', {
+        : date.toLocaleDateString(locale, {
               day: '2-digit',
               month: 'short',
               year: 'numeric',
           });
 };
 
-const formatPreviewDate = (value) =>
-    new Date(value).toLocaleDateString('en-GB', {
+const getCertificatePreviewLocale = (language) =>
+    language === 'ru' ? 'ru-RU' : language === 'ky' ? 'ky-KG' : 'en-GB';
+
+const formatPreviewDate = (value, language = 'en') =>
+    new Date(value).toLocaleDateString(getCertificatePreviewLocale(language), {
         day: '2-digit',
         month: 'long',
         year: 'numeric',
@@ -229,7 +235,10 @@ const getCertificateBadge = (status) => {
     return 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300';
 };
 
-const getStudentCertificateState = (student, canIssueManually = true) => {
+const getStudentCertificateStatusLabel = (status, t) =>
+    getCertificateStatusLabel(status, t);
+
+const getStudentCertificateState = (student, canIssueManually = true, t) => {
     const progress = Math.max(0, Math.min(100, Number(student?.progressPercent || 0)));
     const eligibility = student?.certificateEligibility;
     const isComplete =
@@ -240,8 +249,8 @@ const getStudentCertificateState = (student, canIssueManually = true) => {
     if (student?.certificateStatus === 'issued') {
         return {
             canIssue: false,
-            buttonLabel: 'Берилген',
-            helperText: 'Сертификат активдүү. PDF же текшерүү шилтемесин колдонсоңуз болот.',
+            buttonLabel: t('adminCertificates.state.issued.button'),
+            helperText: t('adminCertificates.state.issued.helper'),
             helperTone: 'text-emerald-600 dark:text-emerald-300',
         };
     }
@@ -249,8 +258,8 @@ const getStudentCertificateState = (student, canIssueManually = true) => {
     if (student?.certificateStatus === 'pending_approval') {
         return {
             canIssue: false,
-            buttonLabel: 'Кароодо',
-            helperText: 'Сураныч буга чейин түзүлгөн. Эми бекитүү же четке кагуу гана керек.',
+            buttonLabel: t('adminCertificates.state.pending.button'),
+            helperText: t('adminCertificates.state.pending.helper'),
             helperTone: 'text-amber-600 dark:text-amber-300',
         };
     }
@@ -259,12 +268,12 @@ const getStudentCertificateState = (student, canIssueManually = true) => {
         const missing = Array.isArray(eligibility?.reasons) && eligibility.reasons.length
             ? eligibility.reasons
                   .map((reason) => {
-                      if (reason === 'sessions_missing') return 'сессиялар түзүлө элек';
-                      if (reason === 'sessions_incomplete') return 'сессиялар бүтө элек';
-                      if (reason === 'attendance_below_threshold') return 'катышуу жетишсиз';
-                      if (reason === 'homework_below_threshold') return 'үй тапшырма жетишсиз';
-                      if (reason === 'activities_below_threshold') return 'класс иштери жетишсиз';
-                      if (reason === 'lesson_progress_incomplete') return 'сабак прогресси толук эмес';
+                      if (reason === 'sessions_missing') return t('adminCertificates.eligibilityReasons.sessionsMissing');
+                      if (reason === 'sessions_incomplete') return t('adminCertificates.eligibilityReasons.sessionsIncomplete');
+                      if (reason === 'attendance_below_threshold') return t('adminCertificates.eligibilityReasons.attendanceBelowThreshold');
+                      if (reason === 'homework_below_threshold') return t('adminCertificates.eligibilityReasons.homeworkBelowThreshold');
+                      if (reason === 'activities_below_threshold') return t('adminCertificates.eligibilityReasons.activitiesBelowThreshold');
+                      if (reason === 'lesson_progress_incomplete') return t('adminCertificates.eligibilityReasons.lessonProgressIncomplete');
                       return null;
                   })
                   .filter(Boolean)
@@ -272,14 +281,16 @@ const getStudentCertificateState = (student, canIssueManually = true) => {
             : '';
         return {
             canIssue: canIssueManually,
-            buttonLabel: canIssueManually ? 'Берүү' : 'Талаптар бүтө элек',
+            buttonLabel: canIssueManually
+                ? t('adminCertificates.actions.issue')
+                : t('adminCertificates.state.incomplete.requirementsButton'),
             helperText: canIssueManually
                 ? missing
-                    ? `Авто-берүү үчүн талаптар бүтө элек: ${missing}. Кол менен сертификат берсеңиз болот.`
-                    : `Курс толук бүтө элек. Азыркы прогресс: ${progress}%. Кааласаңыз сертификатты азыр да бере аласыз.`
+                    ? t('adminCertificates.state.incomplete.manualWithMissing', { missing })
+                    : t('adminCertificates.state.incomplete.manualWithProgress', { progress })
                 : missing
-                  ? `Сертификат үчүн талаптар бүтө элек: ${missing}.`
-                  : `Курс толук бүтө элек. Азыркы прогресс: ${progress}%.`,
+                  ? t('adminCertificates.state.incomplete.blockedWithMissing', { missing })
+                  : t('adminCertificates.state.incomplete.blockedWithProgress', { progress }),
             helperTone: 'text-amber-600 dark:text-amber-300',
         };
     }
@@ -287,10 +298,12 @@ const getStudentCertificateState = (student, canIssueManually = true) => {
     if (student?.certificateStatus === 'rejected') {
         return {
             canIssue: canIssueManually,
-            buttonLabel: canIssueManually ? 'Кайра берүү' : 'Четке кагылган',
+            buttonLabel: canIssueManually
+                ? t('adminCertificates.actions.reissue')
+                : t('adminCertificates.status.rejected'),
             helperText: canIssueManually
-                ? 'Мурдагы сертификат четке кагылган. Толук бүткөндүктөн кайра берсе болот.'
-                : 'Мурдагы сертификат четке кагылган.',
+                ? t('adminCertificates.state.rejected.manualHelper')
+                : t('adminCertificates.state.rejected.helper'),
             helperTone: 'text-red-600 dark:text-red-300',
         };
     }
@@ -298,25 +311,30 @@ const getStudentCertificateState = (student, canIssueManually = true) => {
     if (student?.certificateStatus === 'revoked') {
         return {
             canIssue: canIssueManually,
-            buttonLabel: canIssueManually ? 'Кайра берүү' : 'Жокко чыгарылган',
+            buttonLabel: canIssueManually
+                ? t('adminCertificates.actions.reissue')
+                : t('adminCertificates.status.revoked'),
             helperText: canIssueManually
-                ? 'Мурдагы сертификат жокко чыгарылган. Кааласаңыз жаңысын кайра чыгара аласыз.'
-                : 'Мурдагы сертификат жокко чыгарылган.',
+                ? t('adminCertificates.state.revoked.manualHelper')
+                : t('adminCertificates.state.revoked.helper'),
             helperTone: 'text-slate-600 dark:text-slate-300',
         };
     }
 
     return {
         canIssue: canIssueManually,
-        buttonLabel: canIssueManually ? 'Берүү' : 'Даяр',
+        buttonLabel: canIssueManually
+            ? t('adminCertificates.actions.issue')
+            : t('adminCertificates.state.ready.button'),
         helperText: canIssueManually
-            ? 'Студент курсту толук бүтүргөн. Сертификатты азыр чыгарса болот.'
-            : 'Студент курсту толук бүтүргөн. Сертификат автоматтык же админ эрежеси боюнча берилет.',
+            ? t('adminCertificates.state.ready.manualHelper')
+            : t('adminCertificates.state.ready.helper'),
         helperTone: 'text-emerald-600 dark:text-emerald-300',
     };
 };
 
 const SignaturePad = ({ disabled = false, onSave }) => {
+    const { t } = useTranslation();
     const canvasRef = useRef(null);
     const isDrawingRef = useRef(false);
     const lastPointRef = useRef(null);
@@ -432,10 +450,10 @@ const SignaturePad = ({ disabled = false, onSave }) => {
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                     <p className="text-sm font-medium text-edubot-ink dark:text-slate-200">
-                        Же ушул жерге кол коюңуз
+                        {t('adminCertificates.signaturePad.title')}
                     </p>
                     <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                        Чийилген кол коюу тунук PNG катары сакталат.
+                        {t('adminCertificates.signaturePad.description')}
                     </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -445,7 +463,7 @@ const SignaturePad = ({ disabled = false, onSave }) => {
                         onClick={clearPad}
                         disabled={disabled || !hasStroke}
                     >
-                        Тазалоо
+                        {t('adminCertificates.signaturePad.clear')}
                     </button>
                     <button
                         type="button"
@@ -453,7 +471,7 @@ const SignaturePad = ({ disabled = false, onSave }) => {
                         onClick={savePad}
                         disabled={disabled || !hasStroke}
                     >
-                        Кол коюуну сактоо
+                        {t('adminCertificates.signaturePad.save')}
                     </button>
                 </div>
             </div>
@@ -481,9 +499,9 @@ const SignaturePad = ({ disabled = false, onSave }) => {
     );
 };
 
-const getTemplatePayload = (settingsForm, isAdminMode) => ({
+const getTemplatePayload = (settingsForm, isAdminMode, defaultCertificateTitle) => ({
     certificateTitle: isAdminMode
-        ? settingsForm.certificateTitle.trim() || 'Certificate of Achievement'
+        ? settingsForm.certificateTitle.trim() || defaultCertificateTitle
         : undefined,
     secondaryBrandName: isAdminMode ? settingsForm.secondaryBrandName.trim() || null : undefined,
     certificateLanguage: isAdminMode ? settingsForm.certificateLanguage : undefined,
@@ -511,10 +529,12 @@ const getTemplatePayload = (settingsForm, isAdminMode) => ({
 });
 
 const CERTIFICATE_LANGUAGE_OPTIONS = [
-    { value: 'en', label: 'English' },
-    { value: 'ru', label: 'Русский' },
-    { value: 'ky', label: 'Кыргызча' },
+    { value: 'en', labelKey: 'adminCertificates.page.template.languageOptions.en' },
+    { value: 'ru', labelKey: 'adminCertificates.page.template.languageOptions.ru' },
+    { value: 'ky', labelKey: 'adminCertificates.page.template.languageOptions.ky' },
 ];
+
+const DEFAULT_CERTIFICATE_LANGUAGE = 'en';
 
 const ReadOnlyField = ({ label, value, children, className = '' }) => (
     <div className={className}>
@@ -527,40 +547,19 @@ const ReadOnlyField = ({ label, value, children, className = '' }) => (
     </div>
 );
 
-const getPreviewLanguageCopy = (language) => {
-    switch (language) {
-        case 'ru':
-            return {
-                mainTitle: 'СЕРТИФИКАТ О ЗАВЕРШЕНИИ',
-                supportingText: 'успешно завершил(а) курс',
-                issuedLabel: 'Выдан',
-                verificationLabel: 'Предпросмотр ID проверки',
-                fallbackTitle: 'Сертификат достижения',
-                partnershipLabel: 'В партнерстве с',
-                certifiesLabel: 'Настоящим подтверждается, что',
-            };
-        case 'ky':
-            return {
-                mainTitle: 'АЯКТАГАНДЫГЫ ЖӨНҮНДӨ СЕРТИФИКАТ',
-                supportingText: 'төмөнкү курсту ийгиликтүү аяктаганын тастыктайт',
-                issuedLabel: 'Берилген күнү',
-                verificationLabel: 'Текшерүү ID алдын ала көрүү',
-                fallbackTitle: 'Жетишкендик сертификаты',
-                partnershipLabel: 'Өнөктөштүктө',
-                certifiesLabel: 'Бул сертификат',
-            };
-        default:
-            return {
-                mainTitle: 'CERTIFICATE OF COMPLETION',
-                supportingText: 'has successfully completed the course',
-                issuedLabel: 'Issued',
-                verificationLabel: 'Verification ID preview',
-                fallbackTitle: 'Certificate of Achievement',
-                partnershipLabel: 'In partnership with',
-                certifiesLabel: 'This certifies that',
-            };
-    }
-};
+const getPreviewLanguageCopy = (t, language) => ({
+    mainTitle: t('adminCertificates.previewCanvas.mainTitle', { lng: language }),
+    supportingText: t('adminCertificates.previewCanvas.supportingText', { lng: language }),
+    issuedLabel: t('adminCertificates.previewCanvas.issuedLabel', { lng: language }),
+    verificationLabel: t('adminCertificates.previewCanvas.verificationLabel', { lng: language }),
+    fallbackTitle: t('adminCertificates.previewCanvas.fallbackTitle', { lng: language }),
+    partnershipLabel: t('adminCertificates.previewCanvas.partnershipLabel', { lng: language }),
+    certifiesLabel: t('adminCertificates.previewCanvas.certifiesLabel', { lng: language }),
+    secondaryBrandLogoAlt: t('adminCertificates.previewCanvas.secondaryBrandLogoAlt', {
+        lng: language,
+    }),
+    signatureAlt: t('adminCertificates.previewCanvas.signatureAlt', { lng: language }),
+});
 
 const CertificatePreviewCanvas = ({
     settingsForm,
@@ -573,7 +572,8 @@ const CertificatePreviewCanvas = ({
     expanded = false,
     compact = false,
 }) => {
-    const copy = getPreviewLanguageCopy(settingsForm.certificateLanguage);
+    const { t } = useTranslation();
+    const copy = getPreviewLanguageCopy(t, settingsForm.certificateLanguage);
     return (
         <div
             className={`relative mx-auto overflow-hidden rounded-[24px] ${
@@ -684,7 +684,7 @@ const CertificatePreviewCanvas = ({
                             {settingsForm.secondaryBrandLogoUrl ? (
                                 <img
                                     src={settingsForm.secondaryBrandLogoUrl}
-                                    alt="Secondary brand logo preview"
+                                    alt={copy.secondaryBrandLogoAlt}
                                     className={`${expanded ? 'max-h-14 max-w-[220px]' : 'max-h-10 max-w-[160px]'} object-contain`}
                                 />
                             ) : null}
@@ -772,7 +772,7 @@ const CertificatePreviewCanvas = ({
                             {settingsForm.signatureAssetUrl ? (
                                 <img
                                     src={settingsForm.signatureAssetUrl}
-                                    alt="Signature preview"
+                                    alt={copy.signatureAlt}
                                     className={`${expanded ? 'mb-3 ml-auto max-h-16 max-w-[220px]' : 'mb-2 ml-auto max-h-12 max-w-[180px]'} object-contain`}
                                 />
                             ) : null}
@@ -816,7 +816,8 @@ const CertificatePreviewCanvas = ({
                     } text-slate-600`}
                 >
                     <span>{copy.verificationLabel}</span>
-                    <span className="font-semibold">EDB-XXXX-XXXX</span>
+                    {/* l10n-audit-ignore: certificate number format example */}
+                    <span className="font-semibold">{'EDB-XXXX-XXXX'}</span>
                 </div>
             </div>
         </div>
@@ -861,7 +862,11 @@ const CertificatesSection = ({
     disabledReason = '',
 }) => {
     const navigate = useNavigate();
+    const { t, i18n } = useTranslation();
     const isAdminMode = mode === 'admin';
+    const defaultCertificateTitle = t('adminCertificates.previewCanvas.fallbackTitle', {
+        lng: DEFAULT_CERTIFICATE_LANGUAGE,
+    });
     const canIssueCertificates = isAdminMode;
     const canRevokeCertificates = isAdminMode;
     const canApproveCertificates =
@@ -877,8 +882,8 @@ const CertificatesSection = ({
     const previewRequestIdRef = useRef(0);
     const previewFrameCleanupRef = useRef({});
     const [settingsForm, setSettingsForm] = useState({
-        certificateTitle: 'Certificate of Achievement',
-        certificateLanguage: 'en',
+        certificateTitle: defaultCertificateTitle,
+        certificateLanguage: DEFAULT_CERTIFICATE_LANGUAGE,
         secondaryBrandName: '',
         secondaryBrandLogoUrl: '',
         issuerDisplayName: '',
@@ -900,13 +905,14 @@ const CertificatesSection = ({
         currentUser?.fullName ||
         selectedCourse?.instructorName ||
         '';
-    const defaultIssuerTitle =
-        (isPlatformAdmin(currentUser) ? 'Admin' : 'Instructor');
+    const defaultIssuerTitle = isPlatformAdmin(currentUser)
+        ? t('adminCertificates.previewCanvas.adminIssuerTitle')
+        : t('adminCertificates.previewCanvas.instructorIssuerTitle');
 
     useEffect(() => {
         setSettingsForm({
-            certificateTitle: certificateSettings?.certificateTitle || 'Certificate of Achievement',
-            certificateLanguage: certificateSettings?.certificateLanguage || 'en',
+            certificateTitle: certificateSettings?.certificateTitle || defaultCertificateTitle,
+            certificateLanguage: certificateSettings?.certificateLanguage || DEFAULT_CERTIFICATE_LANGUAGE,
             secondaryBrandName: certificateSettings?.secondaryBrandName || '',
             secondaryBrandLogoUrl: certificateSettings?.secondaryBrandLogoUrl || '',
             issuerDisplayName: defaultIssuerDisplayName,
@@ -928,7 +934,7 @@ const CertificatesSection = ({
             eligibilityActivitiesPercent:
                 certificateSettings?.eligibilityActivitiesPercent ?? 100,
         });
-    }, [certificateSettings, defaultIssuerDisplayName, defaultIssuerTitle]);
+    }, [certificateSettings, defaultCertificateTitle, defaultIssuerDisplayName, defaultIssuerTitle]);
 
     useEffect(() => {
         setSelectedStudentId('');
@@ -974,13 +980,16 @@ const CertificatesSection = ({
         },
         { issued: 0, pending: 0, revoked: 0, rejected: 0 }
     );
-    const previewStudentFallback = sortedStudents[0]?.fullName || 'Aigerim Sadykova';
-    const previewCourseTitle = courseMeta?.title || selectedCourse?.title || 'Selected Course';
+    const previewStudentFallback =
+        sortedStudents[0]?.fullName || t('adminCertificates.previewCanvas.sampleStudentName');
+    const previewCourseTitle =
+        courseMeta?.title || selectedCourse?.title || t('adminCertificates.previewCanvas.sampleCourseTitle');
     const previewIssuerName =
         settingsForm.issuerDisplayName.trim() ||
         selectedCourse?.instructorName ||
-        'Instructor Name';
-    const previewIssuerTitle = settingsForm.issuerTitle.trim() || 'Instructor';
+        t('adminCertificates.previewCanvas.sampleIssuerName');
+    const previewIssuerTitle =
+        settingsForm.issuerTitle.trim() || t('adminCertificates.previewCanvas.instructorIssuerTitle');
     const getCertificateDisplayPayload = useCallback(
         (student) => {
             return {
@@ -998,17 +1007,17 @@ const CertificatesSection = ({
             settingsForm.pageOrientation,
         ]
     );
-    const previewDate = formatPreviewDate(new Date());
+    const previewDate = formatPreviewDate(new Date(), settingsForm.certificateLanguage);
     const isPortraitPreview = settingsForm.pageOrientation === 'portrait';
     const visibleStudents = selectedStudentId
         ? sortedStudents.filter((student) => String(student.id) === selectedStudentId)
         : sortedStudents;
     const previewStudentName = visibleStudents[0]?.fullName || previewStudentFallback;
-    const templatePayload = getTemplatePayload(settingsForm, isAdminMode);
+    const templatePayload = getTemplatePayload(settingsForm, isAdminMode, defaultCertificateTitle);
     const savedTemplatePayload = getTemplatePayload(
         {
-                certificateTitle: certificateSettings?.certificateTitle || 'Certificate of Achievement',
-                certificateLanguage: certificateSettings?.certificateLanguage || 'en',
+                certificateTitle: certificateSettings?.certificateTitle || defaultCertificateTitle,
+                certificateLanguage: certificateSettings?.certificateLanguage || DEFAULT_CERTIFICATE_LANGUAGE,
                 secondaryBrandName: certificateSettings?.secondaryBrandName || '',
                 pageOrientation: certificateSettings?.pageOrientation || 'landscape',
                 primaryColor: certificateSettings?.primaryColor || '#122144',
@@ -1026,14 +1035,14 @@ const CertificatesSection = ({
                 eligibilityActivitiesPercent:
                     certificateSettings?.eligibilityActivitiesPercent ?? 100,
         },
-        isAdminMode
+        isAdminMode,
+        defaultCertificateTitle
     );
     const hasTemplateChanges =
         JSON.stringify(templatePayload) !== JSON.stringify(savedTemplatePayload);
     const fieldEditDisabled = isAdminMode && !isTemplateEditMode;
     const shouldShowExactPreview = Boolean(exactPreviewHtml);
-    const pageOrientationLabel =
-        settingsForm.pageOrientation === 'portrait' ? 'Portrait' : 'Landscape';
+    const pageOrientationLabel = getPageOrientationLabel(settingsForm.pageOrientation, t);
     const colorPresets = [
         { label: 'EduBot', primary: '#122144', accent: '#F17E22' },
         { label: 'Forest', primary: '#1F4D3D', accent: '#D6A85F' },
@@ -1080,7 +1089,7 @@ const CertificatesSection = ({
         try {
             const html = await fetchCourseCertificatePreviewHtml(selectedCourseId, {
                 certificateTitle: isAdminMode
-                    ? settingsForm.certificateTitle.trim() || 'Certificate of Achievement'
+                    ? settingsForm.certificateTitle.trim() || defaultCertificateTitle
                     : undefined,
                 secondaryBrandName: isAdminMode
                     ? settingsForm.secondaryBrandName.trim() || null
@@ -1102,7 +1111,7 @@ const CertificatesSection = ({
         } catch (err) {
             if (requestId !== previewRequestIdRef.current) return;
             console.error('Failed to load exact certificate preview', err);
-            setExactPreviewError('Так preview жүктөлгөн жок.');
+            setExactPreviewError(t('adminCertificates.errors.exactPreviewLoad'));
         } finally {
             if (requestId === previewRequestIdRef.current) {
                 setExactPreviewLoading(false);
@@ -1115,6 +1124,7 @@ const CertificatesSection = ({
         previewIssuerTitle,
         previewStudentName,
         selectedCourseId,
+        defaultCertificateTitle,
         settingsForm.accentColor,
         settingsForm.certificateTitle,
         settingsForm.certificateLanguage,
@@ -1123,6 +1133,7 @@ const CertificatesSection = ({
         settingsForm.pageOrientation,
         settingsForm.primaryColor,
         settingsForm.secondaryBrandName,
+        t,
     ]);
 
     useEffect(() => {
@@ -1139,12 +1150,12 @@ const CertificatesSection = ({
         <div className="space-y-5">
             <div className="dashboard-panel overflow-hidden">
                 <DashboardSectionHeader
-                    eyebrow="Сертификат иш аймагы"
-                    title="Сертификаттар"
+                    eyebrow={t('adminCertificates.page.hero.eyebrow')}
+                    title={t('adminCertificates.page.hero.title')}
                     description={
                         isAdminMode
-                            ? 'Курс тандап, сертификат эрежесин, бренд көрүнүшүн, кол коюучуну жана студенттерге бериле турган сертификаттарды ушул жерден башкарыңыз.'
-                            : 'Курс тандап, сертификат тилин, өз колуңуздун сүрөтүн жана студенттерге бериле турган сертификаттарды ушул жерден башкарыңыз.'
+                            ? t('adminCertificates.page.hero.adminDescription')
+                            : t('adminCertificates.page.hero.instructorDescription')
                     }
                     action={
                         <button
@@ -1153,31 +1164,31 @@ const CertificatesSection = ({
                             disabled={loadingCourses}
                             className="dashboard-button-secondary"
                         >
-                            Жаңыртуу
+                            {t('adminCertificates.page.actions.refresh')}
                         </button>
                     }
                 />
 
                 <div className="grid gap-3 px-6 pb-6 md:grid-cols-2 xl:grid-cols-4">
                     <DashboardMetricCard
-                        label="Жалпы студенттер"
+                        label={t('adminCertificates.page.metrics.totalStudents')}
                         value={total ?? '—'}
                         icon={FiUsers}
                     />
                     <DashboardMetricCard
-                        label="Курстар"
+                        label={t('adminCertificates.page.metrics.courses')}
                         value={courses.length}
                         icon={FiBookOpen}
                         tone="blue"
                     />
                     <DashboardMetricCard
-                        label="Бул курста сертификат"
+                        label={t('adminCertificates.page.metrics.courseCertificates')}
                         value={selectedCourseId ? courseCertificates.length : '—'}
                         icon={FiAward}
                         tone="green"
                     />
                     <DashboardMetricCard
-                        label="Орточо прогресс"
+                        label={t('adminCertificates.page.metrics.averageProgress')}
                         value={selectedCourseId ? `${averageProgress}%` : '—'}
                         icon={FiActivity}
                         tone="amber"
@@ -1198,18 +1209,18 @@ const CertificatesSection = ({
             ) : null}
 
             <DashboardInsetPanel
-                title="Тандоо"
-                description="Сертификаттарды башкаруу үчүн курс тандаңыз. Кааласаңыз, ошол курстун ичинен белгилүү студентти да тандап иштеңиз."
+                title={t('adminCertificates.page.selection.title')}
+                description={t('adminCertificates.page.selection.description')}
             >
                 {loadingCourses && !courses.length ? (
                     <div className="mt-4 rounded-2xl border border-edubot-line/70 bg-slate-50 px-4 py-6 text-sm text-edubot-muted dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-400">
-                        Курстар жүктөлүүдө...
+                        {t('adminCertificates.page.selection.loadingCourses')}
                     </div>
                 ) : courses.length ? (
                     <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(220px,1fr)]">
                         <div>
                             <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
-                                Курс
+                                {t('adminCertificates.page.selection.courseLabel')}
                             </label>
                             <select
                                 value={selectedCourseId ?? ''}
@@ -1218,7 +1229,7 @@ const CertificatesSection = ({
                                 }
                                 className="dashboard-field"
                             >
-                                <option value="">Курсту тандаңыз</option>
+                                <option value="">{t('adminCertificates.page.selection.selectCourse')}</option>
                                 {courses.map((course) => (
                                     <option key={course.id} value={course.id}>
                                         {course.title}
@@ -1228,7 +1239,7 @@ const CertificatesSection = ({
                         </div>
                         <div>
                             <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
-                                Студент
+                                {t('adminCertificates.page.selection.studentLabel')}
                             </label>
                             <select
                                 value={selectedStudentId}
@@ -1236,7 +1247,7 @@ const CertificatesSection = ({
                                 disabled={!selectedCourseId || !sortedStudents.length}
                                 className="dashboard-field"
                             >
-                                <option value="">Бардык студенттер</option>
+                                <option value="">{t('adminCertificates.page.selection.allStudents')}</option>
                                 {sortedStudents.map((student) => (
                                     <option key={student.id} value={student.id}>
                                         {student.fullName}
@@ -1246,23 +1257,25 @@ const CertificatesSection = ({
                         </div>
                         <div>
                             <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
-                                Көрүнүш
+                                {t('adminCertificates.page.selection.visibilityLabel')}
                             </label>
                             <div className="flex h-11 items-center rounded-2xl border border-edubot-line/70 bg-slate-50 px-4 text-sm text-edubot-muted dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-400">
                                 {selectedCourseId
                                     ? selectedStudentId
-                                        ? 'Белгилүү студент тандалды'
-                                        : `${visibleStudents.length} студент көрсөтүлөт`
-                                    : 'Алгач курс тандаңыз'}
+                                        ? t('adminCertificates.page.selection.specificStudentSelected')
+                                        : t('adminCertificates.page.selection.studentsVisible', {
+                                            count: visibleStudents.length,
+                                        })
+                                    : t('adminCertificates.page.selection.noCourseSelected')}
                             </div>
                         </div>
                     </div>
                 ) : (
                     <EmptyState
-                        title="Курстар азырынча жок"
-                        subtitle="Алгач курс түзүп баштаңыз, андан кийин сертификаттар ушул жерде башкарылат."
+                        title={t('adminCertificates.page.selection.noCoursesTitle')}
+                        subtitle={t('adminCertificates.page.selection.noCoursesSubtitle')}
                         action={{
-                            label: 'Курс түзүү',
+                            label: t('adminCertificates.page.actions.createCourse'),
                             onClick: () => navigate('/instructor/course/create'),
                         }}
                         className="py-8"
@@ -1272,49 +1285,48 @@ const CertificatesSection = ({
 
             {!selectedCourseId ? (
                 <DashboardInsetPanel
-                    title="Курс тандалган эмес"
-                    description="Бул таб сертификат иштерине арналган. Улантуу үчүн жогорудагы селектордон бир курс тандаңыз."
+                    title={t('adminCertificates.page.selection.noCoursePanelTitle')}
+                    description={t('adminCertificates.page.selection.noCoursePanelDescription')}
                 >
                     <div className="mt-4 rounded-2xl border border-dashed border-edubot-line/80 bg-slate-50 px-4 py-6 text-sm text-edubot-muted dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-400">
-                        Курс тандалгандан кийин ушул жерде шаблон, реестр жана студентке сертификат
-                        берүү аракеттери ачылат.
+                        {t('adminCertificates.page.selection.noCoursePanelBody')}
                     </div>
                 </DashboardInsetPanel>
             ) : (
                 <>
                     <DashboardInsetPanel
-                        title={courseMeta?.title || selectedCourse?.title || 'Сертификаттар'}
-                        description="Курс тандалгандан кийин шаблон, реестр жана сертификат берүү аракеттери ушул блокто иштейт."
+                        title={courseMeta?.title || selectedCourse?.title || t('adminCertificates.page.courseWorkspace.fallbackTitle')}
+                        description={t('adminCertificates.page.courseWorkspace.description')}
                         action={
                             <button
                                 type="button"
                                 onClick={() => onSelectCourse(null)}
                                 className="dashboard-button-secondary"
                             >
-                                Курстарга кайтуу
+                                {t('adminCertificates.page.actions.backToCourses')}
                             </button>
                         }
                     >
                         <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                             <DashboardMetricCard
-                                label="Бул курстагы студент"
+                                label={t('adminCertificates.page.metrics.courseStudents')}
                                 value={courseMeta?.studentCount ?? sortedStudents.length}
                                 icon={FiUsers}
                             />
                             <DashboardMetricCard
-                                label="Сабактар"
+                                label={t('adminCertificates.page.metrics.lessons')}
                                 value={courseMeta?.lessonCount ?? '—'}
                                 icon={FiBookOpen}
                                 tone="blue"
                             />
                             <DashboardMetricCard
-                                label="Бүтүргөн"
+                                label={t('adminCertificates.page.metrics.completed')}
                                 value={completedCount}
                                 icon={FiCalendar}
                                 tone="green"
                             />
                             <DashboardMetricCard
-                                label="Реестрдеги сертификат"
+                                label={t('adminCertificates.page.metrics.registryCertificates')}
                                 value={courseCertificates.length}
                                 icon={FiAward}
                                 tone="amber"
@@ -1323,13 +1335,13 @@ const CertificatesSection = ({
                     </DashboardInsetPanel>
 
                     <DashboardInsetPanel
-                        title="Тандоо жана фильтр"
-                        description="Белгилүү студентти табуу же прогресси жеткендерди тез бөлүп алуу үчүн курс студенттерин чыпкалаңыз."
+                        title={t('adminCertificates.page.filters.title')}
+                        description={t('adminCertificates.page.filters.description')}
                     >
                         <div className="mt-4 flex flex-wrap items-end gap-3">
                             <div className="min-w-[220px] flex-1">
                                 <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
-                                    Студент издөө
+                                    {t('adminCertificates.page.filters.studentSearch')}
                                 </label>
                                 <div className="relative">
                                     <FiSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-edubot-muted dark:text-slate-500" />
@@ -1340,21 +1352,21 @@ const CertificatesSection = ({
                                             onChangePage(1);
                                             onSearchChange(e.target.value);
                                         }}
-                                        placeholder="Ат, email же телефон"
+                                        placeholder={t('adminCertificates.page.filters.searchPlaceholder')}
                                         className="dashboard-field dashboard-field-icon pl-10"
                                     />
                                 </div>
                             </div>
                             <div className="min-w-[220px] flex-1">
                                 <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
-                                    Студент селектору
+                                    {t('adminCertificates.page.filters.studentSelector')}
                                 </label>
                                 <select
                                     value={selectedStudentId}
                                     onChange={(e) => setSelectedStudentId(e.target.value)}
                                     className="dashboard-field"
                                 >
-                                    <option value="">Бардык студенттер</option>
+                                    <option value="">{t('adminCertificates.page.selection.allStudents')}</option>
                                     {sortedStudents.map((student) => (
                                         <option key={student.id} value={student.id}>
                                             {student.fullName}
@@ -1364,7 +1376,7 @@ const CertificatesSection = ({
                             </div>
                             <div>
                                 <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
-                                    Прогресс кеминде
+                                    {t('adminCertificates.page.filters.progressMin')}
                                 </label>
                                 <input
                                     type="number"
@@ -1380,7 +1392,7 @@ const CertificatesSection = ({
                             </div>
                             <div>
                                 <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
-                                    Прогресс жогору
+                                    {t('adminCertificates.page.filters.progressMax')}
                                 </label>
                                 <input
                                     type="number"
@@ -1399,16 +1411,16 @@ const CertificatesSection = ({
 
                     {isAdminMode ? (
                         <DashboardInsetPanel
-                            title="Сертификат эрежеси"
-                            description="Бул курс бүткөндө сертификат дароо берилеби же инструктор бекитеби."
+                            title={t('adminCertificates.page.rule.title')}
+                            description={t('adminCertificates.page.rule.description')}
                         >
                             <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
                                 <div className="text-sm text-edubot-muted dark:text-slate-400">
-                                    Учурда:
+                                    {t('adminCertificates.page.rule.current')}
                                     <span className="ml-2 font-semibold text-edubot-ink dark:text-white">
                                         {certificateSettings?.approvalMode === 'instructor'
-                                            ? 'Инструктор бекитет'
-                                            : 'Дароо берилет'}
+                                            ? t('adminCertificates.page.rule.approvalModeInstructor')
+                                            : t('adminCertificates.page.rule.approvalModeAutomatic')}
                                     </span>
                                 </div>
                                 <button
@@ -1423,8 +1435,8 @@ const CertificatesSection = ({
                                 >
                                     <FiAward className="h-4 w-4" />
                                     {certificateSettings?.approvalMode === 'instructor'
-                                        ? 'Дароо берүүгө өткөрүү'
-                                        : 'Бекитүү режимин күйгүзүү'}
+                                        ? t('adminCertificates.page.rule.switchToAutomatic')
+                                        : t('adminCertificates.page.rule.switchToInstructorApproval')}
                                 </button>
                             </div>
                         </DashboardInsetPanel>
@@ -1432,32 +1444,32 @@ const CertificatesSection = ({
 
                     {isAdminMode ? (
                         <DashboardInsetPanel
-                            title="Аяктоо талаптары"
-                            description="Video курстар сабак прогресси менен эсептелет. Offline жана live курстарда авто-сертификат ушул талаптар аткарылганда түзүлөт."
+                            title={t('adminCertificates.page.requirements.title')}
+                            description={t('adminCertificates.page.requirements.description')}
                         >
                             <div className="mt-4 grid gap-3 lg:grid-cols-3">
                                 {[
                                     {
                                         key: 'Attendance',
                                         icon: FiUsers,
-                                        title: 'Катышуу',
-                                        description: 'Сессиялар completed болуп, катышуу пайызы жетиши керек.',
+                                        title: t('adminCertificates.page.requirements.attendance.title'),
+                                        description: t('adminCertificates.page.requirements.attendance.description'),
                                         enabledKey: 'eligibilityAttendanceRequired',
                                         percentKey: 'eligibilityAttendancePercent',
                                     },
                                     {
                                         key: 'Homework',
                                         icon: FiBookOpen,
-                                        title: 'Үй тапшырма',
-                                        description: 'Жарыяланган жана студентке дайындалган тапшырмалар approved болушу керек.',
+                                        title: t('adminCertificates.page.requirements.homework.title'),
+                                        description: t('adminCertificates.page.requirements.homework.description'),
                                         enabledKey: 'eligibilityHomeworkRequired',
                                         percentKey: 'eligibilityHomeworkPercent',
                                     },
                                     {
                                         key: 'Activities',
                                         icon: FiActivity,
-                                        title: 'Класс иштери',
-                                        description: 'Quiz passed, exercise/group work approved болгондо эсептелет.',
+                                        title: t('adminCertificates.page.requirements.activities.title'),
+                                        description: t('adminCertificates.page.requirements.activities.description'),
                                         enabledKey: 'eligibilityActivitiesRequired',
                                         percentKey: 'eligibilityActivitiesPercent',
                                     },
@@ -1494,7 +1506,7 @@ const CertificatesSection = ({
                                             </div>
                                             <div className="mt-4">
                                                 <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
-                                                    Минимум %
+                                                    {t('adminCertificates.page.requirements.minimumPercent')}
                                                 </label>
                                                 <input
                                                     type="number"
@@ -1521,30 +1533,32 @@ const CertificatesSection = ({
                                     disabled={savingCertificateSettings || !hasTemplateChanges}
                                     className="dashboard-button-primary"
                                 >
-                                    Талаптарды сактоо
+                                    {t('adminCertificates.page.actions.saveRequirements')}
                                 </button>
                             </div>
                         </DashboardInsetPanel>
                     ) : null}
 
                     <DashboardInsetPanel
-                        title="Сертификат шаблону"
+                        title={t('adminCertificates.page.template.title')}
                         description={
                             isAdminMode
-                                ? 'EduBot Learning негизги бренд бойдон калат. Бул жерде курс үчүн сакталуучу шаблон эрежелерин жөндөйсүз.'
-                                : 'Курс сертификатынын көрүнүшүн жана берилген сертификаттарды ушул жерден көрөсүз.'
+                                ? t('adminCertificates.page.template.adminDescription')
+                                : t('adminCertificates.page.template.instructorDescription')
                         }
                     >
                         {isAdminMode ? (
                             <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-[22px] border border-edubot-line/70 bg-white/70 px-4 py-3 dark:border-slate-700 dark:bg-slate-950/35">
                                 <div>
                                     <p className="text-sm font-semibold text-edubot-ink dark:text-white">
-                                        {isTemplateEditMode ? 'Түзөтүү режими' : 'Көрүү режими'}
+                                        {isTemplateEditMode
+                                            ? t('adminCertificates.page.template.editMode')
+                                            : t('adminCertificates.page.template.viewMode')}
                                     </p>
                                     <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
                                         {isTemplateEditMode
-                                            ? 'Курс үчүн сакталуучу шаблон эрежелерин өзгөртүп, сактаңыз.'
-                                            : 'Шаблон эрежелери көрүү режиминде. Өзгөртүү үчүн түзөтүү режимин күйгүзүңүз.'}
+                                            ? t('adminCertificates.page.template.editModeDescription')
+                                            : t('adminCertificates.page.template.viewModeDescription')}
                                     </p>
                                 </div>
                                 <div className="flex flex-wrap items-center gap-2">
@@ -1559,8 +1573,8 @@ const CertificatesSection = ({
                                         >
                                             <FiAward className="h-4 w-4" />
                                             {savingCertificateSettings
-                                                ? 'Сакталууда...'
-                                                : 'Эрежелерди сактоо'}
+                                                ? t('adminCertificates.page.template.saving')
+                                                : t('adminCertificates.page.template.saveRules')}
                                         </button>
                                     ) : null}
                                     <button
@@ -1568,7 +1582,9 @@ const CertificatesSection = ({
                                         onClick={() => setIsTemplateEditMode((value) => !value)}
                                         className="dashboard-button-secondary"
                                     >
-                                        {isTemplateEditMode ? 'Көрүү режими' : 'Түзөтүү режими'}
+                                        {isTemplateEditMode
+                                            ? t('adminCertificates.page.template.viewMode')
+                                            : t('adminCertificates.page.template.editMode')}
                                     </button>
                                 </div>
                             </div>
@@ -1580,15 +1596,14 @@ const CertificatesSection = ({
                                         <div className="flex items-start justify-between gap-4">
                                             <div>
                                                 <p className="text-sm font-semibold text-edubot-ink dark:text-white">
-                                                    Брендинг
+                                                    {t('adminCertificates.page.template.branding.title')}
                                                 </p>
                                                 <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                                    Сертификат аталышын, өнөктөш брендди жана
-                                                    логотипти ушул жерден жаңыртыңыз.
+                                                    {t('adminCertificates.page.template.branding.description')}
                                                 </p>
                                             </div>
                                             <span className="rounded-full bg-edubot-orange/10 px-3 py-1 text-xs font-semibold text-edubot-orange">
-                                                EduBot негизги бренд
+                                                {t('adminCertificates.page.template.branding.primaryBrandBadge')}
                                             </span>
                                         </div>
                                         <div className="mt-4 grid gap-4">
@@ -1596,7 +1611,7 @@ const CertificatesSection = ({
                                                 {isTemplateEditMode ? (
                                                     <>
                                                         <label className="mb-2 block text-sm font-medium text-edubot-ink dark:text-slate-200">
-                                                            Сертификат аталышы
+                                                            {t('adminCertificates.page.template.branding.certificateTitle')}
                                                         </label>
                                                         <input
                                                             type="text"
@@ -1613,7 +1628,7 @@ const CertificatesSection = ({
                                                     </>
                                                 ) : (
                                                     <ReadOnlyField
-                                                        label="Сертификат аталышы"
+                                                        label={t('adminCertificates.page.template.branding.certificateTitle')}
                                                         value={
                                                             settingsForm.certificateTitle ||
                                                             'Certificate of Achievement'
@@ -1625,7 +1640,7 @@ const CertificatesSection = ({
                                                 {isTemplateEditMode ? (
                                                     <>
                                                         <label className="mb-2 block text-sm font-medium text-edubot-ink dark:text-slate-200">
-                                                            Экинчи бренд
+                                                            {t('adminCertificates.page.template.branding.secondaryBrand')}
                                                         </label>
                                                         <input
                                                             type="text"
@@ -1637,16 +1652,16 @@ const CertificatesSection = ({
                                                                         e.target.value,
                                                                 }))
                                                             }
-                                                            placeholder="Компания же өнөктөш аты"
+                                                            placeholder={t('adminCertificates.page.template.branding.secondaryBrandPlaceholder')}
                                                             className="dashboard-field"
                                                         />
                                                     </>
                                                 ) : (
                                                     <ReadOnlyField
-                                                        label="Экинчи бренд"
+                                                        label={t('adminCertificates.page.template.branding.secondaryBrand')}
                                                         value={
                                                             settingsForm.secondaryBrandName ||
-                                                            'Көрсөтүлгөн эмес'
+                                                            t('adminCertificates.page.template.notProvided')
                                                         }
                                                     />
                                                 )}
@@ -1655,17 +1670,17 @@ const CertificatesSection = ({
                                                 <div className="flex flex-wrap items-center justify-between gap-3">
                                                     <div>
                                                         <p className="text-sm font-medium text-edubot-ink dark:text-slate-200">
-                                                            Экинчи бренд логотиби
+                                                            {t('adminCertificates.page.template.branding.secondaryLogo')}
                                                         </p>
                                                         <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                                            PNG, JPG же WEBP
+                                                            {t('adminCertificates.page.template.branding.logoFormats')}
                                                         </p>
                                                     </div>
                                                     {isTemplateEditMode ? (
                                                         <label className="dashboard-button-secondary cursor-pointer">
                                                             {settingsForm.secondaryBrandLogoUrl
-                                                                ? 'Алмаштыруу'
-                                                                : 'Жүктөө'}
+                                                                ? t('adminCertificates.page.template.replace')
+                                                                : t('adminCertificates.page.template.upload')}
                                                             <input
                                                                 type="file"
                                                                 accept="image/png,image/jpeg,image/webp"
@@ -1697,22 +1712,21 @@ const CertificatesSection = ({
                                                     {settingsForm.secondaryBrandLogoUrl ? (
                                                         <img
                                                             src={settingsForm.secondaryBrandLogoUrl}
-                                                            alt="Secondary brand logo preview"
+                                                            alt={t('adminCertificates.page.template.branding.secondaryLogoAlt')}
                                                             className="max-h-14 max-w-full object-contain"
                                                         />
                                                     ) : (
                                                         <p className="text-sm text-edubot-muted dark:text-slate-400">
-                                                            Логотип жүктөлгөндөн кийин ушул жерде
-                                                            көрсөтүлөт.
+                                                            {t('adminCertificates.page.template.branding.logoEmpty')}
                                                         </p>
                                                     )}
                                                 </div>
                                                 <p className="mt-3 text-sm leading-6 text-edubot-muted dark:text-slate-400">
                                                     {savingCertificateAssetKind === 'secondary-logo'
-                                                        ? 'Логотип жүктөлүүдө...'
+                                                        ? t('adminCertificates.page.template.branding.logoUploading')
                                                         : settingsForm.secondaryBrandLogoUrl
-                                                          ? 'Логотип даяр. Кааласаңыз кайра алмаштыра аласыз.'
-                                                          : 'Өнөктөш логотиби керек болбосо бул талааны бош калтырсаңыз болот.'}
+                                                          ? t('adminCertificates.page.template.branding.logoReady')
+                                                          : t('adminCertificates.page.template.branding.logoOptional')}
                                                 </p>
                                             </div>
                                         </div>
@@ -1725,18 +1739,16 @@ const CertificatesSection = ({
                                     <section className="rounded-[24px] border border-edubot-line/70 bg-white/55 p-5 shadow-edubot-soft dark:border-slate-700 dark:bg-slate-950/35">
                                         <div>
                                             <p className="text-sm font-semibold text-edubot-ink dark:text-white">
-                                                Кол коюучу
+                                                {t('adminCertificates.page.template.signer.title')}
                                             </p>
                                             <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                                Бул маалымат сертификат берүү учурунда колдонулат.
-                                                Аты-жөнү, роль жана кол сүрөтү курс эрежеси катары
-                                                сакталбайт.
+                                                {t('adminCertificates.page.template.signer.description')}
                                             </p>
                                         </div>
                                         <div className="mt-4 grid gap-4 lg:grid-cols-2">
                                             <div>
                                                 <label className="mb-2 block text-sm font-medium text-edubot-ink dark:text-slate-200">
-                                                    Сертификат тили
+                                                    {t('adminCertificates.page.template.signer.certificateLanguage')}
                                                 </label>
                                                 <select
                                                     value={settingsForm.certificateLanguage}
@@ -1753,14 +1765,14 @@ const CertificatesSection = ({
                                                             key={option.value}
                                                             value={option.value}
                                                         >
-                                                            {option.label}
+                                                            {t(option.labelKey)}
                                                         </option>
                                                     ))}
                                                 </select>
                                             </div>
                                             <div>
                                                 <label className="mb-2 block text-sm font-medium text-edubot-ink dark:text-slate-200">
-                                                    Кол коюучу
+                                                    {t('adminCertificates.page.template.signer.signerName')}
                                                 </label>
                                                 <input
                                                     type="text"
@@ -1773,14 +1785,14 @@ const CertificatesSection = ({
                                                     }
                                                     placeholder={
                                                         selectedCourse?.instructorName ||
-                                                        'Instructor name'
+                                                        t('adminCertificates.page.template.signer.signerNamePlaceholder')
                                                     }
                                                     className="dashboard-field"
                                                 />
                                             </div>
                                             <div>
                                                 <label className="mb-2 block text-sm font-medium text-edubot-ink dark:text-slate-200">
-                                                    Кол коюучунун ролу
+                                                    {t('adminCertificates.page.template.signer.signerRole')}
                                                 </label>
                                                 <input
                                                     type="text"
@@ -1791,13 +1803,13 @@ const CertificatesSection = ({
                                                             issuerTitle: e.target.value,
                                                         }))
                                                     }
-                                                    placeholder="Instructor"
+                                                    placeholder={t('adminCertificates.page.template.signer.signerRolePlaceholder')}
                                                     className="dashboard-field"
                                                 />
                                             </div>
                                             <div>
                                                 <label className="mb-2 block text-sm font-medium text-edubot-ink dark:text-slate-200">
-                                                    Сертификат форматы
+                                                    {t('adminCertificates.page.template.signer.certificateFormat')}
                                                 </label>
                                                 <select
                                                     value={settingsForm.pageOrientation}
@@ -1809,19 +1821,22 @@ const CertificatesSection = ({
                                                     }
                                                     className="dashboard-field"
                                                 >
-                                                    <option value="landscape">Landscape</option>
-                                                    <option value="portrait">Portrait</option>
+                                                    <option value="landscape">
+                                                        {t('common.enums.pageOrientations.landscape')}
+                                                    </option>
+                                                    <option value="portrait">
+                                                        {t('common.enums.pageOrientations.portrait')}
+                                                    </option>
                                                 </select>
                                             </div>
                                             <div className="rounded-2xl border border-edubot-line/70 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-900/60">
                                                 <div className="flex flex-wrap items-start justify-between gap-3">
                                                     <div>
                                                         <p className="text-sm font-medium text-edubot-ink dark:text-slate-200">
-                                                            Кол коюу
+                                                            {t('adminCertificates.page.template.signer.signature')}
                                                         </p>
                                                         <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                                            Кол коюуну өзүнчө терезеде тартып
-                                                            сактайсыз.
+                                                            {t('adminCertificates.page.template.signer.signatureDescription')}
                                                         </p>
                                                     </div>
                                                     <button
@@ -1834,30 +1849,29 @@ const CertificatesSection = ({
                                                         className="dashboard-button-secondary"
                                                     >
                                                         {settingsForm.signatureAssetUrl
-                                                            ? 'Кол коюуну жаңыртуу'
-                                                            : 'Кол коюуну тартуу'}
+                                                            ? t('adminCertificates.page.template.signer.updateSignature')
+                                                            : t('adminCertificates.page.template.signer.drawSignature')}
                                                     </button>
                                                 </div>
                                                 <div className="mt-4 rounded-2xl border border-[#d8c28f] bg-[#fffaf0] px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] dark:border-[#8f7a4b] dark:bg-[#fff8ea]">
                                                     {settingsForm.signatureAssetUrl ? (
                                                         <img
                                                             src={settingsForm.signatureAssetUrl}
-                                                            alt="Signature preview"
+                                                            alt={t('adminCertificates.page.template.signer.signatureAlt')}
                                                             className="max-h-16 max-w-full object-contain opacity-95"
                                                         />
                                                     ) : (
                                                         <p className="text-sm text-[#7a6850] dark:text-[#7a6850]">
-                                                            Кол сүрөтү жүктөлгөндөн кийин ушул жерде
-                                                            көрүнөт.
+                                                            {t('adminCertificates.page.template.signer.signatureEmpty')}
                                                         </p>
                                                     )}
                                                 </div>
                                                 <p className="mt-3 text-sm leading-6 text-edubot-muted dark:text-slate-400">
                                                     {savingCertificateAssetKind === 'signature'
-                                                        ? 'Кол коюу сакталууда...'
+                                                        ? t('adminCertificates.page.template.signer.signatureSaving')
                                                         : settingsForm.signatureAssetUrl
-                                                          ? 'Кол коюу даяр. Сертификаттагы сапты автоматтык түрдө жаңыртат.'
-                                                          : 'Кол коюуну тартып сактагандан кийин ушул жерде көрүнөт.'}
+                                                          ? t('adminCertificates.page.template.signer.signatureReady')
+                                                          : t('adminCertificates.page.template.signer.signatureHelp')}
                                                 </p>
                                             </div>
                                         </div>
@@ -1868,11 +1882,10 @@ const CertificatesSection = ({
                                             <div className="flex flex-wrap items-start justify-between gap-4">
                                                 <div>
                                                     <p className="text-sm font-semibold text-edubot-ink dark:text-white">
-                                                        Көрүнүш
+                                                        {t('adminCertificates.page.template.appearance.title')}
                                                     </p>
                                                     <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                                        Барак ориентациясын, негизги түстү жана
-                                                        акцент түстү тандаңыз.
+                                                        {t('adminCertificates.page.template.appearance.description')}
                                                     </p>
                                                 </div>
                                                 {isTemplateEditMode ? (
@@ -1888,7 +1901,7 @@ const CertificatesSection = ({
                                                         }
                                                         className="dashboard-button-secondary"
                                                     >
-                                                        Демейкиге кайтаруу
+                                                        {t('adminCertificates.page.template.appearance.resetDefaults')}
                                                     </button>
                                                 ) : null}
                                             </div>
@@ -1898,7 +1911,7 @@ const CertificatesSection = ({
                                                         {isTemplateEditMode ? (
                                                             <>
                                                                 <label className="mb-2 block text-sm font-medium text-edubot-ink dark:text-slate-200">
-                                                                    Барак ориентациясы
+                                                                    {t('adminCertificates.page.template.appearance.pageOrientation')}
                                                                 </label>
                                                                 <select
                                                                     value={
@@ -1917,16 +1930,16 @@ const CertificatesSection = ({
                                                                     className="dashboard-select"
                                                                 >
                                                                     <option value="landscape">
-                                                                        Landscape
+                                                                        {t('common.enums.pageOrientations.landscape')}
                                                                     </option>
                                                                     <option value="portrait">
-                                                                        Portrait
+                                                                        {t('common.enums.pageOrientations.portrait')}
                                                                     </option>
                                                                 </select>
                                                             </>
                                                         ) : (
                                                             <ReadOnlyField
-                                                                label="Барак ориентациясы"
+                                                                label={t('adminCertificates.page.template.appearance.pageOrientation')}
                                                                 value={pageOrientationLabel}
                                                             />
                                                         )}
@@ -1934,7 +1947,7 @@ const CertificatesSection = ({
                                                     <div className="grid gap-4">
                                                         <div className="rounded-2xl border border-edubot-line/70 bg-white/90 p-4 dark:border-slate-700 dark:bg-slate-950/70">
                                                             <label className="mb-3 block text-sm font-medium text-edubot-ink dark:text-slate-200">
-                                                                Негизги түс
+                                                                {t('adminCertificates.page.template.appearance.primaryColor')}
                                                             </label>
                                                             <div className="space-y-3">
                                                                 <div
@@ -1980,7 +1993,7 @@ const CertificatesSection = ({
                                                         </div>
                                                         <div className="rounded-2xl border border-edubot-line/70 bg-white/90 p-4 dark:border-slate-700 dark:bg-slate-950/70">
                                                             <label className="mb-3 block text-sm font-medium text-edubot-ink dark:text-slate-200">
-                                                                Акцент түс
+                                                                {t('adminCertificates.page.template.appearance.accentColor')}
                                                             </label>
                                                             <div className="space-y-3">
                                                                 <div
@@ -2030,11 +2043,10 @@ const CertificatesSection = ({
                                                     <div className="mt-4 border-t border-edubot-line/70 pt-4 dark:border-slate-700">
                                                         <div className="flex flex-wrap items-center justify-between gap-3">
                                                             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-edubot-muted dark:text-slate-400">
-                                                                Даяр темалар
+                                                                {t('adminCertificates.page.template.appearance.presets')}
                                                             </p>
                                                             <p className="text-sm text-edubot-muted dark:text-slate-400">
-                                                                Бир чыкылдатуу менен түс жуптарын
-                                                                алмаштыруу
+                                                                {t('adminCertificates.page.template.appearance.presetsDescription')}
                                                             </p>
                                                         </div>
                                                         <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -2089,10 +2101,10 @@ const CertificatesSection = ({
                                 <div className="space-y-4">
                                     <div className="flex flex-wrap items-center justify-between gap-4">
                                         <span className="rounded-full bg-white/8 px-3 py-1 text-sm font-semibold text-slate-200">
-                                            Жандуу алдын ала көрүү
+                                            {t('adminCertificates.page.template.preview.livePreview')}
                                         </span>
                                         <span className="rounded-full bg-amber-500/15 px-3 py-1 text-[11px] font-semibold text-amber-300">
-                                            {isPortraitPreview ? 'Portrait' : 'Landscape'}
+                                            {pageOrientationLabel}
                                         </span>
                                     </div>
                                     <div className="flex flex-wrap items-center justify-between gap-2">
@@ -2102,21 +2114,21 @@ const CertificatesSection = ({
                                             disabled={exactPreviewLoading || !selectedCourseId}
                                             className="dashboard-button-secondary !border-slate-600 !bg-slate-900 !text-slate-100"
                                         >
-                                            Жаңыртуу
+                                            {t('adminCertificates.page.actions.refresh')}
                                         </button>
                                         <button
                                             type="button"
                                             onClick={() => setIsPreviewModalOpen(true)}
                                             className="dashboard-button-secondary !border-slate-600 !bg-slate-900 !text-slate-100"
                                         >
-                                            Толук алдын ала көрүү
+                                            {t('adminCertificates.page.template.preview.fullPreview')}
                                         </button>
                                     </div>
                                 </div>
                                 <div className="mt-5 rounded-[28px] border border-slate-700 bg-white/95 p-3 shadow-[0_24px_56px_rgba(15,23,42,0.28)]">
                                     {exactPreviewLoading ? (
                                         <div className="flex min-h-[300px] items-center justify-center rounded-[24px] border border-edubot-line/70 bg-white text-slate-500">
-                                            Так preview жүктөлүүдө...
+                                            {t('adminCertificates.page.template.preview.exactLoading')}
                                         </div>
                                     ) : exactPreviewError ? (
                                         <div className="flex min-h-[300px] items-center justify-center rounded-[24px] border border-red-500/30 bg-red-500/10 px-6 text-center text-red-300">
@@ -2124,7 +2136,7 @@ const CertificatesSection = ({
                                         </div>
                                     ) : shouldShowExactPreview ? (
                                         <iframe
-                                            title="Exact certificate preview inline"
+                                            title={t('adminCertificates.page.template.preview.exactFrameTitle')}
                                             srcDoc={exactPreviewHtml}
                                             scrolling="no"
                                             onLoad={handlePreviewFrameLoad('inline')}
@@ -2152,8 +2164,8 @@ const CertificatesSection = ({
                                         <div className="text-sm text-slate-300">
                                             <span>
                                                 {hasTemplateChanges
-                                                    ? 'Өзгөртүүлөр сактала элек'
-                                                    : 'Шаблон сакталган'}
+                                                    ? t('adminCertificates.page.template.preview.unsavedChanges')
+                                                    : t('adminCertificates.page.template.preview.templateSaved')}
                                             </span>
                                         </div>
                                     </div>
@@ -2167,11 +2179,13 @@ const CertificatesSection = ({
                                 <div className="space-y-1">
                                     <div className="text-sm text-edubot-muted dark:text-slate-400">
                                         <span className="font-semibold text-edubot-ink dark:text-white">
-                                            Primary brand:
+                                            {t('adminCertificates.page.template.footer.primaryBrand')}
                                         </span>{' '}
                                         EduBot Learning
                                         {settingsForm.secondaryBrandName
-                                            ? ` · Secondary: ${settingsForm.secondaryBrandName}`
+                                            ? t('adminCertificates.page.template.footer.secondaryBrandSummary', {
+                                                brand: settingsForm.secondaryBrandName,
+                                            })
                                             : ''}
                                     </div>
                                     <div
@@ -2182,8 +2196,8 @@ const CertificatesSection = ({
                                         }`}
                                     >
                                         {hasTemplateChanges
-                                            ? 'Сакталбаган өзгөртүүлөр бар'
-                                            : 'Бардык өзгөртүүлөр сакталган абалда'}
+                                            ? t('adminCertificates.page.template.footer.unsavedChanges')
+                                            : t('adminCertificates.page.template.footer.allChangesSaved')}
                                     </div>
                                 </div>
                                 <div className="flex flex-wrap items-start gap-4">
@@ -2197,11 +2211,11 @@ const CertificatesSection = ({
                                             >
                                                 <FiClock className="h-4 w-4" />
                                                 {regeneratingCertificates
-                                                    ? 'Жаңыртылып жатат...'
-                                                    : 'PDF жаңыртуу'}
+                                                    ? t('adminCertificates.page.template.footer.regenerating')
+                                                    : t('adminCertificates.page.template.footer.regeneratePdf')}
                                             </button>
                                             <p className="text-[11px] text-edubot-muted dark:text-slate-400">
-                                                Мурун түзүлгөн сертификат файлдарын кайра чыгарат
+                                                {t('adminCertificates.page.template.footer.regenerateHelp')}
                                             </p>
                                         </div>
                                     ) : null}
@@ -2219,12 +2233,11 @@ const CertificatesSection = ({
                                             >
                                                 <FiAward className="h-4 w-4" />
                                                 {savingCertificateSettings
-                                                    ? 'Сакталууда...'
-                                                    : 'Шаблонду сактоо'}
+                                                    ? t('adminCertificates.page.template.saving')
+                                                    : t('adminCertificates.page.template.footer.saveTemplate')}
                                             </button>
                                             <p className="text-[11px] text-edubot-muted dark:text-slate-400">
-                                                Шаблон жөндөөлөрүн сактайт, PDF файлдарын өзүнчө
-                                                жаңыртасыз
+                                                {t('adminCertificates.page.template.footer.saveTemplateHelp')}
                                             </p>
                                         </div>
                                     ) : null}
@@ -2232,12 +2245,10 @@ const CertificatesSection = ({
                             </div>
                             <div className="mt-4 grid gap-2 border-t border-edubot-line/70 pt-3 text-[11px] leading-5 text-edubot-muted dark:border-slate-700 dark:text-slate-400 md:grid-cols-2">
                                 <p>
-                                    `PDF жаңыртуу` мурун түзүлгөн сертификат файлдарын кайра
-                                    чыгарат.
+                                    {t('adminCertificates.page.template.footer.regenerateNote')}
                                 </p>
                                 <p className="md:text-right">
-                                    `Шаблонду сактоо` жөндөөлөрдү сактайт, бирок PDF файлдарын
-                                    автоматтык түрдө кайра жаратпайт.
+                                    {t('adminCertificates.page.template.footer.saveTemplateNote')}
                                 </p>
                             </div>
                         </div>
@@ -2245,29 +2256,29 @@ const CertificatesSection = ({
                     </DashboardInsetPanel>
 
                     <DashboardInsetPanel
-                        title="Сертификат реестри"
-                        description="Бул курс боюнча түзүлгөн сертификаттардын акыркы абалы."
+                        title={t('adminCertificates.page.registry.title')}
+                        description={t('adminCertificates.page.registry.description')}
                     >
                         <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                             <DashboardMetricCard
-                                label="Берилди"
+                                label={t('adminCertificates.page.registry.metrics.issued')}
                                 value={certificateStats.issued}
                                 icon={FiAward}
                                 tone="green"
                             />
                             <DashboardMetricCard
-                                label="Кароодо"
+                                label={t('adminCertificates.page.registry.metrics.pending')}
                                 value={certificateStats.pending}
                                 icon={FiClock}
                                 tone="amber"
                             />
                             <DashboardMetricCard
-                                label="Жокко чыгарылды"
+                                label={t('adminCertificates.page.registry.metrics.revoked')}
                                 value={certificateStats.revoked}
                                 icon={FiCalendar}
                             />
                             <DashboardMetricCard
-                                label="Четке кагылды"
+                                label={t('adminCertificates.page.registry.metrics.rejected')}
                                 value={certificateStats.rejected}
                                 icon={FiChevronRight}
                             />
@@ -2288,10 +2299,14 @@ const CertificatesSection = ({
                                         >
                                             <div className="min-w-0">
                                                 <p className="text-sm font-semibold text-edubot-ink dark:text-white">
-                                                    {item.studentName || `Student #${item.studentId}`}
+                                                    {item.studentName ||
+                                                        t('adminCertificates.page.registry.studentFallback', {
+                                                            id: item.studentId,
+                                                        })}
                                                 </p>
                                                 <p className="mt-1 text-xs text-edubot-muted dark:text-slate-400">
-                                                    {item.publicId} · {item.status}
+                                                    {item.publicId} ·{' '}
+                                                    {getStudentCertificateStatusLabel(item.status, t)}
                                                 </p>
                                             </div>
                                             <div className="flex flex-wrap items-center gap-2">
@@ -2308,7 +2323,9 @@ const CertificatesSection = ({
                                                         disabled={isDownloading}
                                                         className="dashboard-button-secondary"
                                                     >
-                                                        {isDownloading ? 'Жүктөлүүдө...' : 'PDF'}
+                                                        {isDownloading
+                                                            ? t('common.loadingEllipsis')
+                                                            : t('adminCertificates.actions.pdf')}
                                                     </button>
                                                 ) : null}
                                                 {item.verificationUrl ? (
@@ -2318,7 +2335,7 @@ const CertificatesSection = ({
                                                         rel="noreferrer"
                                                         className="dashboard-button-secondary"
                                                     >
-                                                        Текшерүү
+                                                        {t('adminCertificates.actions.verify')}
                                                     </a>
                                                 ) : null}
                                             </div>
@@ -2328,27 +2345,31 @@ const CertificatesSection = ({
                             </div>
                         ) : (
                             <div className="mt-5 rounded-2xl border border-edubot-line/70 bg-slate-50 px-4 py-6 text-sm text-edubot-muted dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-400">
-                                Азырынча бул курс боюнча сертификаттар түзүлгөн жок.
+                                {t('adminCertificates.page.registry.empty')}
                             </div>
                         )}
                     </DashboardInsetPanel>
 
                     {loadingStudents ? (
-                        <DashboardInsetPanel title="Студенттер" description="Тизме жүктөлүүдө.">
+                        <DashboardInsetPanel
+                            title={t('adminCertificates.page.students.title')}
+                            description={t('adminCertificates.page.students.loadingDescription')}
+                        >
                             <div className="mt-4">
                                 <DashboardTableSkeleton rows={5} columns={5} />
                             </div>
                         </DashboardInsetPanel>
                     ) : visibleStudents.length ? (
                         <DashboardInsetPanel
-                            title="Студенттерге сертификат берүү"
-                            description="Курс жана студент тандоосу ушул жерде бириктирилген: студентти таап, сертификат абалына жараша берүү же бекитүү аракетин жасаңыз."
+                            title={t('adminCertificates.page.students.issueTitle')}
+                            description={t('adminCertificates.page.students.issueDescription')}
                         >
                             <div className="mt-4 grid gap-4 xl:grid-cols-2">
                                 {visibleStudents.map((student) => {
                                     const issueState = getStudentCertificateState(
                                         student,
-                                        canIssueCertificates
+                                        canIssueCertificates,
+                                        t
                                     );
                                     const downloadKey = `student-${
                                         student.certificatePublicId || student.id
@@ -2391,17 +2412,10 @@ const CertificatesSection = ({
                                                         student.certificateStatus
                                                     )}`}
                                                 >
-                                                    {student.certificateStatus === 'issued'
-                                                        ? 'Сертификат берилди'
-                                                        : student.certificateStatus ===
-                                                            'pending_approval'
-                                                          ? 'Сертификат кароодо'
-                                                          : student.certificateStatus === 'rejected'
-                                                            ? 'Сертификат четке кагылган'
-                                                            : student.certificateStatus ===
-                                                                'revoked'
-                                                              ? 'Сертификат жокко чыгарылган'
-                                                              : 'Сертификат жок'}
+                                                    {getStudentCertificateStatusLabel(
+                                                        student.certificateStatus,
+                                                        t
+                                                    )}
                                                 </span>
                                             </div>
                                             <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -2423,7 +2437,7 @@ const CertificatesSection = ({
                                                         }`}
                                                     >
                                                         {activeActionKind === 'issue'
-                                                            ? 'Берилүүдө...'
+                                                            ? t('adminCertificates.actions.issuing')
                                                             : issueState.buttonLabel}
                                                     </button>
                                                 ) : null}
@@ -2446,8 +2460,8 @@ const CertificatesSection = ({
                                                             className="dashboard-button-secondary"
                                                         >
                                                             {activeActionKind === 'approve'
-                                                                ? 'Бекитилүүдө...'
-                                                                : 'Бекитүү'}
+                                                                ? t('adminCertificates.actions.approving')
+                                                                : t('adminCertificates.actions.approve')}
                                                         </button>
                                                         <button
                                                             type="button"
@@ -2461,8 +2475,8 @@ const CertificatesSection = ({
                                                             className="dashboard-button-secondary"
                                                         >
                                                             {activeActionKind === 'reject'
-                                                                ? 'Жөнөтүлүүдө...'
-                                                                : 'Четке кагуу'}
+                                                                ? t('adminCertificates.actions.sending')
+                                                                : t('adminCertificates.actions.reject')}
                                                         </button>
                                                     </>
                                                 ) : null}
@@ -2482,8 +2496,8 @@ const CertificatesSection = ({
                                                                 className="dashboard-button-secondary"
                                                             >
                                                                 {isDownloading
-                                                                    ? 'Жүктөлүүдө...'
-                                                                    : 'PDF жүктөө'}
+                                                                    ? t('common.loadingEllipsis')
+                                                                    : t('adminCertificates.actions.downloadPdf')}
                                                             </button>
                                                         ) : null}
                                                         {student.certificateVerificationUrl ? (
@@ -2495,7 +2509,7 @@ const CertificatesSection = ({
                                                                 rel="noreferrer"
                                                                 className="dashboard-button-secondary"
                                                             >
-                                                                Текшерүү
+                                                                {t('adminCertificates.actions.verify')}
                                                             </a>
                                                         ) : null}
                                                         {canRevokeCertificates ? (
@@ -2511,8 +2525,8 @@ const CertificatesSection = ({
                                                                 className="dashboard-button-secondary"
                                                             >
                                                                 {activeActionKind === 'revoke'
-                                                                    ? 'Жокко чыгарылууда...'
-                                                                    : 'Жокко чыгаруу'}
+                                                                    ? t('adminCertificates.actions.revoking')
+                                                                    : t('adminCertificates.actions.revoke')}
                                                             </button>
                                                         ) : null}
                                                     </>
@@ -2524,17 +2538,17 @@ const CertificatesSection = ({
                                             <div className="mt-4 grid gap-3 sm:grid-cols-2">
                                                 <div className="dashboard-panel rounded-2xl border border-edubot-line/70 px-4 py-3 dark:border-slate-700">
                                                     <div className="text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
-                                                        Катталды
+                                                        {t('adminCertificates.studentCard.enrolledAt')}
                                                     </div>
                                                     <div className="mt-2 text-sm font-semibold text-edubot-ink dark:text-white">
-                                                        {formatDate(student.enrolledAt)}
+                                                        {formatDate(student.enrolledAt, i18n.language)}
                                                     </div>
                                                 </div>
                                                 <div className="dashboard-panel rounded-2xl border border-edubot-line/70 px-4 py-3 dark:border-slate-700">
                                                     <div className="text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
                                                         {eligibility?.mode === 'delivery'
-                                                            ? 'Аяктоо'
-                                                            : 'Прогресс'}
+                                                            ? t('adminCertificates.studentCard.completion')
+                                                            : t('common.progress')}
                                                     </div>
                                                     <div className="mt-2 text-sm font-semibold text-edubot-ink dark:text-white">
                                                         {Math.max(
@@ -2551,19 +2565,19 @@ const CertificatesSection = ({
                                             {eligibility?.mode === 'delivery' ? (
                                                 <div className="mt-3 grid gap-2 text-xs text-edubot-muted dark:text-slate-400 sm:grid-cols-3">
                                                     <div>
-                                                        Катышуу:{' '}
+                                                        {t('adminCertificates.page.students.eligibility.attendance')}{' '}
                                                         <span className="font-semibold text-edubot-ink dark:text-white">
                                                             {eligibility.attendance?.percent ?? 0}%
                                                         </span>
                                                     </div>
                                                     <div>
-                                                        Үй тапшырма:{' '}
+                                                        {t('adminCertificates.page.students.eligibility.homework')}{' '}
                                                         <span className="font-semibold text-edubot-ink dark:text-white">
                                                             {eligibility.homework?.percent ?? 0}%
                                                         </span>
                                                     </div>
                                                     <div>
-                                                        Иштер:{' '}
+                                                        {t('adminCertificates.page.students.eligibility.activities')}{' '}
                                                         <span className="font-semibold text-edubot-ink dark:text-white">
                                                             {eligibility.activities?.percent ?? 0}%
                                                         </span>
@@ -2577,23 +2591,23 @@ const CertificatesSection = ({
                         </DashboardInsetPanel>
                     ) : (
                         <DashboardInsetPanel
-                            title="Студенттер"
+                            title={t('adminCertificates.page.students.title')}
                             description={
                                 selectedStudentId
-                                    ? 'Тандалган студент бул фильтр менен табылган жок.'
-                                    : 'Бул курс боюнча тизмек азырынча бош.'
+                                    ? t('adminCertificates.page.students.selectedNotFoundDescription')
+                                    : t('adminCertificates.page.students.emptyDescription')
                             }
                         >
                             <EmptyState
                                 title={
                                     selectedStudentId
-                                        ? 'Бул студент азыркы фильтрге туура келбейт'
-                                        : 'Бул курста азырынча студент жок'
+                                        ? t('adminCertificates.page.students.selectedNotFoundTitle')
+                                        : t('adminCertificates.page.students.emptyTitle')
                                 }
                                 subtitle={
                                     selectedStudentId
-                                        ? 'Башка студентти тандаңыз же селекторду тазалаңыз.'
-                                        : 'Башка курсту тандап көрүңүз же катталууларды күтүңүз.'
+                                        ? t('adminCertificates.page.students.selectedNotFoundSubtitle')
+                                        : t('adminCertificates.page.students.emptySubtitle')
                                 }
                                 icon={<FiUsers className="h-8 w-8 text-edubot-orange" />}
                                 className="py-8"
@@ -2610,10 +2624,13 @@ const CertificatesSection = ({
                                 className="dashboard-button-secondary disabled:opacity-50"
                             >
                                 <FiChevronLeft className="h-4 w-4" />
-                                Алдыңкы
+                                {t('adminCertificates.page.pagination.previous')}
                             </button>
                             <span>
-                                Барак {studentsPage} / {courseMeta.totalPages}
+                                {t('adminCertificates.page.pagination.page', {
+                                    page: studentsPage,
+                                    total: courseMeta.totalPages,
+                                })}
                             </span>
                             <button
                                 type="button"
@@ -2625,7 +2642,7 @@ const CertificatesSection = ({
                                 disabled={studentsPage >= (courseMeta.totalPages || 1)}
                                 className="dashboard-button-secondary disabled:opacity-50"
                             >
-                                Кийинки
+                                {t('adminCertificates.page.pagination.next')}
                                 <FiChevronRight className="h-4 w-4" />
                             </button>
                         </div>
@@ -2643,18 +2660,17 @@ const CertificatesSection = ({
                     <div className="flex items-start justify-between gap-3">
                         <div>
                             <p className="text-base font-semibold text-edubot-ink dark:text-white">
-                                Кол коюуну тартуу
+                                {t('adminCertificates.page.signatureModal.title')}
                             </p>
                             <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                Тартып бүткөндөн кийин сактаңыз. Жаңыртылган кол коюу сертификатка
-                                дароо колдонулат.
+                                {t('adminCertificates.page.signatureModal.description')}
                             </p>
                         </div>
                         <button
                             type="button"
                             onClick={() => setIsSignatureModalOpen(false)}
                             className="rounded-full border border-edubot-line/70 bg-white p-2 text-edubot-muted transition hover:text-edubot-ink dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:text-white"
-                            aria-label="Жабуу"
+                            aria-label={t('common.close')}
                         >
                             <FiX className="h-5 w-5" />
                         </button>
@@ -2683,20 +2699,20 @@ const CertificatesSection = ({
                 <div className="space-y-2">
                     <div className="flex items-center justify-between gap-3 px-1 py-1">
                         <p className="text-sm font-medium text-slate-300">
-                            Сертификаттын толук көрүнүшү
+                            {t('adminCertificates.page.template.preview.fullPreview')}
                         </p>
                         <button
                             type="button"
                             onClick={() => setIsPreviewModalOpen(false)}
                             className="rounded-full border border-slate-600 bg-slate-900/80 p-2 text-slate-300 transition hover:border-slate-500 hover:text-white"
-                            aria-label="Жабуу"
+                            aria-label={t('common.close')}
                         >
                             <FiX className="h-5 w-5" />
                         </button>
                     </div>
                     {exactPreviewLoading ? (
                         <div className="flex min-h-[86vh] items-center justify-center rounded-[24px] border border-slate-700 bg-white text-slate-500">
-                            Так preview жүктөлүүдө...
+                            {t('adminCertificates.page.template.preview.exactLoading')}
                         </div>
                     ) : exactPreviewError ? (
                         <div className="flex min-h-[86vh] items-center justify-center rounded-[24px] border border-red-500/30 bg-red-500/10 px-6 text-center text-red-200">
@@ -2707,13 +2723,13 @@ const CertificatesSection = ({
                             <button
                                 type="button"
                                 onClick={() => loadExactPreview()}
-                                disabled={exactPreviewLoading || !selectedCourseId}
-                                className="dashboard-button-secondary absolute right-4 top-4 z-10"
-                            >
-                                Жаңыртуу
+                            disabled={exactPreviewLoading || !selectedCourseId}
+                            className="dashboard-button-secondary absolute right-4 top-4 z-10"
+                        >
+                                {t('adminCertificates.page.actions.refresh')}
                             </button>
                             <iframe
-                                title="Exact certificate preview"
+                                title={t('adminCertificates.page.template.preview.exactFrameTitle')}
                                 srcDoc={exactPreviewHtml}
                                 data-preview-surface="modal"
                                 scrolling="no"
@@ -2723,7 +2739,7 @@ const CertificatesSection = ({
                         </div>
                     ) : (
                         <div className="flex min-h-[86vh] items-center justify-center rounded-[24px] border border-slate-700 bg-white text-slate-500">
-                            Алдын ала көрүү жеткиликсиз.
+                            {t('adminCertificates.page.template.preview.unavailable')}
                         </div>
                     )}
                 </div>

@@ -7,6 +7,7 @@ import {
     COURSE_LIFECYCLE_STATES,
     getCourseLifecycleMeta,
 } from '@features/instructor-dashboard/utils/courseLifecycle';
+import { getCourseTypeLabel } from '@shared/i18n/enumLabels';
 
 const getCourseFilters = (t) => [
     { value: 'all', label: t('instructorDashboard.coursesPage.filters.all') },
@@ -21,13 +22,6 @@ const getCourseTypeFilters = (t) => [
     { value: 'video', label: t('instructorDashboard.coursesPage.workflows.video') },
     { value: 'delivery', label: t('instructorDashboard.coursesPage.workflows.delivery') },
 ];
-
-const courseTypeLabel = (type, t) => {
-    const normalized = String(type || 'video').toLowerCase();
-    if (normalized === 'offline') return t('instructorDashboard.coursesPage.courseTypes.offline');
-    if (normalized === 'online_live') return t('instructorDashboard.coursesPage.courseTypes.onlineLive');
-    return t('instructorDashboard.coursesPage.courseTypes.video');
-};
 
 const getCourseWorkflow = (type) => {
     const normalized = String(type || 'video').toLowerCase();
@@ -64,7 +58,7 @@ const getCourseDisplayData = (course, user, t) => {
             : t('instructorDashboard.coursesPage.price.missing'),
         title,
         workflow: getCourseWorkflow(course?.courseType || course?.type),
-        typeLabel: courseTypeLabel(course?.courseType || course?.type, t),
+        typeLabel: getCourseTypeLabel(course?.courseType || course?.type, t),
     };
 };
 

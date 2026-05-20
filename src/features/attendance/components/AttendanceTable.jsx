@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FiChevronLeft, FiChevronRight, FiSearch } from 'react-icons/fi';
 import {
   DashboardInsetPanel,
@@ -33,11 +34,12 @@ const AttendanceTable = ({
   onBulkUpdate,
   // UI props
   className = '',
-  emptyStateMessage = 'No attendance data available',
+  emptyStateMessage,
 
   // Admin-specific props
   adminMode = false,
 }) => {
+  const { t } = useTranslation();
   // State management
   const [selectedCells, setSelectedCells] = useState(new Set());
   const [filterQuery, setFilterQuery] = useState('');
@@ -52,6 +54,15 @@ const AttendanceTable = ({
     absent: '✗',
     not_scheduled: '-',
     excused: '○'
+  };
+
+  const statusLabels = {
+    all: t('attendance.filters.all'),
+    present: t('attendance.status.present'),
+    late: t('attendance.status.late'),
+    absent: t('attendance.status.absent'),
+    not_scheduled: t('attendance.status.notScheduled'),
+    excused: t('attendance.status.excused'),
   };
 
   // Filter and sort students
@@ -184,8 +195,8 @@ const AttendanceTable = ({
   if (loading) {
     return (
       <DashboardInsetPanel
-        title="Attendance Overview"
-        description="Loading attendance data..."
+        title={t('attendance.legacy.overview')}
+        description={t('attendance.legacy.loadingData')}
       >
         <LoadingState />
       </DashboardInsetPanel>
@@ -196,11 +207,11 @@ const AttendanceTable = ({
   if (error) {
     return (
       <DashboardInsetPanel
-        title="Attendance Overview"
-        description="Error loading attendance data"
+        title={t('attendance.legacy.overview')}
+        description={t('attendance.legacy.loadError')}
       >
         <div className="text-red-600 dark:text-red-400">
-          {error.message || 'Failed to load attendance data'}
+          {error.message || t('attendance.legacy.loadFailed')}
         </div>
       </DashboardInsetPanel>
     );
@@ -210,12 +221,12 @@ const AttendanceTable = ({
   if (students.length === 0) {
     return (
       <DashboardInsetPanel
-        title="Attendance Overview"
-        description={emptyStateMessage}
+        title={t('attendance.legacy.overview')}
+        description={emptyStateMessage || t('attendance.legacy.empty')}
       >
         <EmptyState
-          title="No students found"
-          subtitle="Add students to this group to start tracking attendance"
+          title={t('attendance.empty.noStudentsTitle')}
+          subtitle={t('attendance.legacy.noStudentsSubtitle')}
           icon={<FiSearch className="h-8 w-8" />}
         />
       </DashboardInsetPanel>
@@ -229,10 +240,13 @@ const AttendanceTable = ({
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              {groupName || 'Group Attendance'}
+              {groupName || t('attendance.legacy.groupAttendance')}
             </h3>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              {students.length} students • {sessions.length} sessions
+              {t('attendance.legacy.counts', {
+                students: students.length,
+                sessions: sessions.length,
+              })}
             </p>
           </div>
 
@@ -243,7 +257,7 @@ const AttendanceTable = ({
                 type="text"
                 value={filterQuery}
                 onChange={(e) => setFilterQuery(e.target.value)}
-                placeholder="Search students..."
+                placeholder={t('attendance.legacy.searchStudents')}
                 className="dashboard-field dashboard-field-icon h-10 w-full pl-10"
               />
             </div>
@@ -253,11 +267,11 @@ const AttendanceTable = ({
               onChange={(e) => setStatusFilter(e.target.value)}
               className="dashboard-select h-10 min-w-0 w-full lg:w-32"
             >
-              <option value="all">All Status</option>
-              <option value="present">Present</option>
-              <option value="late">Late</option>
-              <option value="absent">Absent</option>
-              <option value="not_scheduled">Not Scheduled</option>
+              <option value="all">{statusLabels.all}</option>
+              <option value="present">{statusLabels.present}</option>
+              <option value="late">{statusLabels.late}</option>
+              <option value="absent">{statusLabels.absent}</option>
+              <option value="not_scheduled">{statusLabels.not_scheduled}</option>
             </select>
           </DashboardFilterBar>
         </div>
@@ -269,31 +283,31 @@ const AttendanceTable = ({
           <div className="text-2xl font-bold text-green-600 dark:text-green-400">
             {statistics.totals.present}
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Present</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">{statusLabels.present}</div>
         </div>
         <div className="text-center">
           <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
             {statistics.totals.late}
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Late</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">{statusLabels.late}</div>
         </div>
         <div className="text-center">
           <div className="text-2xl font-bold text-red-600 dark:text-red-400">
             {statistics.totals.absent}
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Absent</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">{statusLabels.absent}</div>
         </div>
         <div className="text-center">
           <div className="text-2xl font-bold text-gray-600 dark:text-gray-400">
             {statistics.totals.not_scheduled}
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Not Scheduled</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">{statusLabels.not_scheduled}</div>
         </div>
         <div className="text-center">
           <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
             {Math.round(statistics.percentages.present || 0)}%
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Attendance Rate</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">{t('attendance.metrics.rate')}</div>
         </div>
       </div>
 
@@ -303,13 +317,15 @@ const AttendanceTable = ({
           <thead>
             <tr>
               <th className="attendance-table-sticky-corner border-r border-gray-200 dark:border-gray-700">
-                Student Name
+                {t('attendance.legacy.studentName')}
               </th>
               {sessions.map(session => (
                 <th key={session.id} className="min-w-[80px] text-center">
                   <div className="space-y-1">
                     <div className="font-medium">
-                      {showSessionDates ? session.date : `Session ${session.sessionIndex}`}
+                      {showSessionDates
+                        ? session.date
+                        : t('attendance.fallbacks.sessionWithId', { id: session.sessionIndex })}
                     </div>
                     {session.title && (
                       <div className="text-xs text-gray-400 dark:text-gray-500 truncate max-w-[100px]">
@@ -320,7 +336,7 @@ const AttendanceTable = ({
                 </th>
               ))}
               <th className="sticky right-0 z-10 bg-gray-50 dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 text-center">
-                Total
+                {t('attendance.metrics.total')}
               </th>
             </tr>
           </thead>
@@ -342,7 +358,7 @@ const AttendanceTable = ({
                     <div className="flex items-center gap-3">
                       {showStudentAvatars && (
                         <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs font-medium text-gray-600 dark:text-gray-300">
-                          {(student.fullName || student.name || 'Unknown')
+                          {(student.fullName || student.name || t('common.userFallback'))
                             .split(' ')
                             .map(n => n[0])
                             .join('')
@@ -375,7 +391,14 @@ const AttendanceTable = ({
                         onKeyDown={(e) => handleKeyDown(e, student.id, session.id)}
                         tabIndex={0}
                         role="button"
-                        aria-label={`Change attendance for ${student.name} in ${session.title || `Session ${session.sessionIndex}`}`}
+                        aria-label={t('attendance.legacy.changeAttendanceAria', {
+                          student: student.name || student.fullName || t('common.userFallback'),
+                          session:
+                            session.title ||
+                            t('attendance.fallbacks.sessionWithId', {
+                              id: session.sessionIndex,
+                            }),
+                        })}
                       >
                         <div className={`attendance-status ${status}`}>
                           {statusIcons[status]}
@@ -406,32 +429,32 @@ const AttendanceTable = ({
         <div className="sticky bottom-0 z-30 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-600 dark:text-gray-400">
-              {selectedCells.size} cells selected
+              {t('attendance.legacy.cellsSelected', { count: selectedCells.size })}
             </div>
             <div className="flex gap-2">
               <button
                 onClick={() => handleBulkUpdate('present')}
                 className="dashboard-button-secondary text-green-600 border-green-600 hover:bg-green-50 dark:hover:bg-green-900/20"
               >
-                Mark Present
+                {t('attendance.legacy.markPresent')}
               </button>
               <button
                 onClick={() => handleBulkUpdate('late')}
                 className="dashboard-button-secondary text-amber-600 border-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20"
               >
-                Mark Late
+                {t('attendance.legacy.markLate')}
               </button>
               <button
                 onClick={() => handleBulkUpdate('absent')}
                 className="dashboard-button-secondary text-red-600 border-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
               >
-                Mark Absent
+                {t('attendance.legacy.markAbsent')}
               </button>
               <button
                 onClick={() => setSelectedCells(new Set())}
                 className="dashboard-button-secondary"
               >
-                Clear Selection
+                {t('attendance.legacy.clearSelection')}
               </button>
             </div>
           </div>
@@ -442,7 +465,11 @@ const AttendanceTable = ({
       {totalPages > 1 && (
         <div className="flex items-center justify-between p-4 border-t border-gray-200 dark:border-gray-700">
           <div className="text-sm text-gray-600 dark:text-gray-400">
-            Showing {currentPage * itemsPerPage + 1} to {Math.min((currentPage + 1) * itemsPerPage, filteredStudents.length)} of {filteredStudents.length} students
+            {t('attendance.legacy.paginationSummary', {
+              start: currentPage * itemsPerPage + 1,
+              end: Math.min((currentPage + 1) * itemsPerPage, filteredStudents.length),
+              total: filteredStudents.length,
+            })}
           </div>
           <div className="flex gap-2">
             <button
@@ -451,7 +478,7 @@ const AttendanceTable = ({
               className="dashboard-button-secondary disabled:opacity-50"
             >
               <FiChevronLeft className="h-4 w-4" />
-              Previous
+              {t('analytics.common.previous')}
             </button>
             <span className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400">
               {currentPage + 1} / {totalPages}
@@ -461,7 +488,7 @@ const AttendanceTable = ({
               disabled={currentPage === totalPages - 1}
               className="dashboard-button-secondary disabled:opacity-50"
             >
-              Next
+              {t('analytics.common.next')}
               <FiChevronRight className="h-4 w-4" />
             </button>
           </div>

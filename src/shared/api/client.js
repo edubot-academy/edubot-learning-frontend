@@ -98,7 +98,8 @@ api.interceptors.response.use(
     },
     async (error) => {
         const shouldSkipAuthRedirect = Boolean(error?.config?.skipAuthRedirect);
-        const message = error?.response?.data?.message;
+        const payload = error?.response?.data || {};
+        const message = payload.message;
         const code = getApiErrorCode(error);
         const isCsrfError =
             error?.response?.status === 403 &&

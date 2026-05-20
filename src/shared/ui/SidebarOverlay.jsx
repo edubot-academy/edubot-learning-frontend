@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const SidebarOverlay = ({ 
     isOpen, 
@@ -9,9 +10,9 @@ const SidebarOverlay = ({
     overlayClickClose = true,
     escKeyClose = true
 }) => {
+    const { t } = useTranslation();
     const sidebarRef = useRef(null);
 
-    // Обработка нажатия ESC
     useEffect(() => {
         if (!escKeyClose || !isOpen) return;
 
@@ -25,7 +26,6 @@ const SidebarOverlay = ({
         return () => document.removeEventListener('keydown', handleEscKey);
     }, [isOpen, onClose, escKeyClose]);
 
-    // Блокировка скролла на body
     useEffect(() => {
         if (!disableScroll) return;
 
@@ -40,14 +40,12 @@ const SidebarOverlay = ({
         };
     }, [isOpen, disableScroll]);
 
-    // Клик вне сайдбара
     const handleOverlayClick = (e) => {
         if (overlayClickClose && e.target === e.currentTarget) {
             onClose();
         }
     };
 
-    // Отключение клика на сайдбар при закрытии
     const handleSidebarClick = (e) => {
         if (!isOpen) {
             e.stopPropagation();
@@ -62,14 +60,12 @@ const SidebarOverlay = ({
             onClick={handleOverlayClick}
             aria-hidden={!isOpen}
         >
-            {/* Overlay */}
             <div
                 className={`flex-1 transition-opacity duration-300 
                     ${isOpen ? 'opacity-100' : 'opacity-0'}
                     bg-black/50 dark:bg-black/70`}
             ></div>
 
-            {/* Sidebar */}
             <div
                 ref={sidebarRef}
                 className={`w-2/3 md:max-w-[393px] h-full shadow-lg fixed
@@ -87,7 +83,7 @@ const SidebarOverlay = ({
                 onClick={handleSidebarClick}
                 role="dialog"
                 aria-modal="true"
-                aria-label="Sidebar"
+                aria-label={t('sidebarOverlay.label')}
             >
                 <div className="p-4">
                     {children}

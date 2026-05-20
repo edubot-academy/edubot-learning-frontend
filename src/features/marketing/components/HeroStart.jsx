@@ -107,7 +107,7 @@ const HeroStart = () => {
 
                                         <img
                                             src={slide.image}
-                                            alt="Edubot"
+                                            alt={t('public.home.hero.alt.primaryStudent')}
                                             className="z-[1] lg:h-full w-[326px] lg:mr-20"
                                             width="326"
                                             height="454"
@@ -140,7 +140,7 @@ const HeroStart = () => {
                                     <div className="absolute inset-0">
                                         <img
                                             src={slide.image}
-                                            alt="Background"
+                                            alt={t('public.home.hero.alt.learningBackground')}
                                             className="w-full h-full"
                                             loading="lazy"
                                             decoding="async"
@@ -189,7 +189,7 @@ const HeroStart = () => {
                                     <div className="absolute inset-0">
                                         <img
                                             src={slide.image}
-                                            alt="background"
+                                            alt={t('public.home.hero.alt.workspaceBackground')}
                                             className="w-full h-full object-cover"
                                             loading="lazy"
                                             decoding="async"
@@ -209,7 +209,7 @@ const HeroStart = () => {
                                         </div>
                                         <img
                                             src={bannerMan3}
-                                            alt="Student"
+                                            alt={t('public.home.hero.alt.discountStudent')}
                                             className="lg:h-[120%] -scale-x-100 absolute lg:left-[26%] bottom-0 h-[55%] md:h-[70%] "
                                             loading="lazy"
                                             decoding="async"

@@ -1,5 +1,5 @@
-
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
     FiActivity,
     FiBookOpen,
@@ -22,19 +22,20 @@ import {
 } from '@components/ui/dashboard';
 import { downloadCourseCertificatePdf } from '@features/courses/api';
 
-const formatDate = (value) => {
+const formatDate = (value, language = 'ky') => {
     if (!value) return '—';
     const date = new Date(value);
+    const locale = language === 'ru' ? 'ru-RU' : language === 'en' ? 'en-US' : 'ky-KG';
     return Number.isNaN(date.getTime())
         ? '—'
-        : date.toLocaleDateString('ky-KG', {
+        : date.toLocaleDateString(locale, {
               day: '2-digit',
               month: 'short',
               year: 'numeric',
           });
 };
 
-const formatLastViewed = (student) => {
+const formatLastViewed = (student, t) => {
     if (!student.lastViewedLessonId) return '—';
 
     const rawTime = Number(student.lastVideoTime) || 0;
@@ -43,7 +44,26 @@ const formatLastViewed = (student) => {
     const seconds = String(totalSeconds % 60).padStart(2, '0');
     const timeText = totalSeconds ? ` (${minutes}:${seconds})` : '';
 
-    return `Сабак #${student.lastViewedLessonId}${timeText}`;
+    return t('instructorDashboard.studentsSection.studentCard.lessonNumber', {
+        id: student.lastViewedLessonId,
+        time: timeText,
+    });
+};
+
+const getCourseStatusLabel = (course, t) => {
+    if (course.isPublished) return t('instructorDashboard.studentsSection.courseStatus.published');
+    if (course.status === 'approved') return t('instructorDashboard.studentsSection.courseStatus.approved');
+    if (course.status === 'rejected') return t('instructorDashboard.studentsSection.courseStatus.rejected');
+    if (course.status === 'draft') return t('instructorDashboard.studentsSection.courseStatus.draft');
+    return t('instructorDashboard.studentsSection.courseStatus.pending');
+};
+
+const getCertificateStatusLabel = (status, t) => {
+    if (status === 'issued') return t('adminCertificates.status.issued');
+    if (status === 'pending_approval') return t('adminCertificates.status.pending_approval');
+    if (status === 'rejected') return t('adminCertificates.status.rejected');
+    if (status === 'revoked') return t('adminCertificates.status.revoked');
+    return t('adminCertificates.status.none');
 };
 
 const StudentsSection = ({
@@ -67,6 +87,7 @@ const StudentsSection = ({
     onProgressMaxChange,
 }) => {
     const navigate = useNavigate();
+    const { t, i18n } = useTranslation();
     const selectedCourse = courses.find((course) => course.id === selectedCourseId) || null;
 
     const sortedStudents = (courseStudents || []).slice().sort((a, b) => {
@@ -89,9 +110,9 @@ const StudentsSection = ({
         <div className="space-y-5">
             <div className="dashboard-panel overflow-hidden">
                 <DashboardSectionHeader
-                    eyebrow="Student Workspace"
-                    title="Студенттер"
-                    description="Курстарыңыздагы студенттерди курс боюнча бөлүп, прогрессти жана акыркы активдүүлүктү бир жерден көзөмөлдөңүз."
+                    eyebrow={t('instructorDashboard.studentsSection.hero.eyebrow')}
+                    title={t('instructorDashboard.studentsSection.hero.title')}
+                    description={t('instructorDashboard.studentsSection.hero.description')}
                     action={
                         <button
                             type="button"
@@ -99,27 +120,31 @@ const StudentsSection = ({
                             disabled={loadingCourses}
                             className="dashboard-button-secondary"
                         >
-                            Жаңыртуу
+                            {t('common.refresh')}
                         </button>
                     }
                 />
 
                 <div className="grid gap-3 px-6 pb-6 md:grid-cols-2 xl:grid-cols-4">
-                    <DashboardMetricCard label="Жалпы студенттер" value={total ?? '—'} icon={FiUsers} />
                     <DashboardMetricCard
-                        label="Курстар"
+                        label={t('instructorDashboard.studentsSection.metrics.totalStudents')}
+                        value={total ?? '—'}
+                        icon={FiUsers}
+                    />
+                    <DashboardMetricCard
+                        label={t('instructorDashboard.studentsSection.metrics.courses')}
                         value={courses.length}
                         icon={FiBookOpen}
                         tone="blue"
                     />
                     <DashboardMetricCard
-                        label="Тандалган курстагы студент"
+                        label={t('instructorDashboard.studentsSection.metrics.selectedCourseStudents')}
                         value={selectedCourseId ? sortedStudents.length : '—'}
                         icon={FiLayers}
                         tone="green"
                     />
                     <DashboardMetricCard
-                        label="Орточо прогресс"
+                        label={t('instructorDashboard.studentsSection.metrics.averageProgress')}
                         value={selectedCourseId ? `${averageProgress}%` : '—'}
                         icon={FiActivity}
                         tone="amber"
@@ -135,8 +160,8 @@ const StudentsSection = ({
 
             {!selectedCourseId ? (
                 <DashboardInsetPanel
-                    title="Курсту тандаңыз"
-                    description="Курсту тандасаңыз, ошол агымдагы студенттердин толук тизмеси жана прогресс деталдары ачылат."
+                    title={t('instructorDashboard.studentsSection.courseSelection.title')}
+                    description={t('instructorDashboard.studentsSection.courseSelection.description')}
                 >
                     {loadingCourses && !courses.length ? (
                         <div className="mt-4">
@@ -155,12 +180,12 @@ const StudentsSection = ({
                                         {course.coverImageUrl ? (
                                             <img
                                                 src={course.coverImageUrl}
-                                                alt={course.title || 'Курс сүрөтү'}
+                                                alt={course.title || t('instructorDashboard.studentsSection.courseSelection.courseImageAlt')}
                                                 className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                                             />
                                         ) : (
                                             <div className="flex h-full w-full items-center justify-center bg-edubot-surfaceAlt text-sm font-semibold text-edubot-muted dark:bg-slate-800 dark:text-slate-300">
-                                                Курс сүрөтү жок
+                                                {t('instructorDashboard.studentsSection.courseSelection.noCourseImage')}
                                             </div>
                                         )}
                                     </div>
@@ -179,21 +204,21 @@ const StudentsSection = ({
                                                         : 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300'
                                                 }`}
                                             >
-                                                {course.isPublished ? 'Жарыяланды' : course.status || 'Каралууда'}
+                                                {getCourseStatusLabel(course, t)}
                                             </span>
                                         </div>
 
                                         <div className="grid gap-2 text-sm text-edubot-muted dark:text-slate-400">
                                             <div className="flex items-center justify-between gap-2">
-                                                <span>Студенттер</span>
+                                                <span>{t('instructorDashboard.studentsSection.studentCard.students')}</span>
                                                 <span className="font-semibold text-edubot-ink dark:text-white">
                                                     {course.studentCount ?? 0}
                                                 </span>
                                             </div>
                                             <div className="flex items-center justify-between gap-2">
-                                                <span>Түзүлгөн</span>
+                                                <span>{t('instructorDashboard.studentsSection.courseSelection.created')}</span>
                                                 <span className="font-semibold text-edubot-ink dark:text-white">
-                                                    {formatDate(course.createdAt)}
+                                                    {formatDate(course.createdAt, i18n.language)}
                                                 </span>
                                             </div>
                                         </div>
@@ -203,10 +228,10 @@ const StudentsSection = ({
                         </div>
                     ) : (
                         <EmptyState
-                            title="Курстар азырынча жок"
-                            subtitle="Алгач курс түзүп баштаңыз, андан кийин студент агымдары ушул жерде көрүнөт."
+                            title={t('instructorDashboard.studentsSection.courseSelection.emptyTitle')}
+                            subtitle={t('instructorDashboard.studentsSection.courseSelection.emptySubtitle')}
                             action={{
-                                label: 'Курс түзүү',
+                                label: t('instructorDashboard.coursesSection.actions.createCourse'),
                                 onClick: () => navigate('/instructor/course/create'),
                             }}
                             className="py-8"
@@ -216,38 +241,38 @@ const StudentsSection = ({
             ) : (
                 <>
                     <DashboardInsetPanel
-                        title={courseMeta?.title || selectedCourse?.title || 'Студенттер тизмеси'}
-                        description="Курс тандалгандан кийин издөө, прогресс фильтри жана студент активдүүлүк деталдары ушул блокто иштейт."
+                        title={courseMeta?.title || selectedCourse?.title || t('instructorDashboard.studentsSection.list.fallbackTitle')}
+                        description={t('instructorDashboard.studentsSection.courseWorkspace.description')}
                         action={
                             <button
                                 type="button"
                                 onClick={() => onSelectCourse(null)}
                                 className="dashboard-button-secondary"
                             >
-                                Курстарга кайтуу
+                                {t('instructorDashboard.studentsSection.courseWorkspace.backToCourses')}
                             </button>
                         }
                     >
                         <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                             <DashboardMetricCard
-                                label="Бул курстагы студент"
+                                label={t('instructorDashboard.studentsSection.metrics.courseStudents')}
                                 value={courseMeta?.studentCount ?? sortedStudents.length}
                                 icon={FiUsers}
                             />
                             <DashboardMetricCard
-                                label="Сабактар"
+                                label={t('instructorDashboard.studentsSection.metrics.lessons')}
                                 value={courseMeta?.lessonCount ?? '—'}
                                 icon={FiBookOpen}
                                 tone="blue"
                             />
                             <DashboardMetricCard
-                                label="Бүтүргөн"
+                                label={t('instructorDashboard.studentsSection.metrics.completed')}
                                 value={completedCount}
                                 icon={FiCalendar}
                                 tone="green"
                             />
                             <DashboardMetricCard
-                                label="Орточо прогресс"
+                                label={t('instructorDashboard.studentsSection.metrics.averageProgress')}
                                 value={`${averageProgress}%`}
                                 icon={FiActivity}
                                 tone="amber"
@@ -256,13 +281,13 @@ const StudentsSection = ({
                     </DashboardInsetPanel>
 
                     <DashboardInsetPanel
-                        title="Фильтрлер"
-                        description="Студенттерди аталышы, байланыш маалыматы жана прогресс диапазону боюнча чыпкалаңыз."
+                        title={t('instructorDashboard.studentsSection.filters.title')}
+                        description={t('instructorDashboard.studentsSection.filters.description')}
                     >
                         <div className="mt-4 flex flex-wrap gap-3 items-end">
                             <div className="min-w-[220px] flex-1">
                                 <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
-                                    Издөө
+                                    {t('instructorDashboard.studentsSection.filters.search')}
                                 </label>
                                 <div className="relative">
                                     <FiSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-edubot-muted dark:text-slate-500" />
@@ -273,7 +298,7 @@ const StudentsSection = ({
                                             onChangePage(1);
                                             onSearchChange(e.target.value);
                                         }}
-                                        placeholder="Ат, email же телефон"
+                                        placeholder={t('instructorDashboard.studentsSection.filters.searchPlaceholder')}
                                         className="dashboard-field dashboard-field-icon pl-10"
                                     />
                                 </div>
@@ -281,7 +306,7 @@ const StudentsSection = ({
 
                             <div>
                                 <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
-                                    Прогресс кеминде
+                                    {t('instructorDashboard.studentsSection.filters.progressMin')}
                                 </label>
                                 <input
                                     type="number"
@@ -298,7 +323,7 @@ const StudentsSection = ({
 
                             <div>
                                 <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
-                                    Прогресс жогору
+                                    {t('instructorDashboard.studentsSection.filters.progressMax')}
                                 </label>
                                 <input
                                     type="number"
@@ -316,15 +341,18 @@ const StudentsSection = ({
                     </DashboardInsetPanel>
 
                     {loadingStudents ? (
-                        <DashboardInsetPanel title="Студенттер" description="Тизме жүктөлүүдө.">
+                        <DashboardInsetPanel
+                            title={t('instructorDashboard.studentsSection.hero.title')}
+                            description={t('instructorDashboard.studentsSection.list.loadingDescription')}
+                        >
                             <div className="mt-4">
                                 <DashboardTableSkeleton rows={5} columns={5} />
                             </div>
                         </DashboardInsetPanel>
                     ) : sortedStudents.length ? (
                         <DashboardInsetPanel
-                            title="Студенттер тизмеси"
-                            description="Ар бир студенттин байланыш маалыматы, прогресси жана акыркы көргөн сабагы көрсөтүлөт."
+                            title={t('instructorDashboard.studentsSection.list.title')}
+                            description={t('instructorDashboard.studentsSection.list.description')}
                         >
                             <div className="mt-4 grid gap-4 xl:grid-cols-2">
                                 {sortedStudents.map((student) => {
@@ -362,7 +390,9 @@ const StudentsSection = ({
                                                             : 'bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300'
                                                     }`}
                                                 >
-                                                    {student.completed ? 'Бүттү' : 'Уланууда'}
+                                                    {student.completed
+                                                        ? t('instructorDashboard.studentsSection.studentCard.completed')
+                                                        : t('instructorDashboard.studentsSection.studentCard.inProgress')}
                                                 </span>
                                             </div>
 
@@ -378,15 +408,7 @@ const StudentsSection = ({
                                                                     : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
                                                     }`}
                                                 >
-                                                    {student.certificateStatus === 'issued'
-                                                        ? 'Сертификат берилди'
-                                                        : student.certificateStatus === 'pending_approval'
-                                                            ? 'Сертификат кароодо'
-                                                            : student.certificateStatus === 'rejected'
-                                                                ? 'Сертификат четке кагылган'
-                                                                : student.certificateStatus === 'revoked'
-                                                                    ? 'Сертификат жокко чыгарылган'
-                                                                : 'Сертификат жок'}
+                                                    {getCertificateStatusLabel(student.certificateStatus, t)}
                                                 </span>
                                                 {student.certificateStatus === 'issued' ? (
                                                     <>
@@ -402,14 +424,14 @@ const StudentsSection = ({
                                                                     }
                                                                     className="dashboard-button-secondary"
                                                                 >
-                                                                    PDF жүктөө
+                                                                    {t('adminCertificates.actions.downloadPdf')}
                                                                 </button>
                                                                 {student.certificateVerificationUrl ? (
                                                                     <a
                                                                         href={student.certificateVerificationUrl}
                                                                         className="dashboard-button-secondary"
                                                                     >
-                                                                        Текшерүү
+                                                                        {t('adminCertificates.actions.verify')}
                                                                     </a>
                                                                 ) : null}
                                                             </>
@@ -421,18 +443,18 @@ const StudentsSection = ({
                                             <div className="mt-4 grid gap-3 sm:grid-cols-2">
                                                 <div className="dashboard-panel rounded-2xl border border-edubot-line/70 px-4 py-3 dark:border-slate-700">
                                                     <div className="text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
-                                                        Катталды
+                                                        {t('instructorDashboard.studentsSection.studentCard.enrolled')}
                                                     </div>
                                                     <div className="mt-2 text-sm font-semibold text-edubot-ink dark:text-white">
-                                                        {formatDate(student.enrolledAt)}
+                                                        {formatDate(student.enrolledAt, i18n.language)}
                                                     </div>
                                                 </div>
                                                 <div className="dashboard-panel rounded-2xl border border-edubot-line/70 px-4 py-3 dark:border-slate-700">
                                                     <div className="text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
-                                                        Акыркы көргөн
+                                                        {t('instructorDashboard.studentsSection.studentCard.lastViewed')}
                                                     </div>
                                                     <div className="mt-2 text-sm font-semibold text-edubot-ink dark:text-white">
-                                                        {formatLastViewed(student)}
+                                                        {formatLastViewed(student, t)}
                                                     </div>
                                                 </div>
                                             </div>
@@ -440,7 +462,7 @@ const StudentsSection = ({
                                             <div className="mt-4">
                                                 <div className="flex items-center justify-between gap-2 text-sm">
                                                     <span className="font-medium text-edubot-ink dark:text-white">
-                                                        Прогресс
+                                                        {t('common.progress')}
                                                     </span>
                                                     <span className="text-edubot-muted dark:text-slate-400">
                                                         {progress}%
@@ -456,7 +478,7 @@ const StudentsSection = ({
 
                                             <div className="mt-4">
                                                 <div className="text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
-                                                    Тесттер
+                                                    {t('instructorDashboard.studentsSection.studentCard.tests')}
                                                 </div>
                                                 {tests.length ? (
                                                     <div className="mt-3 flex flex-col gap-2">
@@ -475,7 +497,9 @@ const StudentsSection = ({
                                                                             : 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300'
                                                                     }`}
                                                                 >
-                                                                    {test.passed ? 'Өттү' : 'Өтпөдү'}
+                                                                    {test.passed
+                                                                        ? t('instructorDashboard.studentsSection.studentCard.testPassed')
+                                                                        : t('instructorDashboard.studentsSection.studentCard.testFailed')}
                                                                 </span>
                                                                 {typeof test.score === 'number' ? (
                                                                     <span className="text-edubot-muted dark:text-slate-400">
@@ -487,7 +511,7 @@ const StudentsSection = ({
                                                     </div>
                                                 ) : (
                                                     <p className="mt-3 text-sm text-edubot-muted dark:text-slate-400">
-                                                        Тест тапшыруулар жок.
+                                                        {t('instructorDashboard.studentsSection.studentCard.noTests')}
                                                     </p>
                                                 )}
                                             </div>
@@ -498,12 +522,12 @@ const StudentsSection = ({
                         </DashboardInsetPanel>
                     ) : (
                         <DashboardInsetPanel
-                            title="Студенттер"
-                            description="Бул курс боюнча тизмек азырынча бош."
+                            title={t('instructorDashboard.studentsSection.hero.title')}
+                            description={t('instructorDashboard.studentsSection.empty.description')}
                         >
                             <EmptyState
-                                title="Бул курста азырынча студент жок"
-                                subtitle="Башка курсту тандап көрүңүз же катталууларды күтүңүз."
+                                title={t('instructorDashboard.studentsSection.empty.title')}
+                                subtitle={t('instructorDashboard.studentsSection.empty.subtitle')}
                                 icon={<FiUsers className="h-8 w-8 text-edubot-orange" />}
                                 className="py-8"
                             />
@@ -519,11 +543,14 @@ const StudentsSection = ({
                                 className="dashboard-button-secondary disabled:opacity-50"
                             >
                                 <FiChevronLeft className="h-4 w-4" />
-                                Алдыңкы
+                                {t('instructorDashboard.studentsSection.pagination.previous')}
                             </button>
 
                             <span>
-                                Барак {studentsPage} / {courseMeta.totalPages}
+                                {t('instructorDashboard.studentsSection.pagination.page', {
+                                    page: studentsPage,
+                                    total: courseMeta.totalPages,
+                                })}
                             </span>
 
                             <button
@@ -534,7 +561,7 @@ const StudentsSection = ({
                                 disabled={studentsPage >= (courseMeta.totalPages || 1)}
                                 className="dashboard-button-secondary disabled:opacity-50"
                             >
-                                Кийинки
+                                {t('instructorDashboard.studentsSection.pagination.next')}
                                 <FiChevronRight className="h-4 w-4" />
                             </button>
                         </div>

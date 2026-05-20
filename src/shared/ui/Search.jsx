@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { BiSearch } from 'react-icons/bi'; // иконка search
+import { BiSearch } from 'react-icons/bi';
 
 export default function Search() {
     const { t } = useTranslation();

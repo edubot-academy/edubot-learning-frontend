@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 import NotificationsWidget from '@features/notifications/components/NotificationsWidget';
 import {
     DashboardInsetPanel,
@@ -29,10 +30,12 @@ import {
     FiRadio,
 } from 'react-icons/fi';
 
-const getSessionTitle = (item) =>
+const getSessionTitle = (item, t) =>
     item.sessionTitle ||
     item.title ||
-    (Number.isFinite(Number(item.sessionIndex)) ? `Сессия ${Number(item.sessionIndex) + 1}` : 'Сессия');
+    (Number.isFinite(Number(item.sessionIndex))
+        ? t('studentDashboard.overview.sessionTitleWithNumber', { number: Number(item.sessionIndex) + 1 })
+        : t('studentDashboard.overview.sessionFallback'));
 
 const OverviewTab = ({
     student,
@@ -46,6 +49,7 @@ const OverviewTab = ({
     onOpenCourse,
     openingCourseId,
 }) => {
+    const { t } = useTranslation();
     const [nowMs, setNowMs] = useState(Date.now());
 
     const liveRefreshInterval = useMemo(
@@ -149,43 +153,40 @@ const OverviewTab = ({
         [progressItems]
     );
 
-    const welcomeName = student.name?.split(' ')[0] || 'Студент';
+    const welcomeName = student.name?.split(' ')[0] || t('studentDashboard.data.fallbacks.student');
 
     const heroCopy = useMemo(() => {
         if (hasVideoLearning && hasDeliveryLearning) {
             return {
-                title: 'Окуу жана сессиялар бир жерде',
-                description:
-                    'Өз алдынча видеокурстарыңызды улантып, жакынкы live же offline сабактарыңызды өткөрүп жибербей көзөмөлдөңүз.',
+                title: t('studentDashboard.overview.hero.mixed.title'),
+                description: t('studentDashboard.overview.hero.mixed.description'),
             };
         }
         if (hasDeliveryLearning) {
             return {
-                title: 'Кийинки сессияңызга даярданыңыз',
-                description:
-                    'Жакынкы сабак, join же жайгашкан жер, жана ошол сессияга тиешелүү тапшырмалар бул жерден көрүнөт.',
+                title: t('studentDashboard.overview.hero.delivery.title'),
+                description: t('studentDashboard.overview.hero.delivery.description'),
             };
         }
         return {
-            title: 'Окууну улантууга даярсыз',
-            description:
-                'Акыркы токтогон жериңизден улантып, видеокурстардагы прогрессиңизди ишенимдүү көзөмөлдөңүз.',
+            title: t('studentDashboard.overview.hero.video.title'),
+            description: t('studentDashboard.overview.hero.video.description'),
         };
-    }, [hasDeliveryLearning, hasVideoLearning]);
+    }, [hasDeliveryLearning, hasVideoLearning, t]);
 
     return (
         <div className="space-y-6">
             <section className="dashboard-panel overflow-hidden">
                 <DashboardSectionHeader
-                    eyebrow="Student Overview"
-                    title={`Кош келиңиз, ${welcomeName}!`}
-                    description="Бүгүнкү негизги окуу аракеттери, жакынкы сессиялар жана прогресс ушул бетке топтолду."
+                    eyebrow={t('studentDashboard.overview.eyebrow')}
+                    title={t('studentDashboard.overview.title', { name: welcomeName })}
+                    description={t('studentDashboard.overview.description')}
                     metrics={
                         <>
-                            <DashboardMetricCard label="Активдүү курстар" value={activeCourses} icon={FiBookOpen} />
-                            <DashboardMetricCard label="Бүткөн сабак" value={lessonsCompleted} icon={FiCheckCircle} tone="green" />
-                            <DashboardMetricCard label="Кийинки сессиялар" value={upcomingCount} icon={FiCalendar} tone="blue" />
-                            <DashboardMetricCard label="Аракет керек" value={homeworkNeedingAction.length} icon={FiClock} tone="amber" />
+                            <DashboardMetricCard label={t('studentDashboard.overview.metrics.activeCourses')} value={activeCourses} icon={FiBookOpen} />
+                            <DashboardMetricCard label={t('studentDashboard.overview.metrics.completedLessons')} value={lessonsCompleted} icon={FiCheckCircle} tone="green" />
+                            <DashboardMetricCard label={t('studentDashboard.overview.metrics.upcomingSessions')} value={upcomingCount} icon={FiCalendar} tone="blue" />
+                            <DashboardMetricCard label={t('studentDashboard.overview.metrics.needsAction')} value={homeworkNeedingAction.length} icon={FiClock} tone="amber" />
                         </>
                     }
                 />
@@ -194,20 +195,20 @@ const OverviewTab = ({
                     <div className="rounded-panel bg-edubot-hero p-6 text-white shadow-edubot-glow">
                         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                             <div className="max-w-2xl">
-                                <p className="dashboard-pill">Today&apos;s Focus</p>
+                                <p className="dashboard-pill">{t('studentDashboard.overview.focusLabel')}</p>
                                 <h3 className="mt-4 text-2xl font-semibold">{heroCopy.title}</h3>
                                 <p className="mt-2 text-sm leading-6 text-white/80">{heroCopy.description}</p>
                                 {nextSession ? (
                                     <p className="mt-4 text-sm text-white/80">
-                                        Кийинки сессия:{' '}
+                                        {t('studentDashboard.overview.nextSessionLabel')}{' '}
                                         <span className="font-semibold text-white">
-                                            {getSessionTitle(nextSession)}
+                                            {getSessionTitle(nextSession, t)}
                                         </span>{' '}
                                         · {formatSessionDate(nextSession.startAt || nextSession.startsAt)}
                                     </p>
                                 ) : recommendedVideoCourse ? (
                                     <p className="mt-4 text-sm text-white/80">
-                                        Улантууга ылайыктуу курс:{' '}
+                                        {t('studentDashboard.overview.recommendedCourseLabel')}{' '}
                                         <span className="font-semibold text-white">
                                             {recommendedVideoCourse.title || recommendedVideoCourse.courseTitle}
                                         </span>{' '}
@@ -217,10 +218,10 @@ const OverviewTab = ({
                             </div>
 
                             <div className="grid gap-3 sm:grid-cols-3 lg:w-[22rem] lg:grid-cols-1">
-                                <StudentHeroPill label="Видео курстар" value={videoCourses.length} />
-                                <StudentHeroPill label="Сессия курстары" value={deliveryCourses.length || upcoming.length} />
+                                <StudentHeroPill label={t('studentDashboard.overview.pills.videoCourses')} value={videoCourses.length} />
+                                <StudentHeroPill label={t('studentDashboard.overview.pills.sessionCourses')} value={deliveryCourses.length || upcoming.length} />
                                 <StudentHeroPill
-                                    label="Катышуу"
+                                    label={t('studentDashboard.overview.pills.attendance')}
                                     value={attendanceEnabled ? `${attendanceStats?.rate || 0}%` : '—'}
                                 />
                             </div>
@@ -228,31 +229,33 @@ const OverviewTab = ({
                     </div>
 
                     <DashboardInsetPanel
-                        title={hasDeliveryLearning ? 'Кийинки негизги аракет' : 'Улантуу чекити'}
+                        title={hasDeliveryLearning
+                            ? t('studentDashboard.overview.nextAction.deliveryTitle')
+                            : t('studentDashboard.overview.nextAction.videoTitle')}
                         description={
                             hasDeliveryLearning
-                                ? 'Жакынкы сабак же дароо көңүл бурууга тийиш болгон иш.'
-                                : 'Өз алдынча окууда азыр кайсы курска кайрылуу керек.'
+                                ? t('studentDashboard.overview.nextAction.deliveryDescription')
+                                : t('studentDashboard.overview.nextAction.videoDescription')
                         }
                     >
                         {nextSession ? (
                             <div className="space-y-4">
                                 <div>
                                     <p className="text-lg font-semibold text-edubot-ink dark:text-white">
-                                        {getSessionTitle(nextSession)}
+                                        {getSessionTitle(nextSession, t)}
                                     </p>
                                     <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                        {nextSession.courseTitle || 'Курс'} · {formatSessionDate(nextSession.startAt || nextSession.startsAt)}
+                                        {nextSession.courseTitle || t('studentDashboard.data.fallbacks.course')} · {formatSessionDate(nextSession.startAt || nextSession.startsAt)}
                                     </p>
                                 </div>
 
                                 <div className="grid gap-3 sm:grid-cols-2">
                                     <StudentHeroPill
-                                        label="Формат"
+                                        label={t('studentDashboard.overview.labels.format')}
                                         value={courseTypeLabel(resolveCourseType(nextSession))}
                                     />
                                     <StudentHeroPill
-                                        label="Башталышына"
+                                        label={t('studentDashboard.overview.labels.startsIn')}
                                         value={formatCountdown(new Date(nextSession.startAt || nextSession.startsAt).getTime(), nowMs)}
                                     />
                                 </div>
@@ -266,17 +269,17 @@ const OverviewTab = ({
                                             className="dashboard-button-primary w-full"
                                         >
                                             <FiRadio className="h-4 w-4" />
-                                            Сабакка кошулуу
+                                            {t('studentDashboard.overview.actions.joinLesson')}
                                         </a>
                                     ) : (
                                         <div className="inline-flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
                                             <FiAlertCircle className="h-4 w-4" />
-                                            Кошулуу шилтемеси 10 мүнөт мурун ачылат
+                                            {t('studentDashboard.overview.joinOpensSoon')}
                                         </div>
                                     )
                                 ) : (
                                     <div className="rounded-2xl border border-edubot-line bg-white px-4 py-3 text-sm text-edubot-muted dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
-                                        {nextSession.location || 'Оффлайн сессия. Жайгашкан жер кийин көрсөтүлөт.'}
+                                        {nextSession.location || t('studentDashboard.overview.fallbacks.offlineLocationLater')}
                                     </div>
                                 )}
                             </div>
@@ -287,7 +290,9 @@ const OverviewTab = ({
                                         {recommendedVideoCourse.title || recommendedVideoCourse.courseTitle}
                                     </p>
                                     <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                        Прогресс: {recommendedVideoCourse.progressPercent || 0}%
+                                        {t('studentDashboard.overview.progressLabel', {
+                                            value: recommendedVideoCourse.progressPercent || 0,
+                                        })}
                                     </p>
                                 </div>
 
@@ -317,14 +322,14 @@ const OverviewTab = ({
                                         <FiArrowRight className="h-4 w-4" />
                                         {openingCourseId ===
                                         (recommendedVideoCourse.id || recommendedVideoCourse.courseId)
-                                            ? 'Иштелүүдө...'
-                                            : 'Окууну улантуу'}
+                                            ? t('common.loadingEllipsis')
+                                            : t('studentDashboard.overview.actions.continueLearning')}
                                     </button>
                                 ) : null}
                             </div>
                         ) : (
                             <div className="text-sm text-edubot-muted dark:text-slate-400">
-                                Азырынча негизги аракет табылган жок.
+                                {t('studentDashboard.overview.nextAction.empty')}
                             </div>
                         )}
                     </DashboardInsetPanel>
@@ -336,20 +341,20 @@ const OverviewTab = ({
                     {hasDeliveryLearning ? (
                         <section className="dashboard-panel overflow-hidden">
                             <DashboardSectionHeader
-                                eyebrow="Live / Offline Learning"
-                                title="Жакынкы сессиялар"
-                                description="Түз эфир же оффлайн окуудагы кийинки сессиялар жана алардын контексти."
+                                eyebrow={t('studentDashboard.overview.sessions.eyebrow')}
+                                title={t('studentDashboard.overview.sessions.title')}
+                                description={t('studentDashboard.overview.sessions.description')}
                                 metricsClassName="grid grid-cols-2 gap-3 sm:grid-cols-2"
                                 metrics={
                                     <>
                                         <DashboardMetricCard
-                                            label="Жакынкы сессия"
+                                            label={t('studentDashboard.overview.metrics.upcomingSession')}
                                             value={upcoming.length}
                                             icon={FiCalendar}
                                             tone="blue"
                                         />
                                         <DashboardMetricCard
-                                            label="Жазуулар"
+                                            label={t('studentDashboard.overview.metrics.recordings')}
                                             value={availableRecordings}
                                             icon={FiPlayCircle}
                                         />
@@ -379,7 +384,7 @@ const OverviewTab = ({
                                                     <div className="min-w-0">
                                                         <div className="flex flex-wrap items-center gap-2">
                                                             <p className="text-base font-semibold text-edubot-ink dark:text-white">
-                                                                {getSessionTitle(item)}
+                                                                {getSessionTitle(item, t)}
                                                             </p>
                                                             <span className="rounded-full border border-edubot-line bg-white px-3 py-1 text-xs font-semibold text-edubot-ink dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
                                                                 {courseTypeLabel(type)}
@@ -389,7 +394,7 @@ const OverviewTab = ({
                                                             {formatSessionDate(item.startAt || item.startsAt)}
                                                         </p>
                                                         <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                                            {item.courseTitle || item.course?.title || 'Курс'}
+                                                            {item.courseTitle || item.course?.title || t('studentDashboard.data.fallbacks.course')}
                                                             {resolveInstructorName(item)
                                                                 ? ` · ${resolveInstructorName(item)}`
                                                                 : ''}
@@ -397,7 +402,7 @@ const OverviewTab = ({
                                                         {type === 'offline' ? (
                                                             <p className="mt-1 inline-flex items-center gap-2 text-sm text-edubot-muted dark:text-slate-400">
                                                                 <FiMapPin className="h-4 w-4" />
-                                                                {item.location || item.room || 'Жайгашкан жер көрсөтүлгөн эмес'}
+                                                                {item.location || item.room || t('studentDashboard.overview.fallbacks.locationMissing')}
                                                             </p>
                                                         ) : null}
                                                     </div>
@@ -406,7 +411,7 @@ const OverviewTab = ({
                                                         {type === 'online_live' ? (
                                                             <div className="space-y-2">
                                                                 <div className="text-xs font-medium uppercase tracking-[0.14em] text-edubot-muted dark:text-slate-400">
-                                                                    Башталышына
+                                                                    {t('studentDashboard.overview.labels.startsIn')}
                                                                 </div>
                                                                 <div className="text-lg font-semibold text-edubot-ink dark:text-white">
                                                                     {countdown}
@@ -418,18 +423,18 @@ const OverviewTab = ({
                                                                         rel="noopener noreferrer"
                                                                         className="dashboard-button-primary w-full"
                                                                     >
-                                                                        Кошулуу
+                                                                        {t('studentDashboard.overview.actions.join')}
                                                                     </a>
                                                                 ) : (
                                                                     <div className="inline-flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
                                                                         <FiAlertCircle className="h-4 w-4" />
-                                                                        Кошулуу 10 мүнөт калганда ачылат
+                                                                        {t('studentDashboard.overview.joinOpensSoon')}
                                                                     </div>
                                                                 )}
                                                             </div>
                                                         ) : (
                                                             <div className="rounded-2xl border border-edubot-line bg-white px-4 py-3 text-sm text-edubot-muted dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
-                                                                Offline сессия. Жайгашкан жерди алдын ала текшериңиз.
+                                                                {t('studentDashboard.overview.fallbacks.offlineCheckLocation')}
                                                             </div>
                                                         )}
                                                     </div>
@@ -439,7 +444,7 @@ const OverviewTab = ({
                                     })
                                 ) : (
                                     <div className="dashboard-panel-muted p-8 text-center text-sm text-edubot-muted dark:text-slate-400">
-                                        Жакынкы сабактар азырынча жок.
+                                        {t('studentDashboard.overview.sessions.empty')}
                                     </div>
                                 )}
                             </div>
@@ -449,9 +454,9 @@ const OverviewTab = ({
                     {hasVideoLearning ? (
                         <section className="dashboard-panel overflow-hidden">
                             <DashboardSectionHeader
-                                eyebrow="Video Learning"
-                                title="Видео курстардагы прогресс"
-                                description="Өз алдынча окууда улантууга ылайыктуу курстар жана учурдагы прогресс."
+                                eyebrow={t('studentDashboard.overview.videoProgress.eyebrow')}
+                                title={t('studentDashboard.overview.videoProgress.title')}
+                                description={t('studentDashboard.overview.videoProgress.description')}
                             />
 
                             <div className="grid gap-3 p-6 md:grid-cols-2 xl:grid-cols-3">
@@ -464,7 +469,10 @@ const OverviewTab = ({
                                             {item.courseTitle}
                                         </p>
                                         <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                            {item.lessonsCompleted}/{item.lessonsTotal || '—'} сабак бүттү
+                                            {t('studentDashboard.overview.videoProgress.lessonsCompleted', {
+                                                completed: item.lessonsCompleted,
+                                                total: item.lessonsTotal || '—',
+                                            })}
                                         </p>
                                         <div className="mt-4 h-2 rounded-full bg-edubot-surfaceAlt dark:bg-slate-800">
                                             <div
@@ -476,7 +484,7 @@ const OverviewTab = ({
                                         </div>
                                         <div className="mt-2 flex items-center justify-between gap-3 text-sm">
                                             <span className="text-edubot-muted dark:text-slate-400">
-                                                Прогресс
+                                                {t('studentDashboard.overview.videoProgress.progress')}
                                             </span>
                                             <span className="font-semibold text-edubot-orange">
                                                 {item.progressPercent || 0}%
@@ -493,8 +501,8 @@ const OverviewTab = ({
 
                 <div className="space-y-4">
                     <DashboardInsetPanel
-                        title="Аракет керек болгон тапшырмалар"
-                        description="Жакын арада көңүл буруу керек болгон үй тапшырмалары."
+                        title={t('studentDashboard.overview.homework.title')}
+                        description={t('studentDashboard.overview.homework.description')}
                     >
                         <div className="space-y-3">
                             {homeworkNeedingAction.length ? (
@@ -504,35 +512,35 @@ const OverviewTab = ({
                                         className="rounded-2xl border border-edubot-line/70 bg-white/80 px-4 py-3 dark:border-slate-700 dark:bg-slate-900"
                                     >
                                         <p className="font-medium text-edubot-ink dark:text-white">
-                                            {task.title || 'Тапшырма'}
+                                            {task.title || t('studentDashboard.overview.fallbacks.task')}
                                         </p>
                                         <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                            {task.courseTitle || task.course || 'Курс көрсөтүлгөн эмес'}
+                                            {task.courseTitle || task.course || t('studentDashboard.overview.fallbacks.courseMissing')}
                                         </p>
                                         <p className="mt-1 text-xs text-edubot-muted dark:text-slate-400">
-                                            {task.meta?.label || task.statusLabel || task.status || 'Күтүүдө'}
+                                            {task.meta?.label || task.statusLabel || task.status || t('studentDashboard.overview.fallbacks.pending')}
                                         </p>
                                     </div>
                                 ))
                             ) : (
                                 <div className="text-sm text-edubot-muted dark:text-slate-400">
-                                    Азырынча ачык тапшырма жок.
+                                    {t('studentDashboard.overview.homework.empty')}
                                 </div>
                             )}
                         </div>
                     </DashboardInsetPanel>
 
                     <DashboardInsetPanel
-                        title="Окуу форматы"
-                        description="Катышып жаткан курстар боюнча негизги багыттар."
+                        title={t('studentDashboard.overview.learningFormat.title')}
+                        description={t('studentDashboard.overview.learningFormat.description')}
                     >
                         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                            <StudentHeroPill label="Видео курстар" value={videoCourses.length} />
-                            <StudentHeroPill label="Сессия курстары" value={deliveryCourses.length || upcoming.length} />
-                            <StudentHeroPill label="Жазуулар" value={availableRecordings} />
+                            <StudentHeroPill label={t('studentDashboard.overview.pills.videoCourses')} value={videoCourses.length} />
+                            <StudentHeroPill label={t('studentDashboard.overview.pills.sessionCourses')} value={deliveryCourses.length || upcoming.length} />
+                            <StudentHeroPill label={t('studentDashboard.overview.pills.recordings')} value={availableRecordings} />
                             <StudentHeroPill
-                                label="Катышуу"
-                                value={attendanceEnabled ? `${attendanceStats.rate}%` : 'Эсептелбейт'}
+                                label={t('studentDashboard.overview.pills.attendance')}
+                                value={attendanceEnabled ? `${attendanceStats.rate}%` : t('studentDashboard.overview.fallbacks.notCalculated')}
                             />
                         </div>
                     </DashboardInsetPanel>

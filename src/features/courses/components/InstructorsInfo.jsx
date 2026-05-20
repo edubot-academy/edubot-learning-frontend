@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 import {
     FaBriefcase,
     FaBookOpen,
@@ -20,7 +21,7 @@ const SOCIAL_LABELS = {
     instagram: 'Instagram',
     telegram: 'Telegram',
     linkedin: 'LinkedIn',
-    portfolio: 'Портфолио',
+    portfolio: 'Portfolio',
     github: 'GitHub',
     facebook: 'Facebook',
     fb: 'Facebook',
@@ -65,11 +66,12 @@ const getSocialIcon = (platform) => {
 };
 
 function InstructorsInfo({ instructorData, ratingAverage, ratingCount, priority = false }) {
+    const { t } = useTranslation();
     const {
         avatarUrl,
-        fullName = 'Инструктор',
+        fullName = t('public.courseShared.instructorInfo.fallbackName'),
         title,
-        bio = 'Инструктор тууралуу маалымат азырынча жок',
+        bio = t('public.courseShared.instructorInfo.fallbackBio'),
         expertiseTags = [],
         yearsOfExperience,
         coursesCount = 0,
@@ -109,18 +111,22 @@ function InstructorsInfo({ instructorData, ratingAverage, ratingCount, priority 
             ? {
                   id: 'experience',
                   icon: FaBriefcase,
-                  label: `${yearsOfExperience}+ жыл тажрыйба`,
+                  label: t('public.courseShared.instructorInfo.experience', {
+                      count: Number(yearsOfExperience),
+                  }),
               }
             : null,
         {
             id: 'courses',
             icon: FaBookOpen,
-            label: `${coursesCount} курс`,
+            label: t('public.courseShared.instructorInfo.courses', { count: coursesCount }),
         },
         {
             id: 'students',
             icon: FaUsers,
-            label: `${numberOfStudents}+ студент`,
+            label: t('public.courseShared.instructorInfo.students', {
+                count: numberOfStudents,
+            }),
         },
     ].filter(Boolean);
 
@@ -147,7 +153,7 @@ function InstructorsInfo({ instructorData, ratingAverage, ratingCount, priority 
                     <div className="flex items-center gap-2 flex-wrap text-sm">
                         {isTopTutor && (
                             <span className="bg-green-100 text-green-600 px-2 py-0.5 text-xs font-semibold rounded-md dark:bg-green-900/30 dark:text-green-400">
-                                Топ инструктор
+                                {t('public.courseShared.instructorInfo.topInstructor')}
                             </span>
                         )}
                         <FaStar className="w-4 h-4 text-amber-400" />
@@ -204,7 +210,9 @@ function InstructorsInfo({ instructorData, ratingAverage, ratingCount, priority 
                                         href={url}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        aria-label={`${label} профилин ачуу`}
+                                        aria-label={t('public.courseShared.instructorInfo.openProfile', {
+                                            label,
+                                        })}
                                         className="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors dark:text-gray-400 dark:hover:text-blue-400"
                                     >
                                         <div className="w-5 h-5 flex items-center justify-center">

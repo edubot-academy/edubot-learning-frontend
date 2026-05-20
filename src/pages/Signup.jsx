@@ -12,6 +12,7 @@ import { useFavourites } from '../context/FavouritesContext';
 import Loader from '@shared/ui/Loader';
 import { executePendingAuthAction, getPostLoginPath } from '@features/auth/utils/postLogin';
 import { useTranslation } from 'react-i18next';
+import { parseApiError } from '@shared/api/error';
 
 const getPasswordChecks = (password) => ({
     length: password.length >= 8,
@@ -132,7 +133,7 @@ const SignupPage = () => {
                 navigate(getPostLoginPath(user, location), { replace: true });
             }
         } catch (err) {
-            setError(err.response?.data?.message || t('public.auth.signup.errorFallback'));
+            setError(parseApiError(err, t('public.auth.signup.errorFallback')).message);
         } finally {
             setLoading(false);
         }
@@ -164,7 +165,7 @@ const SignupPage = () => {
                         <div className="relative z-10 mx-auto flex w-full max-w-sm justify-center py-2">
                             <img
                                 src={SignUpImg}
-                                alt="EduBot Learning"
+                                alt={t('public.auth.signup.imageAlt')}
                                 className="h-[145px] w-full object-contain drop-shadow-xl lg:h-[170px]"
                                 width="384"
                                 height="170"

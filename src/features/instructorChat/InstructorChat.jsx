@@ -1,5 +1,6 @@
 
 import { useContext, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     fetchInstructorChats,
     fetchInstructorChatMessages,
@@ -13,6 +14,7 @@ import { AuthContext } from '@app/providers';
 import Loader from '@shared/ui/Loader';
 
 export default function InstructorChat({ course, onClose }) {
+    const { t } = useTranslation();
     const { user } = useContext(AuthContext);
 
     const [activeChat, setActiveChat] = useState(null);
@@ -25,7 +27,6 @@ export default function InstructorChat({ course, onClose }) {
     const messagesRef = useRef(null);
     const actionsRef = useRef(null);
 
-    // Закрытие actions при клике вне них
     useEffect(() => {
         const handleClickOutsideActions = (event) => {
             if (actionsOpen && actionsRef.current && !actionsRef.current.contains(event.target)) {
@@ -62,7 +63,7 @@ export default function InstructorChat({ course, onClose }) {
                     setActiveChat(null);
                 }
             } catch (e) {
-                console.error('Баарлашууну жүктөөдө ката кетти', e);
+                console.error('Failed to load instructor chat', e);
             } finally {
                 // If chat exists, messages loader will manage loading state further
                 if (!chatForCourse) {
@@ -82,7 +83,7 @@ export default function InstructorChat({ course, onClose }) {
                 const res = await fetchInstructorChatMessages(activeChat.id);
                 setMessages(res?.messages ?? []);
             } catch {
-                console.error('Билдирүүлөрдү жүктөөдө ката кетти');
+                console.error('Failed to load instructor chat messages');
             } finally {
                 setLoading(false);
             }
@@ -146,7 +147,7 @@ export default function InstructorChat({ course, onClose }) {
                 setMessages(res?.messages ?? []);
             }
         } catch (error) {
-            console.error('Жүктөөдө ката кетти', error);
+            console.error('Failed to send instructor chat message', error);
             setMessages((prev) => prev.filter((m) => !m.isOptimistic));
             setMessage(trimmedMessage);
         } finally {
@@ -161,12 +162,11 @@ export default function InstructorChat({ course, onClose }) {
         }
     };
 
-    // УБЕДИТЕСЬ, что у вас есть все необходимые данные!
     if (!course || !course.instructor) {
         return (
             <div className="w-full max-w-md h-[70vh] max-h-[500px] bg-white dark:bg-[#222222] rounded-xl shadow-xl border flex flex-col mx-auto">
                 <div className="p-4 text-center text-gray-500">
-                    Курс маалыматы жүктөлө элек...
+                    {t('instructorChat.courseLoading')}
                 </div>
             </div>
         );
@@ -180,23 +180,24 @@ export default function InstructorChat({ course, onClose }) {
                     <img
                         src={course.instructor.avatarUrl || '/default-avatar.png'}
                         className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover bg-gray-300"
-                        alt={course.instructor.fullName || 'Инструктор'}
+                        alt={course.instructor.fullName || t('instructorChat.instructorFallback')}
                         onError={(e) => {
                             e.target.src = '/default-avatar.png';
                         }}
                     />
                     <div>
                         <p className="font-medium text-xs sm:text-sm text-gray-900 dark:text-white">
-                            {course.instructor.fullName || 'Инструктор'}
+                            {course.instructor.fullName || t('instructorChat.instructorFallback')}
                         </p>
                         <p className="text-[10px] sm:text-[11px] text-[#0284C7]">
-                            {activeChat?.status || 'Онлайн'}
+                            {activeChat?.status || t('instructorChat.onlineStatus')}
                         </p>
                     </div>
                 </div>
                 <button
                     onClick={onClose}
                     className="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors"
+                    aria-label={t('common.close')}
                 >
                     <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -221,10 +222,10 @@ export default function InstructorChat({ course, onClose }) {
                             </svg>
                         </div>
                         <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">
-                            Баарлашууну баштаңыз
+                            {t('instructorChat.empty.title')}
                         </p>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
-                            Инструкторго биринчи билдирүүңүздү жөнөтүңүз
+                            {t('instructorChat.empty.subtitle')}
                         </p>
                     </div>
                 ) : (
@@ -248,11 +249,11 @@ export default function InstructorChat({ course, onClose }) {
                                             <img
                                                 src={m.url}
                                                 className="rounded-lg max-w-full"
-                                                alt="Сүрөт"
+                                                alt={t('instructorChat.imageAlt')}
                                             />
                                         ) : m.type === 'file' ? (
                                             <span className="underline flex items-center gap-1">
-                                                📎 {m.file?.name || 'Файл'}
+                                                📎 {m.file?.name || t('instructorChat.fileFallback')}
                                             </span>
                                         ) : (
                                             m.content
@@ -282,10 +283,16 @@ export default function InstructorChat({ course, onClose }) {
                                 : 'opacity-0 invisible transform translate-y-2'
                         }`}
                     >
-                        <button className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#FFF7ED] shadow flex items-center justify-center hover:bg-[#FED7AA] transition-colors">
+                        <button
+                            className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#FFF7ED] shadow flex items-center justify-center hover:bg-[#FED7AA] transition-colors"
+                            aria-label={t('instructorChat.attachFile')}
+                        >
                             <CgFileDocument className="w-4 h-4 sm:w-5 sm:h-5" />
                         </button>
-                        <button className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#FFF7ED] shadow flex items-center justify-center hover:bg-[#FED7AA] transition-colors">
+                        <button
+                            className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#FFF7ED] shadow flex items-center justify-center hover:bg-[#FED7AA] transition-colors"
+                            aria-label={t('instructorChat.attachImage')}
+                        >
                             <SlPicture className="w-4 h-4 sm:w-5 sm:h-5" />
                         </button>
                     </div>
@@ -296,6 +303,8 @@ export default function InstructorChat({ course, onClose }) {
                     <button
                         onClick={() => setActionsOpen(!actionsOpen)}
                         className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#FFF7ED] flex items-center justify-center hover:bg-[#FED7AA] transition-colors"
+                        aria-label={t('instructorChat.toggleAttachments')}
+                        aria-expanded={actionsOpen}
                     >
                         <FaPlus className="w-3 h-3 sm:w-4 sm:h-4 text-[#EA580C]" />
                     </button>
@@ -305,14 +314,16 @@ export default function InstructorChat({ course, onClose }) {
                             value={message}
                             onChange={(e) => setMessage(e.target.value)}
                             onKeyDown={handleKeyDown}
-                            placeholder="Билдирүү жазыңыз..."
+                            placeholder={t('instructorChat.composerPlaceholder')}
                             className="w-full h-8 sm:h-10 px-3 sm:px-4 rounded-full text-xs sm:text-sm focus:outline-none bg-gray-100 dark:bg-gray-800 border border-transparent focus:border-[#EA580C] transition-colors"
+                            aria-label={t('instructorChat.composerAria')}
                         />
                     </div>
                     
                     <button
                         onClick={handleSend}
                         disabled={!message.trim() || sending}
+                        aria-label={t('instructorChat.send')}
                         className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all ${
                             message.trim() && !sending
                                 ? 'bg-gradient-to-t from-[#FF8C6E] to-[#E14219] hover:opacity-90 cursor-pointer'
@@ -322,7 +333,7 @@ export default function InstructorChat({ course, onClose }) {
                         {sending ? (
                             <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                         ) : (
-                            <img src={sendSvg} className="w-3 h-3 sm:w-4 sm:h-4" alt="Жөнөтүү" />
+                            <img src={sendSvg} className="w-3 h-3 sm:w-4 sm:h-4" alt={t('instructorChat.send')} />
                         )}
                     </button>
                 </div>

@@ -16,7 +16,7 @@ export const ASSISTANT_DASHBOARD_TABS = Object.freeze({
 export const ASSISTANT_WORKSPACE_GROUPS = Object.freeze({
     DAILY_ACTIONS: Object.freeze({
         id: 'daily-actions',
-        label: 'Daily actions',
+        labelKey: 'assistantDashboard.workspaceGroups.dailyActions',
         tabs: Object.freeze([
             ASSISTANT_DASHBOARD_TABS.OVERVIEW,
             ASSISTANT_DASHBOARD_TABS.ENROLLMENTS,
@@ -25,7 +25,7 @@ export const ASSISTANT_WORKSPACE_GROUPS = Object.freeze({
     }),
     REFERENCE_VIEWS: Object.freeze({
         id: 'reference-views',
-        label: 'Reference views',
+        labelKey: 'assistantDashboard.workspaceGroups.referenceViews',
         tabs: Object.freeze([
             ASSISTANT_DASHBOARD_TABS.COURSES,
         ]),
@@ -35,17 +35,17 @@ export const ASSISTANT_WORKSPACE_GROUPS = Object.freeze({
 export const ASSISTANT_ATTENDANCE_WORKSPACE_DECISION = Object.freeze({
     mode: 'embedded-route',
     owner: 'attendance-domain',
-    reason: 'Ассистент катышуусу shared attendance workspace ичинде калат; ассистентке өзүнчө катышуу workflow керек болгондо гана бөлүнөт.',
+    reasonKey: 'assistantDashboard.attendance.decisionReason',
 });
 
 const RAW_NAV_ITEMS = [
     // Primary Navigation - Core Daily Tasks
-    { id: ASSISTANT_DASHBOARD_TABS.OVERVIEW, label: 'Кыскача', icon: FiHome, category: 'primary', priority: 1 },
-    { id: ASSISTANT_DASHBOARD_TABS.ENROLLMENTS, label: 'Студенттер', icon: FiUsers, category: 'primary', priority: 2 },
+    { id: ASSISTANT_DASHBOARD_TABS.OVERVIEW, labelKey: 'assistantDashboard.nav.overview', icon: FiHome, category: 'primary', priority: 1 },
+    { id: ASSISTANT_DASHBOARD_TABS.ENROLLMENTS, labelKey: 'assistantDashboard.nav.enrollments', icon: FiUsers, category: 'primary', priority: 2 },
 
     // Secondary Navigation - Learning Management
-    { id: ASSISTANT_DASHBOARD_TABS.COURSES, label: 'Курстар', icon: FiBookOpen, category: 'secondary', priority: 1 },
-    { id: ASSISTANT_DASHBOARD_TABS.ATTENDANCE, label: 'Катышуу', icon: FiCalendar, category: 'secondary', priority: 2 },
+    { id: ASSISTANT_DASHBOARD_TABS.COURSES, labelKey: 'assistantDashboard.nav.courses', icon: FiBookOpen, category: 'secondary', priority: 1 },
+    { id: ASSISTANT_DASHBOARD_TABS.ATTENDANCE, labelKey: 'assistantDashboard.nav.attendance', icon: FiCalendar, category: 'secondary', priority: 2 },
 ];
 
 export const NAV_ITEMS = applyWorkspaceGroups(RAW_NAV_ITEMS, ASSISTANT_WORKSPACE_GROUPS);

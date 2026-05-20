@@ -15,7 +15,6 @@ export default function DropdownList() {
     const checkboxRef = useRef();
     const searchRef = useRef();
 
-    // Закрытие при клике вне
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (

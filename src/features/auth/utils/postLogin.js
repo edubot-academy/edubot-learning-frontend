@@ -32,7 +32,7 @@ export const executePendingAuthAction = async ({ addToCart, toggleFavourite, nav
             const course = {
                 ...pendingAction.course,
                 id: pendingAction.courseId,
-                title: pendingAction.courseTitle || i18n.t('pages.auth.postLogin.courseFallback', {
+                title: pendingAction.courseTitle || i18n.t('public.auth.postLogin.courseFallback', {
                     id: pendingAction.courseId,
                 }),
             };
@@ -40,7 +40,7 @@ export const executePendingAuthAction = async ({ addToCart, toggleFavourite, nav
 
             if (result.success) {
                 localStorage.removeItem('pendingAction');
-                toast.success(i18n.t('pages.auth.postLogin.favouriteAdded'));
+                toast.success(i18n.t('public.auth.postLogin.favouriteAdded'));
                 navigate('/favourites');
                 return true;
             }
@@ -50,7 +50,7 @@ export const executePendingAuthAction = async ({ addToCart, toggleFavourite, nav
             const course = {
                 ...pendingAction.course,
                 id: pendingAction.courseId,
-                title: pendingAction.courseTitle || i18n.t('pages.auth.postLogin.courseFallback', {
+                title: pendingAction.courseTitle || i18n.t('public.auth.postLogin.courseFallback', {
                     id: pendingAction.courseId,
                 }),
             };
@@ -58,7 +58,7 @@ export const executePendingAuthAction = async ({ addToCart, toggleFavourite, nav
 
             if (result.success) {
                 localStorage.removeItem('pendingAction');
-                toast.success(i18n.t('pages.auth.postLogin.cartAdded'));
+                toast.success(i18n.t('public.auth.postLogin.cartAdded'));
                 navigate('/cart');
                 return true;
             }

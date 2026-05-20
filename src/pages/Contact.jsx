@@ -10,6 +10,7 @@ import { GoClock } from 'react-icons/go';
 import { SlLocationPin } from 'react-icons/sl';
 import { getMailToUrl, SUPPORT_CONTACT } from '@shared/config/support';
 import { useTranslation } from 'react-i18next';
+import { parseApiError } from '@shared/api/error';
 
 const CONTACT_FIELDS = [
     {
@@ -56,7 +57,7 @@ const CONTACT_METHODS = [
     },
     {
         labelKey: 'hoursLabel',
-        value: SUPPORT_CONTACT.workingHours,
+        valueKey: SUPPORT_CONTACT.workingHoursKey,
         icon: GoClock,
         descriptionKey: 'hours',
     },
@@ -147,13 +148,7 @@ const loadTwoGisApi = () =>
     });
 
 const getApiErrorMessage = (error, fallback) => {
-    const data = error?.response?.data;
-
-    if (typeof data === 'string') return data;
-    if (typeof data?.message === 'string') return data.message;
-    if (typeof data?.error === 'string') return data.error;
-
-    return fallback;
+    return parseApiError(error, fallback).message;
 };
 
 const getApiFieldErrors = (error) => {
@@ -403,7 +398,7 @@ const ContactMethodsSection = () => {
                                 </p>
                             </div>
                             <p className="mt-4 break-words text-sm font-medium text-gray-900 dark:text-white">
-                                {method.value}
+                                {method.valueKey ? t(method.valueKey) : method.value}
                             </p>
                             <p className="mt-2 text-sm text-gray-600 dark:text-[#a6adba]">
                                 {t(`public.contact.methods.${method.descriptionKey}`)}
@@ -472,7 +467,7 @@ const TwoGisMapWidget = () => {
                         });
 
                         const marker = window.DG.marker(TWO_GIS_COORDINATES).addTo(map);
-                        marker.bindPopup(SUPPORT_CONTACT.addressFull);
+                        marker.bindPopup(t(SUPPORT_CONTACT.addressFullKey));
 
                         mapInstanceRef.current = map;
                         markerRef.current = marker;
@@ -502,7 +497,7 @@ const TwoGisMapWidget = () => {
             mapInstanceRef.current = null;
             markerRef.current = null;
         };
-    }, []);
+    }, [t]);
 
     if (failed) {
         return (
@@ -547,7 +542,7 @@ const LocationSection = () => {
                         </h2>
                     </div>
                     <p className="mt-2 text-sm text-gray-600 dark:text-[#a6adba]">
-                        {SUPPORT_CONTACT.addressFull}
+                        {t(SUPPORT_CONTACT.addressFullKey)}
                     </p>
                 </div>
                 <a

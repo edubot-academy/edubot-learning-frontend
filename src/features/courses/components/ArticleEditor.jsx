@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import DOMPurify from 'dompurify';
 import {
     FaBold,
@@ -24,24 +25,24 @@ const TOOLBAR_GROUPS = [
         { label: 'P', command: 'formatBlock', value: 'P' },
     ],
     [
-        { icon: <FaBold />, command: 'bold', title: 'Bold' },
-        { icon: <FaItalic />, command: 'italic', title: 'Italic' },
-        { icon: <FaUnderline />, command: 'underline', title: 'Underline' },
+        { icon: <FaBold />, command: 'bold', titleKey: 'bold' },
+        { icon: <FaItalic />, command: 'italic', titleKey: 'italic' },
+        { icon: <FaUnderline />, command: 'underline', titleKey: 'underline' },
     ],
     [
-        { icon: <FaListUl />, command: 'insertUnorderedList', title: 'Bulleted list' },
-        { icon: <FaListOl />, command: 'insertOrderedList', title: 'Numbered list' },
-        { icon: <FaQuoteLeft />, command: 'formatBlock', value: 'BLOCKQUOTE', title: 'Quote' },
-        { icon: <FaCode />, command: 'inlineCode', title: 'Inline code' },
+        { icon: <FaListUl />, command: 'insertUnorderedList', titleKey: 'bulletedList' },
+        { icon: <FaListOl />, command: 'insertOrderedList', titleKey: 'numberedList' },
+        { icon: <FaQuoteLeft />, command: 'formatBlock', value: 'BLOCKQUOTE', titleKey: 'quote' },
+        { icon: <FaCode />, command: 'inlineCode', titleKey: 'inlineCode' },
     ],
     [
-        { icon: <FaLink />, command: 'createLink', title: 'Insert link' },
-        { icon: <FaUnlink />, command: 'unlink', title: 'Remove link' },
+        { icon: <FaLink />, command: 'createLink', titleKey: 'insertLink' },
+        { icon: <FaUnlink />, command: 'unlink', titleKey: 'removeLink' },
     ],
     [
-        { icon: <FaUndo />, command: 'undo', title: 'Undo' },
-        { icon: <FaRedo />, command: 'redo', title: 'Redo' },
-        { icon: <FaEraser />, command: 'removeFormat', title: 'Clear format' },
+        { icon: <FaUndo />, command: 'undo', titleKey: 'undo' },
+        { icon: <FaRedo />, command: 'redo', titleKey: 'redo' },
+        { icon: <FaEraser />, command: 'removeFormat', titleKey: 'clearFormat' },
     ],
 ];
 
@@ -78,9 +79,12 @@ const sanitizeEditorHtml = (html = '') =>
 const ArticleEditor = ({
     value = '',
     onChange,
-    placeholder = 'Макаланын текстин бул жерге жазыңыз...',
+    placeholder,
     disabled = false,
 }) => {
+    const { t } = useTranslation();
+    const editorPlaceholder =
+        placeholder || t('instructorDashboard.courseBuilder.articleEditor.placeholder');
     const editorRef = useRef(null);
     const [history, setHistory] = useState([value || '']);
     const [historyIndex, setHistoryIndex] = useState(0);
@@ -214,7 +218,9 @@ const ArticleEditor = ({
 
         if (command === 'createLink') {
             if (typeof window === 'undefined') return;
-            const rawUrl = window.prompt('Шилтемени жазыңыз (https://...)');
+            const rawUrl = window.prompt(
+                t('instructorDashboard.courseBuilder.articleEditor.linkUrlPrompt')
+            );
             const normalized = ensureUrl(rawUrl || '');
             if (!normalized) return;
 
@@ -222,7 +228,9 @@ const ArticleEditor = ({
             if (!selection) return;
 
             if (selection.isCollapsed) {
-                const linkText = window.prompt('Шилтеменин тексти');
+                const linkText = window.prompt(
+                    t('instructorDashboard.courseBuilder.articleEditor.linkTextPrompt')
+                );
                 if (!linkText) return;
                 const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
                 if (!range) return;
@@ -445,15 +453,18 @@ const ArticleEditor = ({
                             key={`group-${groupIdx}`}
                             className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-gray-600 bg-white dark:bg-gray-700 p-1"
                         >
-                            {group.map(({ label, icon, command, value: commandValue, title }) => {
+                            {group.map(({ label, icon, command, value: commandValue, titleKey }) => {
                                 const isDisabled = disabled ||
                                     (command === 'undo' && !canUndo) ||
                                     (command === 'redo' && !canRedo);
+                                const title = titleKey
+                                    ? t(`instructorDashboard.courseBuilder.articleEditor.toolbar.${titleKey}`)
+                                    : label;
 
                                 return (
                                     <button
                                         type="button"
-                                        key={`${command}-${label || title || commandValue || ''}`}
+                                        key={`${command}-${label || titleKey || commandValue || ''}`}
                                         onClick={() => handleCommand(command, commandValue)}
                                         title={title || label}
                                         disabled={isDisabled}
@@ -473,14 +484,14 @@ const ArticleEditor = ({
                 </div>
 
                 <p className="mt-2 text-[11px] text-slate-500 dark:text-gray-400">
-                    Кеңеш: `Ctrl/Cmd + B` калың, `Ctrl/Cmd + I` курсив. Код үчүн `&lt;/&gt;` баскычы же `` баскычын басыңыз.
+                    {t('instructorDashboard.courseBuilder.articleEditor.keyboardHint')}
                 </p>
             </div>
 
             <div className="relative p-3">
                 {showPlaceholder && (
                     <span className="absolute top-6 left-6 text-slate-400 dark:text-gray-500 pointer-events-none select-none">
-                        {placeholder}
+                        {editorPlaceholder}
                     </span>
                 )}
 

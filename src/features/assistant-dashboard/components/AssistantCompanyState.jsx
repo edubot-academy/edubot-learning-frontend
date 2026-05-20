@@ -1,22 +1,22 @@
-
+import { useTranslation } from 'react-i18next';
 import { DashboardWorkspaceHero, EmptyState } from '@components/ui/dashboard';
 import { FiBookOpen, FiBriefcase, FiCheckCircle, FiUsers } from 'react-icons/fi';
 
-const companyContextItems = [
+const companyContextItems = (t) => [
     {
         icon: FiUsers,
-        title: 'Student roster',
-        text: 'Student search, enrollment actions, and attendance context are scoped to the selected tenant.',
+        title: t('assistantCompanyState.context.roster.title'),
+        text: t('assistantCompanyState.context.roster.text'),
     },
     {
         icon: FiBookOpen,
-        title: 'Course access',
-        text: 'Course load and assignment tools use the tenant selection to avoid cross-company changes.',
+        title: t('assistantCompanyState.context.courses.title'),
+        text: t('assistantCompanyState.context.courses.text'),
     },
     {
         icon: FiCheckCircle,
-        title: 'Daily operations',
-        text: 'Pick the tenant you are helping today before changing enrollments or checking attendance.',
+        title: t('assistantCompanyState.context.operations.title'),
+        text: t('assistantCompanyState.context.operations.text'),
     },
 ];
 
@@ -27,16 +27,18 @@ const AssistantCompanyState = ({
     activeCompanyId,
     setActiveCompanyId,
 }) => {
+    const { t } = useTranslation();
+
     if (assistantNoCompany) {
         return (
             <DashboardWorkspaceHero
-                eyebrow="Assistant access"
-                title="No tenant assigned"
-                description="Your assistant account is not connected to a tenant yet. Ask a platform admin or tenant admin to add you before working with students and courses."
+                eyebrow={t('assistantCompanyState.eyebrow')}
+                title={t('assistantCompanyState.noCompany.title')}
+                description={t('assistantCompanyState.noCompany.description')}
             >
                 <EmptyState
-                    title="Tenant access is required"
-                    subtitle="Assistant tools are tenant-scoped so student, course, and attendance actions stay inside the right company workspace."
+                    title={t('assistantCompanyState.noCompany.emptyTitle')}
+                    subtitle={t('assistantCompanyState.noCompany.emptySubtitle')}
                     icon={<FiBriefcase className="h-8 w-8 text-edubot-orange" />}
                 />
             </DashboardWorkspaceHero>
@@ -46,13 +48,13 @@ const AssistantCompanyState = ({
     if (assistantNeedsSelect) {
         return (
             <DashboardWorkspaceHero
-                eyebrow="Assistant access"
-                title="Choose a tenant workspace"
-                description="You are connected to multiple tenants. Select the company context before reviewing students, attendance, or enrollments."
+                eyebrow={t('assistantCompanyState.eyebrow')}
+                title={t('assistantCompanyState.select.title')}
+                description={t('assistantCompanyState.select.description')}
             >
                 <div className="max-w-3xl space-y-4">
                     <div className="grid gap-3 md:grid-cols-3">
-                        {companyContextItems.map((item) => {
+                        {companyContextItems(t).map((item) => {
                             const Icon = item.icon;
                             return (
                                 <div
@@ -75,7 +77,9 @@ const AssistantCompanyState = ({
                     </div>
 
                     <label className="text-sm text-edubot-ink dark:text-white">
-                        <span className="mb-2 block font-medium">Tenant workspace</span>
+                        <span className="mb-2 block font-medium">
+                            {t('assistantCompanyState.select.label')}
+                        </span>
                         <select
                             className="dashboard-select w-full"
                             value={activeCompanyId ?? ''}
@@ -83,7 +87,7 @@ const AssistantCompanyState = ({
                                 setActiveCompanyId(e.target.value ? Number(e.target.value) : null)
                             }
                         >
-                            <option value="">Select a tenant</option>
+                            <option value="">{t('assistantCompanyState.select.placeholder')}</option>
                             {companies.map((company) => (
                                 <option key={company.id} value={company.id}>
                                     {company.name}

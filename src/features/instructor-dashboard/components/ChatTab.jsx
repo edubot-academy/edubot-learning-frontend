@@ -1,5 +1,6 @@
-import { lazy, Suspense, useState, useEffect, useContext, useMemo } from 'react';
+import { lazy, Suspense, useState, useEffect, useContext, useMemo, useCallback } from 'react';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import { FiClock, FiMessageCircle, FiSend } from 'react-icons/fi';
 import {
     fetchInstructorChats,
@@ -9,11 +10,19 @@ import {
 } from '@services/api';
 import Loader from '@shared/ui/Loader';
 import { AuthContext } from '../../../context/AuthContext';
+import { parseApiError } from '@shared/api/error';
 
 const ChatWorkspace = lazy(() => import('@components/ui/ChatWorkspace'));
+const CHAT_NOT_FOUND_MESSAGE = 'Chat not found';
+
+const isChatNotFoundError = (error) => {
+    const payload = error?.response?.data || {};
+    return error?.response?.status === 404 && payload.message === CHAT_NOT_FOUND_MESSAGE;
+};
 
 const ChatTab = () => {
     const { user } = useContext(AuthContext);
+    const { i18n, t } = useTranslation();
 
     const [chats, setChats] = useState([]);
     const [activeChat, setActiveChat] = useState(null);
@@ -35,13 +44,13 @@ const ChatTab = () => {
                 const nextChats = Array.isArray(res) ? res : [];
                 setChats(nextChats);
                 setActiveChat(nextChats[0] ?? null);
-            } catch {
-                toast.error('Чатты жүктөөдө ката кетти');
+            } catch (error) {
+                toast.error(parseApiError(error, t('instructorDashboard.chat.toasts.loadChatsError')).message);
             } finally {
                 setLoading(false);
             }
         })();
-    }, [user]);
+    }, [t, user]);
 
     useEffect(() => {
         if (!activeChat?.id) return;
@@ -50,11 +59,11 @@ const ChatTab = () => {
             try {
                 const res = await fetchInstructorChatMessages(activeChat.id);
                 setMessages(res?.messages ?? []);
-            } catch {
-                toast.error('Баарлашууну жүктөөдө ката кетти');
+            } catch (error) {
+                toast.error(parseApiError(error, t('instructorDashboard.chat.toasts.loadMessagesError')).message);
             }
         })();
-    }, [activeChat?.id]);
+    }, [activeChat?.id, t]);
 
     useEffect(() => {
         if (!activeChat) return;
@@ -89,10 +98,7 @@ const ChatTab = () => {
             const res = await fetchInstructorChatMessages(activeChat.id);
             setMessages(res?.messages ?? []);
         } catch (error) {
-            if (
-                error?.response?.status === 404 &&
-                error?.response?.data?.message === 'Chat not found'
-            ) {
+            if (isChatNotFoundError(error)) {
                 try {
                     await sendInstructorChatMessage({
                         content: optimistic.content,
@@ -110,20 +116,22 @@ const ChatTab = () => {
                             chat.student?.id === activeChatCompanion?.id
                     );
 
-                    if (!newChat) throw new Error('Чат түзүлгөн соң да табылган жок');
+                    if (!newChat) throw new Error(t('instructorDashboard.chat.errors.chatMissingAfterCreate'));
 
                     setActiveChat(newChat);
                     const msgs = await fetchInstructorChatMessages(newChat.id);
                     setMessages(msgs?.messages ?? []);
                 } catch (createError) {
                     toast.error(
-                        `Чатты түзүү мүмкүн болбоду: ${createError?.message || 'Белгисиз ката'}`
+                        t('instructorDashboard.chat.toasts.createWithReason', {
+                            reason: createError?.message || t('instructorDashboard.chat.errors.unknown'),
+                        })
                     );
                     setMessages((prev) => prev.filter((m) => !m.isOptimistic));
                     setMessage(prevMessage);
                 }
             } else {
-                toast.error('Жүктөө учурунда ката кетти');
+                toast.error(parseApiError(error, t('instructorDashboard.chat.toasts.sendError')).message);
                 setMessages((prev) => prev.filter((m) => !m.isOptimistic));
                 setMessage(prevMessage);
             }
@@ -157,13 +165,14 @@ const ChatTab = () => {
             const res = await fetchInstructorChatMessages(activeChat.id);
             setMessages(res?.messages ?? []);
         } catch (error) {
-            if (
-                error?.response?.status === 404 &&
-                error?.response?.data?.message === 'Chat not found'
-            ) {
+            if (isChatNotFoundError(error)) {
                 try {
                     await sendInstructorChatMessage({
-                        content: `📎 ${type === 'image' ? 'Сүрөт' : 'Файл'} жөнөтүлдү`,
+                        content: t('instructorDashboard.chat.fileFallback', {
+                            type: type === 'image'
+                                ? t('instructorDashboard.chat.fileTypes.image')
+                                : t('instructorDashboard.chat.fileTypes.file'),
+                        }),
                         courseId: activeChat.course?.id,
                         instructorId: activeChatCompanion?.id,
                     });
@@ -178,7 +187,7 @@ const ChatTab = () => {
                             chat.student?.id === activeChatCompanion?.id
                     );
 
-                    if (!newChat) throw new Error('Чат түзүлгөн соң да табылган жок');
+                    if (!newChat) throw new Error(t('instructorDashboard.chat.errors.chatMissingAfterCreate'));
 
                     setActiveChat(newChat);
 
@@ -192,12 +201,14 @@ const ChatTab = () => {
                     setMessages(msgs?.messages ?? []);
                 } catch (createError) {
                     toast.error(
-                        `Файлды жөнөтүү мүмкүн болбоду: ${createError?.message || 'Белгисиз ката'}`
+                        t('instructorDashboard.chat.toasts.fileWithReason', {
+                            reason: createError?.message || t('instructorDashboard.chat.errors.unknown'),
+                        })
                     );
                     setMessages((prev) => prev.filter((m) => !m.isOptimistic));
                 }
             } else {
-                toast.error('Файлды жүктөөдө ката кетти');
+                toast.error(parseApiError(error, t('instructorDashboard.chat.toasts.fileUploadError')).message);
                 setMessages((prev) => prev.filter((m) => !m.isOptimistic));
             }
         }
@@ -210,7 +221,7 @@ const ChatTab = () => {
         }
     };
 
-    const formatMessageTime = (createdAt) => {
+    const formatMessageTime = useCallback((createdAt) => {
         if (!createdAt) return '';
         const date = new Date(createdAt);
         const now = new Date();
@@ -219,18 +230,18 @@ const ChatTab = () => {
         const diffHours = Math.floor(diffMs / 3600000);
         const diffDays = Math.floor(diffMs / 86400000);
 
-        if (diffMins < 1) return 'азыр';
-        if (diffMins < 60) return `${diffMins} мүнөт мурун`;
-        if (diffHours < 24) return `${diffHours} саат мурун`;
-        if (diffDays < 7) return `${diffDays} күн мурун`;
+        if (diffMins < 1) return t('instructorDashboard.chat.time.now');
+        if (diffMins < 60) return t('instructorDashboard.chat.time.minutesAgo', { count: diffMins });
+        if (diffHours < 24) return t('instructorDashboard.chat.time.hoursAgo', { count: diffHours });
+        if (diffDays < 7) return t('instructorDashboard.chat.time.daysAgo', { count: diffDays });
 
-        return date.toLocaleDateString('ky-KZ', {
+        return date.toLocaleDateString(i18n.language || undefined, {
             day: 'numeric',
             month: 'short',
             hour: '2-digit',
             minute: '2-digit',
         });
-    };
+    }, [i18n.language, t]);
 
     const filteredChats = useMemo(() => {
         const normalized = query.trim().toLowerCase();
@@ -246,25 +257,30 @@ const ChatTab = () => {
         () =>
             filteredChats.map((chat) => ({
                 id: chat.id,
-                title: chat.student?.fullName || 'Студент',
-                subtitle: chat.course?.title || 'Курс',
+                title: chat.student?.fullName || t('instructorDashboard.chat.fallbacks.student'),
+                subtitle: chat.course?.title || t('instructorDashboard.chat.fallbacks.course'),
                 meta: formatMessageTime(chat.updatedAt),
-                statusLabel: chat.status,
+                statusLabel: chat.status
+                    ? t(`instructorDashboard.chat.statuses.${chat.status}`, { defaultValue: chat.status })
+                    : t('instructorDashboard.chat.statuses.unknown'),
                 statusTone: chat.status === 'active' ? 'active' : 'default',
                 avatarText: chat.student?.fullName?.[0]?.toUpperCase(),
-                ariaLabel: `${chat.student?.fullName || 'Студент'} - ${chat.course?.title || 'Курс'} чаты`,
+                ariaLabel: t('instructorDashboard.chat.chatAriaLabel', {
+                    student: chat.student?.fullName || t('instructorDashboard.chat.fallbacks.student'),
+                    course: chat.course?.title || t('instructorDashboard.chat.fallbacks.course'),
+                }),
             })),
-        [filteredChats]
+        [filteredChats, formatMessageTime, t]
     );
 
     const stats = useMemo(() => {
         const pending = messages.filter((item) => item.role !== user?.role && !item.isRead).length;
         return [
-            { label: 'Чаттар', value: chats.length, icon: FiMessageCircle },
-            { label: 'Билдирүүлөр', value: messages.length, icon: FiSend, tone: 'blue' },
-            { label: 'Окулбаган', value: pending, icon: FiClock, tone: 'amber' },
+            { label: t('instructorDashboard.chat.stats.chats'), value: chats.length, icon: FiMessageCircle },
+            { label: t('instructorDashboard.chat.stats.messages'), value: messages.length, icon: FiSend, tone: 'blue' },
+            { label: t('instructorDashboard.chat.stats.unread'), value: pending, icon: FiClock, tone: 'amber' },
         ];
-    }, [chats.length, messages, user?.role]);
+    }, [chats.length, messages, t, user?.role]);
 
     if (loading) {
         return (
@@ -277,23 +293,29 @@ const ChatTab = () => {
     return (
         <Suspense fallback={<Loader fullScreen={false} />}>
             <ChatWorkspace
-                sidebarTitle="Сүйлөшүүлөр"
-                sidebarDescription="Курс жана студент боюнча активдүү чаттарды ушул жерден тандаңыз."
+                sidebarTitle={t('instructorDashboard.chat.sidebarTitle')}
+                sidebarDescription={t('instructorDashboard.chat.sidebarDescription')}
                 stats={stats}
                 query={query}
                 onQueryChange={setQuery}
                 chatItems={chatItems}
                 activeChatId={activeChat?.id || null}
                 onSelectChat={(chatId) => setActiveChat(chats.find((item) => item.id === chatId) || null)}
-                noChatsTitle="Чат табылган жок"
-                noChatsSubtitle="Издөө суроосун өзгөртүп көрүңүз же студент менен жаңы сүйлөшүүнү күтүңүз."
-                activeChatTitle={activeChatCompanion?.fullName || 'Студент'}
-                activeChatSubtitle={activeChat?.course?.title || 'Курс'}
-                activeStatusLabel={activeChat?.status || 'Белгисиз'}
+                noChatsTitle={t('instructorDashboard.chat.empty.noChatsTitle')}
+                noChatsSubtitle={t('instructorDashboard.chat.empty.noChatsSubtitle')}
+                activeChatTitle={activeChatCompanion?.fullName || t('instructorDashboard.chat.fallbacks.student')}
+                activeChatSubtitle={activeChat?.course?.title || t('instructorDashboard.chat.fallbacks.course')}
+                activeStatusLabel={
+                    activeChat?.status
+                        ? t(`instructorDashboard.chat.statuses.${activeChat.status}`, {
+                            defaultValue: activeChat.status,
+                        })
+                        : t('instructorDashboard.chat.statuses.unknown')
+                }
                 activeStatusTone={activeChat?.status === 'active' ? 'active' : 'default'}
                 onBack={() => setActiveChat(null)}
-                emptySelectionTitle="Сүйлөшүү тандалган жок"
-                emptySelectionSubtitle="Сол жактагы тизмеден студентти тандасаңыз, баарлашуу ушул жерде ачылат."
+                emptySelectionTitle={t('instructorDashboard.chat.empty.selectionTitle')}
+                emptySelectionSubtitle={t('instructorDashboard.chat.empty.selectionSubtitle')}
                 messages={messages}
                 currentUserRole={user.role}
                 formatMessageTime={formatMessageTime}

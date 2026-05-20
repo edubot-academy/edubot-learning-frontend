@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import { toast } from 'react-hot-toast';
 import {
@@ -19,9 +20,10 @@ import { fetchSessionAttendance, markSessionAttendanceBulk } from '../api';
 import AttendanceFilters from './AttendanceFilters';
 import AttendanceSummary from './AttendanceSummary';
 
+const getStatusTranslationKey = (status) => (status === 'not_scheduled' ? 'notScheduled' : status);
+
 const statusConfig = {
   [SESSION_ATTENDANCE_STATUS.PRESENT]: {
-    label: 'Катышты',
     icon: FiCheckCircle,
     tone: 'green',
     bgColor: 'bg-emerald-100 dark:bg-emerald-900/40',
@@ -29,7 +31,6 @@ const statusConfig = {
     borderColor: 'border-emerald-200 dark:border-emerald-500/30',
   },
   [SESSION_ATTENDANCE_STATUS.LATE]: {
-    label: 'Кечикти',
     icon: FiClock,
     tone: 'amber',
     bgColor: 'bg-amber-100 dark:bg-amber-900/40',
@@ -37,7 +38,6 @@ const statusConfig = {
     borderColor: 'border-amber-200 dark:border-amber-500/30',
   },
   [SESSION_ATTENDANCE_STATUS.ABSENT]: {
-    label: 'Келген жок',
     icon: FiXCircle,
     tone: 'red',
     bgColor: 'bg-red-100 dark:bg-red-900/40',
@@ -45,7 +45,6 @@ const statusConfig = {
     borderColor: 'border-red-200 dark:border-red-500/30',
   },
   [SESSION_ATTENDANCE_STATUS.EXCUSED]: {
-    label: 'Себептүү',
     icon: FiAlertCircle,
     tone: 'blue',
     bgColor: 'bg-blue-100 dark:bg-blue-900/40',
@@ -53,7 +52,6 @@ const statusConfig = {
     borderColor: 'border-blue-200 dark:border-blue-500/30',
   },
   not_scheduled: {
-    label: 'Күтүлүүдө',
     icon: FiClock,
     tone: 'default',
     bgColor: 'bg-gray-100 dark:bg-gray-800',
@@ -68,6 +66,7 @@ const AttendanceTableView = ({
   onAttendanceUpdate,
   className = '',
 }) => {
+  const { t, i18n } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [students, setStudents] = useState([]);
@@ -86,6 +85,23 @@ const AttendanceTableView = ({
   });
   const [popupCell, setPopupCell] = useState(null);
   const [pendingChanges, setPendingChanges] = useState(new Map()); // Track unsaved changes
+  const language = i18n.resolvedLanguage || i18n.language || undefined;
+
+  const getSessionTitle = useCallback((session = {}) => (
+    session.title || t('attendance.fallbacks.sessionWithId', { id: session.sessionIndex || session.id })
+  ), [t]);
+
+  const formatSessionDate = useCallback((value, fallback = '-') => {
+    if (!value) return fallback;
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return t('attendance.fallbacks.unknownDate');
+
+    return date.toLocaleDateString(language, {
+      month: 'short',
+      day: 'numeric',
+    });
+  }, [language, t]);
 
   const loadData = useCallback(async () => {
     if (!groupId) return;
@@ -143,11 +159,11 @@ const AttendanceTableView = ({
     } catch (loadError) {
       console.error('Failed to load attendance data:', loadError);
       setError(loadError);
-      toast.error('Жүктөөдө ката кетти');
+      toast.error(t('attendance.legacy.loadError'));
     } finally {
       setLoading(false);
     }
-  }, [groupId]);
+  }, [groupId, t]);
 
   useEffect(() => {
     loadData();
@@ -211,7 +227,7 @@ const AttendanceTableView = ({
 
   const handleSave = useCallback(async () => {
     if (pendingChanges.size === 0) {
-      toast.info('Сактоо үчүн өзгөртүүлөр жок');
+      toast.info(t('attendance.table.toasts.noChangesToSave'));
       return;
     }
 
@@ -244,14 +260,14 @@ const AttendanceTableView = ({
         onAttendanceUpdate();
       }
 
-      toast.success(`${pendingChanges.size} катышуу ийгиликтүү сакталды!`);
+      toast.success(t('attendance.table.toasts.saveSuccess', { count: pendingChanges.size }));
     } catch (error) {
       console.error('Failed to save attendance:', error);
-      toast.error('Катышууну сактоо мүмкүн болбоду');
+      toast.error(t('attendance.table.toasts.saveFailed'));
     } finally {
       setLoading(false);
     }
-  }, [pendingChanges, courseId, onAttendanceUpdate]);
+  }, [pendingChanges, courseId, onAttendanceUpdate, t]);
 
   const filteredStudents = useMemo(() => {
     const filtered = students.filter((student) => {
@@ -312,10 +328,10 @@ const AttendanceTableView = ({
     return (
       <div className="py-12 text-center">
         <div className="mb-2 text-red-600 dark:text-red-400">
-          Катышуу маалыматын жүктөөдө ката кетти
+          {t('attendance.legacy.loadError')}
         </div>
         <button onClick={loadData} className="dashboard-button-primary">
-          Кайта жүктөө
+          {t('attendance.table.actions.reload')}
         </button>
       </div>
     );
@@ -324,8 +340,8 @@ const AttendanceTableView = ({
   if (students.length === 0) {
     return (
       <EmptyState
-        title="Студенттер жок"
-        subtitle="Бул группада студенттер жок же жүктөөдө ката кетти"
+        title={t('attendance.empty.noStudentsTitle')}
+        subtitle={t('attendance.empty.noStudentsDescription')}
         icon={<FiSearch className="h-8 w-8" />}
       />
     );
@@ -355,23 +371,26 @@ const AttendanceTableView = ({
           <div className="flex items-center gap-3">
             {selectedCells.size > 0 && (
               <>
-                <div className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                  {selectedCells.size} клетка тандалды
-                </div>
-                <div className="text-xs text-blue-700 dark:text-blue-300">
-                  {new Set(Array.from(selectedCells).map(cell => cell.split('-')[0])).size} студент • {new Set(Array.from(selectedCells).map(cell => cell.split('-')[1])).size} сессия
-                </div>
+	                <div className="text-sm font-medium text-blue-900 dark:text-blue-100">
+	                  {t('attendance.bulk.selection.cellsSelected', { count: selectedCells.size })}
+	                </div>
+	                <div className="text-xs text-blue-700 dark:text-blue-300">
+	                  {t('attendance.bulk.selection.summary', {
+                        students: new Set(Array.from(selectedCells).map(cell => cell.split('-')[0])).size,
+                        sessions: new Set(Array.from(selectedCells).map(cell => cell.split('-')[1])).size,
+                      })}
+	                </div>
               </>
             )}
             {pendingChanges.size > 0 && (
-              <div className="text-sm font-medium text-orange-600 dark:text-orange-400">
-                {pendingChanges.size} өзгөртүү сакталган эмес
-              </div>
+	              <div className="text-sm font-medium text-orange-600 dark:text-orange-400">
+	                {t('attendance.table.unsavedChanges', { count: pendingChanges.size })}
+	              </div>
             )}
             {selectedCells.size === 0 && pendingChanges.size === 0 && (
-              <div className="text-sm text-gray-500 dark:text-gray-400">
-                Катышуу белгилөө үчүн клеткаларды тандаңыз
-              </div>
+	              <div className="text-sm text-gray-500 dark:text-gray-400">
+	                {t('attendance.table.selectCellsHint')}
+	              </div>
             )}
           </div>
 
@@ -383,8 +402,8 @@ const AttendanceTableView = ({
                 disabled={loading}
                 className="dashboard-button-primary text-xs px-3 py-1 disabled:opacity-50"
               >
-                {loading ? 'Сакталууда...' : 'Сактоо'}
-              </button>
+	                {loading ? t('attendance.actions.saving') : t('attendance.actions.save')}
+	              </button>
             )}
             {selectedCells.size > 0 && (
               <button
@@ -392,8 +411,8 @@ const AttendanceTableView = ({
                 onClick={() => setSelectedCells(new Set())}
                 className="text-xs px-3 py-1 text-blue-700 hover:bg-blue-100 dark:text-blue-300 dark:hover:bg-blue-900/30 rounded"
               >
-                Тандоону тазалоо
-              </button>
+	                {t('attendance.bulk.actions.clearSelection')}
+	              </button>
             )}
           </div>
         </div>
@@ -427,8 +446,8 @@ const AttendanceTableView = ({
                       }}
                       className="h-4 w-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500 dark:border-gray-600 dark:bg-gray-800 dark:text-orange-500"
                     />
-                    Студент
-                  </div>
+	                    {t('attendance.metrics.students')}
+	                  </div>
                 </th>
 
                 {sessions.map((session) => (
@@ -438,23 +457,18 @@ const AttendanceTableView = ({
                   >
                     <div className="space-y-1">
                       <div className="font-medium text-xs truncate">
-                        {session.title || `Сессия ${session.sessionIndex}`}
-                      </div>
-                      <div className="text-xs text-gray-400 dark:text-gray-500">
-                        {session.startsAt
-                          ? new Date(session.startsAt).toLocaleDateString('ky-KG', {
-                            month: 'short',
-                            day: 'numeric',
-                          })
-                          : '-'}
-                      </div>
+	                        {getSessionTitle(session)}
+	                      </div>
+	                      <div className="text-xs text-gray-400 dark:text-gray-500">
+	                        {formatSessionDate(session.startsAt)}
+	                      </div>
                     </div>
                   </th>
                 ))}
 
                 <th className="sticky right-0 z-10 border-l border-gray-200 bg-gray-50 px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400">
-                  Жыйынтык
-                </th>
+	                  {t('attendance.table.summary')}
+	                </th>
               </tr>
             </thead>
 
@@ -501,7 +515,7 @@ const AttendanceTableView = ({
                           className="h-4 w-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500 dark:border-gray-600 dark:bg-gray-800 dark:text-orange-500"
                         />
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
-                          {(student.fullName || 'Unknown')
+	                          {(student.fullName || t('attendance.cardView.unknownStudent'))
                             .split(' ')
                             .filter(Boolean)
                             .map((n) => n[0])
@@ -551,8 +565,10 @@ const AttendanceTableView = ({
                           }
                           role={isSessionIncomplete ? 'presentation' : 'button'}
                           tabIndex={isSessionIncomplete ? -1 : 0}
-                          aria-label={`Change attendance for ${student.fullName} in ${session.title || `Session ${session.sessionIndex}`
-                            }`}
+	                          aria-label={t('attendance.legacy.changeAttendanceAria', {
+                                student: student.fullName || t('attendance.cardView.unknownStudent'),
+                                session: getSessionTitle(session),
+                              })}
                         >
                           <div
                             className={`attendance-status inline-flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs font-medium transition-all duration-200 ${config.bgColor} ${config.textColor} ${config.borderColor} ${isSessionIncomplete ? 'grayscale' : ''
@@ -587,8 +603,8 @@ const AttendanceTableView = ({
             <div className="mx-4 w-full max-w-sm rounded-lg bg-white p-6 dark:bg-gray-800">
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Катышуу статусун тандаңыз
-                </h3>
+	                  {t('attendance.table.selectStatusTitle')}
+	                </h3>
                 <button
                   type="button"
                   onClick={() => setPopupCell(null)}
@@ -603,8 +619,8 @@ const AttendanceTableView = ({
                   <strong>{popupCell.student?.fullName}</strong>
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-500">
-                  {popupCell.session?.title || `Сессия ${popupCell.session?.sessionIndex}`}
-                </p>
+	                  {getSessionTitle(popupCell.session)}
+	                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-2">
@@ -624,8 +640,8 @@ const AttendanceTableView = ({
                     >
                       <Icon className={`mb-1 h-6 w-6 ${config.textColor}`} />
                       <span className="text-xs font-medium text-gray-900 dark:text-white">
-                        {config.label}
-                      </span>
+	                        {t(`attendance.status.${getStatusTranslationKey(status)}`)}
+	                      </span>
                     </button>
                   );
                 })}

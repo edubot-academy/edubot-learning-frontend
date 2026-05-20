@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 
 /**
@@ -128,7 +129,8 @@ AttendanceFilterSkeleton.displayName = 'AttendanceFilterSkeleton';
 /**
  * Loading overlay component
  */
-export const AttendanceLoadingOverlay = memo(({ message = 'Жүктөө...', isVisible = true }) => {
+export const AttendanceLoadingOverlay = memo(({ message, isVisible = true }) => {
+  const { t } = useTranslation();
   if (!isVisible) return null;
 
   return (
@@ -136,7 +138,7 @@ export const AttendanceLoadingOverlay = memo(({ message = 'Жүктөө...', isV
       <div className="bg-white dark:bg-gray-900 rounded-lg p-6 shadow-xl max-w-sm w-full mx-4">
         <div className="flex items-center justify-center space-x-3">
           <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
-          <span className="text-gray-900 dark:text-white font-medium">{message}</span>
+          <span className="text-gray-900 dark:text-white font-medium">{message || t('attendance.loading.title')}</span>
         </div>
       </div>
     </div>
@@ -148,12 +150,13 @@ AttendanceLoadingOverlay.displayName = 'AttendanceLoadingOverlay';
 /**
  * Progress indicator for bulk operations
  */
-export const AttendanceProgressIndicator = memo(({ 
-  current = 0, 
-  total = 100, 
-  message = 'Иштеп жатат...', 
-  showPercentage = true 
+export const AttendanceProgressIndicator = memo(({
+  current = 0,
+  total = 100,
+  message,
+  showPercentage = true
 }) => {
+  const { t } = useTranslation();
   const percentage = total > 0 ? Math.round((current / total) * 100) : 0;
 
   return (
@@ -161,7 +164,7 @@ export const AttendanceProgressIndicator = memo(({
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium text-gray-900 dark:text-white">
-            {message}
+            {message || t('attendance.loading.working')}
           </span>
           {showPercentage && (
             <span className="text-sm text-gray-500 dark:text-gray-400">
@@ -178,7 +181,7 @@ export const AttendanceProgressIndicator = memo(({
         </div>
         
         <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
-          {current} / {total} аякталды
+          {t('attendance.loading.progressComplete', { current, total })}
         </div>
       </div>
     </div>
@@ -190,28 +193,29 @@ AttendanceProgressIndicator.displayName = 'AttendanceProgressIndicator';
 /**
  * Empty state components
  */
-export const AttendanceEmptyState = memo(({ 
-  type = 'students', 
-  title, 
-  subtitle, 
-  action = null 
+export const AttendanceEmptyState = memo(({
+  type = 'students',
+  title,
+  subtitle,
+  action = null
 }) => {
+  const { t } = useTranslation();
   const defaultContent = {
     students: {
-      title: 'Студенттер жок',
-      subtitle: 'Бул группада студенттер жок же жүктөөдө ката кетти',
+      title: t('attendance.empty.noStudentsTitle'),
+      subtitle: t('attendance.empty.noStudentsDescription'),
     },
     sessions: {
-      title: 'Сессиялар жок',
-      subtitle: 'Бул курс үчүн сессиялар пландалган эмес',
+      title: t('attendance.loadingStates.empty.sessionsTitle'),
+      subtitle: t('attendance.loadingStates.empty.sessionsSubtitle'),
     },
     data: {
-      title: 'Маалымат жок',
-      subtitle: 'Көрсөтүү үчүн маалымат жок',
+      title: t('attendance.loadingStates.empty.dataTitle'),
+      subtitle: t('attendance.loadingStates.empty.dataSubtitle'),
     },
     filtered: {
-      title: 'Натыйжалар жок',
-      subtitle: 'Сиздин фильтриңизге ылайык натыйжалар табылган жок',
+      title: t('attendance.empty.noRecordsTitle'),
+      subtitle: t('attendance.empty.noRecordsDescription'),
     },
   };
 
@@ -245,12 +249,13 @@ AttendanceEmptyState.displayName = 'AttendanceEmptyState';
 /**
  * Error state component
  */
-export const AttendanceErrorState = memo(({ 
-  error, 
-  title = 'Ката кетти', 
-  onRetry, 
-  retryText = 'Кайта аракет кылуу' 
+export const AttendanceErrorState = memo(({
+  error,
+  title,
+  onRetry,
+  retryText
 }) => {
+  const { t } = useTranslation();
   return (
     <div className="text-center py-12 px-4">
       <div className="mx-auto w-24 h-24 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mb-4">
@@ -258,11 +263,11 @@ export const AttendanceErrorState = memo(({
       </div>
       
       <h3 className="text-lg font-semibold text-red-900 dark:text-red-100 mb-2">
-        {title}
+        {title || t('attendance.loadingStates.error.title')}
       </h3>
       
       <p className="text-red-600 dark:text-red-400 mb-6 max-w-md mx-auto">
-        {error?.message || 'Белгисиз ката кетти. Кайта аракет кылыңыз.'}
+        {error?.message || t('attendance.loadingStates.error.unknown')}
       </p>
       
       {onRetry && (
@@ -270,7 +275,7 @@ export const AttendanceErrorState = memo(({
           onClick={onRetry}
           className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
         >
-          {retryText}
+          {retryText || t('attendance.loadingStates.error.retry')}
         </button>
       )}
     </div>

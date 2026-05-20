@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import toast from "react-hot-toast";
 import {
     checkEnrollments,
@@ -23,6 +24,7 @@ export const useAssistantWorkspaceData = ({
     assistantNoCompany,
     isAssistant,
 }) => {
+    const { t } = useTranslation();
     const [currentPage, setCurrentPage] = useState(1);
     const [search, setSearch] = useState("");
     const [students, setStudents] = useState([]);
@@ -248,7 +250,7 @@ export const useAssistantWorkspaceData = ({
             setEnrolledStudents(studentsData.filter((student) => enrolledSet.has(student.id)));
         } catch {
             if (!isCurrentRequest()) return;
-            toast.error("Маалыматтарды жүктөөдө ката кетти");
+            toast.error(t('assistantDashboard.toasts.loadFailed'));
             resetDashboardData();
         } finally {
             if (isCurrentRequest()) {
@@ -263,6 +265,7 @@ export const useAssistantWorkspaceData = ({
         loadPublishedCourses,
         resetDashboardData,
         search,
+        t,
     ]);
 
     useEffect(() => {

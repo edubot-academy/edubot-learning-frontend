@@ -53,19 +53,15 @@ export const setStoredLocale = (locale, storage = globalThis.localStorage) => {
 
 export const resolveLocale = ({
     storedLocale,
-    tenantLocale,
     browserLocale = getBrowserLocale(),
 } = {}) => {
     const explicitStoredLocale = parseSupportedLocale(storedLocale);
     if (explicitStoredLocale) return explicitStoredLocale;
 
-    const selectedTenantLocale = parseSupportedLocale(tenantLocale);
-    if (selectedTenantLocale) return selectedTenantLocale;
-
     return normalizeLocale(browserLocale);
 };
 
-export const getResolvedLocale = ({ tenantLocale, browserLocale, storage } = {}) =>
+export const getResolvedLocale = ({ browserLocale, storage } = {}) =>
     (() => {
         let storedLocale = null;
         try {
@@ -80,7 +76,7 @@ export const getResolvedLocale = ({ tenantLocale, browserLocale, storage } = {})
             return normalizeLocale(storedLocale);
         }
 
-        return resolveLocale({ tenantLocale, browserLocale });
+        return resolveLocale({ browserLocale });
     })();
 
 export const getLocaleLabel = (locale) => {

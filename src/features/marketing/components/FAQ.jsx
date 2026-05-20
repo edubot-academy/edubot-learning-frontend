@@ -42,7 +42,9 @@ const FAQ = () => {
 
     return (
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 mb-20 bg-white dark:bg-[#141619] rounded-xl shadow-sm border border-gray-200 dark:border-[#2A2E35]">
-            <h3 className="text-2xl font-bold text-gray-900 dark:text-[#E8ECF3]">FAQ</h3>
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-[#E8ECF3]">
+                {t('public.home.faq.title')}
+            </h3>
             <p className="text-gray-500 dark:text-gray-300 text-sm mb-6">
                 {t('public.home.faq.intro')}
             </p>

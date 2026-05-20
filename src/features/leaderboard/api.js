@@ -1,4 +1,6 @@
 import api, { clean } from '../../shared/api/client';
+import i18n from '../../i18n';
+import { parseApiError } from '@shared/api/error';
 
 const buildEmptyLeaderboard = (page = 1, limit = 10) => ({
     items: [],
@@ -10,7 +12,7 @@ const buildEmptyLeaderboard = (page = 1, limit = 10) => ({
 const withFallbackMeta = (value, error) => ({
     ...(value || {}),
     _fallback: true,
-    _fallbackMessage: error?.response?.data?.error?.message || error?.message || 'Leaderboard unavailable',
+    _fallbackMessage: parseApiError(error, i18n.t('public.leaderboard.errors.load')).message,
 });
 
 const safeRequest = async (fn, fallback) => {

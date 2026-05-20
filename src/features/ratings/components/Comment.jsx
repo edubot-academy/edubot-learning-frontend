@@ -4,6 +4,7 @@ import Button from '@shared-ui/Button';
 import { IoStar, IoStarOutline } from 'react-icons/io5';
 import { rateCourse, getCourseRating } from '@services/api';
 import toast from 'react-hot-toast';
+import { parseApiError } from '@shared/api/error';
 
 const STARS = [1, 2, 3, 4, 5];
 
@@ -14,7 +15,7 @@ function Comment({ courseId }) {
     const [comment, setComment] = useState('');
     const [loading, setLoading] = useState(false);
     const [loadingInitial, setLoadingInitial] = useState(false);
-    const [existingRating, setExistingRating] = useState(null); // { value, comment } | null
+    const [existingRating, setExistingRating] = useState(null);
     const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
     const isRated = Boolean(existingRating);
@@ -27,7 +28,6 @@ function Comment({ courseId }) {
         comment.trim().length < 5 ||
         isRated;
 
-    // ⭐ Load user's existing rating
     useEffect(() => {
         if (!courseId) return;
 
@@ -44,7 +44,7 @@ function Comment({ courseId }) {
                     setExistingRating(data);
                     setRating(data.value ?? 0);
                     setComment(data.comment ?? '');
-                    setShowSuccessMessage(true); // Если уже был отзыв, показываем сообщение
+                    setShowSuccessMessage(true);
                 } else {
                     // no rating yet
                     setExistingRating(null);
@@ -91,10 +91,7 @@ function Comment({ courseId }) {
             setShowSuccessMessage(true);
         } catch (error) {
             console.error('Error rating course:', error);
-            toast.error(
-                error?.response?.data?.message ||
-                    t('ratings.comment.toasts.submitError')
-            );
+            toast.error(parseApiError(error, t('ratings.comment.toasts.submitError')).message);
         } finally {
             setLoading(false);
         }
@@ -126,41 +123,36 @@ function Comment({ courseId }) {
         );
     };
 
-    // Если есть отзыв или только что отправили, показываем сообщение об успехе
     if (showSuccessMessage) {
         return (
             <div className="border border-[#C5C9D1] p-6 md:p-10 rounded-xl mb-16 mt-6 bg-white dark:border-gray-700 dark:bg-[#222222]">
                 <div className="text-center">
-                    {/* Иконка успеха */}
                     <div className="flex justify-center mb-4">
                         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center dark:bg-green-900/30">
-                            <svg 
-                                className="w-8 h-8 text-green-500 dark:text-green-400" 
-                                fill="none" 
-                                stroke="currentColor" 
+                            <svg
+                                className="w-8 h-8 text-green-500 dark:text-green-400"
+                                fill="none"
+                                stroke="currentColor"
                                 viewBox="0 0 24 24"
                             >
-                                <path 
-                                    strokeLinecap="round" 
-                                    strokeLinejoin="round" 
-                                    strokeWidth={2} 
-                                    d="M5 13l4 4L19 7" 
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M5 13l4 4L19 7"
                                 />
                             </svg>
                         </div>
                     </div>
-                    
-                    {/* Заголовок */}
+
                     <h3 className="font-semibold text-xl md:text-2xl text-gray-800 mb-2 dark:text-gray-100">
                         {t('ratings.comment.success.title')}
                     </h3>
-                    
-                    {/* Описание */}
+
                     <p className="text-[#3E424A] text-sm md:text-base font-normal max-w-md mx-auto dark:text-gray-300">
                         {t('ratings.comment.success.description')}
                     </p>
-                    
-                    {/* Отображение оценки (опционально) */}
+
                     {existingRating && (
                         <div className="mt-4 flex items-center justify-center gap-2">
                             <span className="text-gray-600 dark:text-gray-300">{t('ratings.comment.success.yourRating')}</span>
@@ -182,7 +174,6 @@ function Comment({ courseId }) {
         );
     }
 
-    // Если нет отзыва, показываем форму
     return (
         <div className="flex flex-col md:flex-row gap-8 md:gap-12 border border-[#C5C9D1] p-6 md:p-10 rounded-xl mb-16 mt-6 bg-white dark:border-gray-700 dark:bg-gray-800">
             {/* Left side: title + stars */}

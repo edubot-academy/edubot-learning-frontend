@@ -1,8 +1,10 @@
 import { useCallback, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import toast from "react-hot-toast";
 import { myCompanies } from "@services/api";
 
 export const useAssistantCompanyState = (user) => {
+    const { t } = useTranslation();
     const isAssistant = user?.role === "assistant";
     const [companies, setCompanies] = useState([]);
     const [companiesLoaded, setCompaniesLoaded] = useState(false);
@@ -27,11 +29,11 @@ export const useAssistantCompanyState = (user) => {
                 return null;
             });
         } catch {
-            toast.error("Компанияларды жүктөөдө ката кетти");
+            toast.error(t('assistantDashboard.toasts.companiesLoadFailed'));
         } finally {
             setCompaniesLoaded(true);
         }
-    }, [isAssistant]);
+    }, [isAssistant, t]);
 
     const activeCompany = useMemo(
         () => companies.find((company) => company.id === activeCompanyId) || null,

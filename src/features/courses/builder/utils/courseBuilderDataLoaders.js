@@ -9,8 +9,11 @@ import { fetchCategories } from '../../../categories/api';
 import { fetchSkills } from '../../../skills/api';
 import { createEmptyQuiz, mapQuizFromApi } from '../../../../utils/quizUtils';
 import { createEmptyChallenge, mapChallengeFromApi } from '../../../../utils/challengeUtils';
+import i18n from '../../../../i18n';
 
-export const DEFAULT_SKILL_OPTION_LABEL = 'Skill тандаңыз (опция)';
+export const DEFAULT_SKILL_OPTION_LABEL = i18n.t(
+    'instructorDashboard.courseBuilder.placeholders.optionalSkill'
+);
 export const DEFAULT_SKILL_OPTION = { value: '', label: DEFAULT_SKILL_OPTION_LABEL };
 
 export const mapSkillsToOptions = (skillsData, optionalSkillLabel = DEFAULT_SKILL_OPTION_LABEL) => {

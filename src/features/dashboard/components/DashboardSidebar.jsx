@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 
 const DashboardSidebar = ({
@@ -9,10 +10,15 @@ const DashboardSidebar = ({
     onToggle,
     defaultOpen = true,
     className = '',
-    toggleLabels = { collapse: 'Менюну жыйуу', expand: 'Меню' },
+    toggleLabels,
 }) => {
+    const { t } = useTranslation();
     const [internalOpen, setInternalOpen] = useState(defaultOpen);
     const resolvedOpen = typeof isOpen === 'boolean' ? isOpen : internalOpen;
+    const resolvedToggleLabels = {
+        collapse: toggleLabels?.collapse || t('dashboardSidebar.collapse'),
+        expand: toggleLabels?.expand || t('dashboardSidebar.expand'),
+    };
 
     const handleToggle = () => {
         if (onToggle) {
@@ -26,14 +32,14 @@ const DashboardSidebar = ({
         <aside
             className={`flex max-h-[calc(100vh-2rem)] max-w-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-edubot-soft transition-[width,padding] duration-300 dark:border-gray-700 dark:bg-gray-800 ${resolvedOpen ? 'w-64 p-5' : 'w-20 p-4'
                 } ${className}`}
-            aria-label="Dashboard navigation menu"
+            aria-label={t('dashboardSidebar.navigationMenu')}
         >
             <div className={`mb-4 flex ${resolvedOpen ? 'justify-end' : 'justify-center'}`}>
                 <button
                     type="button"
                     onClick={handleToggle}
                     className="inline-flex h-9 min-w-9 items-center justify-center rounded-xl border border-gray-200 bg-white px-2 text-sm font-semibold text-gray-600 transition hover:border-edubot-orange hover:text-edubot-orange focus:outline-none focus:ring-2 focus:ring-edubot-orange/40 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
-                    aria-label={resolvedOpen ? toggleLabels.collapse : toggleLabels.expand}
+                    aria-label={resolvedOpen ? resolvedToggleLabels.collapse : resolvedToggleLabels.expand}
                     aria-expanded={resolvedOpen}
                 >
                     {resolvedOpen ? '‹' : '›'}
@@ -43,7 +49,7 @@ const DashboardSidebar = ({
             <nav
                 className="space-y-1 overflow-y-auto pr-1"
                 id="dashboard-nav-menu"
-                aria-label="Dashboard sections"
+                aria-label={t('dashboardSidebar.sections')}
                 data-dashboard-navigation
                 tabIndex={-1}
             >
@@ -58,15 +64,15 @@ const DashboardSidebar = ({
 
                     const categoryOrder = ['primary', 'secondary', 'analytics', 'progress', 'personal', 'content', 'users', 'admin', 'other'];
                     const categoryLabels = {
-                        primary: 'Негизги функциялар',
-                        secondary: 'Окутуу башкаруу',
-                        progress: 'Окутуу прогресси',
-                        personal: 'Жеке башкаруу',
-                        content: 'Мазмун башкаруу',
-                        users: 'Колдонуучулар башкаруу',
-                        analytics: 'Аналитика жана статистика',
-                        admin: 'Система башкаруу',
-                        other: 'Башкалар'
+                        primary: t('dashboardSidebar.categories.primary'),
+                        secondary: t('dashboardSidebar.categories.secondary'),
+                        progress: t('dashboardSidebar.categories.progress'),
+                        personal: t('dashboardSidebar.categories.personal'),
+                        content: t('dashboardSidebar.categories.content'),
+                        users: t('dashboardSidebar.categories.users'),
+                        analytics: t('dashboardSidebar.categories.analytics'),
+                        admin: t('dashboardSidebar.categories.admin'),
+                        other: t('dashboardSidebar.categories.other'),
                     };
 
                     return categoryOrder.map((category) => {

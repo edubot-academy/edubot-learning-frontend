@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import AttendanceCell from './AttendanceCell';
 
@@ -12,6 +13,7 @@ const VirtualizedAttendanceTable = ({
   containerHeight = 600,
   className = '',
 }) => {
+  const { t, i18n } = useTranslation();
   const containerRef = useRef(null);
   const [scrollTop, setScrollTop] = useState(0);
   const [isScrolling, setIsScrolling] = useState(false);
@@ -50,6 +52,18 @@ const VirtualizedAttendanceTable = ({
   }, []);
 
   const totalHeight = students.length * rowHeight;
+  const language = i18n.resolvedLanguage || i18n.language || undefined;
+
+  const getSessionTitle = useCallback((session = {}) => (
+    session.title || t('attendance.fallbacks.sessionWithId', { id: session.sessionIndex || session.id })
+  ), [t]);
+
+  const formatSessionDate = useCallback((value, fallback = '-') => {
+    if (!value) return fallback;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return t('attendance.fallbacks.unknownDate');
+    return date.toLocaleDateString(language, { month: 'short', day: 'numeric' });
+  }, [language, t]);
 
   const handleKeyDown = useCallback(
     (event, studentId, sessionId) => {
@@ -126,9 +140,9 @@ const VirtualizedAttendanceTable = ({
 
       return {
         studentId,
-        studentName: student?.fullName || 'Unknown',
-        sessionId,
-        sessionTitle: session?.title,
+	        studentName: student?.fullName || t('attendance.cardView.unknownStudent'),
+	        sessionId,
+	        sessionTitle: getSessionTitle(session),
         sessionDate: session?.startsAt,
         currentStatus,
         isSelected: false,
@@ -138,7 +152,7 @@ const VirtualizedAttendanceTable = ({
         onStatusChange,
       };
     },
-    [students, sessions, attendanceData, onStatusChange]
+	    [students, sessions, attendanceData, onStatusChange, t, getSessionTitle]
   );
 
   useEffect(() => {
@@ -161,7 +175,7 @@ const VirtualizedAttendanceTable = ({
             style={{ gridTemplateColumns: `200px repeat(${sessions.length}, 80px) 100px` }}
           >
             <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-              Студент
+	              {t('attendance.metrics.students')}
             </div>
 
             {sessions.map((session) => (
@@ -170,21 +184,16 @@ const VirtualizedAttendanceTable = ({
                 className="text-center text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400"
               >
                 <div className="truncate">
-                  {session.title || `Сессия ${session.sessionIndex}`}
+	                  {getSessionTitle(session)}
                 </div>
                 <div className="text-xs text-gray-400 dark:text-gray-500">
-                  {session.startsAt
-                    ? new Date(session.startsAt).toLocaleDateString('ky-KG', {
-                      month: 'short',
-                      day: 'numeric',
-                    })
-                    : '-'}
+	                  {formatSessionDate(session.startsAt)}
                 </div>
               </div>
             ))}
 
             <div className="text-center text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-              Жыйынтык
+	              {t('attendance.table.summary')}
             </div>
           </div>
         </div>
@@ -227,7 +236,7 @@ const VirtualizedAttendanceTable = ({
                 >
                   <div className="flex items-center gap-3 p-3">
                     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
-                      {(student.fullName || 'Unknown')
+	                      {(student.fullName || t('attendance.cardView.unknownStudent'))
                         .split(' ')
                         .filter(Boolean)
                         .map((n) => n[0])

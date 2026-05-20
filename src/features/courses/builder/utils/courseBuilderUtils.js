@@ -200,19 +200,19 @@ export const getStepItems = (currentStep, courseInfo, curriculum, t) => {
     return [
         {
             key: 'info',
-            label: label('info', 'Курс маалыматы'),
+            label: label('info', 'Course information'),
             completed: step1Completed,
             enabled: true, // Always allow navigation
         },
         {
             key: 'curriculum',
-            label: label('curriculum', 'Окуу мазмуну'),
+            label: label('curriculum', 'Learning content'),
             completed: step2Completed,
             enabled: true, // Always allow navigation
         },
         {
             key: 'media',
-            label: label('media', 'Медиа жана башкаруу'),
+            label: label('media', 'Media and management'),
             completed: currentStep > 2,
             enabled: true, // Always allow navigation
         },

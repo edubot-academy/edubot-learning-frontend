@@ -1,4 +1,6 @@
 import { toast } from 'react-hot-toast';
+import i18n from '../../../i18n';
+import { parseApiError } from '@shared/api/error';
 
 /**
  * Standardized error handling utilities for attendance features
@@ -15,34 +17,30 @@ export const getAttendanceErrorMessage = (error) => {
   
   // HTTP status code specific messages
   if (status === 401) {
-    return 'Сессия мөөнөтү бүттү. Кайра кириңиз.';
+    return i18n.t('attendance.errors.sessionExpired');
   }
   
   if (status === 403) {
-    return 'Бул аракетке уруксатыңыз жок.';
+    return i18n.t('attendance.errors.forbidden');
   }
   
   if (status === 404) {
-    return 'Тандалган группа же сессия табылган жок.';
+    return i18n.t('attendance.errors.notFound');
   }
   
   if (status === 422) {
-    const message = error?.response?.data?.message;
-    if (Array.isArray(message)) return message.join(', ');
-    return message || 'Текшерүү катасы болду.';
+    return i18n.t('attendance.errors.validation');
   }
   
   if (status === 429) {
-    return 'Аракеттер саны ашты. Кээ бир убакыттан кийин кайта аракет кылыңыз.';
+    return i18n.t('attendance.errors.rateLimited');
   }
   
   if (status >= 500) {
-    return 'Сервер катасы болду. Кайта аракет кылыңыз.';
+    return i18n.t('attendance.errors.server');
   }
 
-  // Fallback to response message or default
-  const fallback = error?.response?.data?.message || error?.message || 'Белгисиз ката кетти.';
-  return Array.isArray(fallback) ? fallback.join(', ') : fallback;
+  return parseApiError(error, i18n.t('errors.generic')).message;
 };
 
 /**
@@ -52,8 +50,8 @@ export const getAttendanceErrorMessage = (error) => {
  * @param {Object} options - Additional options
  */
 export const handleAttendanceError = (
-  error, 
-  fallbackMessage = 'Ката кетти', 
+  error,
+  fallbackMessage = i18n.t('errors.generic'),
   options = {}
 ) => {
   const {
@@ -196,7 +194,7 @@ export const debounce = (func, delay) => {
  * @returns {string} Formatted student name
  */
 export const formatStudentName = (student) => {
-  return student?.fullName || student?.name || 'Белгисиз студент';
+  return student?.fullName || student?.name || i18n.t('attendance.cardView.unknownStudent');
 };
 
 /**
@@ -205,7 +203,9 @@ export const formatStudentName = (student) => {
  * @returns {string} Formatted session title
  */
 export const formatSessionTitle = (session) => {
-  return session?.title || `Сессия ${session?.sessionIndex || session?.id || ''}`;
+  return session?.title || i18n.t('attendance.fallbacks.sessionWithId', {
+    id: session?.sessionIndex || session?.id || '',
+  });
 };
 
 /**
@@ -216,7 +216,7 @@ export const formatSessionTitle = (session) => {
  */
 export const formatDate = (date, options = {}) => {
   const {
-    locale = 'ky-KG',
+    locale = i18n.language || undefined,
     includeTime = false,
     format = 'short',
   } = options;
@@ -224,7 +224,7 @@ export const formatDate = (date, options = {}) => {
   if (!date) return '-';
 
   const parsedDate = new Date(date);
-  if (Number.isNaN(parsedDate.getTime())) return 'Күнү белгисиз';
+  if (Number.isNaN(parsedDate.getTime())) return i18n.t('attendance.fallbacks.unknownDate');
 
   const formatOptions = {
     month: format === 'short' ? 'short' : 'long',

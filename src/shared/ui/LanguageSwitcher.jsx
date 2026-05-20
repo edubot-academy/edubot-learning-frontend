@@ -110,7 +110,7 @@ const LanguageSwitcher = ({ placement = 'bottom' }) => {
                                         : ''
                                 }`}
                             >
-                                {locale.value === 'ky' ? 'KG' : locale.value.toUpperCase()}
+                                {locale.value.toUpperCase()}
                             </button>
                         ))}
                     </div>

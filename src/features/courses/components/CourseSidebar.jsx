@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 import { FiChevronDown, FiVideo, FiFileText, FiDownload, FiCode } from 'react-icons/fi';
 import { formatDuration } from '../../../utils/timeUtils';
 import { formatReadTime, getResourceMeta } from '../../../utils/lessonUtils';
@@ -15,6 +16,7 @@ const CourseSidebar = ({
     lessonRefs,
     headerContent = null,
 }) => {
+    const { t } = useTranslation();
     const handleResourceDownload = (event, url) => {
         event.stopPropagation();
         event.preventDefault();
@@ -32,7 +34,9 @@ const CourseSidebar = ({
             {headerContent ? (
                 <div className="mb-4">{headerContent}</div>
             ) : (
-                <h2 className="text-xl font-semibold mb-4">Курстун мазмуну</h2>
+                <h2 className="text-xl font-semibold mb-4">
+                    {t('public.courseShared.sidebar.title')}
+                </h2>
             )}
 
             {sections.map((section) => {
@@ -66,9 +70,9 @@ const CourseSidebar = ({
                                     const isQuiz = lesson.kind === 'quiz';
                                     const isCode = lesson.kind === 'code';
                                     const durationLabel = isQuiz
-                                        ? 'Квиз'
+                                        ? t('public.courseShared.lessonKinds.quiz')
                                         : isCode
-                                            ? 'Код тапшырма'
+                                            ? t('public.courseShared.lessonKinds.code')
                                             : isArticle
                                                 ? formatReadTime(lesson.duration)
                                                 : formatDuration(lesson.duration);
@@ -183,17 +187,17 @@ const CourseSidebar = ({
                                                     !enrolled && (
                                                         <span
                                                             className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded"
-                                                            title="Ачык сабак"
+                                                            title={t('public.courseShared.sidebar.previewTitle')}
                                                         >
-                                                            Превью
+                                                            {t('public.courseShared.sidebar.preview')}
                                                         </span>
                                                     )}
                                                 {lesson.locked && (
                                                     <span
                                                         className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded"
-                                                        title="Курс жазылуусу талап кылынат"
+                                                        title={t('public.courseShared.sidebar.lockedTitle')}
                                                     >
-                                                        Жабык
+                                                        {t('public.courseShared.sidebar.locked')}
                                                     </span>
                                                 )}
                                             </div>

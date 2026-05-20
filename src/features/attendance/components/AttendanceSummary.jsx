@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import {
   FiTrendingUp,
@@ -24,6 +25,18 @@ const AttendanceSummary = ({
   showSessionBreakdown = false,
   className = '',
 }) => {
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage || i18n.language || undefined;
+
+  const getSessionTitle = (session = {}) =>
+    session.title || t('attendance.fallbacks.sessionWithId', { id: session.sessionIndex || session.id });
+
+  const formatSessionDate = (value) => {
+    if (!value) return t('attendance.fallbacks.unknownDate');
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return t('attendance.fallbacks.unknownDate');
+    return date.toLocaleDateString(language, { month: 'short', day: 'numeric', year: 'numeric' });
+  };
   const statistics = useMemo(() => {
     if (!students.length || !sessions.length) {
       return {
@@ -227,8 +240,8 @@ const AttendanceSummary = ({
   return (
     <div className={`space-y-6 ${className}`}>
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-        <DashboardMetricCard
-          label="Жалпы катышуу"
+	        <DashboardMetricCard
+	          label={t('attendance.summary.totalAttendance')}
           value={`${statistics.attendanceRate.toFixed(1)}%`}
           icon={FiPercent}
           tone={
@@ -240,29 +253,29 @@ const AttendanceSummary = ({
           }
         />
 
-        <DashboardMetricCard
-          label="Катышты"
+	        <DashboardMetricCard
+	          label={t('attendance.status.present')}
           value={statistics.totals.present}
           icon={FiUsers}
           tone="green"
         />
 
-        <DashboardMetricCard
-          label="Кечикти"
+	        <DashboardMetricCard
+	          label={t('attendance.status.late')}
           value={statistics.totals.late}
           icon={FiCalendar}
           tone="amber"
         />
 
-        <DashboardMetricCard
-          label="Келген жок"
+	        <DashboardMetricCard
+	          label={t('attendance.status.absent')}
           value={statistics.totals.absent}
           icon={FiUsers}
           tone="red"
         />
 
-        <DashboardMetricCard
-          label="Себептүү"
+	        <DashboardMetricCard
+	          label={t('attendance.status.excused')}
           value={statistics.totals.excused}
           icon={FiCalendar}
           tone="blue"
@@ -272,13 +285,13 @@ const AttendanceSummary = ({
       {showTrends && statistics.trends && trendMeta && (
         <div className="dashboard-panel-muted rounded-2xl p-4">
           <h3 className="mb-4 text-sm font-semibold text-gray-900 dark:text-white">
-            Катышуу тенденциялары
+	            {t('attendance.summary.trends')}
           </h3>
 
           <div className="grid gap-4 lg:grid-cols-3">
             <div className="flex items-center gap-3">
               <div className="text-sm text-gray-600 dark:text-gray-400">
-                Катышуу %:
+	                {t('attendance.summary.attendanceRate')}
               </div>
 
               <div className="flex items-center gap-2">
@@ -301,7 +314,7 @@ const AttendanceSummary = ({
       {showStudentBreakdown && (
         <div className="dashboard-panel-muted rounded-2xl p-4">
           <h3 className="mb-4 text-sm font-semibold text-gray-900 dark:text-white">
-            Студенттердин катышуу категориялары
+	            {t('attendance.summary.studentCategories')}
           </h3>
 
           <div className="grid gap-4 lg:grid-cols-5">
@@ -310,7 +323,7 @@ const AttendanceSummary = ({
                 {studentPerformanceCategories.excellent.count}
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-400">
-                Мыкты (90-100%)
+	                {t('attendance.summary.categories.excellent')}
               </div>
             </div>
 
@@ -319,7 +332,7 @@ const AttendanceSummary = ({
                 {studentPerformanceCategories.good.count}
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-400">
-                Жакшы (75-89%)
+	                {t('attendance.summary.categories.good')}
               </div>
             </div>
 
@@ -328,7 +341,7 @@ const AttendanceSummary = ({
                 {studentPerformanceCategories.fair.count}
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-400">
-                Орточо (50-74%)
+	                {t('attendance.summary.categories.fair')}
               </div>
             </div>
 
@@ -337,7 +350,7 @@ const AttendanceSummary = ({
                 {studentPerformanceCategories.poor.count}
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-400">
-                Начар (&lt;50%)
+	                {t('attendance.summary.categories.poor')}
               </div>
             </div>
 
@@ -346,7 +359,7 @@ const AttendanceSummary = ({
                 {studentPerformanceCategories.noData.count}
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-400">
-                Маалымат жок
+	                {t('attendance.summary.categories.noData')}
               </div>
             </div>
           </div>
@@ -356,7 +369,7 @@ const AttendanceSummary = ({
       {showSessionBreakdown && sessionPerformanceAnalysis.length > 0 && (
         <div className="dashboard-panel-muted rounded-2xl p-4">
           <h3 className="mb-4 text-sm font-semibold text-gray-900 dark:text-white">
-            Сессиялар боюнча катышуу
+	            {t('attendance.summary.bySession')}
           </h3>
 
           <div className="space-y-3">
@@ -367,16 +380,10 @@ const AttendanceSummary = ({
                 <div key={session.id} className="flex items-center justify-between">
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-medium text-gray-900 dark:text-white">
-                      {session.title || `Сессия ${session.sessionIndex}`}
+	                      {getSessionTitle(session)}
                     </div>
                     <div className="text-xs text-gray-500 dark:text-gray-400">
-                      {session.startsAt
-                        ? new Date(session.startsAt).toLocaleDateString('ky-KG', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                        })
-                        : 'Күнү белгисиз'}
+	                      {formatSessionDate(session.startsAt)}
                     </div>
                   </div>
 

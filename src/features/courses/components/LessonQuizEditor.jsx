@@ -14,10 +14,10 @@ const LessonQuizEditor = ({ quiz, onChange, disabled = false }) => {
 
     const appendFormattingToken = (value, type) => {
         if (type === 'bold') {
-            return `${value || ''}${value ? ' ' : ''}**калың текст**`;
+            return `${value || ''}${value ? ' ' : ''}**${t('instructorDashboard.courseBuilder.quiz.boldInsertSample')}**`;
         }
 
-        return `${value || ''}${value ? ' ' : ''}\`код\``;
+        return `${value || ''}${value ? ' ' : ''}\`${t('instructorDashboard.courseBuilder.quiz.codeInsertSample')}\``;
     };
 
     const handlePassingScoreChange = (value) => {

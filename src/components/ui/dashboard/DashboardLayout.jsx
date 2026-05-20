@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import SkipNavigation from '../SkipNavigation';
 import DashboardSidebar from '@features/dashboard/components/DashboardSidebar';
 
@@ -11,6 +12,7 @@ const DashboardLayout = ({
   headerContent,
   className = '',
 }) => {
+  const { t } = useTranslation();
   const activeId = navItems.find((item) => item.isActive)?.id || navItems[0]?.id;
 
   const handleSidebarSelect = (id) => {
@@ -51,7 +53,7 @@ const DashboardLayout = ({
               id="main-content"
               tabIndex={-1}
               role="main"
-              aria-label={`${role} dashboard content`}
+              aria-label={t('dashboardLayout.contentAria', { role })}
             >
               {headerContent}
               {children}

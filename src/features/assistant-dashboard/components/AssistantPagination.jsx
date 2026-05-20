@@ -1,4 +1,8 @@
+import { useTranslation } from 'react-i18next';
+
 const AssistantPagination = ({ currentPage, totalPages, loading, setCurrentPage }) => {
+    const { t } = useTranslation();
+
     if (totalPages <= 1) return null;
 
     const visiblePages = [...Array(totalPages).keys()].filter(
@@ -15,7 +19,7 @@ const AssistantPagination = ({ currentPage, totalPages, loading, setCurrentPage 
                 disabled={currentPage === 1 || loading}
                 className="dashboard-button-secondary disabled:opacity-50"
             >
-                ⟨ Мурунку
+                {t('assistantDashboard.pagination.previous')}
             </button>
 
             {visiblePages.map((page, idx) => (
@@ -43,7 +47,7 @@ const AssistantPagination = ({ currentPage, totalPages, loading, setCurrentPage 
                 disabled={currentPage === totalPages || loading}
                 className="dashboard-button-secondary disabled:opacity-50"
             >
-                Кийинки ⟩
+                {t('assistantDashboard.pagination.next')}
             </button>
         </div>
     );

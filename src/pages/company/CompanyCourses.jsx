@@ -17,16 +17,10 @@ import { isCourseTypeAllowedForTenant } from '@shared/utils/tenantFeatures';
 import { isPlatformAdmin } from '@shared/utils/roles';
 import { useTranslation } from 'react-i18next';
 import { parseApiError } from '@shared/api/error';
+import { getCourseTypeLabel } from '@shared/i18n/enumLabels';
 
 const PAGE_SIZE = 20;
 const ATTACH_SEARCH_LIMIT = 25;
-
-const getCourseTypeLabel = (course, t) => {
-    const type = String(course?.courseType || course?.type || '').toLowerCase();
-    return t(`company.courses.types.${type}`, {
-        defaultValue: t('company.courses.types.course'),
-    });
-};
 
 const getCourseStatusLabel = (course, t) => {
     if (course?.status) {
@@ -69,7 +63,7 @@ const getDisabledMessage = (courseType, t) => {
 const CourseMeta = ({ course, restricted = false, t, language }) => (
     <div className="mt-1 flex flex-wrap gap-1.5 text-xs">
         <span className="rounded-full bg-edubot-surfaceAlt px-2 py-0.5 text-edubot-muted dark:bg-slate-800 dark:text-slate-300">
-            {getCourseTypeLabel(course, t)}
+            {getCourseTypeLabel(course?.courseType || course?.type, t)}
         </span>
         <span className="rounded-full bg-edubot-surfaceAlt px-2 py-0.5 text-edubot-muted dark:bg-slate-800 dark:text-slate-300">
             {getCourseStatusLabel(course, t)}

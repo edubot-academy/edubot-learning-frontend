@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { CiPlay1, CiPause1, CiVolumeHigh, CiVolumeMute } from 'react-icons/ci';
 import { IoSettingsOutline } from 'react-icons/io5';
 import { BsFullscreen, BsFullscreenExit } from 'react-icons/bs';
@@ -60,6 +61,7 @@ const VideoPlayerUI = ({
     onQualityChange,
     isLoading,
 }) => {
+    const { t } = useTranslation();
     const [isMuted, setIsMuted] = useState(false);
     const [volume, setVolume] = useState(1);
     const [duration, setDuration] = useState(0);
@@ -70,7 +72,6 @@ const VideoPlayerUI = ({
     const [showFeedback, setShowFeedback] = useState(true);
     const feedbackTimeoutRef = useRef(null);
 
-    // Добавляем refs для перетаскивания
     const isDraggingRef = useRef(false);
     const progressBarRef = useRef(null);
 
@@ -91,7 +92,6 @@ const VideoPlayerUI = ({
         setShowFeedback(true);
         clearTimeout(feedbackTimeoutRef.current);
 
-        // Показываем индикатор всегда при взаимодействии
         feedbackTimeoutRef.current = setTimeout(() => {
             setShowFeedback(false);
         }, 3000);
@@ -169,7 +169,6 @@ const VideoPlayerUI = ({
         return `${m}:${s}`;
     }, []);
 
-    // Функции для перетаскивания прогресс-бара
     const handleProgressMouseDown = useCallback((e) => {
         e.stopPropagation();
         isDraggingRef.current = true;
@@ -207,7 +206,6 @@ const VideoPlayerUI = ({
         (e) => {
             e.stopPropagation();
 
-            // Если это клик (не перетаскивание), обрабатываем
             if (!isDraggingRef.current) {
                 const v = videoRef.current;
                 if (!v || !v.duration || !progressBarRef.current) return;
@@ -228,7 +226,6 @@ const VideoPlayerUI = ({
         if (!v) return;
 
         const handleTimeUpdate = () => {
-            // Обновляем currentTime только если не перетаскиваем
             if (!isDraggingRef.current) {
                 setCurrentTime(v.currentTime);
                 onTimeUpdate?.(v.currentTime);
@@ -324,13 +321,11 @@ const VideoPlayerUI = ({
         [onQualityChange]
     );
 
-    // Слушаем событие play/pause для скрытия индикатора
     useEffect(() => {
         const v = videoRef.current;
         if (!v) return;
 
         const handlePlay = () => {
-            // Скрываем индикатор через 3 секунды после начала воспроизведения
             clearTimeout(feedbackTimeoutRef.current);
             feedbackTimeoutRef.current = setTimeout(() => {
                 setShowFeedback(false);
@@ -338,7 +333,6 @@ const VideoPlayerUI = ({
         };
 
         const handlePause = () => {
-            // Показываем индикатор при паузе
             setShowFeedback(true);
             clearTimeout(feedbackTimeoutRef.current);
         };
@@ -398,7 +392,7 @@ const VideoPlayerUI = ({
                             type="button"
                             onClick={togglePlay}
                             className="hover:opacity-80"
-                            aria-label={isPlaying ? 'Pause' : 'Play'}
+                            aria-label={isPlaying ? t('videoPlayer.pause') : t('videoPlayer.play')}
                         >
                             {isPlaying ? (
                                 <CiPause1 className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -411,11 +405,11 @@ const VideoPlayerUI = ({
                             type="button"
                             onClick={() => seek(-15)}
                             className="hover:opacity-80"
-                            aria-label="Rewind 15"
+                            aria-label={t('videoPlayer.rewind15')}
                         >
                             <img
                                 src={Rewind15sekBack}
-                                alt="rewind 15"
+                                alt={t('videoPlayer.rewind15')}
                                 className="w-4 h-4 sm:w-5 sm:h-5"
                             />
                         </button>
@@ -424,11 +418,11 @@ const VideoPlayerUI = ({
                             type="button"
                             onClick={() => seek(15)}
                             className="hover:opacity-80"
-                            aria-label="Forward 15"
+                            aria-label={t('videoPlayer.forward15')}
                         >
                             <img
                                 src={Rewind15sekForward}
-                                alt="forward 15"
+                                alt={t('videoPlayer.forward15')}
                                 className="w-4 h-4 sm:w-5 sm:h-5"
                             />
                         </button>
@@ -440,7 +434,7 @@ const VideoPlayerUI = ({
                                     e.stopPropagation();
                                     setShowVolumeSlider(!showVolumeSlider);
                                 }}
-                                aria-label="Volume"
+                                aria-label={t('videoPlayer.volume')}
                             >
                                 {isMuted || volume === 0 ? (
                                     <CiVolumeMute className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -483,7 +477,7 @@ const VideoPlayerUI = ({
                                     e.stopPropagation();
                                     setOpenMenu(!openMenu);
                                 }}
-                                aria-label="Quality"
+                                aria-label={t('videoPlayer.quality')}
                             >
                                 <IoSettingsOutline className="w-4 h-4 sm:w-5 sm:h-5" />
                             </button>
@@ -495,7 +489,7 @@ const VideoPlayerUI = ({
                                 >
                                     {(qualityOptions?.length
                                         ? qualityOptions
-                                        : [{ id: 'auto', label: 'Auto' }]
+                                        : [{ id: 'auto', label: t('videoPlayer.autoQuality') }]
                                     ).map((item) => (
                                         <button
                                             key={item.id}
@@ -515,7 +509,7 @@ const VideoPlayerUI = ({
                             type="button"
                             onClick={toggleFullscreen}
                             className="hover:opacity-80 mb-1"
-                            aria-label="Fullscreen"
+                            aria-label={fullScreen ? t('videoPlayer.exitFullscreen') : t('videoPlayer.fullscreen')}
                         >
                             {fullScreen ? (
                                 <BsFullscreenExit className="w-3 h-3 sm:w-4 sm:h-4" />

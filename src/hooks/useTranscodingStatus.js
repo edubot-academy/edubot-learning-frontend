@@ -1,7 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
+import i18n from '../i18n';
+import { parseApiError } from '@shared/api/error';
 
 const POLL_INTERVAL_MS = 5000; // Poll every 5 seconds
 const TERMINAL_STATUSES = ['ready', 'failed', 'missing'];
+const getStatusFetchError = (error) =>
+  parseApiError(error, i18n.t('adminCourses.transcode.errors.statusFetchFailed')).message;
+const getPlaybackError = () => i18n.t('adminCourses.transcode.errors.playbackFailed');
 
 /**
  * Hook to poll for transcoding status updates.
@@ -50,7 +55,7 @@ export const useTranscodingStatus = (lessonId, initialStatus, fetchStatusFn, ena
         if (isMounted) {
           setStatus(result.playbackStatus);
           if (result.playbackStatus === 'failed' && result.playbackError) {
-            setError(result.playbackError);
+            setError(getPlaybackError());
           } else {
             setError(null);
           }
@@ -58,7 +63,7 @@ export const useTranscodingStatus = (lessonId, initialStatus, fetchStatusFn, ena
       } catch (err) {
         if (isMounted) {
           console.error('Failed to fetch transcoding status:', err);
-          setError('Unable to fetch transcoding status');
+          setError(getStatusFetchError(err));
         }
       }
     };
@@ -80,13 +85,13 @@ export const useTranscodingStatus = (lessonId, initialStatus, fetchStatusFn, ena
       const result = await fetchStatusFn(lessonId);
       setStatus(result.playbackStatus);
       if (result.playbackStatus === 'failed' && result.playbackError) {
-        setError(result.playbackError);
+        setError(getPlaybackError());
       } else {
         setError(null);
       }
     } catch (err) {
       console.error('Manual refresh failed:', err);
-      setError('Unable to fetch transcoding status');
+      setError(getStatusFetchError(err));
     }
   };
 

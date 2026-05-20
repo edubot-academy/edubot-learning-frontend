@@ -33,20 +33,23 @@ describe('locale helpers', () => {
         expect(normalizeLocale('fr-FR')).toBe(DEFAULT_LOCALE);
     });
 
-    it('resolves locale from stored value before tenant and browser defaults', () => {
+    it('resolves locale from stored value before browser defaults', () => {
         expect(
             resolveLocale({
                 storedLocale: 'ru',
-                tenantLocale: 'en',
                 browserLocale: 'ky-KG',
             })
         ).toBe('ru');
     });
 
-    it('falls back through tenant, browser, then default locale', () => {
-        expect(resolveLocale({ tenantLocale: 'en-US', browserLocale: 'ru-RU' })).toBe('en');
-        expect(resolveLocale({ tenantLocale: 'fr-FR', browserLocale: 'ru-RU' })).toBe('ru');
-        expect(resolveLocale({ tenantLocale: 'fr-FR', browserLocale: 'de-DE' })).toBe('ky');
+    it('falls back through browser, then default locale', () => {
+        expect(resolveLocale({ browserLocale: 'ru-RU' })).toBe('ru');
+        expect(resolveLocale({ browserLocale: 'de-DE' })).toBe('ky');
+    });
+
+    it('does not use tenant locale for main app UI resolution', () => {
+        expect(resolveLocale({ tenantLocale: 'en-US', browserLocale: 'ru-RU' })).toBe('ru');
+        expect(getResolvedLocale({ tenantLocale: 'en-US', browserLocale: 'ru-RU' })).toBe('ru');
     });
 
     it('persists only supported short locale codes', () => {
@@ -73,8 +76,6 @@ describe('locale helpers', () => {
     it('uses injected storage when resolving the current app locale', () => {
         const storage = createStorage({ [LOCALE_STORAGE_KEY]: 'ru-RU' });
 
-        expect(getResolvedLocale({ tenantLocale: 'en', browserLocale: 'ky-KG', storage })).toBe(
-            'ru'
-        );
+        expect(getResolvedLocale({ browserLocale: 'ky-KG', storage })).toBe('ru');
     });
 });

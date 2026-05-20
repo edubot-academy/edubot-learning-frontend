@@ -22,7 +22,7 @@ export const useDashboardKeyboardNavigation = () => {
                     case 's': {
                         event.preventDefault();
                         const searchInput = document.querySelector(
-                            'input[placeholder*="издөө" i], input[type="search"]'
+                            '[data-dashboard-search], input[type="search"]'
                         );
                         searchInput?.focus();
                         searchInput?.scrollIntoView({ behavior: 'smooth' });

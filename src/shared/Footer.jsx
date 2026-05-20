@@ -8,13 +8,14 @@ import { getWhatsAppUrl, SUPPORT_CONTACT } from '@shared/config/support';
 const Footer = () => {
     const { t } = useTranslation();
     const year = new Date().getFullYear();
+    const [brandPrefix, ...brandRest] = SUPPORT_CONTACT.brandName.split(' ');
 
     return (
         <footer className="bg-white text-black dark:bg-[#141619] dark:text-[#E8ECF3] py-12 px-4 sm:px-6 lg:px-12 border-t border-gray-300 dark:border-[#2A2E35] p-5">
             <div className="mx-auto flex max-w-7xl flex-col items-start space-y-12">
                 <h2 className="hidden md:block text-5xl font-normal text-center tracking-wide w-full">
-                    <span className="font-extrabold text-[#EA580C]">EDUBOT </span>
-                    LEARNING
+                    <span className="font-extrabold text-[#EA580C]">{brandPrefix} </span>
+                    {brandRest.join(' ')}
                 </h2>
 
                 <div className="w-full flex flex-col md:flex-row justify-between items-start md:items-center gap-20">
@@ -79,7 +80,7 @@ const Footer = () => {
                                 {t('footer.address')}
                             </h3>
                             <p className="text-sm text-gray-700 dark:text-[#a6adba]">
-                                {SUPPORT_CONTACT.addressShort}
+                                {t(SUPPORT_CONTACT.addressShortKey)}
                             </p>
                         </div>
                     </div>

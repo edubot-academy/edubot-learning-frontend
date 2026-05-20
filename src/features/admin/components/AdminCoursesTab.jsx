@@ -16,6 +16,8 @@ import useTranscodingStatus from '@hooks/useTranscodingStatus';
 import TranscodingStatusBadge from '@features/courses/components/TranscodingStatusBadge';
 import RetryTranscodeButton from '@features/courses/components/RetryTranscodeButton';
 import { ADMIN_COURSES_TAB_SECTIONS } from '../utils/adminPanel.constants';
+import { parseApiError } from '@shared/api/error';
+import { getCourseTypeLabel, getDeliveryModeLabel } from '@shared/i18n/enumLabels';
 
 const COURSE_WORKFLOWS = Object.freeze([
     {
@@ -34,22 +36,6 @@ const COURSE_WORKFLOWS = Object.freeze([
         descriptionKey: 'adminCourses.workflows.media.description',
     },
 ]);
-
-const getCourseTypeLabel = (courseType, t) => {
-    switch (courseType) {
-        case 'offline':
-            return t('adminPendingCourses.courseTypes.offline');
-        case 'online_live':
-            return t('adminPendingCourses.courseTypes.onlineLive');
-        default:
-            return t('adminPendingCourses.courseTypes.video');
-    }
-};
-
-const getDeliveryModeLabel = (value, t) =>
-    value === 'individual'
-        ? t('adminCourses.deliveryModes.individual')
-        : t('adminCourses.deliveryModes.group');
 
 const getDeliveryModeClass = (value) =>
     value === 'individual'
@@ -130,7 +116,7 @@ const AdminCoursesTab = ({
                         recordTranscodeEvent({
                             type: 'error',
                             label: t('adminCourses.transcode.history.singleStartFailed'),
-                            detail: err?.message || t('adminCourses.fallback.unknownError'),
+                            detail: parseApiError(err, t('adminCourses.fallback.unknownError')).message,
                         });
                     }
                 })();
@@ -148,7 +134,7 @@ const AdminCoursesTab = ({
                         recordTranscodeEvent({
                             type: 'error',
                             label: t('adminCourses.transcode.history.bulkStartFailed'),
-                            detail: err?.message || t('adminCourses.fallback.unknownError'),
+                            detail: parseApiError(err, t('adminCourses.fallback.unknownError')).message,
                         });
                     }
                 })();

@@ -30,15 +30,7 @@ import {
     resolveInstructorName,
     resolveRecordings,
 } from '../../utils/studentDashboard.helpers.js';
-
-const COURSE_TYPE_LABEL_KEYS = {
-    video: 'studentDashboard.schedule.courseTypes.video',
-    offline: 'studentDashboard.schedule.courseTypes.offline',
-    online_live: 'studentDashboard.schedule.courseTypes.onlineLive',
-};
-
-const getCourseTypeLabel = (type, t) =>
-    t(COURSE_TYPE_LABEL_KEYS[type] || 'studentDashboard.schedule.courseTypes.video');
+import { getCourseTypeLabel } from '@shared/i18n/enumLabels';
 
 const ScheduleTab = ({ offerings, recordings }) => {
     const { i18n, t } = useTranslation();

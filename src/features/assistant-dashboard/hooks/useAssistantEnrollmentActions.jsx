@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import {
     enrollUserInCourse,
@@ -6,7 +7,7 @@ import {
 } from '@services/api';
 import { normalizeEnrollmentCourseType } from '@features/enrollments/policy';
 
-const confirmToast = (message, onConfirm, confirmClass = 'bg-blue-600 hover:bg-blue-700') => {
+const confirmToast = (message, onConfirm, labels, confirmClass = 'bg-blue-600 hover:bg-blue-700') => {
     toast((toastInstance) => (
         <div>
             <div className="mb-2">{message}</div>
@@ -19,14 +20,14 @@ const confirmToast = (message, onConfirm, confirmClass = 'bg-blue-600 hover:bg-b
                     }}
                     className={`px-3 py-1 text-white rounded ${confirmClass}`}
                 >
-                    Ооба
+                    {labels.confirm}
                 </button>
                 <button
                     type="button"
                     onClick={() => toast.dismiss(toastInstance.id)}
                     className="px-3 py-1 border rounded hover:bg-gray-100"
                 >
-                    Жок
+                    {labels.cancel}
                 </button>
             </div>
         </div>
@@ -39,6 +40,7 @@ export const useAssistantEnrollmentActions = ({
     onEnrollSuccess,
     onUnenrollSuccess,
 }) => {
+    const { t } = useTranslation();
     const [pendingEnrollmentAction, setPendingEnrollmentAction] = useState(null);
     const [lastEnrollmentFeedback, setLastEnrollmentFeedback] = useState(null);
 
@@ -47,14 +49,17 @@ export const useAssistantEnrollmentActions = ({
 
     const handleEnroll = useCallback(
         async (student, selectedCourseId) => {
-            const courseTitle = coursesById[selectedCourseId]?.title ?? 'курс';
+            const courseTitle = coursesById[selectedCourseId]?.title ?? t('assistantDashboard.enrollment.courseFallback');
             const mutationContext = getMutationContext();
             const actionKey = getActionKey(student.id, selectedCourseId, 'enroll');
 
             confirmToast(
                 <>
-                    <span className="font-bold">{student.fullName}</span> студентин{' '}
-                    <span className="font-bold">{courseTitle}</span> курсуна каттоо — макулсузбу?
+                    <Trans
+                        i18nKey="assistantDashboard.enrollment.confirmEnroll"
+                        values={{ student: student.fullName, course: courseTitle }}
+                        components={{ strong: <span className="font-bold" /> }}
+                    />
                 </>,
                 async () => {
                     setPendingEnrollmentAction(actionKey);
@@ -63,7 +68,10 @@ export const useAssistantEnrollmentActions = ({
                         studentId: student.id,
                         courseId: Number(selectedCourseId),
                         type: 'pending',
-                        message: `${student.fullName} студентин "${courseTitle}" курсуна каттоо жүрүп жатат.`,
+                        message: t('assistantDashboard.enrollment.enrollPending', {
+                            student: student.fullName,
+                            course: courseTitle,
+                        }),
                     });
                     try {
                         await enrollUserInCourse(student.id, selectedCourseId, {
@@ -74,7 +82,11 @@ export const useAssistantEnrollmentActions = ({
 
                         toast.success(
                             <span>
-                                <span className="font-bold">{student.fullName}</span> курска ийгиликтүү катталды
+                                <Trans
+                                    i18nKey="assistantDashboard.enrollment.enrollSuccessToast"
+                                    values={{ student: student.fullName }}
+                                    components={{ strong: <span className="font-bold" /> }}
+                                />
                             </span>
                         );
 
@@ -84,36 +96,49 @@ export const useAssistantEnrollmentActions = ({
                             studentId: student.id,
                             courseId: Number(selectedCourseId),
                             type: 'success',
-                            message: `${student.fullName} "${courseTitle}" курсуна катталды.`,
+                            message: t('assistantDashboard.enrollment.enrollSuccessFeedback', {
+                                student: student.fullName,
+                                course: courseTitle,
+                            }),
                         });
                     } catch {
-                        toast.error('Курска каттоодо ката кетти');
+                        toast.error(t('assistantDashboard.enrollment.enrollErrorToast'));
                         setLastEnrollmentFeedback({
                             actionKey,
                             studentId: student.id,
                             courseId: Number(selectedCourseId),
                             type: 'error',
-                            message: `${student.fullName} студентин "${courseTitle}" курсуна каттоо ишке ашкан жок.`,
+                            message: t('assistantDashboard.enrollment.enrollErrorFeedback', {
+                                student: student.fullName,
+                                course: courseTitle,
+                            }),
                         });
                     } finally {
                         setPendingEnrollmentAction(null);
                     }
+                },
+                {
+                    confirm: t('assistantDashboard.enrollment.confirmAction'),
+                    cancel: t('common.cancel'),
                 }
             );
         },
-        [coursesById, getActionKey, getMutationContext, onEnrollSuccess]
+        [coursesById, getActionKey, getMutationContext, onEnrollSuccess, t]
     );
 
     const handleUnenroll = useCallback(
         (student, courseId) => {
-            const courseTitle = coursesById[courseId]?.title ?? 'курс';
+            const courseTitle = coursesById[courseId]?.title ?? t('assistantDashboard.enrollment.courseFallback');
             const mutationContext = getMutationContext();
             const actionKey = getActionKey(student.id, courseId, 'unenroll');
 
             confirmToast(
                 <>
-                    <span className="font-bold">{student.fullName}</span> студентин{' '}
-                    <span className="font-bold">{courseTitle}</span> курсунан чыгаруу — макулсузбу?
+                    <Trans
+                        i18nKey="assistantDashboard.enrollment.confirmUnenroll"
+                        values={{ student: student.fullName, course: courseTitle }}
+                        components={{ strong: <span className="font-bold" /> }}
+                    />
                 </>,
                 async () => {
                     setPendingEnrollmentAction(actionKey);
@@ -122,13 +147,20 @@ export const useAssistantEnrollmentActions = ({
                         studentId: student.id,
                         courseId: Number(courseId),
                         type: 'pending',
-                        message: `${student.fullName} студентин "${courseTitle}" курсунан чыгаруу жүрүп жатат.`,
+                        message: t('assistantDashboard.enrollment.unenrollPending', {
+                            student: student.fullName,
+                            course: courseTitle,
+                        }),
                     });
                     try {
                         await unenrollUserFromCourse(student.id, courseId);
                         toast.success(
                             <span>
-                                <span className="font-bold">{student.fullName}</span> курстан ийгиликтүү чыгарылды
+                                <Trans
+                                    i18nKey="assistantDashboard.enrollment.unenrollSuccessToast"
+                                    values={{ student: student.fullName }}
+                                    components={{ strong: <span className="font-bold" /> }}
+                                />
                             </span>
                         );
                         onUnenrollSuccess(student.id, Number(courseId), mutationContext);
@@ -137,25 +169,35 @@ export const useAssistantEnrollmentActions = ({
                             studentId: student.id,
                             courseId: Number(courseId),
                             type: 'success',
-                            message: `${student.fullName} "${courseTitle}" курсунан чыгарылды.`,
+                            message: t('assistantDashboard.enrollment.unenrollSuccessFeedback', {
+                                student: student.fullName,
+                                course: courseTitle,
+                            }),
                         });
                     } catch {
-                        toast.error('Курстан чыгарууда ката кетти');
+                        toast.error(t('assistantDashboard.enrollment.unenrollErrorToast'));
                         setLastEnrollmentFeedback({
                             actionKey,
                             studentId: student.id,
                             courseId: Number(courseId),
                             type: 'error',
-                            message: `${student.fullName} студентин "${courseTitle}" курсунан чыгаруу ишке ашкан жок.`,
+                            message: t('assistantDashboard.enrollment.unenrollErrorFeedback', {
+                                student: student.fullName,
+                                course: courseTitle,
+                            }),
                         });
                     } finally {
                         setPendingEnrollmentAction(null);
                     }
                 },
+                {
+                    confirm: t('assistantDashboard.enrollment.confirmAction'),
+                    cancel: t('common.cancel'),
+                },
                 'bg-red-600 hover:bg-red-700'
             );
         },
-        [coursesById, getActionKey, getMutationContext, onUnenrollSuccess]
+        [coursesById, getActionKey, getMutationContext, onUnenrollSuccess, t]
     );
 
     return {

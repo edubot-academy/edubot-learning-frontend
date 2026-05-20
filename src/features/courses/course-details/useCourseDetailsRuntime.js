@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import debounce from 'lodash.debounce';
 import toast from 'react-hot-toast';
+import i18n from '../../../i18n';
 import {
     fetchCourseDetails,
     fetchSections,
@@ -54,13 +55,16 @@ export const useLessonQuiz = ({ courseId, activeLesson, onEnrollmentAccessError,
                 if (
                     onEnrollmentAccessError(
                         err,
-                        'Квизге жетүү үчүн курска активдүү жеткиликтүүлүк керек.'
+                        i18n.t('public.courseDetails.runtime.access.quizLoad')
                     )
                 ) {
                     return;
                 }
                 console.error(err);
-                const message = err.response?.data?.message || 'Квиз жүктөлбөй калды';
+                const message = parseApiError(
+                    err,
+                    i18n.t('public.courseDetails.runtime.errors.quizLoad')
+                ).message;
                 toast.error(message);
             } finally {
                 setQuizLoading(false);
@@ -113,12 +117,12 @@ export const useLessonQuiz = ({ courseId, activeLesson, onEnrollmentAccessError,
             });
 
             if (preparedAnswers && !hasAnsweredQuestions) {
-                toast.error('Сураныч, жок дегенде бир суроого жооп бериңиз.');
+                toast.error(i18n.t('public.courseDetails.runtime.errors.answerAtLeastOne'));
                 return;
             }
 
             if (!preparedAnswers && hasUnansweredQuestions) {
-                toast.error('Бардык суроолорго жооп бериңиз.');
+                toast.error(i18n.t('public.courseDetails.runtime.errors.answerAll'));
                 return;
             }
 
@@ -146,8 +150,10 @@ export const useLessonQuiz = ({ courseId, activeLesson, onEnrollmentAccessError,
 
                         toast.success(
                             updatedResult.passed
-                                ? 'Куттуктайбыз! Квиз ийгиликтүү тапшырылды.'
-                                : `Кайра аракет кылып көрүңүз. Сиз ${updatedResult.score}% түздүңүз.`
+                                ? i18n.t('public.courseDetails.runtime.quiz.passed')
+                                : i18n.t('public.courseDetails.runtime.quiz.failedWithScore', {
+                                      score: updatedResult.score,
+                                  })
                         );
 
                         if (updatedResult.passed) {
@@ -161,21 +167,23 @@ export const useLessonQuiz = ({ courseId, activeLesson, onEnrollmentAccessError,
                 setLessonQuizResults((prev) => ({ ...prev, [activeLesson.id]: result }));
                 toast.success(
                     result.passed
-                        ? 'Куттуктайбыз! Квиз ийгиликтүү тапшырылды.'
-                        : 'Кайра аракет кылып көрүңүз.'
+                        ? i18n.t('public.courseDetails.runtime.quiz.passed')
+                        : i18n.t('public.courseDetails.runtime.quiz.failed')
                 );
                 onLessonComplete(activeLesson.id);
             } catch (err) {
                 if (
                     onEnrollmentAccessError(
                         err,
-                        'Квизди тапшыруу үчүн курска активдүү жеткиликтүүлүк керек.'
+                        i18n.t('public.courseDetails.runtime.access.quizSubmit')
                     )
                 ) {
                     return;
                 }
                 console.error(err);
-                toast.error(err.response?.data?.message || 'Квизди тапшыруу мүмкүн болбоду');
+                toast.error(
+                    parseApiError(err, i18n.t('public.courseDetails.runtime.errors.quizSubmit')).message
+                );
             } finally {
                 setQuizSubmitting(false);
             }
@@ -244,13 +252,16 @@ export const useLessonChallenge = ({
                 if (
                     onEnrollmentAccessError(
                         err,
-                        'Код тапшырмага жетүү үчүн курска активдүү жеткиликтүүлүк керек.'
+                        i18n.t('public.courseDetails.runtime.access.challengeLoad')
                     )
                 ) {
                     return null;
                 }
                 console.error(err);
-                const message = err.response?.data?.message || 'Код тапшырма жүктөлбөй калды';
+                const message = parseApiError(
+                    err,
+                    i18n.t('public.courseDetails.runtime.errors.challengeLoad')
+                ).message;
                 toast.error(message);
                 return null;
             } finally {
@@ -294,19 +305,25 @@ export const useLessonChallenge = ({
                 code: codeValue,
                 result,
             });
-            toast.success(result.passed ? 'Бардык тесттер өттү!' : 'Кээ бир тесттер өтпөй калды');
+            toast.success(
+                result.passed
+                    ? i18n.t('public.courseDetails.runtime.challenge.passed')
+                    : i18n.t('public.courseDetails.runtime.challenge.failed')
+            );
             onLessonComplete(activeLesson.id);
         } catch (err) {
             if (
                 onEnrollmentAccessError(
                     err,
-                    'Код тапшырманы тапшыруу үчүн курска активдүү жеткиликтүүлүк керек.'
+                    i18n.t('public.courseDetails.runtime.access.challengeSubmit')
                 )
             ) {
                 return;
             }
             console.error(err);
-            toast.error(err.response?.data?.message || 'Код тапшырма текшерилген жок');
+            toast.error(
+                parseApiError(err, i18n.t('public.courseDetails.runtime.errors.challengeSubmit')).message
+            );
         } finally {
             setChallengeSubmitting(false);
         }
@@ -360,7 +377,7 @@ export const useArticleAutoComplete = ({
                 if (
                     onEnrollmentAccessError(
                         err,
-                        'Бул сабакты белгилөө үчүн курска активдүү жеткиликтүүлүк керек.'
+                        i18n.t('public.courseDetails.runtime.access.markArticleComplete')
                     )
                 ) {
                     return;
@@ -407,7 +424,7 @@ export const useCourseVideoProgress = ({
                 onPersistVideoTime(
                     activeLessonRef.current.id,
                     time,
-                    'Видеонун жүрүшүн сактоо үчүн курска активдүү жеткиликтүүлүк керек.'
+                    i18n.t('public.courseDetails.runtime.access.videoProgressSave')
                 );
             }
         }, 3000),
@@ -453,7 +470,7 @@ export const useCourseVideoProgress = ({
                     if (
                         onEnrollmentAccessError(
                             err,
-                            'Сабакты аяктоо үчүн курска активдүү жеткиликтүүлүк керек.'
+                            i18n.t('public.courseDetails.runtime.access.completeLesson')
                         )
                     ) {
                         return;
@@ -488,7 +505,7 @@ export const useCourseVideoProgress = ({
                 onPersistVideoTime(
                     activeLessonRef.current.id,
                     currentTime,
-                    'Видеонун жүрүшүн сактоо үчүн курска активдүү жеткиликтүүлүк керек.'
+                    i18n.t('public.courseDetails.runtime.access.videoProgressSave')
                 );
             }
         },
@@ -511,9 +528,9 @@ export const useCourseVideoProgress = ({
             } catch (err) {
                 if (
                     onEnrollmentAccessError(
-                        err,
-                        'Сабакты аяктоо үчүн курска активдүү жеткиликтүүлүк керек.'
-                    )
+                    err,
+                    i18n.t('public.courseDetails.runtime.access.completeLesson')
+                )
                 ) {
                     return;
                 }
@@ -615,7 +632,7 @@ export const useInitialCourseDetailsLoad = ({
                         if (
                             !handleEnrollmentAccessError(
                                 err,
-                                'Курстун прогрессин көрүү үчүн активдүү жеткиликтүүлүк керек.'
+                                i18n.t('public.courseDetails.runtime.access.courseProgress')
                             )
                         ) {
                             throw err;
@@ -639,7 +656,7 @@ export const useInitialCourseDetailsLoad = ({
                         if (
                             !handleEnrollmentAccessError(
                                 err,
-                                'Соңку көрүлгөн сабакты алуу үчүн активдүү жеткиликтүүлүк керек.'
+                                i18n.t('public.courseDetails.runtime.access.lastViewedLesson')
                             )
                         ) {
                             throw err;
@@ -687,7 +704,7 @@ export const useInitialCourseDetailsLoad = ({
                                 if (
                                     !handleEnrollmentAccessError(
                                         err,
-                                        'Видеону улантуу үчүн активдүү жеткиликтүүлүк керек.'
+                                        i18n.t('public.courseDetails.runtime.access.resumeVideo')
                                     )
                                 ) {
                                     throw err;
@@ -705,7 +722,7 @@ export const useInitialCourseDetailsLoad = ({
                     setActiveSectionId(sectionIdToOpen);
                 }
             } catch (err) {
-                setError(err.message || 'Курс жүктөлбөй калды.');
+                setError(parseApiError(err, i18n.t('public.courseDetails.runtime.errors.courseLoad')).message);
             } finally {
                 setLoading(false);
             }
@@ -961,7 +978,7 @@ export const useCourseDetailsController = ({ courseId, searchParams, user }) => 
                     if (
                         handleEnrollmentAccessError(
                             err,
-                            'Бул сабакты улантуу үчүн курска активдүү жеткиликтүүлүк керек.'
+                            i18n.t('public.courseDetails.runtime.access.resumeLesson')
                         )
                     ) {
                         return;
@@ -1015,7 +1032,7 @@ export const useCourseDetailsController = ({ courseId, searchParams, user }) => 
                         const didResetVideoTime = await persistVideoTime(
                             lesson.id,
                             0,
-                            'Видеонун жүрүшүн сактоо үчүн курска активдүү жеткиликтүүлүк керек.',
+                            i18n.t('public.courseDetails.runtime.access.videoProgressSave'),
                             { rethrow: true }
                         );
                         if (!didResetVideoTime) return;
@@ -1029,7 +1046,7 @@ export const useCourseDetailsController = ({ courseId, searchParams, user }) => 
                 if (
                     handleEnrollmentAccessError(
                         err,
-                        'Сабактын прогрессин өзгөртүү үчүн курска активдүү жеткиликтүүлүк керек.'
+                        i18n.t('public.courseDetails.runtime.access.lessonProgressChange')
                     )
                 ) {
                     return;
@@ -1058,14 +1075,16 @@ export const useCourseDetailsController = ({ courseId, searchParams, user }) => 
         (enrolled || isCourseInstructor || isAdmin)
     );
     const assistantAvailableMessage = !isAiFeatureEnabled
-        ? 'EDU AI ассистенти бул tenant үчүн өчүрүлгөн.'
+        ? i18n.t('public.courseDetails.assistant.unavailableTenant')
         : course?.aiAssistantEnabled
-          ? 'Ассистентти колдонуу үчүн курска жазылуу керек.'
-          : 'EDU AI ассистенти бул курста өчүрүлгөн.';
+          ? i18n.t('public.courseDetails.assistant.enrollmentRequired')
+          : i18n.t('public.courseDetails.assistant.unavailableCourse');
 
     const tabs = [
-        { id: 'program', label: 'Курстун программасы', disabled: false },
-        ...(isAiAvailable ? [{ id: 'assistant', label: 'Edu AI Assistent', disabled: false }] : []),
+        { id: 'program', label: i18n.t('public.courseDetails.tabs.program'), disabled: false },
+        ...(isAiAvailable
+            ? [{ id: 'assistant', label: i18n.t('public.courseDetails.tabs.assistant'), disabled: false }]
+            : []),
     ];
 
     const handleTabChange = useCallback((tab) => {

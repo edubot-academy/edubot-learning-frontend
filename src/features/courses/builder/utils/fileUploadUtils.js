@@ -3,6 +3,7 @@
 
 import { getVideoDuration } from '../../../../utils/videoUtils';
 import { updateLessonUploadProgress, setLessonUploading } from './sectionUtils';
+import i18n from '../../../../i18n';
 
 /**
  * Validates file before upload
@@ -12,14 +13,20 @@ import { updateLessonUploadProgress, setLessonUploading } from './sectionUtils';
  */
 export const validateFileForUpload = (file, type) => {
     if (!file) {
-        return { valid: false, error: 'Файл тандалган жок' };
+        return {
+            valid: false,
+            error: i18n.t('instructorDashboard.courseBuilder.fileValidation.noFile'),
+        };
     }
 
     // Check file type
     if (type === 'video') {
         const videoTypes = ['video/mp4', 'video/webm', 'video/avi', 'video/mov', 'video/mkv'];
         if (!videoTypes.includes(file.type)) {
-            return { valid: false, error: 'Видео файлын тандаңыз (MP4, WebM, AVI, MOV, MKV)' };
+            return {
+                valid: false,
+                error: i18n.t('instructorDashboard.courseBuilder.fileValidation.invalidVideo'),
+            };
         }
     }
 
@@ -27,7 +34,12 @@ export const validateFileForUpload = (file, type) => {
     const maxSize = type === 'image' ? 5 * 1024 * 1024 : 2 * 1024 * 1024 * 1024; // 2GB for videos
     if (file.size > maxSize) {
         const maxSizeMB = Math.round(maxSize / (1024 * 1024));
-        return { valid: false, error: `Файл өлчөмү ${maxSizeMB}MB ашпашы керек` };
+        return {
+            valid: false,
+            error: i18n.t('instructorDashboard.courseBuilder.fileValidation.fileTooLarge', {
+                size: maxSizeMB,
+            }),
+        };
     }
 
     return { valid: true };
@@ -40,15 +52,24 @@ export const validateFileForUpload = (file, type) => {
  */
 export const validateCoverImage = (file) => {
     if (!file) {
-        return { valid: false, error: 'Сүрөт файлын тандаңыз' };
+        return {
+            valid: false,
+            error: i18n.t('instructorDashboard.courseBuilder.fileValidation.noImage'),
+        };
     }
 
     if (!file.type.startsWith('image/')) {
-        return { valid: false, error: 'Сураныч, сүрөт файлын тандаңыз.' };
+        return {
+            valid: false,
+            error: i18n.t('instructorDashboard.courseBuilder.fileValidation.invalidImage'),
+        };
     }
 
     if (file.size > 5 * 1024 * 1024) {
-        return { valid: false, error: 'Сүрөт көлөмү 5MB ашпашы керек.' };
+        return {
+            valid: false,
+            error: i18n.t('instructorDashboard.courseBuilder.fileValidation.imageTooLarge'),
+        };
     }
 
     return { valid: true };

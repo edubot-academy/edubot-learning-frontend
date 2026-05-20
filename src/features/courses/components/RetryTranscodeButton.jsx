@@ -5,6 +5,8 @@
  * Handles loading state and error feedback to user.
  */
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { parseApiError } from '@shared/api/error';
 
 const RetryTranscodeButton = ({
   courseId,
@@ -15,21 +17,27 @@ const RetryTranscodeButton = ({
   onSuccess = null,
   className = '',
 }) => {
+  const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const [retryError, setRetryError] = useState(null);
 
   const handleRetry = async () => {
+    const validationMessages = new Set([
+      t('adminCourses.transcode.retry.errors.missingIds'),
+      t('adminCourses.transcode.retry.errors.missingHandler'),
+    ]);
+
     try {
       setIsLoading(true);
       setRetryError(null);
 
       // Validate required IDs
       if (!courseId || !sectionId || !lessonId) {
-        throw new Error('Missing course, section, or lesson ID required for retry');
+        throw new Error(t('adminCourses.transcode.retry.errors.missingIds'));
       }
 
       if (!retryFn) {
-        throw new Error('Retry function not provided');
+        throw new Error(t('adminCourses.transcode.retry.errors.missingHandler'));
       }
 
       // Call the retry function with course context
@@ -40,7 +48,9 @@ const RetryTranscodeButton = ({
         onSuccess();
       }
     } catch (error) {
-      const errorMessage = error?.message || 'Failed to retry transcoding. Please try again.';
+      const errorMessage = validationMessages.has(error?.message)
+        ? error.message
+        : parseApiError(error, t('adminCourses.transcode.retry.errors.failed')).message;
       setRetryError(errorMessage);
       
       if (onError) {
@@ -64,15 +74,15 @@ const RetryTranscodeButton = ({
           transition-colors duration-200
           ${className}
         `}
-        title="Retry the video transcoding process"
+        title={t('adminCourses.transcode.retry.title')}
       >
         {isLoading ? (
           <>
             <span className="inline-block mr-2 w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-            Retrying...
+            {t('adminCourses.transcode.retry.loading')}
           </>
         ) : (
-          <>🔄 Retry Transcoding</>
+          <>{t('adminCourses.transcode.retry.button')}</>
         )}
       </button>
 

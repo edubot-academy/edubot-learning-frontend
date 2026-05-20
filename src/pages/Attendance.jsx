@@ -27,6 +27,7 @@ import {
     UnifiedAttendanceTable,
     useAttendanceWorkspace,
 } from '../features/attendance';
+import { getDeliveryModeLabel } from '@shared/i18n/enumLabels';
 
 const statusOptions = [
     { value: SESSION_ATTENDANCE_STATUS.PRESENT, labelKey: 'attendance.status.present', icon: FiCheckCircle },
@@ -61,9 +62,6 @@ const statusMeta = {
         tone: 'sky',
     },
 };
-
-const getDeliveryModeLabel = (value, t) =>
-    value === 'individual' ? t('attendance.delivery.individual') : t('attendance.delivery.group');
 
 const getDeliveryModeBadgeClass = (value) =>
     value === 'individual'

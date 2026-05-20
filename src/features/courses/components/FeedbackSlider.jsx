@@ -1,9 +1,11 @@
 import useEmblaCarousel from 'embla-carousel-react';
 import { useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import CardFeedback from '../../marketing/components/CardFeedback';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 
 const FeedbackSlider = ({ data }) => {
+    const { t } = useTranslation();
     const [emblaRef, emblaApi] = useEmblaCarousel({
         align: 'start',
         dragFree: false,
@@ -28,7 +30,7 @@ const FeedbackSlider = ({ data }) => {
                     type="button"
                     onClick={() => emblaApi?.scrollPrev()}
                     className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 transition hover:border-orange-300 hover:text-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 dark:border-gray-700 dark:bg-[#222222] dark:text-white"
-                    aria-label="Мурунку пикир"
+                    aria-label={t('public.courseShared.feedback.previous')}
                 >
                     <FiChevronLeft aria-hidden="true" />
                 </button>
@@ -36,7 +38,7 @@ const FeedbackSlider = ({ data }) => {
                     type="button"
                     onClick={() => emblaApi?.scrollNext()}
                     className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 transition hover:border-orange-300 hover:text-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 dark:border-gray-700 dark:bg-[#222222] dark:text-white"
-                    aria-label="Кийинки пикир"
+                    aria-label={t('public.courseShared.feedback.next')}
                 >
                     <FiChevronRight aria-hidden="true" />
                 </button>

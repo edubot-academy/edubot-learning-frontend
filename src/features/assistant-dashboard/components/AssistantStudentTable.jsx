@@ -1,4 +1,5 @@
 
+import { useTranslation } from 'react-i18next';
 import {
     DashboardFilterBar,
     DashboardInsetPanel,
@@ -34,42 +35,44 @@ const AssistantStudentTable = ({
     lastEnrollmentFeedback,
     pendingEnrollmentAction,
 }) => {
+    const { t } = useTranslation();
+
     const emptyStateCopy = (() => {
         if (isSearchTooShort) {
             return {
-                title: 'Издөө үчүн маалымат жетишсиз',
-                subtitle: 'Натыйжаларды көрсөтүү үчүн кеминде 3 белги киргизиңиз.',
+                title: t('assistantDashboard.students.empty.searchTooShort.title'),
+                subtitle: t('assistantDashboard.students.empty.searchTooShort.subtitle'),
             };
         }
         if (search.trim().length >= 3) {
             return {
-                title: 'Издөөгө туура келген студент табылган жок',
-                subtitle: 'Атын, email дарегин же фильтр контекстин өзгөртүп көрүңүз.',
+                title: t('assistantDashboard.students.empty.noSearchResults.title'),
+                subtitle: t('assistantDashboard.students.empty.noSearchResults.subtitle'),
             };
         }
         if (!courses.length) {
             return {
-                title: 'Каттоо үчүн жарыяланган курс жок',
-                subtitle: 'Курстар жарыялангандан кийин ассистент студенттерди каттай алат.',
+                title: t('assistantDashboard.students.empty.noCourses.title'),
+                subtitle: t('assistantDashboard.students.empty.noCourses.subtitle'),
             };
         }
         return {
-            title: 'Бекитилген студенттер жок',
-            subtitle: 'Компанияга бекитилген студенттер пайда болгондо бул жерде көрсөтүлөт.',
+            title: t('assistantDashboard.students.empty.noStudents.title'),
+            subtitle: t('assistantDashboard.students.empty.noStudents.subtitle'),
         };
     })();
 
     return (
         <div className="space-y-6">
             <DashboardWorkspaceHero
-                eyebrow="Assistant workspace"
-                title="Студент каттоо агымы"
-                description="Компаниядагы студенттерди көрүп, жеткиликтүү курстарга тез каттап же чыгарыңыз."
+                eyebrow={t('assistantDashboard.students.hero.eyebrow')}
+                title={t('assistantDashboard.students.hero.title')}
+                description={t('assistantDashboard.students.hero.description')}
                 metrics={(
                     <>
-                        <DashboardMetricCard label="Жалпы студенттер" value={totalStudents} icon={FiUsers} />
-                        <DashboardMetricCard label="Катталган студенттер" value={enrolledStudents.length} icon={FiCheckCircle} tone="green" />
-                        <DashboardMetricCard label="Жарыяланган курстар" value={courses.length} icon={FiBookOpen} tone="blue" />
+                        <DashboardMetricCard label={t('assistantDashboard.metrics.totalStudents')} value={totalStudents} icon={FiUsers} />
+                        <DashboardMetricCard label={t('assistantDashboard.metrics.enrolledStudents')} value={enrolledStudents.length} icon={FiCheckCircle} tone="green" />
+                        <DashboardMetricCard label={t('assistantDashboard.metrics.publishedCourses')} value={courses.length} icon={FiBookOpen} tone="blue" />
                     </>
                 )}
                 metricsClassName="grid grid-cols-1 gap-3 sm:grid-cols-3"
@@ -79,7 +82,7 @@ const AssistantStudentTable = ({
                         <FiSearch className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-edubot-muted" />
                         <input
                             type="text"
-                            placeholder="Студент атын же email изде..."
+                            placeholder={t('assistantDashboard.students.searchPlaceholder')}
                             className="dashboard-field dashboard-field-icon"
                             value={search}
                             onChange={(e) => {
@@ -90,7 +93,7 @@ const AssistantStudentTable = ({
                         />
                         {isSearchTooShort && (
                             <p className="mt-2 text-xs text-edubot-muted dark:text-slate-400">
-                                Издөө үчүн кеминде 3 белги киргизиңиз.
+                                {t('assistantDashboard.students.searchTooShortHelp')}
                             </p>
                         )}
                     </label>
@@ -104,8 +107,8 @@ const AssistantStudentTable = ({
             />
 
             <DashboardInsetPanel
-                title="Студенттер тизмеси"
-                description="Ар бир студент үчүн активдүү курстарды көрүп, жаңы курс тандап каттоо аракетин аткарыңыз."
+                title={t('assistantDashboard.students.list.title')}
+                description={t('assistantDashboard.students.list.description')}
             >
                 {lastEnrollmentFeedback && (
                     <div
@@ -124,7 +127,7 @@ const AssistantStudentTable = ({
 
                 {loading ? (
                     <div className="dashboard-panel-muted p-10 text-center text-sm text-edubot-muted dark:text-slate-400">
-                        Жүктөлүүдө...
+                        {t('common.loading')}
                     </div>
                 ) : students.length === 0 ? (
                     <EmptyState
@@ -200,18 +203,21 @@ const AssistantStudentTable = ({
                                                                     className="rounded-full bg-red-600 px-2 py-0.5 text-[11px] font-semibold text-white hover:bg-red-700"
                                                                     disabled={pendingEnrollmentAction === getActionKey(student.id, courseId, 'unenroll')}
                                                                     onClick={() => handleUnenroll(student, courseId)}
-                                                                    aria-label={`${student.fullName} студентин ${course.title} курсунан чыгаруу`}
-                                                                    title="Курстан чыгаруу"
+                                                                    aria-label={t('assistantDashboard.students.unenrollAria', {
+                                                                        student: student.fullName,
+                                                                        course: course.title,
+                                                                    })}
+                                                                    title={t('assistantDashboard.students.unenrollTitle')}
                                                                 >
                                                                     {pendingEnrollmentAction === getActionKey(student.id, courseId, 'unenroll')
-                                                                        ? 'Чыгарылууда...'
-                                                                        : 'Чыгаруу'}
+                                                                        ? t('assistantDashboard.students.unenrolling')
+                                                                        : t('assistantDashboard.students.unenroll')}
                                                                 </button>
                                                             </div>
                                                         );
                                                     })
                                                 ) : (
-                                                    <StatusBadge tone="default">Катталган курс жок</StatusBadge>
+                                                    <StatusBadge tone="default">{t('assistantDashboard.students.noEnrolledCourse')}</StatusBadge>
                                                 )}
                                             </div>
                                         </div>
@@ -220,7 +226,7 @@ const AssistantStudentTable = ({
                                             {availableCourses.length > 0 ? (
                                                 <div>
                                                     <label htmlFor={`assistant-course-${student.id}`} className="mb-1 block text-xs font-semibold text-edubot-muted dark:text-slate-400">
-                                                        Каттай турган курс
+                                                        {t('assistantDashboard.students.courseSelectLabel')}
                                                     </label>
                                                     <select
                                                         id={`assistant-course-${student.id}`}
@@ -233,7 +239,7 @@ const AssistantStudentTable = ({
                                                             }))
                                                         }
                                                     >
-                                                        <option value="">-- Тандоо --</option>
+                                                        <option value="">{t('assistantDashboard.students.courseSelectPlaceholder')}</option>
                                                         {availableCourses.map((course) => (
                                                             <option key={course.id} value={course.id}>
                                                                 {course.title}
@@ -242,13 +248,15 @@ const AssistantStudentTable = ({
                                                     </select>
                                                     {selectedCourse && (
                                                         <p className="mt-1 text-xs text-edubot-muted dark:text-slate-400">
-                                                            Тандалды: {selectedCourse.title}
+                                                            {t('assistantDashboard.students.selectedCourse', {
+                                                                course: selectedCourse.title,
+                                                            })}
                                                         </p>
                                                     )}
                                                 </div>
                                             ) : (
                                                 <div className="text-sm italic text-edubot-muted dark:text-slate-400">
-                                                    Бардык курстарга катталган
+                                                    {t('assistantDashboard.students.allCoursesEnrolled')}
                                                 </div>
                                             )}
 
@@ -261,7 +269,9 @@ const AssistantStudentTable = ({
                                                     handleEnroll(student, selectedCourseId);
                                                 }}
                                             >
-                                                {isEnrolling ? 'Катталууда...' : 'Каттоо'}
+                                                {isEnrolling
+                                                    ? t('assistantDashboard.students.enrolling')
+                                                    : t('assistantDashboard.students.enroll')}
                                             </button>
                                         </div>
                                     </div>

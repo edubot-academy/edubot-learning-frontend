@@ -155,7 +155,7 @@ const ProfileTab = ({
                                         {preview ? (
                                             <img
                                                 src={preview}
-                                                alt="Avatar preview"
+                                                alt={t('studentDashboard.profile.account.avatarPreviewAlt')}
                                                 className="h-full w-full object-cover"
                                             />
                                         ) : (
@@ -254,7 +254,7 @@ const ProfileTab = ({
                                         {preview ? (
                                             <img
                                                 src={preview}
-                                                alt="Avatar preview"
+                                                alt={t('studentDashboard.profile.account.avatarPreviewAlt')}
                                                 className="h-full w-full object-cover"
                                             />
                                         ) : (

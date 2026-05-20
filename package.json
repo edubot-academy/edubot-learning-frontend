@@ -1,12 +1,13 @@
 {
     "name": "edubot-learning-frontend",
     "private": true,
-    "version": "1.13.8",
+    "version": "1.13.9",
     "type": "module",
     "scripts": {
         "dev": "vite",
         "build": "vite build",
         "lint": "eslint .",
+        "audit:localization": "node scripts/audit-localization.js",
         "preview": "vite preview",
         "format": "prettier --write .",
         "test": "vitest run",

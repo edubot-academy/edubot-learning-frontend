@@ -49,6 +49,7 @@ import { getDashboardPath } from '@shared/utils/navigation';
 import { LOCALE_OPTIONS, getLocaleLabel, normalizeLocale } from '../../../i18n/locale';
 import { useTranslation } from 'react-i18next';
 import { parseApiError } from '@shared/api/error';
+import { getCourseTypeLabel } from '@shared/i18n/enumLabels';
 
 const TABS = [
     {
@@ -304,13 +305,6 @@ const courseStatusLabel = (course, t) => {
             : 'draft';
     return t(`company.courses.status.${status}`, {
         defaultValue: status.replace(/_/g, ' '),
-    });
-};
-
-const courseTypeLabel = (courseType, t) => {
-    const type = String(courseType || 'course').toLowerCase();
-    return t(`company.courses.types.${type}`, {
-        defaultValue: t('company.courses.types.course'),
     });
 };
 
@@ -1511,7 +1505,7 @@ export default function PlatformTenantDetail() {
                                                                     t(
                                                                         'company.courses.platform.noInstructor'
                                                                     )}{' '}
-                                                                · {courseTypeLabel(
+                                                                · {getCourseTypeLabel(
                                                                     course.courseType,
                                                                     t
                                                                 )}
@@ -1585,7 +1579,7 @@ export default function PlatformTenantDetail() {
                                                             t('company.detail.notSet')}
                                                     </td>
                                                     <td className="px-4 py-3 text-edubot-muted dark:text-slate-400">
-                                                        {courseTypeLabel(course.courseType, t)}
+                                                        {getCourseTypeLabel(course.courseType, t)}
                                                     </td>
                                                     <td className="px-4 py-3">
                                                         <span className="rounded-full border border-edubot-line px-2.5 py-1 text-xs font-semibold text-edubot-ink dark:border-slate-700 dark:text-white">
@@ -1859,7 +1853,8 @@ export default function PlatformTenantDetail() {
                                                                 key: value,
                                                             })
                                                         }
-                                                        placeholder="custom.feature.enabled"
+                                                        // l10n-audit-ignore: feature flag key example
+                                                        placeholder={'custom.feature.enabled'}
                                                     />
                                                     <div className="self-end">
                                                         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-edubot-muted dark:text-slate-400">

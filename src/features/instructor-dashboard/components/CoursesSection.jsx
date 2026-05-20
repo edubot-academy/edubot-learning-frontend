@@ -1,6 +1,7 @@
-
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { getDashboardPath } from '@shared/utils/navigation';
+import { getCourseTypeLabel } from '@shared/i18n/enumLabels';
 import {
     EmptyState,
     DashboardCardSkeleton,
@@ -22,6 +23,7 @@ const CoursesSection = ({
     onOpenDeliveryEditModal,
     onSubmitCourseForApproval,
 }) => {
+    const { t, i18n } = useTranslation();
     const publishedCount = courses.filter((course) => course.isPublished).length;
     const pendingCount = courses.filter((course) => course.status === 'pending').length;
     const totalStudents = courses.reduce(
@@ -32,27 +34,27 @@ const CoursesSection = ({
     const getStatusMeta = (course) => {
         if (course.status === 'approved' || course.isPublished) {
             return {
-                label: 'Бекитилди',
+                label: t('instructorDashboard.coursesSection.status.approved'),
                 badgeClass: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300',
             };
         }
 
         if (course.status === 'pending') {
             return {
-                label: 'Каралууда',
+                label: t('instructorDashboard.coursesSection.status.pending'),
                 badgeClass: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300',
             };
         }
 
         if (course.status === 'rejected') {
             return {
-                label: 'Баш тартылган',
+                label: t('instructorDashboard.coursesSection.status.rejected'),
                 badgeClass: 'bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300',
             };
         }
 
         return {
-            label: 'Черновик',
+            label: t('instructorDashboard.coursesSection.status.draft'),
             badgeClass: 'bg-slate-100 text-slate-700 dark:bg-slate-500/15 dark:text-slate-300',
         };
     };
@@ -60,9 +62,9 @@ const CoursesSection = ({
     return (
         <div className="space-y-6">
             <DashboardSectionHeader
-                eyebrow="Courses workspace"
-                title="Курстарым"
-                description="Жарыяланган жана каралуудагы курстарды көзөмөлдөп, жаңы видео же оффлайн/live багыттарды ушул жерден башкарыңыз."
+                eyebrow={t('instructorDashboard.coursesSection.hero.eyebrow')}
+                title={t('instructorDashboard.coursesSection.hero.title')}
+                description={t('instructorDashboard.coursesSection.hero.description')}
                 action={(
                     <div className="flex flex-wrap items-center gap-2">
                         <button
@@ -71,7 +73,7 @@ const CoursesSection = ({
                             className="dashboard-button-secondary"
                         >
                             <FiLayers className="h-4 w-4" />
-                            Оффлайн/Live курс
+                            {t('instructorDashboard.coursesSection.actions.createDeliveryCourse')}
                         </button>
 
                         <Link
@@ -79,7 +81,7 @@ const CoursesSection = ({
                             className="dashboard-button-primary"
                         >
                             <FiPlus className="h-4 w-4" />
-                            Жаңы курс
+                            {t('instructorDashboard.coursesSection.actions.newCourse')}
                         </Link>
                     </div>
                 )}
@@ -87,24 +89,24 @@ const CoursesSection = ({
 
             <div className="grid gap-4 md:grid-cols-4">
                 <DashboardMetricCard
-                    label="Бардык курстар"
+                    label={t('instructorDashboard.coursesSection.metrics.totalCourses')}
                     value={courses.length}
                     icon={FiBookOpen}
                 />
                 <DashboardMetricCard
-                    label="Жарыяланган"
+                    label={t('instructorDashboard.coursesSection.metrics.published')}
                     value={publishedCount}
                     icon={FiUsers}
                     tone="green"
                 />
                 <DashboardMetricCard
-                    label="Каралууда"
+                    label={t('instructorDashboard.coursesSection.metrics.pending')}
                     value={pendingCount}
                     icon={FiClock}
                     tone="amber"
                 />
                 <DashboardMetricCard
-                    label="Студенттер"
+                    label={t('instructorDashboard.coursesSection.metrics.students')}
                     value={totalStudents}
                     icon={FiUsers}
                     tone="blue"
@@ -112,8 +114,8 @@ const CoursesSection = ({
             </div>
 
             <DashboardInsetPanel
-                title="Курс тизмеси"
-                description="Ар бир курстун абалын, категориясын жана акыркы жаңыртылган убактысын ушул жерден көрүңүз."
+                title={t('instructorDashboard.coursesSection.list.title')}
+                description={t('instructorDashboard.coursesSection.list.description')}
             >
                 <div className="mt-4">
                     {loading && !courses.length ? (
@@ -157,29 +159,32 @@ const CoursesSection = ({
                                                 </div>
 
                                                 <p className="mt-4 line-clamp-2 text-sm text-edubot-muted dark:text-slate-400">
-                                                    {course.description || 'Сүрөттөмө жок'}
+                                                    {course.description ||
+                                                        t('instructorDashboard.coursesSection.card.noDescription')}
                                                 </p>
 
                                                 <div className="mt-4 flex flex-wrap items-center gap-2">
                                                     <span className="rounded-full bg-edubot-orange/10 px-2.5 py-1 text-xs font-medium text-edubot-orange dark:bg-edubot-orange/20">
-                                                        {course.category?.name || course.category || 'Категориясыз'}
+                                                        {course.category?.name ||
+                                                            course.category ||
+                                                            t('instructorDashboard.coursesSection.card.uncategorized')}
                                                     </span>
                                                     <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                                                        {course.courseType === 'offline'
-                                                            ? 'Оффлайн'
-                                                            : course.courseType === 'online_live'
-                                                                ? 'Онлайн түз эфир'
-                                                                : 'Видео'}
+                                                        {getCourseTypeLabel(course.courseType, t)}
                                                     </span>
                                                     <span className="text-xs text-edubot-muted dark:text-slate-400">
-                                                        {course.price ? `${course.price} сом` : 'Акысыз'}
+                                                        {course.price
+                                                            ? t('instructorDashboard.coursesSection.card.price', {
+                                                                price: course.price,
+                                                            })
+                                                            : t('instructorDashboard.coursesSection.card.free')}
                                                     </span>
                                                 </div>
 
                                                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
                                                     <div className="rounded-2xl border border-edubot-line/70 bg-edubot-surfaceAlt/60 px-4 py-3 dark:border-slate-700 dark:bg-slate-900/70">
                                                         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
-                                                            Студенттер
+                                                            {t('instructorDashboard.coursesSection.card.students')}
                                                         </p>
                                                         <p className="mt-2 text-lg font-semibold text-edubot-ink dark:text-white">
                                                             {course.studentsCount ? `${course.studentsCount}` : '—'}
@@ -187,12 +192,12 @@ const CoursesSection = ({
                                                     </div>
                                                     <div className="rounded-2xl border border-edubot-line/70 bg-edubot-surfaceAlt/60 px-4 py-3 dark:border-slate-700 dark:bg-slate-900/70">
                                                         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
-                                                            Жаңыртылды
+                                                            {t('instructorDashboard.coursesSection.card.updated')}
                                                         </p>
                                                         <p className="mt-2 text-sm font-semibold text-edubot-ink dark:text-white">
                                                             {course.updatedAt
-                                                                ? new Date(course.updatedAt).toLocaleDateString()
-                                                                : 'Маалымат жок'}
+                                                                ? new Date(course.updatedAt).toLocaleDateString(i18n.language)
+                                                                : t('instructorDashboard.coursesSection.card.noData')}
                                                         </p>
                                                     </div>
                                                 </div>
@@ -203,7 +208,9 @@ const CoursesSection = ({
                                                         className="dashboard-button-secondary"
                                                     >
                                                         <FiEye className="h-4 w-4" />
-                                                        {deliveryCourse ? 'Башкаруу' : 'Көрүү'}
+                                                        {deliveryCourse
+                                                            ? t('instructorDashboard.coursesSection.actions.manage')
+                                                            : t('instructorDashboard.coursesSection.actions.view')}
                                                     </Link>
                                                     {deliveryCourse ? (
                                                         <button
@@ -212,7 +219,7 @@ const CoursesSection = ({
                                                             className="dashboard-button-primary"
                                                         >
                                                             <FiEdit3 className="h-4 w-4" />
-                                                            Өзгөртүү
+                                                            {t('instructorDashboard.coursesSection.actions.edit')}
                                                         </button>
                                                     ) : (
                                                         <Link
@@ -220,7 +227,7 @@ const CoursesSection = ({
                                                             className="dashboard-button-primary"
                                                         >
                                                             <FiEdit3 className="h-4 w-4" />
-                                                            Өзгөртүү
+                                                            {t('instructorDashboard.coursesSection.actions.edit')}
                                                         </Link>
                                                     )}
                                                     {isDraft ? (
@@ -231,7 +238,9 @@ const CoursesSection = ({
                                                             className="dashboard-button-secondary"
                                                         >
                                                             <FiSend className="h-4 w-4" />
-                                                            {isSubmitting ? 'Жөнөтүлүүдө...' : 'Тастыктоого жөнөтүү'}
+                                                            {isSubmitting
+                                                                ? t('instructorDashboard.coursesSection.actions.submitting')
+                                                                : t('instructorDashboard.coursesSection.actions.submitForApproval')}
                                                         </button>
                                                     ) : null}
                                                 </div>
@@ -243,8 +252,8 @@ const CoursesSection = ({
                         </div>
                     ) : (
                         <EmptyState
-                            title="Курстар азырынча жок"
-                            subtitle="Биринчи курсуңузду түзүп баштаңыз."
+                            title={t('instructorDashboard.coursesSection.empty.title')}
+                            subtitle={t('instructorDashboard.coursesSection.empty.subtitle')}
                             icon={<FiBookOpen className="h-8 w-8 text-edubot-orange" />}
                             action={(
                                 <Link
@@ -252,7 +261,7 @@ const CoursesSection = ({
                                     className="dashboard-button-primary"
                                 >
                                     <FiPlus className="h-4 w-4" />
-                                    Курс түзүү
+                                    {t('instructorDashboard.coursesSection.actions.createCourse')}
                                 </Link>
                             )}
                         />

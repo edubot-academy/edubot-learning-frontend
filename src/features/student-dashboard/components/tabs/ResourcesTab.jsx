@@ -36,6 +36,7 @@ import {
     fetchStudentSessionRecordingMeta,
 } from '../../../student/api.js';
 import { parseApiError } from '@shared/api/error';
+import { getCourseTypeLabel } from '@shared/i18n/enumLabels';
 
 const MATERIAL_TYPE_META = {
     video: {
@@ -321,15 +322,6 @@ const ResourcesTab = ({ items, onOpenTasks }) => {
         [filteredItems, i18n.language, t]
     );
 
-    const getCourseTypeLabel = useCallback(
-        (type) => {
-            if (type === 'offline') return t('studentDashboard.resources.courseTypes.offline');
-            if (type === 'online_live') return t('studentDashboard.resources.courseTypes.onlineLive');
-            return t('studentDashboard.resources.courseTypes.video');
-        },
-        [t]
-    );
-
     const recordingTitle = useCallback(
         (sessionTitle) =>
             t('studentDashboard.resources.recordingTitle', {
@@ -447,7 +439,7 @@ const ResourcesTab = ({ items, onOpenTasks }) => {
                                                 {selectedItem.sessionTitle}
                                             </h3>
                                             <StatusBadge tone="default">
-                                                {getCourseTypeLabel(selectedItem.courseType)}
+                                                {getCourseTypeLabel(selectedItem.courseType, t)}
                                             </StatusBadge>
                                             {selectedItem.status === 'completed' ? (
                                                 <StatusBadge tone="default">{t('studentDashboard.resources.statuses.completed')}</StatusBadge>

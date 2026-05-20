@@ -31,17 +31,12 @@ export const parseApiError = (error, fallbackMessage = i18n.t('errors.generic'))
     const requestId = payload?.requestId || stableError?.requestId || null;
     const timestamp = payload?.timestamp || stableError?.timestamp || null;
 
-    const rawMessage =
-        stableError?.message || payload?.message || error?.message || fallbackMessage;
-
-    const message = Array.isArray(rawMessage) ? rawMessage.join(', ') : rawMessage;
-
     return {
         status,
         code,
         requestId,
         timestamp,
-        message: getApiErrorMessage(code, message),
+        message: getApiErrorMessage(code, fallbackMessage),
     };
 };
 

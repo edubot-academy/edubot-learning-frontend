@@ -18,11 +18,13 @@ const isHlsUrl = (url) => {
     }
 };
 
-const buildQualityOptions = (levels = []) => {
+const getAutoQualityOption = (t) => ({ id: 'auto', label: t('videoPlayer.autoQuality') });
+
+const buildQualityOptions = (levels = [], t) => {
     const seenLabels = new Map();
 
     return [
-        { id: 'auto', label: 'Auto' },
+        getAutoQualityOption(t),
         ...levels.map((level, index) => {
             const baseLabel = level.height ? `${level.height}p` : `Level ${index + 1}`;
             const count = seenLabels.get(baseLabel) || 0;
@@ -62,7 +64,7 @@ const VideoPlayerInner = ({
     const internalVideoRef = useRef(null);
     const [hasError, setHasError] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
-    const [qualityOptions, setQualityOptions] = useState([{ id: 'auto', label: 'Auto' }]);
+    const [qualityOptions, setQualityOptions] = useState(() => [getAutoQualityOption(t)]);
     const [currentQuality, setCurrentQuality] = useState('auto');
     const fitMode = ['contain', 'cover', 'crop'].includes(defaultFitMode)
         ? defaultFitMode
@@ -132,7 +134,7 @@ const VideoPlayerInner = ({
         setHasError(false);
         setIsLoading(true);
         setCurrentQuality('auto');
-        setQualityOptions([{ id: 'auto', label: 'Auto' }]);
+        setQualityOptions([getAutoQualityOption(t)]);
         hlsRecoveryRef.current = { network: 0, media: 0 };
         lastAppliedResumeTimeRef.current = null;
 
@@ -212,7 +214,7 @@ const VideoPlayerInner = ({
 
                 hls.on(Hls.Events.MANIFEST_PARSED, (_, data) => {
                     if (signal.aborted) return;
-                    setQualityOptions(buildQualityOptions(data.levels?.length ? data.levels : hls.levels));
+                    setQualityOptions(buildQualityOptions(data.levels?.length ? data.levels : hls.levels, t));
                     tryAutoPlay();
                 });
 

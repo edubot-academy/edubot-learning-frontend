@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import { toast } from 'react-hot-toast';
 import { FiX, FiCheckCircle, FiClock, FiXCircle, FiAlertCircle } from 'react-icons/fi';
@@ -40,6 +41,7 @@ const cloneAttendanceData = (data = {}) =>
   );
 
 const getDayStart = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
+const getStatusTranslationKey = (status) => (status === 'not_scheduled' ? 'notScheduled' : status);
 
 const isSessionInDateRange = (session, filters) => {
   const range = filters.dateRange || 'all';
@@ -153,6 +155,7 @@ const UnifiedAttendanceTable = ({
   showStudentBreakdown = true,
   showSessionBreakdown = false,
 }) => {
+  const { t, i18n } = useTranslation();
   // State management
   const [selectedViewMode, setSelectedViewMode] = useState(viewMode);
   const [loading, setLoading] = useState(false);
@@ -173,6 +176,23 @@ const UnifiedAttendanceTable = ({
     customStartDate: '',
     customEndDate: '',
   });
+  const language = i18n.resolvedLanguage || i18n.language || undefined;
+
+  const getSessionTitle = useCallback((session = {}) => (
+    session.title || t('attendance.fallbacks.sessionWithId', { id: session.sessionIndex || session.id })
+  ), [t]);
+
+  const formatSessionDate = useCallback((value, fallback = '-') => {
+    if (!value) return fallback;
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return t('attendance.fallbacks.unknownDate');
+
+    return date.toLocaleDateString(language, {
+      month: 'short',
+      day: 'numeric',
+    });
+  }, [language, t]);
 
   // Data loading
   const loadData = useCallback(async () => {
@@ -227,12 +247,12 @@ const UnifiedAttendanceTable = ({
       }
       setPendingChanges(new Map());
     } catch (loadError) {
-      handleAttendanceError(loadError, 'Жүктөөдө ката кетти');
+      handleAttendanceError(loadError, t('attendance.legacy.loadError'));
       setError(loadError);
     } finally {
       setLoading(false);
     }
-  }, [groupId]);
+  }, [groupId, t]);
 
   useEffect(() => {
     loadData();
@@ -378,14 +398,14 @@ const UnifiedAttendanceTable = ({
           onAttendanceUpdate();
         }
 
-        handleAttendanceSuccess(`${updates.length} катышуу ийгиликтүү жаңыртылды!`);
+        handleAttendanceSuccess(t('attendance.toasts.bulkUpdateSuccess', { count: updates.length }));
       } catch (saveError) {
-        handleAttendanceError(saveError, 'Катышууну сактоо мүмкүн болбоду');
+        handleAttendanceError(saveError, t('attendance.table.toasts.saveFailed'));
       } finally {
         setUpdatingCells(new Set());
       }
     },
-    [courseId, onAttendanceUpdate]
+    [courseId, onAttendanceUpdate, t]
   );
 
   const unsavedUpdates = useMemo(() => {
@@ -427,12 +447,12 @@ const UnifiedAttendanceTable = ({
       }));
 
     if (updates.length === 0) {
-      toast('Сактоо үчүн өзгөртүүлөр жок');
+      toast(t('attendance.table.toasts.noChangesToSave'));
       return;
     }
 
     await handleBulkUpdate(updates);
-  }, [pendingChanges, unsavedUpdates, handleBulkUpdate]);
+  }, [pendingChanges, unsavedUpdates, handleBulkUpdate, t]);
 
   const handleDiscardChanges = useCallback(() => {
     if (unsavedChangeCount === 0 && pendingChanges.size === 0) return;
@@ -511,35 +531,30 @@ const UnifiedAttendanceTable = ({
   // Status config for popup and cells
   const statusConfig = {
     [SESSION_ATTENDANCE_STATUS.PRESENT]: {
-      label: 'Катышты',
       bgColor: 'bg-emerald-100 dark:bg-emerald-900/40',
       textColor: 'text-emerald-700 dark:text-emerald-300',
       borderColor: 'border-emerald-200 dark:border-emerald-500/30',
       icon: FiCheckCircle,
     },
     [SESSION_ATTENDANCE_STATUS.LATE]: {
-      label: 'Кечикти',
       bgColor: 'bg-amber-100 dark:bg-amber-900/40',
       textColor: 'text-amber-700 dark:text-amber-300',
       borderColor: 'border-amber-200 dark:border-amber-500/30',
       icon: FiClock,
     },
     [SESSION_ATTENDANCE_STATUS.ABSENT]: {
-      label: 'Келген жок',
       bgColor: 'bg-red-100 dark:bg-red-900/40',
       textColor: 'text-red-700 dark:text-red-300',
       borderColor: 'border-red-200 dark:border-red-500/30',
       icon: FiXCircle,
     },
     [SESSION_ATTENDANCE_STATUS.EXCUSED]: {
-      label: 'Себептүү',
       bgColor: 'bg-blue-100 dark:bg-blue-900/40',
       textColor: 'text-blue-700 dark:text-blue-300',
       borderColor: 'border-blue-200 dark:border-blue-500/30',
       icon: FiAlertCircle,
     },
     not_scheduled: {
-      label: 'Күтүлүүдө',
       bgColor: 'bg-gray-100 dark:bg-gray-800',
       textColor: 'text-gray-500 dark:text-gray-400',
       borderColor: 'border-gray-200 dark:border-gray-700',
@@ -565,8 +580,8 @@ const UnifiedAttendanceTable = ({
       return (
         <AttendanceEmptyState
           type="students"
-          title="Студенттер жок"
-          subtitle="Бул группада студенттер жок же жүктөөдө ката кетти"
+          title={t('attendance.empty.noStudentsTitle')}
+          subtitle={t('attendance.empty.noStudentsDescription')}
         />
       );
     }
@@ -575,8 +590,8 @@ const UnifiedAttendanceTable = ({
       return (
         <AttendanceEmptyState
           type="filtered"
-          title="Натыйжалар жок"
-          subtitle="Сиздин фильтриңизге ылайык натыйжалар табылган жок"
+          title={t('attendance.empty.noRecordsTitle')}
+          subtitle={t('attendance.empty.noRecordsDescription')}
         />
       );
     }
@@ -609,7 +624,7 @@ const UnifiedAttendanceTable = ({
                 <thead>
                   <tr>
                     <th className="attendance-table-sticky-corner min-w-[200px] max-w-[300px] border-r border-gray-200 px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:border-gray-700 dark:text-gray-400">
-                      Студент
+	                      {t('attendance.metrics.students')}
                     </th>
 
                     {filteredSessions.map((session) => (
@@ -619,22 +634,17 @@ const UnifiedAttendanceTable = ({
                       >
                         <div className="space-y-1">
                           <div className="font-medium text-xs truncate">
-                            {session.title || `Сессия ${session.sessionIndex}`}
-                          </div>
-                          <div className="text-xs text-gray-400 dark:text-gray-500">
-                            {session.startsAt
-                              ? new Date(session.startsAt).toLocaleDateString('ky-KG', {
-                                month: 'short',
-                                day: 'numeric',
-                              })
-                              : '-'}
-                          </div>
+	                            {getSessionTitle(session)}
+	                          </div>
+	                          <div className="text-xs text-gray-400 dark:text-gray-500">
+	                            {formatSessionDate(session.startsAt)}
+	                          </div>
                         </div>
                       </th>
                     ))}
 
                     <th className="sticky right-0 z-10 border-l border-gray-200 bg-gray-50 px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400">
-                      Жыйынтык
+	                      {t('attendance.table.summary')}
                     </th>
                   </tr>
                 </thead>
@@ -668,7 +678,7 @@ const UnifiedAttendanceTable = ({
                         <td className="sticky left-0 z-10 border-r border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-900">
                           <div className="flex items-center gap-3">
                             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
-                              {(student.fullName || student.name || 'Unknown')
+	                              {(student.fullName || student.name || t('attendance.cardView.unknownStudent'))
                                 .split(' ')
                                 .filter(Boolean)
                                 .map((n) => n[0])
@@ -718,8 +728,10 @@ const UnifiedAttendanceTable = ({
                               }
                               role={isSessionIncomplete ? 'presentation' : 'button'}
                               tabIndex={isSessionIncomplete ? -1 : 0}
-                              aria-label={`Change attendance for ${student.fullName || student.name} in ${session.title || `Session ${session.sessionIndex}`
-                                }`}
+	                              aria-label={t('attendance.legacy.changeAttendanceAria', {
+                                    student: student.fullName || student.name || t('attendance.cardView.unknownStudent'),
+                                    session: getSessionTitle(session),
+                                  })}
                             >
                               <div
                                 className={`attendance-status inline-flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs font-medium transition-all duration-200 ${config.bgColor} ${config.textColor} ${config.borderColor} ${isSessionIncomplete ? 'grayscale' : ''
@@ -758,7 +770,7 @@ const UnifiedAttendanceTable = ({
                 <div className="mx-4 w-full max-w-sm rounded-lg bg-white p-6 dark:bg-gray-800">
                   <div className="mb-4 flex items-center justify-between">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                      Катышуу статусун тандаңыз
+	                      {t('attendance.table.selectStatusTitle')}
                     </h3>
                     <button
                       type="button"
@@ -774,7 +786,7 @@ const UnifiedAttendanceTable = ({
                       <strong>{popupCell.student?.fullName || popupCell.student?.name}</strong>
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-500">
-                      {popupCell.session?.title || `Сессия ${popupCell.session?.sessionIndex}`}
+	                      {getSessionTitle(popupCell.session)}
                     </p>
                   </div>
 
@@ -795,8 +807,8 @@ const UnifiedAttendanceTable = ({
                         >
                           <Icon className={`mb-1 h-6 w-6 ${config.textColor}`} />
                           <span className="text-xs font-medium text-gray-900 dark:text-white">
-                            {config.label}
-                          </span>
+	                            {t(`attendance.status.${getStatusTranslationKey(status)}`)}
+	                          </span>
                         </button>
                       );
                     })}
@@ -833,9 +845,9 @@ const UnifiedAttendanceTable = ({
       {/* View Mode Selector */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="text-sm text-gray-600 dark:text-gray-400">
-          {unsavedChangeCount > 0
-            ? `${unsavedChangeCount} өзгөртүү сакталган эмес`
-            : 'Өзгөртүү киргизилгенде сактоо баскычы активдүү болот'}
+	          {unsavedChangeCount > 0
+	            ? t('attendance.table.unsavedChanges', { count: unsavedChangeCount })
+	            : t('attendance.table.saveEnabledHint')}
         </div>
         <div className="inline-flex rounded-lg border border-gray-200 bg-white p-1 dark:border-gray-700 dark:bg-gray-900">
           <button
@@ -846,7 +858,7 @@ const UnifiedAttendanceTable = ({
               : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
               }`}
           >
-            Таблица
+	            {t('attendance.view.table')}
           </button>
           <button
             type="button"
@@ -856,7 +868,7 @@ const UnifiedAttendanceTable = ({
               : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
               }`}
           >
-            Карталар
+	            {t('attendance.view.cards')}
           </button>
           {students.length > PERFORMANCE_THRESHOLDS.VIRTUAL_SCROLLING_THRESHOLD && (
             <button
@@ -867,7 +879,7 @@ const UnifiedAttendanceTable = ({
                 : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
                 }`}
             >
-              Оптималдуу
+	              {t('attendance.view.virtualized')}
             </button>
           )}
         </div>
@@ -878,12 +890,12 @@ const UnifiedAttendanceTable = ({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-3">
             <div className="text-sm text-gray-600 dark:text-gray-400">
-              Статусту өзгөртүү үчүн таблицадагы клетканы басыңыз.
+	              {t('attendance.table.clickCellHint')}
             </div>
 
             {unsavedChangeCount > 0 && (
               <div className="text-sm font-medium text-orange-600 dark:text-orange-400">
-                {unsavedChangeCount} өзгөртүү сакталган эмес
+	                {t('attendance.table.unsavedChanges', { count: unsavedChangeCount })}
               </div>
             )}
           </div>
@@ -896,7 +908,7 @@ const UnifiedAttendanceTable = ({
                 disabled={loading}
                 className="dashboard-button-secondary px-4 py-2 text-sm disabled:opacity-50"
               >
-                Жокко чыгаруу
+	                {t('attendance.table.actions.discard')}
               </button>
             )}
             <button
@@ -905,7 +917,7 @@ const UnifiedAttendanceTable = ({
               disabled={loading || unsavedChangeCount === 0}
               className="dashboard-button-primary px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {loading ? 'Сакталууда...' : 'Сактоо'}
+	              {loading ? t('attendance.actions.saving') : t('attendance.actions.save')}
             </button>
           </div>
         </div>
@@ -917,7 +929,7 @@ const UnifiedAttendanceTable = ({
       {/* Loading Overlay */}
       <AttendanceLoadingOverlay
         isVisible={loading && !students.length}
-        message="Катышуу маалыматы жүктөлүүдө..."
+        message={t('attendance.legacy.loadingData')}
       />
 
       {/* Accessibility Announcements */}

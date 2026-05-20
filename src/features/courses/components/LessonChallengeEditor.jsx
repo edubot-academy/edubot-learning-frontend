@@ -97,6 +97,7 @@ const LessonChallengeEditor = ({ challenge, onChange, disabled = false }) => {
                     className="w-full border rounded p-2 font-mono min-h-[140px] bg-[#0f172a] text-gray-100 border-[#1f2937]"
                     value={safeChallenge.starterCode || ''}
                     onChange={(e) => updateChallenge((next) => (next.starterCode = e.target.value))}
+                    // l10n-audit-ignore: code starter placeholder
                     placeholder={'function solution() {\n  // ...\n}'}
                 />
                 <p className="text-xs text-gray-500 mt-1">

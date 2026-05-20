@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import { FiDownload, FiMail } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
@@ -22,6 +23,13 @@ const AttendanceBulkActions = ({
   loading = false,
   className = '',
 }) => {
+  const { t } = useTranslation();
+
+  const getStatusLabel = useCallback((status) => {
+    const key = status === 'not_scheduled' ? 'notScheduled' : status;
+    return t(`attendance.status.${key}`, { defaultValue: status });
+  }, [t]);
+
   // Count selected cells by status
   const selectedByStatus = useMemo(() => {
     const counts = {
@@ -78,16 +86,19 @@ const AttendanceBulkActions = ({
 
     try {
       await onBulkUpdate(updates);
-      toast.success(`${updates.length} катышуу жазылгасы "${status}" деп жаңыртылды`);
+      toast.success(t('attendance.bulk.toasts.updateSuccess', {
+        count: updates.length,
+        status: getStatusLabel(status),
+      }));
     } catch {
-      toast.error('Көп жаңыртуу мүмкүн болбоду');
+      toast.error(t('attendance.bulk.toasts.updateFailed'));
     }
-  }, [selectedCells, onBulkUpdate]);
+  }, [selectedCells, onBulkUpdate, t, getStatusLabel]);
 
   // Handle export
   const handleExport = useCallback(async (format = 'csv') => {
     if (selectedStudents.length === 0) {
-      toast.error('Экспорт үчүн студенттерди тандаңыз');
+      toast.error(t('attendance.bulk.toasts.selectStudentsForExport'));
       return;
     }
 
@@ -102,16 +113,16 @@ const AttendanceBulkActions = ({
         includeAttendanceData: true,
       });
 
-      toast.success('Катышуу маалыматы экспорттолду');
+      toast.success(t('attendance.bulk.toasts.exportSuccess'));
     } catch {
-      toast.error('Экспорт мүмкүн болбоду');
+      toast.error(t('attendance.bulk.toasts.exportFailed'));
     }
-  }, [selectedStudents, selectedSessions, onExport]);
+  }, [selectedStudents, selectedSessions, onExport, t]);
 
   // Handle parent notification
   const handleNotifyParents = useCallback(async () => {
     if (selectedStudents.length === 0) {
-      toast.error('Билдирүү үчүн студенттерди тандаңыз');
+      toast.error(t('attendance.bulk.toasts.selectStudentsForNotification'));
       return;
     }
 
@@ -127,7 +138,7 @@ const AttendanceBulkActions = ({
     });
 
     if (absentOrLateStudents.length === 0) {
-      toast.info('Билдирүү керек болгон студенттер жок');
+      toast.info(t('attendance.bulk.toasts.noStudentsToNotify'));
       return;
     }
 
@@ -135,20 +146,22 @@ const AttendanceBulkActions = ({
       await onNotifyParents({
         studentIds: absentOrLateStudents.map(s => s.id),
         sessions: selectedSessions,
-        message: 'Баланыңыздын сессияга катышуусу жөнүндө маалымат',
+        message: t('attendance.bulk.notificationMessage'),
       });
 
-      toast.success(`${absentOrLateStudents.length} ата-энеге билдирүү жөнөтүлдү`);
+      toast.success(t('attendance.bulk.toasts.notifySuccess', {
+        count: absentOrLateStudents.length,
+      }));
     } catch {
-      toast.error('Билдирүү жөнөтүү мүмкүн болбоду');
+      toast.error(t('attendance.bulk.toasts.notifyFailed'));
     }
-  }, [selectedStudents, selectedSessions, selectedCells, attendanceData, onNotifyParents]);
+  }, [selectedStudents, selectedSessions, selectedCells, attendanceData, onNotifyParents, t]);
 
   // Quick action presets
   const quickActions = useMemo(() => [
     {
       key: 'mark_all_present',
-      label: 'Баарын катышты деп белгиле',
+      label: t('attendance.bulk.quickActions.markAllPresent'),
       icon: ATTENDANCE_STATUS_CONFIG.present.icon,
       action: () => handleBulkStatusUpdate('present'),
       color: 'green',
@@ -156,7 +169,7 @@ const AttendanceBulkActions = ({
     },
     {
       key: 'mark_all_absent',
-      label: 'Баарын келген жок деп белгиле',
+      label: t('attendance.bulk.quickActions.markAllAbsent'),
       icon: ATTENDANCE_STATUS_CONFIG.absent.icon,
       action: () => handleBulkStatusUpdate('absent'),
       color: 'red',
@@ -164,7 +177,7 @@ const AttendanceBulkActions = ({
     },
     {
       key: 'clear_absent',
-      label: 'Келген жокторду тазалоо',
+      label: t('attendance.bulk.quickActions.clearAbsent'),
       icon: ATTENDANCE_STATUS_CONFIG.present.icon,
       action: () => {
         const absentUpdates = Array.from(selectedCells)
@@ -180,13 +193,15 @@ const AttendanceBulkActions = ({
 
         if (absentUpdates.length > 0) {
           onBulkUpdate(absentUpdates);
-          toast.success(`${absentUpdates.length} келген жок катышуу тазаланды`);
+          toast.success(t('attendance.bulk.toasts.clearAbsentSuccess', {
+            count: absentUpdates.length,
+          }));
         }
       },
       color: 'green',
       show: selectedByStatus.absent > 0,
     },
-  ], [selectedByStatus.total, selectedByStatus.absent, selectedCells, attendanceData, onBulkUpdate, handleBulkStatusUpdate]);
+  ], [selectedByStatus.total, selectedByStatus.absent, selectedCells, attendanceData, onBulkUpdate, handleBulkStatusUpdate, t]);
 
   if (selectedCells.size === 0) {
     return null;
@@ -199,10 +214,13 @@ const AttendanceBulkActions = ({
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <div className="text-sm font-semibold text-gray-900 dark:text-white">
-              {selectedCells.size} клетка тандалды
+              {t('attendance.bulk.selection.cellsSelected', { count: selectedCells.size })}
             </div>
             <div className="text-xs text-gray-500 dark:text-gray-400">
-              {selectedStudents.length} студент • {selectedSessions.length} сессия
+              {t('attendance.bulk.selection.summary', {
+                students: selectedStudents.length,
+                sessions: selectedSessions.length,
+              })}
             </div>
           </div>
 
@@ -265,7 +283,7 @@ const AttendanceBulkActions = ({
             className="dashboard-button-secondary text-green-600 border-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 disabled:opacity-50"
           >
             <ATTENDANCE_STATUS_CONFIG.present.icon className="h-4 w-4" />
-            Катышты деп белгиле
+            {t('attendance.bulk.actions.markPresent')}
           </button>
           <button
             onClick={() => handleBulkStatusUpdate('late')}
@@ -273,7 +291,7 @@ const AttendanceBulkActions = ({
             className="dashboard-button-secondary text-amber-600 border-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 disabled:opacity-50"
           >
             <ATTENDANCE_STATUS_CONFIG.late.icon className="h-4 w-4" />
-            Кечикти деп белгиле
+            {t('attendance.bulk.actions.markLate')}
           </button>
           <button
             onClick={() => handleBulkStatusUpdate('absent')}
@@ -281,7 +299,7 @@ const AttendanceBulkActions = ({
             className="dashboard-button-secondary text-red-600 border-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50"
           >
             <ATTENDANCE_STATUS_CONFIG.absent.icon className="h-4 w-4" />
-            Келген жок деп белгиле
+            {t('attendance.bulk.actions.markAbsent')}
           </button>
           <button
             onClick={() => handleBulkStatusUpdate('excused')}
@@ -289,7 +307,7 @@ const AttendanceBulkActions = ({
             className="dashboard-button-secondary text-blue-600 border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 disabled:opacity-50"
           >
             <ATTENDANCE_STATUS_CONFIG.excused.icon className="h-4 w-4" />
-            Себептүү деп белгиле
+            {t('attendance.bulk.actions.markExcused')}
           </button>
         </div>
 
@@ -301,7 +319,7 @@ const AttendanceBulkActions = ({
             className="dashboard-button-secondary text-gray-600 border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-900/20 disabled:opacity-50"
           >
             <FiDownload className="h-4 w-4" />
-            CSV экспорт
+            {t('attendance.bulk.actions.exportCsv')}
           </button>
           <button
             onClick={() => handleExport('excel')}
@@ -309,7 +327,7 @@ const AttendanceBulkActions = ({
             className="dashboard-button-secondary text-gray-600 border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-900/20 disabled:opacity-50"
           >
             <FiDownload className="h-4 w-4" />
-            Excel экспорт
+            {t('attendance.bulk.actions.exportExcel')}
           </button>
           <button
             onClick={handleNotifyParents}
@@ -317,7 +335,7 @@ const AttendanceBulkActions = ({
             className="dashboard-button-secondary text-blue-600 border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 disabled:opacity-50"
           >
             <FiMail className="h-4 w-4" />
-            Ата-энеге билдирүү
+            {t('attendance.bulk.actions.notifyParents')}
           </button>
           <button
             onClick={() => {
@@ -328,7 +346,7 @@ const AttendanceBulkActions = ({
             }}
             className="dashboard-button-secondary"
           >
-            Тандоону тазалоо
+            {t('attendance.bulk.actions.clearSelection')}
           </button>
         </div>
       </div>

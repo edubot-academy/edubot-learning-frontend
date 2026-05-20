@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'react-hot-toast';
 import api from '@shared/api/client';
+import { parseApiError } from '@shared/api/error';
 
 /**
  * Hook for managing attendance data fetching and state
@@ -13,6 +15,7 @@ export const useAttendanceData = ({
   autoRefresh = false,
   refreshInterval = 30000, // 30 seconds
 }) => {
+  const { t } = useTranslation();
   // State
   const [data, setData] = useState({
     students: [],
@@ -70,7 +73,7 @@ export const useAttendanceData = ({
       const response = await fetch(`${endpoint}?${params}`, { signal });
       
       if (!response.ok) {
-        throw new Error(`Failed to fetch attendance data: ${response.statusText}`);
+        throw new Error(t('attendance.legacy.loadFailed'));
       }
 
       const result = await response.json();
@@ -90,7 +93,7 @@ export const useAttendanceData = ({
 
     } catch (error) {
       if (error.name !== 'AbortError') {
-        const errorMessage = error.message || 'Failed to load attendance data';
+        const errorMessage = error.message || t('attendance.legacy.loadFailed');
         console.error('Attendance data fetch error:', error);
         setData(prev => ({
           ...prev,
@@ -100,7 +103,7 @@ export const useAttendanceData = ({
         toast.error(errorMessage);
       }
     }
-  }, [groupId, includeUnscheduled, filters.dateRange, getApiEndpoint, normalizeAttendanceData]);
+  }, [groupId, includeUnscheduled, filters.dateRange, getApiEndpoint, normalizeAttendanceData, t]);
 
   // Update single attendance record
   const updateAttendanceRecord = useCallback((studentId, sessionId, status) => {
@@ -300,6 +303,7 @@ export const useAttendanceData = ({
  * Hook for attendance updates with optimistic updates
  */
 export const useAttendanceUpdates = ({ groupId, onSuccess, onError }) => {
+  const { t } = useTranslation();
   const [updating, setUpdating] = useState(false);
   const [pendingUpdates, setPendingUpdates] = useState(new Set());
 
@@ -320,11 +324,11 @@ export const useAttendanceUpdates = ({ groupId, onSuccess, onError }) => {
         onSuccess(result);
       }
       
-      toast.success('Attendance updated successfully');
+      toast.success(t('attendance.toasts.updateSuccess'));
       return result;
 
     } catch (error) {
-      const errorMessage = error.message || 'Failed to update attendance';
+      const errorMessage = parseApiError(error, t('attendance.toasts.updateFailed')).message;
       console.error('Attendance update error:', error);
       
       if (onError) {
@@ -341,7 +345,7 @@ export const useAttendanceUpdates = ({ groupId, onSuccess, onError }) => {
         return newSet;
       });
     }
-  }, [groupId, onSuccess, onError]);
+  }, [groupId, onSuccess, onError, t]);
 
   // Bulk attendance update
   const bulkUpdateAttendance = useCallback(async (updates) => {
@@ -365,11 +369,11 @@ export const useAttendanceUpdates = ({ groupId, onSuccess, onError }) => {
         onSuccess(result);
       }
       
-      toast.success(`${updates.length} attendance records updated`);
+      toast.success(t('attendance.toasts.bulkUpdateSuccess', { count: updates.length }));
       return result;
 
     } catch (error) {
-      const errorMessage = error.message || 'Failed to update attendance';
+      const errorMessage = parseApiError(error, t('attendance.toasts.updateFailed')).message;
       console.error('Bulk attendance update error:', error);
       
       if (onError) {
@@ -382,7 +386,7 @@ export const useAttendanceUpdates = ({ groupId, onSuccess, onError }) => {
       setUpdating(false);
       setPendingUpdates(new Set());
     }
-  }, [groupId, onSuccess, onError]);
+  }, [groupId, onSuccess, onError, t]);
 
   // Check if specific cell is updating
   const isCellUpdating = useCallback((studentId, sessionId) => {

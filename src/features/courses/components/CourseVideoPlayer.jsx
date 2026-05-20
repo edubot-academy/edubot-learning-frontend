@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import VideoPlayer from '@shared/VideoPlayer';
 import { getPlayableVideoUrl } from '../../../utils/videoUtils';
 
@@ -15,6 +16,7 @@ const CourseVideoPlayer = ({
     onEnded,
     autoPlay = false,
 }) => {
+    const { t } = useTranslation();
     const containerRef = React.useRef(null);
     const lessonVideoUrl = getPlayableVideoUrl(activeLesson);
 
@@ -37,7 +39,7 @@ const CourseVideoPlayer = ({
             <button
                 onClick={() => prevLesson && handleLessonClick(prevLesson)}
                 disabled={!prevLesson}
-                aria-label="Предыдущий урок"
+                aria-label={t('public.courseShared.videoControls.previousLesson')}
                 className="absolute top-1/2 left-2 -translate-y-1/2 text-3xl bg-white/50 dark:bg-gray-800/50 rounded-full px-3 py-1 hover:bg-white/80 dark:hover:bg-gray-800/80 disabled:opacity-30"
             >
                 ←
@@ -46,7 +48,7 @@ const CourseVideoPlayer = ({
             <button
                 onClick={() => nextLesson && handleLessonClick(nextLesson)}
                 disabled={!nextLesson}
-                aria-label="Следующий урок"
+                aria-label={t('public.courseShared.videoControls.nextLesson')}
                 className="absolute top-1/2 right-2 -translate-y-1/2 text-3xl bg-white/50 dark:bg-gray-800/50 rounded-full px-3 py-1 hover:bg-white/80 dark:hover:bg-gray-800/80 disabled:opacity-30"
             >
                 →

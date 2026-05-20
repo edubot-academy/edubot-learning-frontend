@@ -98,9 +98,7 @@ export const CurriculumStep = ({
     const { t } = useTranslation();
     const lessonKindOptions = LESSON_KIND_OPTIONS.map((option) => ({
         ...option,
-        label: t(`instructorDashboard.courseBuilder.lessonKinds.${option.value}`, {
-            defaultValue: option.label,
-        }),
+        label: t(option.labelKey, { defaultValue: option.value }),
     }));
 
     const getLessonIssue = (lesson) => {

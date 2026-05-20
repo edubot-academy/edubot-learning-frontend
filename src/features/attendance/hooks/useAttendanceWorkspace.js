@@ -15,6 +15,7 @@ import {
     isCourseFeatureEnabled,
     TENANT_FEATURES,
 } from '@shared/utils/tenantFeatures';
+import { parseApiError } from '@shared/api/error';
 
 const toCourseList = (payload) => {
     if (Array.isArray(payload?.items)) return payload.items;
@@ -67,13 +68,10 @@ const getAttendanceErrorMessage = (error, t) => {
     if (status === 403) return t('attendance.errors.forbidden');
     if (status === 404) return t('attendance.errors.notFound');
     if (status === 400) {
-        const message = error?.response?.data?.message;
-        if (Array.isArray(message)) return message.join(', ');
-        return message || t('attendance.errors.validation');
+        return t('attendance.errors.validation');
     }
 
-    const fallback = error?.response?.data?.message || t('attendance.errors.server');
-    return Array.isArray(fallback) ? fallback.join(', ') : fallback;
+    return parseApiError(error, t('attendance.errors.server')).message;
 };
 
 const cloneRowsMap = (map) =>

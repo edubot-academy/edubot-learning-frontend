@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     DashboardInsetPanel,
     DashboardMetricCard,
@@ -8,12 +9,12 @@ import {
 import { FiAward, FiGlobe, FiPenTool, FiSave, FiUsers, FiX } from 'react-icons/fi';
 
 const SOCIAL_FIELDS = [
-    ['website', 'Сайт / Портфолио'],
-    ['linkedin', 'LinkedIn'],
-    ['instagram', 'Instagram'],
-    ['youtube', 'YouTube'],
-    ['facebook', 'Facebook'],
-    ['twitter', 'Twitter / X'],
+    ['website', 'instructorDashboard.profileSection.social.fields.website'],
+    ['linkedin', 'instructorDashboard.profileSection.social.fields.linkedin'],
+    ['instagram', 'instructorDashboard.profileSection.social.fields.instagram'],
+    ['youtube', 'instructorDashboard.profileSection.social.fields.youtube'],
+    ['facebook', 'instructorDashboard.profileSection.social.fields.facebook'],
+    ['twitter', 'instructorDashboard.profileSection.social.fields.twitter'],
 ];
 
 const createFormState = (profile) => ({
@@ -31,6 +32,7 @@ const createFormState = (profile) => ({
 });
 
 const ProfileSection = ({ profile, studentCount = 0, onSaveProfile, savingProfile }) => {
+    const { t } = useTranslation();
     const [isEditing, setIsEditing] = useState(false);
     const [form, setForm] = useState(createFormState(profile));
 
@@ -83,25 +85,31 @@ const ProfileSection = ({ profile, studentCount = 0, onSaveProfile, savingProfil
     return (
         <div className="space-y-6">
         <DashboardSectionHeader
-            eyebrow="Profile workspace"
-            title="Профиль"
-            description="Өзүңүз тууралуу негизги маалымат, эксперттик темалар жана коомдук шилтемелер ушул жерде көрүнөт."
+            eyebrow={t('instructorDashboard.profileSection.hero.eyebrow')}
+            title={t('instructorDashboard.profileSection.hero.title')}
+            description={t('instructorDashboard.profileSection.hero.description')}
         />
 
         <div className="grid gap-4 md:grid-cols-3">
             <DashboardMetricCard
-                label="Наам"
+                label={t('instructorDashboard.profileSection.metrics.title')}
                 value={form.title.trim() || '—'}
                 icon={FiAward}
             />
             <DashboardMetricCard
-                label="Тажрыйба"
-                value={form.yearsOfExperience ? `${form.yearsOfExperience} жыл` : '—'}
+                label={t('instructorDashboard.profileSection.metrics.experience')}
+                value={
+                    form.yearsOfExperience
+                        ? t('instructorDashboard.profileSection.metrics.years', {
+                            count: Number(form.yearsOfExperience),
+                        })
+                        : '—'
+                }
                 icon={FiPenTool}
                 tone="blue"
             />
             <DashboardMetricCard
-                label="Катталуулар"
+                label={t('instructorDashboard.profileSection.metrics.enrollments')}
                 value={studentCount}
                 icon={FiUsers}
                 tone="green"
@@ -110,8 +118,8 @@ const ProfileSection = ({ profile, studentCount = 0, onSaveProfile, savingProfil
 
         <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
             <DashboardInsetPanel
-                title="Био / Өзүм жөнүндө"
-                description="Студенттерге жана командага көрүнгөн кыскача тааныштыруу."
+                title={t('instructorDashboard.profileSection.bio.title')}
+                description={t('instructorDashboard.profileSection.bio.description')}
                 action={(
                     <button
                         type="button"
@@ -119,7 +127,9 @@ const ProfileSection = ({ profile, studentCount = 0, onSaveProfile, savingProfil
                         className="dashboard-button-secondary"
                     >
                         <FiPenTool className="h-4 w-4" />
-                        {isEditing ? 'Жабуу' : 'Өзгөртүү'}
+                        {isEditing
+                            ? t('instructorDashboard.profileSection.actions.close')
+                            : t('instructorDashboard.profileSection.actions.edit')}
                     </button>
                 )}
             >
@@ -127,9 +137,9 @@ const ProfileSection = ({ profile, studentCount = 0, onSaveProfile, savingProfil
                     <div className="mt-4 space-y-4">
                         <div className="grid gap-4 sm:grid-cols-2">
                             <div>
-                                <label className="text-sm font-medium text-edubot-muted dark:text-slate-400">
-                                    Наам
-                                </label>
+	                                <label className="text-sm font-medium text-edubot-muted dark:text-slate-400">
+	                                    {t('instructorDashboard.profileSection.fields.title')}
+	                                </label>
                                 <input
                                     type="text"
                                     value={form.title}
@@ -140,9 +150,9 @@ const ProfileSection = ({ profile, studentCount = 0, onSaveProfile, savingProfil
                                 />
                             </div>
                             <div>
-                                <label className="text-sm font-medium text-edubot-muted dark:text-slate-400">
-                                    Иш тажрыйбасы
-                                </label>
+	                                <label className="text-sm font-medium text-edubot-muted dark:text-slate-400">
+	                                    {t('instructorDashboard.profileSection.fields.experience')}
+	                                </label>
                                 <input
                                     type="number"
                                     min="0"
@@ -159,9 +169,9 @@ const ProfileSection = ({ profile, studentCount = 0, onSaveProfile, savingProfil
                         </div>
 
                         <div>
-                            <label className="text-sm font-medium text-edubot-muted dark:text-slate-400">
-                                Био / Өзүм жөнүндө
-                            </label>
+	                            <label className="text-sm font-medium text-edubot-muted dark:text-slate-400">
+	                                {t('instructorDashboard.profileSection.fields.bio')}
+	                            </label>
                             <textarea
                                 value={form.bio}
                                 onChange={(e) =>
@@ -173,9 +183,9 @@ const ProfileSection = ({ profile, studentCount = 0, onSaveProfile, savingProfil
                         </div>
 
                         <div>
-                            <label className="text-sm font-medium text-edubot-muted dark:text-slate-400">
-                                Эксперттик билимдер
-                            </label>
+	                            <label className="text-sm font-medium text-edubot-muted dark:text-slate-400">
+	                                {t('instructorDashboard.profileSection.fields.expertise')}
+	                            </label>
                             <input
                                 type="text"
                                 value={form.expertiseTagsText}
@@ -185,9 +195,9 @@ const ProfileSection = ({ profile, studentCount = 0, onSaveProfile, savingProfil
                                         expertiseTagsText: e.target.value,
                                     }))
                                 }
-                                className="dashboard-field mt-1"
-                                placeholder="Frontend, UI/UX, Product Design"
-                            />
+	                                className="dashboard-field mt-1"
+	                                placeholder={t('instructorDashboard.profileSection.fields.expertisePlaceholder')}
+	                            />
                         </div>
 
                         <div className="flex flex-wrap gap-3">
@@ -197,32 +207,34 @@ const ProfileSection = ({ profile, studentCount = 0, onSaveProfile, savingProfil
                                 disabled={savingProfile}
                                 className="dashboard-button-primary"
                             >
-                                <FiSave className="h-4 w-4" />
-                                {savingProfile ? 'Сакталууда...' : 'Сактоо'}
-                            </button>
+	                                <FiSave className="h-4 w-4" />
+	                                {savingProfile
+	                                    ? t('instructorDashboard.profileSection.actions.saving')
+	                                    : t('instructorDashboard.profileSection.actions.save')}
+	                            </button>
                             <button
                                 type="button"
                                 onClick={resetForm}
                                 disabled={savingProfile}
                                 className="dashboard-button-secondary"
                             >
-                                <FiX className="h-4 w-4" />
-                                Жокко чыгаруу
-                            </button>
+	                                <FiX className="h-4 w-4" />
+	                                {t('common.cancel')}
+	                            </button>
                         </div>
                     </div>
                 ) : (
-                    <p className="mt-4 whitespace-pre-line text-sm leading-7 text-edubot-ink dark:text-slate-200">
-                        {form.bio.trim() || 'Маалымат кошула элек'}
-                    </p>
+	                    <p className="mt-4 whitespace-pre-line text-sm leading-7 text-edubot-ink dark:text-slate-200">
+	                        {form.bio.trim() || t('instructorDashboard.profileSection.bio.empty')}
+	                    </p>
                 )}
             </DashboardInsetPanel>
 
             <div className="space-y-6">
-                <DashboardInsetPanel
-                    title="Эксперттик билимдер"
-                    description="Профилде көрүнгөн негизги адистик темалары."
-                >
+	                <DashboardInsetPanel
+	                    title={t('instructorDashboard.profileSection.expertise.title')}
+	                    description={t('instructorDashboard.profileSection.expertise.description')}
+	                >
                     <div className="mt-4">
                         {expertiseTags.length ? (
                             <div className="flex flex-wrap gap-2">
@@ -236,9 +248,9 @@ const ProfileSection = ({ profile, studentCount = 0, onSaveProfile, savingProfil
                                 ))}
                             </div>
                         ) : (
-                            <EmptyState
-                                title="Эксперттик билимдер кошула элек"
-                                subtitle="Профилди түзөтүү бетинде негизги темаларыңызды кошсоңуз, алар ушул жерде көрүнөт."
+	                            <EmptyState
+	                                title={t('instructorDashboard.profileSection.expertise.emptyTitle')}
+	                                subtitle={t('instructorDashboard.profileSection.expertise.emptySubtitle')}
                                 icon={<FiAward className="h-8 w-8 text-edubot-orange" />}
                                 className="py-8"
                             />
@@ -246,17 +258,17 @@ const ProfileSection = ({ profile, studentCount = 0, onSaveProfile, savingProfil
                     </div>
                 </DashboardInsetPanel>
 
-                <DashboardInsetPanel
-                    title="Социалдык шилтемелер"
-                    description="Тышкы профилдер жана коомдук байланыш каналдары."
-                >
+	                <DashboardInsetPanel
+	                    title={t('instructorDashboard.profileSection.social.title')}
+	                    description={t('instructorDashboard.profileSection.social.description')}
+	                >
                     {isEditing ? (
                         <div className="mt-4 space-y-4">
-                            {SOCIAL_FIELDS.map(([key, label]) => (
-                                <div key={key}>
-                                    <label className="text-sm font-medium text-edubot-muted dark:text-slate-400">
-                                        {label}
-                                    </label>
+	                            {SOCIAL_FIELDS.map(([key, labelKey]) => (
+	                                <div key={key}>
+	                                    <label className="text-sm font-medium text-edubot-muted dark:text-slate-400">
+	                                        {t(labelKey)}
+	                                    </label>
                                     <input
                                         type="url"
                                         value={form.socialLinks[key]}
@@ -269,9 +281,9 @@ const ProfileSection = ({ profile, studentCount = 0, onSaveProfile, savingProfil
                                                 },
                                             }))
                                         }
-                                        className="dashboard-field mt-1"
-                                        placeholder="https://..."
-                                    />
+	                                        className="dashboard-field mt-1"
+	                                        placeholder={t('instructorDashboard.profileSection.social.urlPlaceholder')}
+	                                    />
                                 </div>
                             ))}
                         </div>
@@ -293,9 +305,9 @@ const ProfileSection = ({ profile, studentCount = 0, onSaveProfile, savingProfil
                                     </a>
                                 ))
                             ) : (
-                                <EmptyState
-                                    title="Социалдык шилтемелер жок"
-                                    subtitle="Портфолио же коомдук профиль шилтемелерин кошкондо алар ушул жерде пайда болот."
+	                                <EmptyState
+	                                    title={t('instructorDashboard.profileSection.social.emptyTitle')}
+	                                    subtitle={t('instructorDashboard.profileSection.social.emptySubtitle')}
                                     icon={<FiGlobe className="h-8 w-8 text-edubot-orange" />}
                                     className="py-8"
                                 />

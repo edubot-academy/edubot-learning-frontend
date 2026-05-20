@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const PhoneInput = ({
     id,
@@ -13,7 +14,7 @@ const PhoneInput = ({
     className = '',
     inputClassName = '',
     wrapperClassName = '',
-    placeholder = 'Телефон номер',
+    placeholder,
     autoComplete = 'tel',
     allowPlus = true,
     maxLength = 16,
@@ -22,6 +23,7 @@ const PhoneInput = ({
     'aria-describedby': ariaDescribedBy,
     ...props
 }) => {
+    const { t } = useTranslation();
     const [focused, setFocused] = useState(false);
     const allowedPattern = allowPlus ? /^[+\d]*$/ : /^\d*$/;
     const needsGeneratedId = !id && Boolean(label || helperText || error);
@@ -56,7 +58,7 @@ const PhoneInput = ({
             value={value}
             onChange={handleInput}
             onPaste={handlePaste}
-            placeholder={placeholder}
+            placeholder={placeholder || t('formControls.phonePlaceholder')}
             autoComplete={autoComplete}
             inputMode="tel"
             aria-invalid={ariaInvalid ?? Boolean(error)}
@@ -144,7 +146,7 @@ const PhoneInput = ({
                     onPaste={handlePaste}
                     onFocus={() => setFocused(true)}
                     onBlur={() => setFocused(false)}
-                    placeholder={label ? '' : placeholder}
+                    placeholder={label ? '' : placeholder || t('formControls.phonePlaceholder')}
                     autoComplete={autoComplete}
                     inputMode="tel"
                     aria-invalid={ariaInvalid ?? Boolean(error)}

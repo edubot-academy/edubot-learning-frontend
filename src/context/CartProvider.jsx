@@ -1,9 +1,11 @@
 import { useState, useContext, useCallback, useMemo, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AuthContext } from './AuthContext';
 import { CartContext } from './CartContext';
 import { fetchCart as fetchCartApi, addCourseToCart, removeCourseFromCart } from '@services/api';
 
 export const CartProvider = ({ children }) => {
+    const { t } = useTranslation();
     const [cartItems, setCartItems] = useState([]);
     const [loading, setLoading] = useState(false);
     const [initialized, setInitialized] = useState(false);
@@ -130,13 +132,13 @@ export const CartProvider = ({ children }) => {
             if (String(course?.courseType || 'video').toLowerCase() !== 'video') {
                 return {
                     success: false,
-                    message: 'LMS аркылуу өз алдынча сатып алуу видео курстар үчүн гана жеткиликтүү',
+                    message: t('cartProvider.messages.videoOnly'),
                 };
             }
 
             const alreadyInCart = cartItems.some((item) => item.id === course.id);
             if (alreadyInCart) {
-                return { success: false, message: 'Курс уже в корзине' };
+                return { success: false, message: t('cartProvider.messages.alreadyInCart') };
             }
 
             const cartItem = {
@@ -166,16 +168,16 @@ export const CartProvider = ({ children }) => {
                         localStorage.setItem('cart', JSON.stringify(updated));
                         return updated;
                     });
-                    return { success: false, message: 'Курс себетке кошулган жок' };
+                    return { success: false, message: t('cartProvider.messages.addFailed') };
                 }
             }
 
             return {
                 success: true,
-                message: 'Курс себетке кошулду',
+                message: t('cartProvider.messages.added'),
             };
         },
-        [user, normalizeCartItems, cartItems]
+        [user, normalizeCartItems, cartItems, t]
     );
 
     const removeFromCart = useCallback(

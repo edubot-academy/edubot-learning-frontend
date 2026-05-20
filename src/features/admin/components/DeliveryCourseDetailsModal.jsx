@@ -2,12 +2,7 @@
 import AdvancedModal from '@shared/ui/AdvancedModal';
 import { FiBookOpen, FiClock, FiLayers, FiMapPin, FiUser } from 'react-icons/fi';
 import { useTranslation } from 'react-i18next';
-
-const getCourseTypeLabel = (courseType, t) => {
-    if (courseType === 'offline') return t('adminPendingCourses.courseTypes.offline');
-    if (courseType === 'online_live') return t('adminPendingCourses.courseTypes.onlineLive');
-    return t('adminPendingCourses.courseTypes.video');
-};
+import { getCourseTypeLabel } from '@shared/i18n/enumLabels';
 
 const formatDate = (value, locale) => {
     if (!value) return '—';

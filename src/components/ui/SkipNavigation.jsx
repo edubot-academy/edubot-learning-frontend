@@ -42,7 +42,7 @@ const SkipNavigation = () => {
     };
 
     const handleSkipToSearch = () => {
-        const searchInput = document.querySelector('input[type="search"], input[placeholder*="издөө" i], input[placeholder*="search" i]');
+        const searchInput = document.querySelector('input[type="search"], [role="searchbox"]');
         if (searchInput) {
             searchInput.focus();
             searchInput.scrollIntoView({ behavior: 'smooth' });

@@ -23,6 +23,15 @@ export const buildLeaderboardSnapshot = ({
     streakDays = 0,
     badges = [],
     label = 'Weekly board',
+    t = (key, values = {}) => {
+        const fallback = {
+            'public.leaderboard.snapshot.strongStreak': `Strong streak: ${values.count} days`,
+            'public.leaderboard.snapshot.newBadge': `New badge: ${values.title}`,
+            'public.leaderboard.snapshot.visibleInBoard': `You are visible in ${values.label}`,
+            'public.leaderboard.snapshot.noRank': 'No exact rank found yet',
+        };
+        return fallback[key] || key;
+    },
 }) => {
     const normalizedItems = Array.isArray(items) ? items : [];
     const rank = findUserRank(normalizedItems, user);
@@ -42,9 +51,11 @@ export const buildLeaderboardSnapshot = ({
         : null;
 
     const momentum = [
-        streakDays >= 5 ? `Серияңыз күчтүү: ${streakDays} күн` : null,
-        badges[0]?.title ? `Жаңы сыйлык: ${badges[0].title}` : null,
-        rank ? `${label} ичинде көрүнүп турасыз` : 'Азырынча так орун табылган жок',
+        streakDays >= 5 ? t('public.leaderboard.snapshot.strongStreak', { count: streakDays }) : null,
+        badges[0]?.title ? t('public.leaderboard.snapshot.newBadge', { title: badges[0].title }) : null,
+        rank
+            ? t('public.leaderboard.snapshot.visibleInBoard', { label })
+            : t('public.leaderboard.snapshot.noRank'),
     ].filter(Boolean);
 
     return {

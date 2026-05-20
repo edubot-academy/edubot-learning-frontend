@@ -13,8 +13,8 @@ import {
 export const ATTENDANCE_STATUS_CONFIG = {
   [SESSION_ATTENDANCE_STATUS.PRESENT]: {
     id: SESSION_ATTENDANCE_STATUS.PRESENT,
-    label: 'Катышты',
-    shortLabel: 'Катышты',
+    labelKey: 'attendance.status.present',
+    shortLabelKey: 'attendance.status.present',
     icon: FiCheckCircle,
     simpleIcon: '✓',
     color: 'green',
@@ -31,8 +31,8 @@ export const ATTENDANCE_STATUS_CONFIG = {
   },
   [SESSION_ATTENDANCE_STATUS.LATE]: {
     id: SESSION_ATTENDANCE_STATUS.LATE,
-    label: 'Кечикти',
-    shortLabel: 'Кечикти',
+    labelKey: 'attendance.status.late',
+    shortLabelKey: 'attendance.status.late',
     icon: FiClock,
     simpleIcon: '◦',
     color: 'amber',
@@ -49,8 +49,8 @@ export const ATTENDANCE_STATUS_CONFIG = {
   },
   [SESSION_ATTENDANCE_STATUS.ABSENT]: {
     id: SESSION_ATTENDANCE_STATUS.ABSENT,
-    label: 'Келген жок',
-    shortLabel: 'Келген жок',
+    labelKey: 'attendance.status.absent',
+    shortLabelKey: 'attendance.status.absent',
     icon: FiXCircle,
     simpleIcon: '✗',
     color: 'red',
@@ -67,8 +67,8 @@ export const ATTENDANCE_STATUS_CONFIG = {
   },
   [SESSION_ATTENDANCE_STATUS.EXCUSED]: {
     id: SESSION_ATTENDANCE_STATUS.EXCUSED,
-    label: 'Себептүү',
-    shortLabel: 'Себептүү',
+    labelKey: 'attendance.status.excused',
+    shortLabelKey: 'attendance.status.excused',
     icon: FiAlertCircle,
     simpleIcon: '○',
     color: 'blue',
@@ -85,8 +85,8 @@ export const ATTENDANCE_STATUS_CONFIG = {
   },
   not_scheduled: {
     id: 'not_scheduled',
-    label: 'Күтүлүүдө',
-    shortLabel: 'Күтүлүүдө',
+    labelKey: 'attendance.status.notScheduled',
+    shortLabelKey: 'attendance.status.notScheduled',
     icon: FiClock,
     simpleIcon: '-',
     color: 'gray',
@@ -204,15 +204,6 @@ export const PERFORMANCE_THRESHOLDS = {
  * Accessibility constants
  */
 export const ACCESSIBILITY = {
-  // ARIA labels
-  labels: {
-    attendanceCell: 'Change attendance status for {studentName} in {sessionTitle}',
-    statusButton: 'Mark {studentName} as {status}',
-    bulkAction: 'Mark selected students as {status}',
-    clearSelection: 'Clear all selections',
-    saveChanges: 'Save attendance changes',
-  },
-
   // Keyboard shortcuts
   shortcuts: {
     cycleStatus: 'Space',
@@ -221,12 +212,18 @@ export const ACCESSIBILITY = {
     saveChanges: 'Ctrl + S',
   },
 
-  // Screen reader announcements
+  labels: {
+    attendanceCell: 'attendance.accessibility.labels.attendanceCell',
+    statusButton: 'attendance.accessibility.labels.statusButton',
+    bulkAction: 'attendance.accessibility.labels.bulkAction',
+    clearSelection: 'attendance.accessibility.labels.clearSelection',
+    saveChanges: 'attendance.accessibility.labels.saveChanges',
+  },
   announcements: {
-    statusChanged: 'Attendance status changed to {status}',
-    selectionCleared: 'Selection cleared',
-    changesSaved: 'All changes saved successfully',
-    error: 'Error: {message}',
+    statusChanged: 'attendance.accessibility.announcements.statusChanged',
+    selectionCleared: 'attendance.accessibility.announcements.selectionCleared',
+    changesSaved: 'attendance.accessibility.announcements.changesSaved',
+    error: 'attendance.accessibility.announcements.error',
   },
 };
 

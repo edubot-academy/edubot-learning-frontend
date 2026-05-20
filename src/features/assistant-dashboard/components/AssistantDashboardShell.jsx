@@ -1,3 +1,5 @@
+import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import FloatingActionButton from "../../../components/ui/FloatingActionButton";
 import AttendancePage from "../../../pages/Attendance";
 import {
@@ -51,11 +53,18 @@ const AssistantDashboardShell = ({
     totalStudents,
     user,
 }) => {
-    const dashboardNavItems = NAV_ITEMS.map((item) => ({
-        ...item,
-        isActive: item.id === activeTab,
-        onSelect: handleTabSelect,
-    }));
+    const { t } = useTranslation();
+    const dashboardNavItems = useMemo(
+        () =>
+            NAV_ITEMS.map((item) => ({
+                ...item,
+                label: item.labelKey ? t(item.labelKey) : item.label,
+                groupLabel: item.groupLabelKey ? t(item.groupLabelKey) : item.groupLabel,
+                isActive: item.id === activeTab,
+                onSelect: handleTabSelect,
+            })),
+        [activeTab, handleTabSelect, t]
+    );
 
     const renderTabContent = () => {
         if (activeTab === "overview") {
@@ -73,69 +82,69 @@ const AssistantDashboardShell = ({
             return (
                 <div className="space-y-6">
                     <DashboardWorkspaceHero
-                        eyebrow="Assistant overview"
-                        title="Ассистенттин кыскача көрүнүшү"
-                        description="Күндөлүк чечим үчүн бул беттеги студент каттоосу жана курс жүктөмү боюнча сигналдар."
+                        eyebrow={t('assistantDashboard.overview.eyebrow')}
+                        title={t('assistantDashboard.overview.title')}
+                        description={t('assistantDashboard.overview.description')}
                         metrics={(
                             <>
-                                <DashboardMetricCard label="Бул бетте курс жок" value={visibleStudentsWithoutCourse} tone="amber" />
-                                <DashboardMetricCard label="Бул бетте бош курс" value={availableCourses} tone="blue" />
-                                <DashboardMetricCard label="Бул бетте жүктөм көп" value={highLoadCourses} tone="green" />
+                                <DashboardMetricCard label={t('assistantDashboard.overview.metrics.studentsWithoutCourse')} value={visibleStudentsWithoutCourse} tone="amber" />
+                                <DashboardMetricCard label={t('assistantDashboard.overview.metrics.emptyCourses')} value={availableCourses} tone="blue" />
+                                <DashboardMetricCard label={t('assistantDashboard.overview.metrics.highLoadCourses')} value={highLoadCourses} tone="green" />
                             </>
                         )}
                         metricsClassName="grid grid-cols-1 gap-3 sm:grid-cols-3"
                     >
                         <div className="grid gap-4 xl:grid-cols-[minmax(0,1.3fr),minmax(0,0.7fr)]">
                             <DashboardInsetPanel
-                                title="Иш агымы"
-                                description="Негизги милдеттер жана учурдагы компания контексти."
+                                title={t('assistantDashboard.overview.workflow.title')}
+                                description={t('assistantDashboard.overview.workflow.description')}
                             >
                                 <div className="grid gap-3 md:grid-cols-2">
                                     <div className="dashboard-panel-muted rounded-3xl p-4">
                                         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
-                                            Компания
+                                            {t('assistantDashboard.overview.company.label')}
                                         </p>
                                         <p className="mt-2 text-lg font-semibold text-edubot-ink dark:text-white">
-                                            {activeCompany?.name || "Тандалган компания"}
+                                            {activeCompany?.name || t('assistantDashboard.overview.company.fallback')}
                                         </p>
                                         <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                            Ассистент катары ушул компаниянын студент агымын жана курстарын башкарып жатасыз.
+                                            {t('assistantDashboard.overview.company.description')}
                                         </p>
                                     </div>
                                     <div className="dashboard-panel-muted rounded-3xl p-4">
                                         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
-                                            Чечим сигналы
+                                            {t('assistantDashboard.overview.signal.label')}
                                         </p>
                                         <p className="mt-2 text-lg font-semibold text-edubot-ink dark:text-white">
                                             {visibleStudentsWithoutCourse > 0
-                                                ? `${visibleStudentsWithoutCourse} студентке курс керек`
+                                                ? t('assistantDashboard.overview.signal.studentsNeedCourse', { count: visibleStudentsWithoutCourse })
                                                 : highLoadCourses > 0
-                                                  ? `${highLoadCourses} курста жүктөм жогору`
-                                                  : `${availableCourses} бош курс`}
+                                                  ? t('assistantDashboard.overview.signal.highLoadCourses', { count: highLoadCourses })
+                                                  : t('assistantDashboard.overview.signal.emptyCourses', { count: availableCourses })}
                                         </p>
                                         <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                            Бул сигнал учурда ачылган студенттер тизмесине жана ошол бет боюнча эсептелген курс жүктөмүнө жараша көрсөтүлөт.
+                                            {t('assistantDashboard.overview.signal.description')}
                                         </p>
                                     </div>
                                 </div>
                             </DashboardInsetPanel>
 
                             <DashboardInsetPanel
-                                title="Кийинки кадам"
-                                description="Күндөлүк иш үчүн тез багыт."
+                                title={t('assistantDashboard.overview.nextSteps.title')}
+                                description={t('assistantDashboard.overview.nextSteps.description')}
                             >
                                 <div className="space-y-3 text-sm text-edubot-muted dark:text-slate-300">
                                     <div className="dashboard-panel-muted rounded-3xl p-4">
-                                        <p className="font-semibold text-edubot-ink dark:text-white">1. Студенттерди текшериңиз</p>
-                                        <p className="mt-1">Каттоо күтүп турган студенттерди `Студенттер` табынан караңыз.</p>
+                                        <p className="font-semibold text-edubot-ink dark:text-white">{t('assistantDashboard.overview.nextSteps.students.title')}</p>
+                                        <p className="mt-1">{t('assistantDashboard.overview.nextSteps.students.text')}</p>
                                     </div>
                                     <div className="dashboard-panel-muted rounded-3xl p-4">
-                                        <p className="font-semibold text-edubot-ink dark:text-white">2. Курстарды салыштырыңыз</p>
-                                        <p className="mt-1">`Курстар` табынан ар бир курс боюнча жүктөмдү көрүңүз.</p>
+                                        <p className="font-semibold text-edubot-ink dark:text-white">{t('assistantDashboard.overview.nextSteps.courses.title')}</p>
+                                        <p className="mt-1">{t('assistantDashboard.overview.nextSteps.courses.text')}</p>
                                     </div>
                                     <div className="dashboard-panel-muted rounded-3xl p-4">
-                                        <p className="font-semibold text-edubot-ink dark:text-white">3. Катышууну жаңыртыңыз</p>
-                                        <p className="mt-1">Сабак күнү келгенде `Катышуу` табынан күндүк белгилөөнү аткарыңыз.</p>
+                                        <p className="font-semibold text-edubot-ink dark:text-white">{t('assistantDashboard.overview.nextSteps.attendance.title')}</p>
+                                        <p className="mt-1">{t('assistantDashboard.overview.nextSteps.attendance.text')}</p>
                                     </div>
                                 </div>
                             </DashboardInsetPanel>
@@ -155,11 +164,11 @@ const AssistantDashboardShell = ({
             return (
                 <div className="space-y-4">
                     <DashboardInsetPanel
-                        title="Катышуу workspace"
-                        description="Катышуу shared attendance domain ичинде калат; ассистент табы ушул workflow үчүн контекст берет."
+                        title={t('assistantDashboard.attendance.title')}
+                        description={t('assistantDashboard.attendance.description')}
                     >
                         <div className="text-sm text-edubot-muted dark:text-slate-400">
-                            {ASSISTANT_ATTENDANCE_WORKSPACE_DECISION.reason}
+                            {t(ASSISTANT_ATTENDANCE_WORKSPACE_DECISION.reasonKey)}
                         </div>
                     </DashboardInsetPanel>
                     <AttendancePage embedded />
@@ -171,11 +180,11 @@ const AssistantDashboardShell = ({
             return (
                 <div className="space-y-6">
                     <DashboardWorkspaceHero
-                        eyebrow="Assistant courses"
-                        title="Курстар жөнүндө маалымат"
-                        description="Компаниядагы жарыяланган курстар жана алардагы студент жүктөмү."
+                        eyebrow={t('assistantDashboard.courses.eyebrow')}
+                        title={t('assistantDashboard.courses.title')}
+                        description={t('assistantDashboard.courses.description')}
                         metrics={(
-                            <DashboardMetricCard label="Курстар" value={courses.length} tone="blue" />
+                            <DashboardMetricCard label={t('assistantDashboard.metrics.courses')} value={courses.length} tone="blue" />
                         )}
                         metricsClassName="grid grid-cols-1 gap-3 sm:grid-cols-1"
                     />
@@ -225,7 +234,7 @@ const AssistantDashboardShell = ({
                         <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-lg dark:border-gray-700 dark:bg-gray-800">
                             <div className="flex items-center gap-3">
                                 <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-300 border-t-edubot-orange" />
-                                <span className="text-sm text-gray-600 dark:text-gray-400">Жүктөлүүдө...</span>
+                                <span className="text-sm text-gray-600 dark:text-gray-400">{t('common.loading')}</span>
                             </div>
                         </div>
                     </div>
@@ -238,7 +247,9 @@ const AssistantDashboardShell = ({
 
     const headerActions = [
         {
-            label: sidebarOpen ? "Менюну жашыруу" : "Менюну көрсөтүү",
+            label: sidebarOpen
+                ? t('assistantDashboard.header.hideMenu')
+                : t('assistantDashboard.header.showMenu'),
             onClick: () => setSidebarOpen((prev) => !prev),
             variant: "secondary",
         },
@@ -247,19 +258,19 @@ const AssistantDashboardShell = ({
     const headerContent = (
         <div>
             <DashboardHeader
-                user={{ fullName: user?.fullName || "Ассистент", email: user?.email || "" }}
+                user={{ fullName: user?.fullName || t('assistantDashboard.header.userFallback'), email: user?.email || "" }}
                 role="assistant"
                 subtitle={isAssistant && activeCompany
-                    ? `Ассистент катары сиз ${activeCompany.name} компаниясынын курстарын көрүп жатасыз`
-                    : "Инструкторлорго жардам берүү жана колдоо"
+                    ? t('assistantDashboard.header.companySubtitle', { company: activeCompany.name })
+                    : t('assistantDashboard.header.defaultSubtitle')
                 }
                 actions={headerActions}
             />
 
             <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <DashboardMetricCard label="Жалпы студенттер" value={totalStudents} tone="blue" />
-                <DashboardMetricCard label="Катталган студенттер" value={enrolledStudents.length} tone="green" />
-                <DashboardMetricCard label="Жарыяланган курстар" value={courses.length} tone="amber" />
+                <DashboardMetricCard label={t('assistantDashboard.metrics.totalStudents')} value={totalStudents} tone="blue" />
+                <DashboardMetricCard label={t('assistantDashboard.metrics.enrolledStudents')} value={enrolledStudents.length} tone="green" />
+                <DashboardMetricCard label={t('assistantDashboard.metrics.publishedCourses')} value={courses.length} tone="amber" />
             </div>
         </div>
     );
@@ -275,7 +286,7 @@ const AssistantDashboardShell = ({
     return (
         <DashboardLayout
             role="assistant"
-            user={{ fullName: user?.fullName || "Ассистент", email: user?.email || "" }}
+            user={{ fullName: user?.fullName || t('assistantDashboard.header.userFallback'), email: user?.email || "" }}
             sidebarOpen={sidebarOpen}
             setSidebarOpen={setSidebarOpen}
             navItems={dashboardNavItems}

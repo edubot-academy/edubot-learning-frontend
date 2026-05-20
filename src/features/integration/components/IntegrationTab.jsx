@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Link, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import {
     fetchEnrollmentStatusEvents,
     fetchIntegrationEventDetail,
@@ -50,21 +51,22 @@ const buildIntegrationQuickViewLink = (quickView) => {
     });
 };
 
-const copyText = async (value, label) => {
+const copyText = async (value, label, t) => {
     if (!value || value === '-') return;
     try {
         await navigator.clipboard.writeText(String(value));
-        toast.success(`${label} көчүрүлдү`);
+        toast.success(t('integrationTab.toasts.copied', { label }));
     } catch {
-        toast.error(`${label} көчүрүү мүмкүн болгон жок`);
+        toast.error(t('integrationTab.toasts.copyFailed', { label }));
     }
 };
 
-const formatDateTime = (value) => {
+const formatDateTime = (value, locale = 'ky') => {
     if (!value) return '-';
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return '-';
-    return date.toLocaleString('ky-KG');
+    const dateLocale = locale === 'ru' ? 'ru-RU' : locale === 'en' ? 'en-US' : 'ky-KG';
+    return date.toLocaleString(dateLocale);
 };
 
 const getStudentIdentity = (record) => ({
@@ -72,13 +74,15 @@ const getStudentIdentity = (record) => ({
     name: record?.studentName || null,
 });
 
-const renderStudentCell = (record) => {
+const renderStudentCell = (record, t) => {
     const { id, name } = getStudentIdentity(record);
     if (!id && !name) return '-';
 
     return (
         <div className="leading-tight">
-            <div className="text-gray-700 dark:text-gray-200">{name || 'Аты белгисиз'}</div>
+            <div className="text-gray-700 dark:text-gray-200">
+                {name || t('integrationTab.fallbacks.unknownName')}
+            </div>
             {id ? (
                 <div className="text-xs text-edubot-muted dark:text-slate-400">ID: {id}</div>
             ) : null}
@@ -137,7 +141,11 @@ const riskSeverityOptions = Object.values(RISK_SEVERITY);
 const riskIssueOptions = Object.values(RISK_ISSUE_TYPE);
 const enrollmentStatusOptions = Object.values(ENROLLMENT_STATUS);
 
+const translateOptionLabel = (t, namespace, value) =>
+    value ? t(`integrationTab.${namespace}.${value}`, { defaultValue: value }) : '-';
+
 const IntegrationTab = ({ companyId = null }) => {
+    const { t, i18n } = useTranslation();
     const [searchParams, setSearchParams] = useSearchParams();
 
     const [loading, setLoading] = useState(false);
@@ -206,11 +214,13 @@ const IntegrationTab = ({ companyId = null }) => {
             setEnrollmentEvents(eventResponse?.items || []);
             setIntegrationHealth(healthResponse?.queue || null);
         } catch (error) {
-            toast.error(parseApiError(error, 'Интеграция маалыматы жүктөлгөн жок').message);
+            toast.error(
+                parseApiError(error, t('integrationTab.toasts.loadFailed')).message
+            );
         } finally {
             setLoading(false);
         }
-    }, [companyId]);
+    }, [companyId, t]);
 
     useEffect(() => {
         loadData();
@@ -239,7 +249,7 @@ const IntegrationTab = ({ companyId = null }) => {
                 if (!mounted) return;
                 const parsed = parseApiError(
                     error,
-                    'Окуянын толук маалыматын жүктөө мүмкүн болгон жок'
+                    t('integrationTab.toasts.detailLoadFailed')
                 );
                 setDetailError(parsed.message);
                 setSelectedEnrollmentEventDetail(null);
@@ -253,7 +263,7 @@ const IntegrationTab = ({ companyId = null }) => {
         return () => {
             mounted = false;
         };
-    }, [selectedEnrollmentEvent]);
+    }, [selectedEnrollmentEvent, t]);
 
     const filteredRiskAlerts = useMemo(() => {
         const from = parseDate(dateFrom);
@@ -329,10 +339,10 @@ const IntegrationTab = ({ companyId = null }) => {
 
     return (
         <div className="space-y-6">
-            <DashboardWorkspaceHero
-                eyebrow="CRM and LMS sync"
-                title="CRM-LMS Интеграция"
-                description="Webhook абалы, тобокелдик жыйынтыгы жана enrollment статус окуялары."
+                <DashboardWorkspaceHero
+                eyebrow={t('integrationTab.hero.eyebrow')}
+                title={t('integrationTab.hero.title')}
+                description={t('integrationTab.hero.description')}
                 action={
                     <button
                         type="button"
@@ -340,37 +350,40 @@ const IntegrationTab = ({ companyId = null }) => {
                         disabled={loading}
                         className="dashboard-button-secondary disabled:opacity-60"
                     >
-                        {loading ? 'Жүктөлүүдө...' : 'Жаңыртуу'}
+                        {loading ? t('common.loading') : t('common.refresh')}
                     </button>
                 }
             >
                 <DashboardFilterBar gridClassName="lg:grid-cols-3">
                     <FilterSelect
-                        label="Деңгээл"
+                        label={t('integrationTab.filters.severity')}
                         value={severityFilter}
                         onChange={setSeverityFilter}
                         options={riskSeverityOptions}
+                        labelForOption={(option) => translateOptionLabel(t, 'riskSeverity', option)}
                     />
                     <FilterSelect
-                        label="Тобокелдик түрү"
+                        label={t('integrationTab.filters.issueType')}
                         value={issueTypeFilter}
                         onChange={setIssueTypeFilter}
                         options={riskIssueOptions}
+                        labelForOption={(option) => translateOptionLabel(t, 'riskIssueType', option)}
                     />
                     <FilterSelect
-                        label="Каттоо статусу"
+                        label={t('integrationTab.filters.enrollmentStatus')}
                         value={statusFilter}
                         onChange={setStatusFilter}
                         options={enrollmentStatusOptions}
+                        labelForOption={(option) => translateOptionLabel(t, 'enrollmentStatus', option)}
                     />
                     <FilterInput
-                        label="Күндөн"
+                        label={t('integrationTab.filters.from')}
                         value={dateFrom}
                         onChange={setDateFrom}
                         type="datetime-local"
                     />
                     <FilterInput
-                        label="Күнгө чейин"
+                        label={t('integrationTab.filters.to')}
                         value={dateTo}
                         onChange={setDateTo}
                         type="datetime-local"
@@ -381,23 +394,23 @@ const IntegrationTab = ({ companyId = null }) => {
                             onClick={clearFilters}
                             className="dashboard-button-secondary w-full justify-center"
                         >
-                            Фильтрди тазалоо
+                            {t('common.clearFilters')}
                         </button>
                     </div>
                 </DashboardFilterBar>
 
                 <div className="grid gap-4 mt-5 md:grid-cols-3">
                     <DashboardMetricCard
-                        label="Бүгүнкү тобокелдик эскертмеси"
+                        label={t('integrationTab.metrics.riskToday')}
                         value={riskSummary?.todayGenerated ?? 0}
                     />
                     <DashboardMetricCard
-                        label="Критикалык эскертме"
+                        label={t('integrationTab.metrics.criticalAlerts')}
                         value={criticalCount}
                         tone={criticalCount ? 'red' : 'default'}
                     />
                     <DashboardMetricCard
-                        label="Каттоо окуялары"
+                        label={t('integrationTab.metrics.enrollmentEvents')}
                         value={filteredEnrollmentEvents.length}
                         tone={filteredEnrollmentEvents.length ? 'blue' : 'default'}
                     />
@@ -405,58 +418,59 @@ const IntegrationTab = ({ companyId = null }) => {
 
                 <div className="grid gap-4 mt-4 md:grid-cols-3">
                     <DashboardMetricCard
-                        label="Күтүүдөгү вебхук"
+                        label={t('integrationTab.metrics.pendingWebhook')}
                         value={integrationHealth?.pending ?? 0}
                     />
                     <DashboardMetricCard
-                        label="Ишке ашпаган вебхук"
+                        label={t('integrationTab.metrics.failedWebhook')}
                         value={integrationHealth?.failed ?? 0}
                         tone={(integrationHealth?.failed ?? 0) ? 'amber' : 'green'}
                     />
                     <DashboardMetricCard
-                        label="Акыркы жөнөтүү"
-                        value={formatDateTime(integrationHealth?.lastSentAt)}
+                        label={t('integrationTab.metrics.lastSent')}
+                        value={formatDateTime(integrationHealth?.lastSentAt, i18n.language)}
                     />
                 </div>
 
                 <div className="grid gap-4 mt-4 md:grid-cols-3">
                     <DashboardMetricCard
-                        label="Күтүүдөгү CRM каттоолор"
+                        label={t('integrationTab.metrics.pendingCrmEnrollments')}
                         value={pendingEnrollmentEvents.length}
                         tone={pendingEnrollmentEvents.length ? 'amber' : 'default'}
                     />
                     <DashboardMetricCard
-                        label="Каттоо жөнөтүү каталары"
+                        label={t('integrationTab.metrics.dispatchErrors')}
                         value={failedEnrollmentDispatchCount}
                         tone={failedEnrollmentDispatchCount ? 'red' : 'green'}
                     />
                     <DashboardMetricCard
-                        label="Акыркы pending каттоо"
+                        label={t('integrationTab.metrics.lastPendingEnrollment')}
                         value={formatDateTime(
                             pendingEnrollmentEvents[0]?.createdAt ||
-                                pendingEnrollmentEvents[0]?.occurredAt
+                                pendingEnrollmentEvents[0]?.occurredAt,
+                            i18n.language
                         )}
                     />
                 </div>
 
                 <div className="mt-4 flex flex-wrap gap-2">
                     <QuickFilterButton
-                        label="Баары"
+                        label={t('common.all')}
                         active={quickView === QUICK_VIEW.ALL}
                         onClick={() => setQuickView(QUICK_VIEW.ALL)}
                     />
                     <QuickFilterButton
-                        label="Pending"
+                        label={t('integrationTab.quickViews.pending')}
                         active={quickView === QUICK_VIEW.PENDING}
                         onClick={() => setQuickView(QUICK_VIEW.PENDING)}
                     />
                     <QuickFilterButton
-                        label="Active"
+                        label={t('integrationTab.quickViews.active')}
                         active={quickView === QUICK_VIEW.ACTIVE}
                         onClick={() => setQuickView(QUICK_VIEW.ACTIVE)}
                     />
                     <QuickFilterButton
-                        label="Failed Dispatch"
+                        label={t('integrationTab.quickViews.failedDispatch')}
                         active={quickView === QUICK_VIEW.FAILED}
                         onClick={() => setQuickView(QUICK_VIEW.FAILED)}
                     />
@@ -464,20 +478,20 @@ const IntegrationTab = ({ companyId = null }) => {
             </DashboardWorkspaceHero>
 
             <DashboardInsetPanel
-                title="Күтүүдөгү CRM каттоолору"
-                description="LMS ичинде pending абалда турган жана CRMге жөнөтүлгөн enrollment окуялары."
+                title={t('integrationTab.sections.pending.title')}
+                description={t('integrationTab.sections.pending.description')}
             >
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead>
                             <tr className="text-left text-edubot-muted dark:text-slate-400 border-b border-edubot-line/80 dark:border-slate-700">
-                                <th className="py-2 pr-3">Убакыт</th>
-                                <th className="py-2 pr-3">Каттоо</th>
-                                <th className="py-2 pr-3">Студент</th>
-                                <th className="py-2 pr-3">CRM лид</th>
-                                <th className="py-2 pr-3">Жеткиликтүүлүк</th>
-                                <th className="py-2 pr-3">Жөнөтүү</th>
-                                <th className="py-2 pr-3">Эскертүү</th>
+                                <th className="py-2 pr-3">{t('integrationTab.table.time')}</th>
+                                <th className="py-2 pr-3">{t('integrationTab.table.enrollment')}</th>
+                                <th className="py-2 pr-3">{t('integrationTab.table.student')}</th>
+                                <th className="py-2 pr-3">{t('integrationTab.table.crmLead')}</th>
+                                <th className="py-2 pr-3">{t('integrationTab.table.access')}</th>
+                                <th className="py-2 pr-3">{t('integrationTab.table.dispatch')}</th>
+                                <th className="py-2 pr-3">{t('integrationTab.table.note')}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -487,25 +501,25 @@ const IntegrationTab = ({ companyId = null }) => {
                                     className="border-b border-gray-50 dark:border-gray-900"
                                 >
                                     <td className="py-2 pr-3 text-gray-700 dark:text-gray-200">
-                                        {formatDateTime(event.createdAt || event.occurredAt)}
+                                        {formatDateTime(event.createdAt || event.occurredAt, i18n.language)}
                                     </td>
                                     <td className="py-2 pr-3 text-gray-700 dark:text-gray-200">
                                         {event.enrollmentId || event.lmsEnrollmentId || '-'}
                                     </td>
                                     <td className="py-2 pr-3 text-gray-700 dark:text-gray-200">
-                                        {renderStudentCell(event)}
+                                        {renderStudentCell(event, t)}
                                     </td>
                                     <td className="py-2 pr-3 text-gray-700 dark:text-gray-200">
                                         {event.crmLeadId || '-'}
                                     </td>
                                     <td className="py-2 pr-3">
                                         <StatusBadge tone={statusBadgeClass(event.accessStatus)}>
-                                            {event.accessStatus || 'locked'}
+                                            {translateOptionLabel(t, 'accessStatus', event.accessStatus || 'locked')}
                                         </StatusBadge>
                                     </td>
                                     <td className="py-2 pr-3">
                                         <StatusBadge tone={deliveryBadgeClass(event.status)}>
-                                            {event.status || '-'}
+                                            {translateOptionLabel(t, 'dispatchStatus', event.status)}
                                         </StatusBadge>
                                     </td>
                                     <td className="py-2 pr-3 text-gray-600 dark:text-gray-300 max-w-xs truncate">
@@ -517,7 +531,7 @@ const IntegrationTab = ({ companyId = null }) => {
                                             onClick={() => setSelectedEnrollmentEvent(event)}
                                             className="text-sm font-medium text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300"
                                         >
-                                            Толук көрүү
+                                            {t('integrationTab.actions.viewDetails')}
                                         </button>
                                     </td>
                                 </tr>
@@ -526,8 +540,8 @@ const IntegrationTab = ({ companyId = null }) => {
                                 <tr>
                                     <td colSpan={8} className="py-8">
                                         <EmptyState
-                                            title="Pending CRM каттоолору табылган жок"
-                                            subtitle="Учурда CRMден келген күтүүдөгү enrollment көрүнбөйт."
+                                            title={t('integrationTab.empty.pending.title')}
+                                            subtitle={t('integrationTab.empty.pending.subtitle')}
                                         />
                                     </td>
                                 </tr>
@@ -538,19 +552,19 @@ const IntegrationTab = ({ companyId = null }) => {
             </DashboardInsetPanel>
 
             <DashboardInsetPanel
-                title="Акыркы критикалык тобокелдик эскертмелери"
-                description="LMS жана CRM ортосундагы олуттуу бузулуулар."
+                title={t('integrationTab.sections.risk.title')}
+                description={t('integrationTab.sections.risk.description')}
             >
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead>
                             <tr className="text-left text-edubot-muted dark:text-slate-400 border-b border-edubot-line/80 dark:border-slate-700">
-                                <th className="py-2 pr-3">Убакыт</th>
-                                <th className="py-2 pr-3">Деңгээл</th>
-                                <th className="py-2 pr-3">LMS студент</th>
-                                <th className="py-2 pr-3">Каттоо</th>
-                                <th className="py-2 pr-3">CRM лид</th>
-                                <th className="py-2 pr-3">Кыскача</th>
+                                <th className="py-2 pr-3">{t('integrationTab.table.time')}</th>
+                                <th className="py-2 pr-3">{t('integrationTab.table.severity')}</th>
+                                <th className="py-2 pr-3">{t('integrationTab.table.lmsStudent')}</th>
+                                <th className="py-2 pr-3">{t('integrationTab.table.enrollment')}</th>
+                                <th className="py-2 pr-3">{t('integrationTab.table.crmLead')}</th>
+                                <th className="py-2 pr-3">{t('integrationTab.table.summary')}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -562,15 +576,15 @@ const IntegrationTab = ({ companyId = null }) => {
                                     className="border-b border-gray-50 dark:border-gray-900"
                                 >
                                     <td className="py-2 pr-3 text-gray-700 dark:text-gray-200">
-                                        {formatDateTime(alert.createdAt || alert.occurredAt)}
+                                        {formatDateTime(alert.createdAt || alert.occurredAt, i18n.language)}
                                     </td>
                                     <td className="py-2 pr-3">
                                         <StatusBadge tone={riskBadgeClass(alert.severity)}>
-                                            {alert.severity || '-'}
+                                            {translateOptionLabel(t, 'riskSeverity', alert.severity)}
                                         </StatusBadge>
                                     </td>
                                     <td className="py-2 pr-3 text-gray-700 dark:text-gray-200">
-                                        {renderStudentCell(alert)}
+                                        {renderStudentCell(alert, t)}
                                     </td>
                                     <td className="py-2 pr-3 text-gray-700 dark:text-gray-200">
                                         {alert.enrollmentId || alert.lmsEnrollmentId || '-'}
@@ -587,8 +601,8 @@ const IntegrationTab = ({ companyId = null }) => {
                                 <tr>
                                     <td colSpan={6} className="py-8">
                                         <EmptyState
-                                            title="Критикалык тобокелдик эскертмеси табылган жок"
-                                            subtitle="Фильтрлерге туура келген олуттуу эскертмелер жок."
+                                            title={t('integrationTab.empty.risk.title')}
+                                            subtitle={t('integrationTab.empty.risk.subtitle')}
                                         />
                                     </td>
                                 </tr>
@@ -599,21 +613,21 @@ const IntegrationTab = ({ companyId = null }) => {
             </DashboardInsetPanel>
 
             <DashboardInsetPanel
-                title="Каттоо статус окуялары"
-                description="Webhook аркылуу келген enrollment абал тарыхы."
+                title={t('integrationTab.sections.events.title')}
+                description={t('integrationTab.sections.events.description')}
             >
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead>
                             <tr className="text-left text-edubot-muted dark:text-slate-400 border-b border-edubot-line/80 dark:border-slate-700">
-                                <th className="py-2 pr-3">Убакыт</th>
-                                <th className="py-2 pr-3">Окуя ID</th>
-                                <th className="py-2 pr-3">Каттоо</th>
-                                <th className="py-2 pr-3">Студент</th>
-                                <th className="py-2 pr-3">Каттоо статусу</th>
-                                <th className="py-2 pr-3">Жеткиликтүүлүк</th>
-                                <th className="py-2 pr-3">Жөнөтүү</th>
-                                <th className="py-2 pr-3">Ката</th>
+                                <th className="py-2 pr-3">{t('integrationTab.table.time')}</th>
+                                <th className="py-2 pr-3">{t('integrationTab.table.eventId')}</th>
+                                <th className="py-2 pr-3">{t('integrationTab.table.enrollment')}</th>
+                                <th className="py-2 pr-3">{t('integrationTab.table.student')}</th>
+                                <th className="py-2 pr-3">{t('integrationTab.table.enrollmentStatus')}</th>
+                                <th className="py-2 pr-3">{t('integrationTab.table.access')}</th>
+                                <th className="py-2 pr-3">{t('integrationTab.table.dispatch')}</th>
+                                <th className="py-2 pr-3">{t('integrationTab.table.error')}</th>
                                 <th className="py-2 pr-3"></th>
                             </tr>
                         </thead>
@@ -624,7 +638,7 @@ const IntegrationTab = ({ companyId = null }) => {
                                     className="border-b border-gray-50 dark:border-gray-900"
                                 >
                                     <td className="py-2 pr-3 text-gray-700 dark:text-gray-200">
-                                        {formatDateTime(event.createdAt || event.occurredAt)}
+                                        {formatDateTime(event.createdAt || event.occurredAt, i18n.language)}
                                     </td>
                                     <td className="py-2 pr-3 text-gray-700 dark:text-gray-200">
                                         {event.eventId || '-'}
@@ -633,23 +647,23 @@ const IntegrationTab = ({ companyId = null }) => {
                                         {event.enrollmentId || event.lmsEnrollmentId || '-'}
                                     </td>
                                     <td className="py-2 pr-3 text-gray-700 dark:text-gray-200">
-                                        {renderStudentCell(event)}
+                                        {renderStudentCell(event, t)}
                                     </td>
                                     <td className="py-2 pr-3">
                                         <StatusBadge
                                             tone={statusBadgeClass(event.enrollmentStatus)}
                                         >
-                                            {event.enrollmentStatus || '-'}
+                                            {translateOptionLabel(t, 'enrollmentStatus', event.enrollmentStatus)}
                                         </StatusBadge>
                                     </td>
                                     <td className="py-2 pr-3">
                                         <StatusBadge tone={statusBadgeClass(event.accessStatus)}>
-                                            {event.accessStatus || '-'}
+                                            {translateOptionLabel(t, 'accessStatus', event.accessStatus)}
                                         </StatusBadge>
                                     </td>
                                     <td className="py-2 pr-3">
                                         <StatusBadge tone={deliveryBadgeClass(event.status)}>
-                                            {event.status || '-'}
+                                            {translateOptionLabel(t, 'dispatchStatus', event.status)}
                                         </StatusBadge>
                                     </td>
                                     <td className="py-2 pr-3 text-gray-600 dark:text-gray-300 max-w-xs truncate">
@@ -661,7 +675,7 @@ const IntegrationTab = ({ companyId = null }) => {
                                             onClick={() => setSelectedEnrollmentEvent(event)}
                                             className="text-sm font-medium text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300"
                                         >
-                                            Толук көрүү
+                                            {t('integrationTab.actions.viewDetails')}
                                         </button>
                                     </td>
                                 </tr>
@@ -670,8 +684,8 @@ const IntegrationTab = ({ companyId = null }) => {
                                 <tr>
                                     <td colSpan={9} className="py-8">
                                         <EmptyState
-                                            title="Каттоо окуясы табылган жок"
-                                            subtitle="Фильтрлерге туура келген enrollment окуялары жок."
+                                            title={t('integrationTab.empty.events.title')}
+                                            subtitle={t('integrationTab.empty.events.subtitle')}
                                         />
                                     </td>
                                 </tr>
@@ -687,12 +701,15 @@ const IntegrationTab = ({ companyId = null }) => {
                 loading={detailLoading}
                 error={detailError}
                 onClose={() => setSelectedEnrollmentEvent(null)}
+                locale={i18n.language}
             />
         </div>
     );
 };
 
-const FilterSelect = ({ label, value, onChange, options }) => (
+const FilterSelect = ({ label, value, onChange, options, labelForOption }) => {
+    const { t } = useTranslation();
+    return (
     <label className="text-sm text-edubot-ink dark:text-white">
         <span className="block mb-1">{label}</span>
         <select
@@ -700,15 +717,16 @@ const FilterSelect = ({ label, value, onChange, options }) => (
             onChange={(e) => onChange(e.target.value)}
             className="dashboard-select w-full"
         >
-            <option value="">Баары</option>
+            <option value="">{t('common.all')}</option>
             {options.map((option) => (
                 <option key={option} value={option}>
-                    {option}
+                    {labelForOption(option)}
                 </option>
             ))}
         </select>
     </label>
-);
+    );
+};
 
 const FilterInput = ({ label, value, onChange, type }) => (
     <label className="text-sm text-edubot-ink dark:text-white">
@@ -745,6 +763,7 @@ FilterSelect.propTypes = {
     value: PropTypes.string.isRequired,
     onChange: PropTypes.func.isRequired,
     options: PropTypes.arrayOf(PropTypes.string).isRequired,
+    labelForOption: PropTypes.func,
 };
 
 FilterInput.propTypes = {
@@ -768,50 +787,61 @@ QuickFilterButton.defaultProps = {
     active: false,
 };
 
-const EnrollmentEventDetailModal = ({ event, detail, loading, error, onClose }) => (
+const EnrollmentEventDetailModal = ({ event, detail, loading, error, onClose, locale }) => {
+    const { t } = useTranslation();
+    return (
     <BasicModal
         isOpen={Boolean(event)}
         onClose={onClose}
-        title="Каттоо окуясынын толук маалыматы"
+        title={t('integrationTab.detail.title')}
         size="lg"
     >
         {event ? (
             <div className="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                     <DetailField
-                        label="Окуя убактысы"
-                        value={formatDateTime(event.createdAt || event.occurredAt)}
+                        label={t('integrationTab.detail.eventTime')}
+                        value={formatDateTime(event.createdAt || event.occurredAt, locale)}
                     />
-                    <DetailField label="Окуя ID" value={event.eventId || '-'} />
+                    <DetailField label={t('integrationTab.table.eventId')} value={event.eventId || '-'} />
                     <DetailField
-                        label="LMS каттоо"
+                        label={t('integrationTab.detail.lmsEnrollment')}
                         value={event.enrollmentId || event.lmsEnrollmentId || '-'}
-                        copyLabel="LMS каттоо ID"
+                        copyLabel={t('integrationTab.detail.lmsEnrollmentId')}
                     />
                     <DetailField
-                        label="Студенттин аты"
+                        label={t('integrationTab.detail.studentName')}
                         value={event.studentName || detail?.studentName || '-'}
                     />
                     <DetailField
-                        label="LMS студент"
+                        label={t('integrationTab.table.lmsStudent')}
                         value={event.studentId || event.lmsStudentId || '-'}
-                        copyLabel="LMS студент ID"
+                        copyLabel={t('integrationTab.detail.lmsStudentId')}
                     />
                     <DetailField
-                        label="CRM лид"
+                        label={t('integrationTab.table.crmLead')}
                         value={event.crmLeadId || '-'}
-                        copyLabel="CRM лид ID"
+                        copyLabel={t('integrationTab.detail.crmLeadId')}
                     />
-                    <DetailField label="Каттоо статусу" value={event.enrollmentStatus || '-'} />
-                    <DetailField label="Жеткиликтүүлүк" value={event.accessStatus || '-'} />
-                    <DetailField label="Жөнөтүү статусу" value={event.status || '-'} />
-                    <DetailField label="Ката" value={event.lastError || '-'} />
-                    <DetailField label="Эскертүү" value={event.reason || '-'} />
+                    <DetailField
+                        label={t('integrationTab.table.enrollmentStatus')}
+                        value={translateOptionLabel(t, 'enrollmentStatus', event.enrollmentStatus)}
+                    />
+                    <DetailField
+                        label={t('integrationTab.table.access')}
+                        value={translateOptionLabel(t, 'accessStatus', event.accessStatus)}
+                    />
+                    <DetailField
+                        label={t('integrationTab.detail.dispatchStatus')}
+                        value={translateOptionLabel(t, 'dispatchStatus', event.status)}
+                    />
+                    <DetailField label={t('integrationTab.table.error')} value={event.lastError || '-'} />
+                    <DetailField label={t('integrationTab.table.note')} value={event.reason || '-'} />
                 </div>
 
                 {loading ? (
                     <div className="rounded-xl border border-edubot-line/80 bg-white px-4 py-3 text-sm text-edubot-muted dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
-                        Толук payload жүктөлүүдө...
+                        {t('integrationTab.detail.loadingPayload')}
                     </div>
                 ) : null}
 
@@ -824,7 +854,7 @@ const EnrollmentEventDetailModal = ({ event, detail, loading, error, onClose }) 
                 {detail?.payload ? (
                     <div className="space-y-2">
                         <p className="text-sm font-semibold text-edubot-ink dark:text-white">
-                            Webhook payload
+                            {t('integrationTab.detail.webhookPayload')}
                         </p>
                         <pre className="max-h-72 overflow-auto rounded-xl border border-edubot-line/80 bg-slate-950 px-4 py-3 text-xs text-slate-100">
                             {JSON.stringify(detail.payload, null, 2)}
@@ -837,7 +867,7 @@ const EnrollmentEventDetailModal = ({ event, detail, loading, error, onClose }) 
                         to={buildAdminUsersLink(event.studentId || event.lmsStudentId)}
                         className="dashboard-button-secondary"
                     >
-                        Колдонуучу картасын ачуу
+                        {t('integrationTab.actions.openUserCard')}
                     </Link>
                     <Link
                         to={buildIntegrationQuickViewLink(
@@ -851,15 +881,18 @@ const EnrollmentEventDetailModal = ({ event, detail, loading, error, onClose }) 
                         )}
                         className="dashboard-button-secondary"
                     >
-                        Туура фильтр менен ачуу
+                        {t('integrationTab.actions.openWithFilter')}
                     </Link>
                 </div>
             </div>
         ) : null}
     </BasicModal>
-);
+    );
+};
 
-const DetailField = ({ label, value, copyLabel }) => (
+const DetailField = ({ label, value, copyLabel }) => {
+    const { t } = useTranslation();
+    return (
     <div className="rounded-xl border border-edubot-line/80 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-900">
         <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
@@ -873,15 +906,16 @@ const DetailField = ({ label, value, copyLabel }) => (
             {copyLabel && value && value !== '-' ? (
                 <button
                     type="button"
-                    onClick={() => copyText(value, copyLabel)}
+                    onClick={() => copyText(value, copyLabel, t)}
                     className="shrink-0 rounded-lg border border-edubot-line/80 px-2 py-1 text-xs font-medium text-edubot-ink transition-colors hover:bg-orange-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
                 >
-                    Көчүрүү
+                    {t('common.copy')}
                 </button>
             ) : null}
         </div>
     </div>
-);
+    );
+};
 
 EnrollmentEventDetailModal.propTypes = {
     event: PropTypes.shape({
@@ -908,6 +942,7 @@ EnrollmentEventDetailModal.propTypes = {
     loading: PropTypes.bool,
     error: PropTypes.string,
     onClose: PropTypes.func.isRequired,
+    locale: PropTypes.string,
 };
 
 EnrollmentEventDetailModal.defaultProps = {
@@ -915,6 +950,7 @@ EnrollmentEventDetailModal.defaultProps = {
     detail: null,
     loading: false,
     error: '',
+    locale: 'ky',
 };
 
 DetailField.propTypes = {
@@ -925,6 +961,10 @@ DetailField.propTypes = {
 
 DetailField.defaultProps = {
     copyLabel: '',
+};
+
+FilterSelect.defaultProps = {
+    labelForOption: (option) => option,
 };
 
 export default IntegrationTab;

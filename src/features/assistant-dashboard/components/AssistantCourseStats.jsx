@@ -1,44 +1,48 @@
+import { useTranslation } from 'react-i18next';
 import {
     DashboardInsetPanel,
     EmptyState,
     StatusBadge,
 } from '@components/ui/dashboard';
 import { FiBookOpen } from 'react-icons/fi';
+import { getCourseTypeLabel } from '@shared/i18n/enumLabels';
 
 const getCourseSignal = (studentCount) => {
     if (studentCount === 0) {
         return {
             tone: 'amber',
-            label: 'Каттоо күтөт',
-            hint: 'Бул курс азыр бош, студенттер табынан каттоону баштасаңыз болот.',
+            labelKey: 'assistantDashboard.courseStats.signals.empty.label',
+            hintKey: 'assistantDashboard.courseStats.signals.empty.hint',
         };
     }
 
     if (studentCount >= 25) {
         return {
             tone: 'blue',
-            label: 'Жогорку жүктөм',
-            hint: 'Катталган студент көп. Топ/катышуу агымын жакын көзөмөлдөңүз.',
+            labelKey: 'assistantDashboard.courseStats.signals.highLoad.label',
+            hintKey: 'assistantDashboard.courseStats.signals.highLoad.hint',
         };
     }
 
     return {
         tone: 'green',
-        label: 'Активдүү',
-        hint: 'Курста катталган студенттер бар.',
+        labelKey: 'assistantDashboard.courseStats.signals.active.label',
+        hintKey: 'assistantDashboard.courseStats.signals.active.hint',
     };
 };
 
 const AssistantCourseStats = ({ courses, courseCounts, loading }) => {
+    const { t } = useTranslation();
+
     if (!courses.length && !loading) {
         return (
             <DashboardInsetPanel
-                title="Курс жүктөмү"
-                description="Компаниядагы курстар боюнча студенттердин бөлүштүрүлүшү."
+                title={t('assistantDashboard.courseStats.title')}
+                description={t('assistantDashboard.courseStats.description')}
             >
                 <EmptyState
-                    title="Курс табылган жок"
-                    subtitle="Компания үчүн жеткиликтүү жарыяланган курстар чыккандан кийин бул жерде көрүнөт."
+                    title={t('assistantDashboard.courseStats.empty.title')}
+                    subtitle={t('assistantDashboard.courseStats.empty.subtitle')}
                     icon={<FiBookOpen className="h-8 w-8 text-edubot-orange" />}
                 />
             </DashboardInsetPanel>
@@ -47,8 +51,8 @@ const AssistantCourseStats = ({ courses, courseCounts, loading }) => {
 
     return (
         <DashboardInsetPanel
-            title="Курс жүктөмү"
-            description="Компаниядагы курстар боюнча студенттердин бөлүштүрүлүшү."
+            title={t('assistantDashboard.courseStats.title')}
+            description={t('assistantDashboard.courseStats.description')}
         >
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 {courses.map((course) => {
@@ -66,26 +70,22 @@ const AssistantCourseStats = ({ courses, courseCounts, loading }) => {
                                         {course.title}
                                     </div>
                                     <div className="mt-1 text-xs text-edubot-muted dark:text-slate-400">
-                                        {course.shortDescription || 'Компаниядагы активдүү курс'}
+                                        {course.shortDescription || t('assistantDashboard.courseStats.fallbackDescription')}
                                     </div>
                                 </div>
                                 <StatusBadge tone={studentCount > 0 ? 'green' : 'default'}>
-                                    {studentCount} студент
+                                    {t('assistantDashboard.courseStats.studentCount', { count: studentCount })}
                                 </StatusBadge>
                             </div>
 
                             <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-edubot-line/60 pt-3 dark:border-slate-700">
-                                <StatusBadge tone={signal.tone}>{signal.label}</StatusBadge>
+                                <StatusBadge tone={signal.tone}>{t(signal.labelKey)}</StatusBadge>
                                 <span className="text-xs text-edubot-muted dark:text-slate-400">
-                                    {course.courseType === 'offline'
-                                        ? 'Оффлайн'
-                                        : course.courseType === 'online_live'
-                                          ? 'Онлайн live'
-                                          : 'Видео курс'}
+                                    {getCourseTypeLabel(course.courseType, t)}
                                 </span>
                             </div>
                             <p className="mt-2 text-xs leading-5 text-edubot-muted dark:text-slate-400">
-                                {signal.hint}
+                                {t(signal.hintKey)}
                             </p>
                         </div>
                     );

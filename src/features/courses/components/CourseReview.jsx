@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AiFillStar, AiOutlineStar } from 'react-icons/ai';
 import { fetchCourseReviews } from '@features/ratings/api';
 
 const RATING_LEVELS = [5, 4, 3, 2, 1];
 
-const getReviewerName = (review = {}) =>
-    review.userName || review.user?.fullName || review.user?.name || 'Студент';
+const getReviewerName = (review = {}, fallback) =>
+    review.userName || review.user?.fullName || review.user?.name || fallback;
 
 const getInitials = (value = '') =>
     String(value)
@@ -15,11 +16,11 @@ const getInitials = (value = '') =>
         .map((part) => part[0]?.toUpperCase())
         .join('') || 'S';
 
-const formatReviewDate = (value) => {
+const formatReviewDate = (value, language) => {
     if (!value) return '';
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return '';
-    return date.toLocaleDateString('ky-KG', {
+    return date.toLocaleDateString(language || undefined, {
         day: '2-digit',
         month: 'short',
         year: 'numeric',
@@ -31,8 +32,10 @@ const formatReviewDate = (value) => {
  * Shows total reviews, per-star counts with bars, and average rating with stars.
  */
 const CourseReview = ({ courseId, ratingAverage = 0, ratingCount, ratingBreakdown, onViewAll }) => {
+    const { t, i18n } = useTranslation();
     const [reviewsData, setReviewsData] = useState(null);
     const [loadingReviews, setLoadingReviews] = useState(false);
+    const language = i18n.resolvedLanguage || i18n.language || undefined;
 
     useEffect(() => {
         if (!courseId) return;
@@ -94,14 +97,16 @@ const CourseReview = ({ courseId, ratingAverage = 0, ratingCount, ratingBreakdow
     return (
         <div className="w-full border border-gray-200 rounded-2xl bg-white p-6 sm:p-8 space-y-6 dark:border-gray-700 dark:bg-[#222222]">
             <div className="flex items-center justify-between gap-4">
-                <h2 className="text-3xl font-black text-gray-900 dark:text-[#E8ECF3]">({totalRatings || 0}) пикир</h2>
+                <h2 className="text-3xl font-black text-gray-900 dark:text-[#E8ECF3]">
+                    {t('public.courseShared.reviewSummary.count', { count: totalRatings || 0 })}
+                </h2>
                 {onViewAll && (
                     <button
                         type="button"
                         className="rounded-md px-2 py-1 text-sm hover:text-[#7B818C] focus:outline-none focus:ring-2 focus:ring-orange-500"
                         onClick={onViewAll}
                     >
-                        Баардыгын көрүү
+                        {t('public.courseShared.reviewSummary.viewAll')}
                     </button>
                 )}
             </div>
@@ -119,14 +124,14 @@ const CourseReview = ({ courseId, ratingAverage = 0, ratingCount, ratingBreakdow
                                 className="flex items-center gap-4 text-base"
                             >
                                 <span className="min-w-[110px] whitespace-nowrap">
-                                    {level} жылдызча
+                                    {t('public.courseShared.reviewSummary.starLabel', { count: level })}
                                 </span>
                                 <div className="flex-1 h-3 bg-[#D9D9D9] rounded-full overflow-hidden">
                                     <div
                                         className="h-full bg-[#E65A00] rounded-full transition-all"
                                         style={{ width: `${percent}%` }}
                                         role="progressbar"
-                                        aria-label={`${level} жылдызча рейтинги`}
+                                        aria-label={t('public.courseShared.reviewSummary.starRatingAria', { count: level })}
                                         aria-valuenow={Math.round(percent)}
                                         aria-valuemin="0"
                                         aria-valuemax="100"
@@ -144,7 +149,12 @@ const CourseReview = ({ courseId, ratingAverage = 0, ratingCount, ratingBreakdow
                     <p className="text-[48px] font-black text-[#C2410C] leading-none">
                         {resolvedRatingAverage ? resolvedRatingAverage.toFixed(1) : '0.0'}
                     </p>
-                    <div className="flex gap-3 text-[#FACC15]" aria-label={`Орточо рейтинг ${resolvedRatingAverage ? resolvedRatingAverage.toFixed(1) : '0.0'} ичинен 5`}>
+                    <div
+                        className="flex gap-3 text-[#FACC15]"
+                        aria-label={t('public.courseShared.reviewSummary.averageRatingAria', {
+                            rating: resolvedRatingAverage ? resolvedRatingAverage.toFixed(1) : '0.0',
+                        })}
+                    >
                         <div style={{ display: 'flex', gap: '5px' }}>   
                             {[1, 2, 3, 4, 5].map((star) => (
                                 <span
@@ -165,17 +175,21 @@ const CourseReview = ({ courseId, ratingAverage = 0, ratingCount, ratingBreakdow
 
             <div className="border-t border-gray-200 pt-5 dark:border-gray-700">
                 <div className="mb-4 flex items-center justify-between gap-3">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-[#E8ECF3]">Акыркы пикирлер</h3>
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-[#E8ECF3]">
+                        {t('public.courseShared.reviewSummary.latestTitle')}
+                    </h3>
                     {loadingReviews ? (
-                        <span className="text-sm text-gray-500 dark:text-gray-400">Жүктөлүүдө...</span>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">
+                            {t('public.courseShared.reviewSummary.loading')}
+                        </span>
                     ) : null}
                 </div>
 
                 {reviews.length ? (
                     <div className="space-y-4">
                         {reviews.map((review) => {
-                            const reviewerName = getReviewerName(review);
-                            const reviewDate = formatReviewDate(review.createdAt);
+                            const reviewerName = getReviewerName(review, t('public.courseShared.reviewSummary.fallbackStudent'));
+                            const reviewDate = formatReviewDate(review.createdAt, language);
 
                             return (
                                 <article
@@ -197,7 +211,12 @@ const CourseReview = ({ courseId, ratingAverage = 0, ratingCount, ratingBreakdow
                                                     </span>
                                                 ) : null}
                                             </div>
-                                            <div className="mt-1 flex gap-1" aria-label={`${review.value || 0} ичинен 5`}>
+                                            <div
+                                                className="mt-1 flex gap-1"
+                                                aria-label={t('public.courseShared.reviewSummary.reviewRatingAria', {
+                                                    rating: review.value || 0,
+                                                })}
+                                            >
                                                 {[1, 2, 3, 4, 5].map((star) => (
                                                     star <= Number(review.value || 0) ? (
                                                         <AiFillStar key={star} color="#ffc107" size={16} />
@@ -219,7 +238,7 @@ const CourseReview = ({ courseId, ratingAverage = 0, ratingCount, ratingBreakdow
                     </div>
                 ) : !loadingReviews ? (
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Бул курс боюнча жазылган пикирлер азырынча көрсөтүлө элек.
+                        {t('public.courseShared.reviewSummary.empty')}
                     </p>
                 ) : null}
             </div>

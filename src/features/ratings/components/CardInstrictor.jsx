@@ -23,7 +23,7 @@ const CardInstructor = ({
     const ratingLabel = safeRatingAverage ? `${safeRatingAverage.toFixed(1)} / 5` : t('ratings.card.newRating');
     const normalizedName = instructorName
         .toLowerCase()
-        .replace(/[^a-z0-9а-яөүңё]+/gi, '-')
+        .replace(/[^\p{L}0-9]+/gu, '-')
         .replace(/^-|-$/g, '') || 'instructor';
 
     const getFillPercentage = (starIndex) => {

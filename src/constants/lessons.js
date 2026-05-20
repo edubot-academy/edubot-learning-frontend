@@ -1,6 +1,6 @@
 export const LESSON_KIND_OPTIONS = [
-    { value: 'video', label: 'Видео' },
-    { value: 'article', label: 'Макала (текст)' },
-    { value: 'quiz', label: 'Квиз' },
-    { value: 'code', label: 'Код тапшырма' },
+    { value: 'video', labelKey: 'instructorDashboard.courseBuilder.lessonKinds.video' },
+    { value: 'article', labelKey: 'instructorDashboard.courseBuilder.lessonKinds.article' },
+    { value: 'quiz', labelKey: 'instructorDashboard.courseBuilder.lessonKinds.quiz' },
+    { value: 'code', labelKey: 'instructorDashboard.courseBuilder.lessonKinds.code' },
 ];

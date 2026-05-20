@@ -1,8 +1,11 @@
 import { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import { FiChevronDown, FiChevronUp, FiSearch } from 'react-icons/fi';
 import { ATTENDANCE_STATUS_CONFIG } from '../constants/attendanceConfig';
 import AttendanceCell from './AttendanceCell';
+
+const getStatusTranslationKey = (status) => (status === 'not_scheduled' ? 'notScheduled' : status);
 
 /**
  * Mobile-Responsive Card View for Attendance
@@ -16,9 +19,12 @@ const AttendanceCardView = ({
   loading = false,
   className = '',
 }) => {
+  const { t, i18n } = useTranslation();
   const [expandedStudents, setExpandedStudents] = useState(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+
+  const language = i18n.resolvedLanguage || i18n.language || undefined;
 
   // Filter students based on search and status
   const filteredStudents = useMemo(() => {
@@ -59,7 +65,7 @@ const AttendanceCardView = ({
   }, []);
 
   // Calculate student statistics
-  const getStudentStats = useCallback((student) => {
+	  const getStudentStats = useCallback((student) => {
     const stats = {
       present: 0,
       late: 0,
@@ -80,7 +86,19 @@ const AttendanceCardView = ({
     const attendanceRate = scheduledCount > 0 ? (attendedCount / scheduledCount) * 100 : 0;
 
     return { ...stats, attendanceRate };
-  }, [sessions, attendanceData]);
+	  }, [sessions, attendanceData]);
+
+  const formatSessionDate = useCallback((value) => {
+    if (!value) return t('attendance.fallbacks.noDate');
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return t('attendance.fallbacks.unknownDate');
+
+    return date.toLocaleDateString(language, {
+      month: 'short',
+      day: 'numeric',
+    });
+  }, [language, t]);
 
   if (loading) {
     return (
@@ -104,27 +122,27 @@ const AttendanceCardView = ({
       <div className="sticky top-0 z-20 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 p-4 space-y-3">
         <div className="relative">
           <FiSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Студент издөө..."
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-          />
+	          <input
+	            type="text"
+	            value={searchQuery}
+	            onChange={(e) => setSearchQuery(e.target.value)}
+	            placeholder={t('attendance.filters.searchStudent')}
+	            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+	          />
         </div>
 
         <div className="flex gap-2">
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-          >
-            <option value="all">Баардык статус</option>
-            {Object.entries(ATTENDANCE_STATUS_CONFIG).map(([key, config]) => (
-              <option key={key} value={key}>
-                {config.label}
-              </option>
-            ))}
+	            className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+	          >
+	            <option value="all">{t('attendance.filters.allStatuses')}</option>
+	            {Object.keys(ATTENDANCE_STATUS_CONFIG).map((key) => (
+	              <option key={key} value={key}>
+	                {t(`attendance.status.${getStatusTranslationKey(key)}`)}
+	              </option>
+	            ))}
           </select>
 
           <button
@@ -132,21 +150,21 @@ const AttendanceCardView = ({
               setSearchQuery('');
               setStatusFilter('all');
             }}
-            className="px-3 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"
-          >
-            Тазалоо
-          </button>
+	            className="px-3 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"
+	          >
+	            {t('attendance.actions.clear')}
+	          </button>
         </div>
       </div>
 
       {/* Student Cards */}
       <div className="space-y-4 p-4">
         {filteredStudents.length === 0 ? (
-          <div className="text-center py-8">
-            <div className="text-gray-500 dark:text-gray-400">
-              Студенттер табылган жок
-            </div>
-          </div>
+	          <div className="text-center py-8">
+	            <div className="text-gray-500 dark:text-gray-400">
+	              {t('attendance.cardView.noStudentsFound')}
+	            </div>
+	          </div>
         ) : (
           filteredStudents.map(student => {
             const stats = getStudentStats(student);
@@ -162,7 +180,7 @@ const AttendanceCardView = ({
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
                       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 text-sm font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
-                        {(student.fullName || 'Unknown')
+	                        {(student.fullName || t('attendance.cardView.unknownStudent'))
                           .split(' ')
                           .filter(Boolean)
                           .map((n) => n[0])
@@ -197,13 +215,13 @@ const AttendanceCardView = ({
                   {/* Student Stats */}
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Катышуу %:</span>
+	                      <span className="text-gray-600 dark:text-gray-400">{t('attendance.cardView.attendanceRate')}</span>
                       <span className={`font-medium ${stats.attendanceRate >= 75 ? 'text-green-600' : stats.attendanceRate >= 50 ? 'text-amber-600' : 'text-red-600'}`}>
                         {Math.round(stats.attendanceRate)}%
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Катышкан:</span>
+	                      <span className="text-gray-600 dark:text-gray-400">{t('attendance.cardView.attended')}</span>
                       <span className="font-medium text-gray-900 dark:text-white">
                         {stats.present + stats.late}/{stats.present + stats.late + stats.absent + stats.excused}
                       </span>
@@ -243,15 +261,10 @@ const AttendanceCardView = ({
                           <div key={session.id} className="flex items-center justify-between">
                             <div className="min-w-0 flex-1">
                               <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                {session.title || `Сессия ${session.sessionIndex}`}
+	                                {session.title || t('attendance.fallbacks.sessionWithId', { id: session.sessionIndex })}
                               </div>
                               <div className="text-xs text-gray-500 dark:text-gray-400">
-                                {session.startsAt
-                                  ? new Date(session.startsAt).toLocaleDateString('ky-KG', {
-                                      month: 'short',
-                                      day: 'numeric',
-                                    })
-                                  : 'Күнү жок'}
+	                                {formatSessionDate(session.startsAt)}
                               </div>
                             </div>
 

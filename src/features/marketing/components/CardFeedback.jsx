@@ -42,7 +42,7 @@ const CardFeedback = ({ comment, user, value }) => {
                             onError={(e) => {
                                 e.currentTarget.src = grayPerson;
                             }}
-                            alt={'profile'}
+                            alt={user.fullName || ''}
                             className="w-16 h-16 rounded-full object-cover"
                         />
                         <div>

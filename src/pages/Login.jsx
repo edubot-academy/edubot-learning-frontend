@@ -134,7 +134,7 @@ const LoginPage = () => {
                         <div className="relative z-10 mx-auto flex w-full max-w-md justify-center py-4 lg:py-6">
                             <img
                                 src={SignInImg}
-                                alt="EduBot Learning"
+                                alt={t('public.auth.login.imageAlt')}
                                 className="h-[210px] w-full object-contain drop-shadow-xl lg:h-[250px]"
                             />
                         </div>

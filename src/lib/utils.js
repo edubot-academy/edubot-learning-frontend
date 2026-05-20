@@ -1,5 +1,6 @@
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import i18n from '../i18n';
 
 /**
  * Utility function for merging Tailwind CSS classes
@@ -20,7 +21,7 @@ export function formatDate(date, options = {}) {
     ...options
   };
   
-  return new Intl.DateTimeFormat('ky-KG', defaultOptions).format(new Date(date));
+  return new Intl.DateTimeFormat(i18n.language, defaultOptions).format(new Date(date));
 }
 
 /**
@@ -33,7 +34,7 @@ export function formatTime(date, options = {}) {
     ...options
   };
   
-  return new Intl.DateTimeFormat('ky-KG', defaultOptions).format(new Date(date));
+  return new Intl.DateTimeFormat(i18n.language, defaultOptions).format(new Date(date));
 }
 
 /**
@@ -47,10 +48,10 @@ export function formatRelativeTime(date) {
   const diffHours = Math.floor(diffMs / 3600000);
   const diffDays = Math.floor(diffMs / 86400000);
 
-  if (diffMins < 1) return 'азыр';
-  if (diffMins < 60) return `${diffMins} мүнөт мурун`;
-  if (diffHours < 24) return `${diffHours} саат мурун`;
-  if (diffDays < 7) return `${diffDays} күн мурун`;
+  if (diffMins < 1) return i18n.t('relativeTime.now');
+  if (diffMins < 60) return i18n.t('relativeTime.minutesAgo', { count: diffMins });
+  if (diffHours < 24) return i18n.t('relativeTime.hoursAgo', { count: diffHours });
+  if (diffDays < 7) return i18n.t('relativeTime.daysAgo', { count: diffDays });
   
   return formatDate(date);
 }

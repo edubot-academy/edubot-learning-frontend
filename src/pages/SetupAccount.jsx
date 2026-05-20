@@ -4,6 +4,7 @@ import { toast } from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { completeAccountSetup } from '@services/api';
 import { setStoredToken } from '@shared/api/client';
+import { parseApiError } from '@shared/api/error';
 import { AuthContext } from '../context/AuthContext';
 import LabelPassword from '@shared-ui/forms/LabelPassword';
 import SignUpImg from '../assets/images/edubot-signup.png';
@@ -88,9 +89,10 @@ const SetupAccountPage = () => {
         } catch (setupError) {
             setStatus({
                 type: 'error',
-                message:
-                    setupError?.response?.data?.message ||
-                    t('setupAccount.errors.invalidOrExpired'),
+                message: parseApiError(
+                    setupError,
+                    t('setupAccount.errors.invalidOrExpired')
+                ).message,
             });
         } finally {
             setLoading(false);

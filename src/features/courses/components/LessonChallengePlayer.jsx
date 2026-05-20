@@ -15,20 +15,18 @@ const LessonChallengePlayer = ({
 }) => {
     const { t } = useTranslation();
     const [showResultPopup, setShowResultPopup] = useState(false);
-    const [submitted, setSubmitted] = useState(false); // 🔥 ДОБАВЛЕНО
+    const [submitted, setSubmitted] = useState(false);
 
-    // Показывать popup только после сабмита
     useEffect(() => {
         if (submitted && result && !submitting) {
             setShowResultPopup(true);
         }
-    }, [result, submitting, submitted]); // 🔥 ДОБАВЛЕНО "submitted"
+    }, [result, submitting, submitted]);
 
     const closePopup = () => {
         setShowResultPopup(false);
     };
 
-    // Закрытие popup при клике вне области
     useEffect(() => {
         const handleEscape = (e) => {
             if (e.key === 'Escape') {
@@ -42,7 +40,6 @@ const LessonChallengePlayer = ({
         }
     }, [showResultPopup]);
 
-    // 🔥 Обёртка над onSubmit, чтобы отметить "мы нажали Submit"
     const handleSubmit = () => {
         setSubmitted(true);
         onSubmit?.();
@@ -64,10 +61,8 @@ const LessonChallengePlayer = ({
 
     return (
         <>
-            {/* Основной контейнер */}
             <div className="mb-6 rounded-lg shadow-md overflow-hidden bg-[#303133] p-1">
                 <div className="flex flex-col lg:flex-row min-h-[500px]">
-                    {/* Задание */}
                     <div className="flex-1 bg-[#262729] p-3">
                         <div className="flex flex-col h-full">
                             <div>
@@ -80,11 +75,8 @@ const LessonChallengePlayer = ({
                                 </div>
                             </div>
 
-                            {/* Ачык тесттер – ВСЕГДА ВНИЗУ */}
                             {visibleTests.length > 0 && (
                                 <div className="bg-[#303133] rounded p-2 border border-[#404144] mt-auto">
-                                    {' '}
-                                    {/* FIX */}
                                     <p className="text-sm font-semibold mb-2 text-white">
                                         {t('courseLearning.challenge.visibleTests')}
                                     </p>
@@ -109,7 +101,6 @@ const LessonChallengePlayer = ({
                         </div>
                     </div>
 
-                    {/* Редактор */}
                     <div className="flex-1 bg-[#262729] p-6 flex flex-col">
                         <div className="flex-1">
                             <div className="flex justify-between items-center">
@@ -120,7 +111,9 @@ const LessonChallengePlayer = ({
                                 {challenge.timeLimitMs && (
                                     <div className="flex items-center gap-2 text-sm text-gray-400 mb-3">
                                         <FiClock className="text-edubot-orange text-xl" />
-                                        {(challenge.timeLimitMs / 1000 / 60).toFixed(1)} мин
+                                        {t('courseLearning.challenge.timeLimitMinutes', {
+                                            value: (challenge.timeLimitMs / 1000 / 60).toFixed(1),
+                                        })}
                                     </div>
                                 )}
                             </div>
@@ -136,11 +129,10 @@ const LessonChallengePlayer = ({
                             />
                         </div>
 
-                        {/* Кнопка */}
                         <div className="mt-6 pt-4 border-t border-[#404144]">
                             <button
                                 type="button"
-                                onClick={handleSubmit} // 🔥 ВАЖНО
+                                onClick={handleSubmit}
                                 disabled={disabled || submitting}
                                 className="w-full px-4 py-3 rounded bg-edubot-orange text-white disabled:opacity-60 hover:bg-orange-600 transition-colors font-medium"
                             >

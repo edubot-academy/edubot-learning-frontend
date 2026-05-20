@@ -397,7 +397,8 @@ const SessionResourcesTab = ({
                                         onChange={(e) =>
                                             setMaterialDraft((prev) => ({ ...prev, url: e.target.value }))
                                         }
-                                        placeholder="https://..."
+                                        // l10n-audit-ignore: URL format example
+                                        placeholder={'https://...'}
                                         className="dashboard-field"
                                     />
                                     <div className="flex gap-2">
@@ -466,7 +467,8 @@ const SessionResourcesTab = ({
                                                                 url: e.target.value,
                                                             }))
                                                         }
-                                                        placeholder="https://..."
+                                                        // l10n-audit-ignore: URL format example
+                                                        placeholder={'https://...'}
                                                         className="dashboard-field"
                                                     />
                                                 )}
@@ -602,7 +604,8 @@ const SessionResourcesTab = ({
                                     <input
                                         value={meetingJoinUrl}
                                         onChange={(e) => setMeetingJoinUrl(e.target.value)}
-                                        placeholder="https://..."
+                                        // l10n-audit-ignore: URL format example
+                                        placeholder={'https://...'}
                                         className="dashboard-field"
                                     />
                                 </div>

@@ -1,5 +1,7 @@
+import i18n from '../i18n';
+
 export const createEmptyChallengeTest = () => ({
-    title: 'Тест 1',
+    title: i18n.t('challengeUtils.defaults.testTitle', { number: 1 }),
     argsText: '[]',
     expectedText: 'null',
     isHidden: false,
@@ -7,7 +9,7 @@ export const createEmptyChallengeTest = () => ({
 
 export const createEmptyChallenge = () => ({
     instructions: '',
-    starterCode: '// Кодду бул жерге жазыңыз\n',
+    starterCode: i18n.t('challengeUtils.defaults.starterCode'),
     timeLimitMs: 5000,
     tests: [createEmptyChallengeTest()],
 });
@@ -26,7 +28,7 @@ export const mapChallengeFromApi = (challenge, includeHidden = false) => {
         timeLimitMs: challenge.timeLimitMs || 5000,
         tests: (challenge.tests || []).map((test, idx) => ({
             id: test.id,
-            title: test.title || `Тест ${idx + 1}`,
+            title: test.title || i18n.t('challengeUtils.defaults.testTitle', { number: idx + 1 }),
             isHidden: Boolean(test.isHidden),
             argsText:
                 includeHidden || !test.isHidden ? JSON.stringify(test.args ?? [], null, 2) : '[]',
@@ -44,35 +46,39 @@ const parseJsonField = (value, fallback, label) => {
     try {
         return JSON.parse(text);
     } catch {
-        throw new Error(`${label} валиддүү JSON болушу керек`);
+        throw new Error(i18n.t('challengeUtils.errors.invalidJson', { label }));
     }
 };
 
 export const normalizeChallengeForApi = (challenge) => {
     if (!challenge) {
-        throw new Error('Код тапшырма маалыматтары толтурулган эмес');
+        throw new Error(i18n.t('challengeUtils.errors.missingChallenge'));
     }
 
     const instructions = challenge.instructions?.trim();
     if (!instructions) {
-        throw new Error('Код тапшырманын инструкцияларын жазыңыз');
+        throw new Error(i18n.t('challengeUtils.errors.missingInstructions'));
     }
 
     if (!challenge.tests?.length) {
-        throw new Error('Кеминде бир тест кошуңуз');
+        throw new Error(i18n.t('challengeUtils.errors.addTest'));
     }
 
     const tests = challenge.tests.map((test, index) => {
         const title = test.title?.trim();
         if (!title) {
-            throw new Error(`Тест ${index + 1} үчүн аталыш жазыңыз`);
+            throw new Error(i18n.t('challengeUtils.errors.testTitleRequired', { number: index + 1 }));
         }
 
-        const args = parseJsonField(test.argsText || '[]', '[]', `Тест ${index + 1} аргументтери`);
+        const args = parseJsonField(
+            test.argsText || '[]',
+            '[]',
+            i18n.t('challengeUtils.labels.testArgs', { number: index + 1 })
+        );
         const expected = parseJsonField(
             typeof test.expectedText === 'string' ? test.expectedText : 'null',
             'null',
-            `Тест ${index + 1} күткөн жыйынтыгы`
+            i18n.t('challengeUtils.labels.testExpected', { number: index + 1 })
         );
 
         return {

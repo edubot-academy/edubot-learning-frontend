@@ -49,7 +49,6 @@ const LabelArrow = ({
             bg-white
           `}
                 >
-                    {/* Лейбл - ДОБАВЛЕНО pointer-events-none */}
                     <label
                         className={`absolute left-2 sm:left-3 transition-all duration-200 ease-in-out
               ${
@@ -65,7 +64,6 @@ const LabelArrow = ({
                         {showAsterisk && <span className="text-red-600 ml-0.5">*</span>}
                     </label>
 
-                    {/* Инпут */}
                     <input
                         type="text"
                         value={propValue !== undefined ? propValue : value}
@@ -79,11 +77,9 @@ const LabelArrow = ({
                         className="w-full bg-transparent outline-none text-gray-900 text-sm sm:text-base flex items-center"
                     />
 
-                    {/* Иконка стрелки */}
                     <IoIosArrowDown className="absolute right-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
                 </div>
 
-                {/* Ошибка */}
                 {hasError && <p id={`${label}-error`} className="text-red-600 text-xs sm:text-sm">{error}</p>}
             </div>
         </div>

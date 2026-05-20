@@ -25,6 +25,7 @@ import { downloadCourseCertificatePdf } from '../../../courses/api.js';
 import {
     resolveCourseType,
 } from '../../utils/studentDashboard.helpers.js';
+import { getCourseTypeLabel } from '@shared/i18n/enumLabels';
 
 const formatTime = (seconds) => {
     if (seconds === null || seconds === undefined) return null;
@@ -40,15 +41,6 @@ const getProgressTone = (value) => {
     if (value >= 40) return 'blue';
     return 'amber';
 };
-
-const COURSE_TYPE_LABEL_KEYS = {
-    video: 'studentDashboard.progress.courseTypes.video',
-    offline: 'studentDashboard.progress.courseTypes.offline',
-    online_live: 'studentDashboard.progress.courseTypes.onlineLive',
-};
-
-const getCourseTypeLabel = (type, t) =>
-    t(COURSE_TYPE_LABEL_KEYS[type] || 'studentDashboard.progress.courseTypes.video');
 
 const getProgressLabel = (value, t) => {
     if (value >= 100) return t('studentDashboard.progress.progressLabels.completed');

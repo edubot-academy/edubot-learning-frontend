@@ -76,7 +76,7 @@ describe('InternalLeaderboard', () => {
     it('uses role-specific course loaders and copy for instructors and students', async () => {
         const { unmount } = renderPage({ id: 15, role: 'instructor', fullName: 'Instructor User' });
 
-        expect(await screen.findByRole('heading', { name: /окуучулардын рейтинги/i })).toBeInTheDocument();
+        expect(await screen.findByRole('heading', { name: /студенттердин рейтинги/i })).toBeInTheDocument();
         await waitFor(() => {
             expect(apiMocks.fetchInstructorCourses).toHaveBeenCalledWith({ status: 'approved' });
         });

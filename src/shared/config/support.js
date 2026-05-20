@@ -2,8 +2,8 @@ export const SUPPORT_CONTACT = {
     brandName: 'EduBot Learning',
     websiteUrl: 'https://learning.edubot.it.com',
     qrImageSrc: '/edubot-learning-qr.png',
-    addressShort: 'Бишкек ш., Ахунбаева 129B',
-    addressFull: 'Ахунбаева 129B, Бишкек, Кыргызстан',
+    addressShortKey: 'supportContact.addressShort',
+    addressFullKey: 'supportContact.addressFull',
     phoneDisplay: '+996 (221) 004 976',
     phoneE164: '+996221004976',
     whatsappNumber: '996221004976',
@@ -12,7 +12,7 @@ export const SUPPORT_CONTACT = {
     instagramUrl: 'https://www.instagram.com/edubot.company/',
     telegramHandle: '@edubot_learning',
     telegramUrl: 'https://t.me/edubot_learning',
-    workingHours: 'Дүйшөмбү - Жума, 9:00 - 21:00',
+    workingHoursKey: 'supportContact.workingHours',
 };
 
 export const getWhatsAppUrl = () => `https://wa.me/${SUPPORT_CONTACT.whatsappNumber}`;

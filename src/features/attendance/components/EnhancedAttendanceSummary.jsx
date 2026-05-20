@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import {
   FiTrendingUp,
@@ -31,6 +32,24 @@ const EnhancedAttendanceSummary = ({
   showSessionBreakdown = false,
   className = '',
 }) => {
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage || i18n.language || undefined;
+
+  const getStatusLabel = (status) => {
+    const key = status === 'not_scheduled' ? 'notScheduled' : status;
+    return t(`attendance.status.${key}`);
+  };
+
+  const getSessionTitle = (session = {}) =>
+    session.title || t('attendance.fallbacks.sessionWithId', { id: session.sessionIndex || session.id });
+
+  const formatSessionDate = (value) => {
+    if (!value) return t('attendance.fallbacks.unknownDate');
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return t('attendance.fallbacks.unknownDate');
+    return date.toLocaleDateString(language, { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
   const statistics = useMemo(() => {
     if (!students.length || !sessions.length) {
       return {
@@ -235,8 +254,8 @@ const EnhancedAttendanceSummary = ({
     <div className={`space-y-6 ${className}`}>
       {/* Main Metrics Grid */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-        <DashboardMetricCard
-          label="Жалпы катышуу"
+	        <DashboardMetricCard
+	          label={t('attendance.summary.totalAttendance')}
           value={`${statistics.attendanceRate.toFixed(1)}%`}
           icon={FiPercent}
           tone={
@@ -248,29 +267,29 @@ const EnhancedAttendanceSummary = ({
           }
         />
 
-        <DashboardMetricCard
-          label="Катышты"
+	        <DashboardMetricCard
+	          label={t('attendance.status.present')}
           value={statistics.totals.present}
           icon={FiUsers}
           tone="green"
         />
 
-        <DashboardMetricCard
-          label="Кечикти"
+	        <DashboardMetricCard
+	          label={t('attendance.status.late')}
           value={statistics.totals.late}
           icon={FiCalendar}
           tone="amber"
         />
 
-        <DashboardMetricCard
-          label="Келген жок"
+	        <DashboardMetricCard
+	          label={t('attendance.status.absent')}
           value={statistics.totals.absent}
           icon={FiUsers}
           tone="red"
         />
 
-        <DashboardMetricCard
-          label="Себептүү"
+	        <DashboardMetricCard
+	          label={t('attendance.status.excused')}
           value={statistics.totals.excused}
           icon={FiCalendar}
           tone="blue"
@@ -285,7 +304,7 @@ const EnhancedAttendanceSummary = ({
             <div className="flex items-center gap-2 mb-4">
               <FiPieChart className="h-5 w-5 text-orange-500" />
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                Катышуу бөлүштүрүүсү
+	                {t('attendance.summary.distribution')}
               </h3>
             </div>
 
@@ -303,7 +322,7 @@ const EnhancedAttendanceSummary = ({
                       <div className="flex items-center gap-2">
                         <config.icon className={`h-4 w-4 ${config.textColor}`} />
                         <span className="font-medium text-gray-900 dark:text-white">
-                          {config.label}
+	                          {getStatusLabel(status)}
                         </span>
                       </div>
                       <div className="text-gray-600 dark:text-gray-400">
@@ -328,7 +347,7 @@ const EnhancedAttendanceSummary = ({
               <div className="flex items-center gap-2 mb-4">
                 <FiBarChart2 className="h-5 w-5 text-orange-500" />
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                  Студенттердин категориялары
+	                  {t('attendance.summary.studentCategoriesShort')}
                 </h3>
               </div>
 
@@ -344,13 +363,13 @@ const EnhancedAttendanceSummary = ({
                     noData: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300',
                   };
 
-                  const categoryLabels = {
-                    excellent: 'Мыкты (90-100%)',
-                    good: 'Жакшы (75-89%)',
-                    fair: 'Орточо (50-74%)',
-                    poor: 'Начар (<50%)',
-                    noData: 'Маалымат жок',
-                  };
+	                  const categoryLabels = {
+	                    excellent: t('attendance.summary.categories.excellent'),
+	                    good: t('attendance.summary.categories.good'),
+	                    fair: t('attendance.summary.categories.fair'),
+	                    poor: t('attendance.summary.categories.poor'),
+	                    noData: t('attendance.summary.categories.noData'),
+	                  };
 
                   const percentage = students.length > 0 ? (data.count / students.length) * 100 : 0;
 
@@ -362,7 +381,7 @@ const EnhancedAttendanceSummary = ({
                         </span>
                         <div className="flex items-center gap-2">
                           <span className="text-gray-600 dark:text-gray-400">
-                            {data.count} студент
+	                            {t('attendance.summary.studentCount', { count: data.count })}
                           </span>
                           <span className="text-gray-500 dark:text-gray-500">
                             ({percentage.toFixed(1)}%)
@@ -390,7 +409,7 @@ const EnhancedAttendanceSummary = ({
           <div className="flex items-center gap-2 mb-4">
             <FiCalendar className="h-5 w-5 text-orange-500" />
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-              Сессиялар боюнча катышуу
+	              {t('attendance.summary.bySession')}
             </h3>
           </div>
 
@@ -410,16 +429,10 @@ const EnhancedAttendanceSummary = ({
                       </div>
                       <div>
                         <div className="truncate text-sm font-medium text-gray-900 dark:text-white">
-                          {session.title || `Сессия ${session.sessionIndex}`}
+	                          {getSessionTitle(session)}
                         </div>
                         <div className="text-xs text-gray-500 dark:text-gray-400">
-                          {session.startsAt
-                            ? new Date(session.startsAt).toLocaleDateString('ky-KG', {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric',
-                              })
-                            : 'Күнү белгисиз'}
+	                          {formatSessionDate(session.startsAt)}
                         </div>
                       </div>
                     </div>
@@ -451,14 +464,14 @@ const EnhancedAttendanceSummary = ({
           <div className="flex items-center gap-2 mb-4">
             <trendMeta.Icon className={`h-5 w-5 ${trendMeta.colorClass}`} />
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-              Катышуу тенденциялары
+	              {t('attendance.summary.trends')}
             </h3>
           </div>
 
           <div className="grid gap-6 lg:grid-cols-3">
             <div className="flex items-center gap-3">
               <div className="text-sm text-gray-600 dark:text-gray-400">
-                Катышуу %:
+	                {t('attendance.summary.attendanceRate')}
               </div>
 
               <div className="flex items-center gap-2">
@@ -482,7 +495,7 @@ const EnhancedAttendanceSummary = ({
                   {statistics.trends.attendanceRate.current.toFixed(1)}%
                 </div>
                 <div className="text-xs text-gray-600 dark:text-gray-400">
-                    Азыркы мезгил
+	                    {t('attendance.summary.currentPeriod')}
                 </div>
               </div>
             </div>
@@ -494,7 +507,7 @@ const EnhancedAttendanceSummary = ({
                   {statistics.trends.attendanceRate.previous.toFixed(1)}%
                 </div>
                 <div className="text-xs text-gray-500 dark:text-gray-400">
-                  Өткөн мезгил
+	                  {t('attendance.summary.previousPeriod')}
                 </div>
               </div>
             </div>

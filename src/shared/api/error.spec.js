@@ -32,16 +32,19 @@ describe('API error helpers', () => {
         });
     });
 
-    it('falls back to backend message for unknown codes', () => {
+    it('uses localized fallback instead of backend message for unknown codes', () => {
         expect(
-            parseApiError({
-                response: {
-                    data: {
-                        code: 'UNKNOWN_CODE',
-                        message: 'Backend message',
+            parseApiError(
+                {
+                    response: {
+                        data: {
+                            code: 'UNKNOWN_CODE',
+                            message: 'Backend message',
+                        },
                     },
                 },
-            }).message
-        ).toBe('Backend message');
+                'Fallback message'
+            ).message
+        ).toBe('Fallback message');
     });
 });

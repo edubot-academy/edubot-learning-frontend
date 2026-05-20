@@ -442,7 +442,8 @@ export default function CompanySettings({
                             <input
                                 id={fieldId}
                                 className="dashboard-field"
-                                placeholder="https://..."
+                                // l10n-audit-ignore: URL format example
+                                placeholder={'https://...'}
                                 value={form.logoUrl ?? ''}
                                 onChange={(e) =>
                                     setForm((s) => ({ ...s, logoUrl: e.target.value }))

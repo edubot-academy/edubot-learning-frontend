@@ -1,7 +1,10 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'react-hot-toast';
+import { parseApiError } from '@shared/api/error';
+import { getDeliveryModeLabel } from '@shared/i18n/enumLabels';
 import {
     DashboardCardSkeleton,
     DashboardFilterBar,
@@ -39,15 +42,6 @@ import { getDashboardPath } from '@shared/utils/navigation';
 import { fetchGroupRoster } from '@features/courseGroups/roster';
 
 const DELIVERY_TYPES = new Set(['offline', 'online_live']);
-const WEEKDAY_LABELS = {
-    mon: 'Дүйшөмбү',
-    tue: 'Шейшемби',
-    wed: 'Шаршемби',
-    thu: 'Бейшемби',
-    fri: 'Жума',
-    sat: 'Ишемби',
-    sun: 'Жекшемби',
-};
 const GROUP_FORM_DEFAULT = {
     name: '',
     code: '',
@@ -118,8 +112,6 @@ const statusTone = {
     cancelled: 'red',
 };
 
-const deliveryModeLabel = (value) => (value === 'individual' ? 'Жеке курс' : 'Группа');
-
 const isIndividualGroup = (group = {}) => group.deliveryMode === 'individual';
 
 const deliveryModeTone = (value) =>
@@ -183,10 +175,13 @@ const normalizeGroupForm = (group = {}) => ({
     instructorId: group.instructorId ? String(group.instructorId) : '',
 });
 
-const formatScheduleBlocks = (blocks = []) =>
+const formatScheduleBlocks = (blocks = [], t) =>
     (Array.isArray(blocks) ? blocks : [])
         .filter((block) => block?.day && block?.startTime && block?.endTime)
-        .map((block) => `${WEEKDAY_LABELS[String(block.day).toLowerCase()] || block.day} · ${block.startTime}–${block.endTime}`);
+        .map((block) => {
+            const day = String(block.day).toLowerCase();
+            return `${t(`instructorDashboard.groupForm.weekdays.${day}`, { defaultValue: block.day })} · ${block.startTime}–${block.endTime}`;
+        });
 
 const hasCompleteScheduleBlock = (blocks = []) =>
     (Array.isArray(blocks) ? blocks : []).some(
@@ -199,6 +194,7 @@ const getStudentDisplayName = (student) => {
 };
 
 const GroupsSection = ({ courses = [] }) => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const sessionsPath = getDashboardPath('instructor', 'sessions');
@@ -298,11 +294,13 @@ const GroupsSection = ({ courses = [] }) => {
             console.error('Failed to load course groups', error);
             setGroups([]);
             setIndividualStudentsByGroupId({});
-            toast.error('Группаларды жүктөө мүмкүн болбоду');
+            toast.error(
+                parseApiError(error, t('instructorDashboard.groupForm.toasts.loadFailed')).message
+            );
         } finally {
             setLoadingGroups(false);
         }
-    }, []);
+    }, [t]);
 
     useEffect(() => {
         loadGroups(selectedCourseId);
@@ -431,7 +429,7 @@ const GroupsSection = ({ courses = [] }) => {
 
     const handleCreateGroup = useCallback(async () => {
         if (!selectedCourse?.id) {
-            toast.error('Адегенде курсту тандаңыз');
+            toast.error(t('instructorDashboard.groupsSection.toasts.selectCourse'));
             return;
         }
 
@@ -439,17 +437,21 @@ const GroupsSection = ({ courses = [] }) => {
         const studentIdValue = Number(createForm.studentId);
 
         if (!createForm.name.trim()) {
-            toast.error(isIndividual ? 'Жеке курс үчүн аталыш милдеттүү' : 'Группа үчүн аталыш жана код милдеттүү');
+            toast.error(
+                isIndividual
+                    ? t('instructorDashboard.groupsSection.toasts.individualNameRequired')
+                    : t('instructorDashboard.groupsSection.toasts.groupNameAndCodeRequired')
+            );
             return;
         }
 
         if (!isIndividual && !createForm.code.trim()) {
-            toast.error('Группа үчүн аталыш жана код милдеттүү');
+            toast.error(t('instructorDashboard.groupsSection.toasts.groupNameAndCodeRequired'));
             return;
         }
 
         if (isIndividual && (!studentIdValue || Number.isNaN(studentIdValue))) {
-            toast.error('Жеке курс үчүн студентти тандаңыз');
+            toast.error(t('instructorDashboard.groupsSection.toasts.studentRequired'));
             return;
         }
 
@@ -458,7 +460,7 @@ const GroupsSection = ({ courses = [] }) => {
             createForm.createFirstSession &&
             (!createForm.startDate || !hasCompleteScheduleBlock(createForm.scheduleBlocks))
         ) {
-            toast.error('Биринчи сессия үчүн баштоо датасын жана толук график блогун кошуңуз');
+            toast.error(t('instructorDashboard.groupsSection.toasts.firstSessionScheduleRequired'));
             return;
         }
 
@@ -492,7 +494,11 @@ const GroupsSection = ({ courses = [] }) => {
                   });
             const createdGroup = isIndividual ? created?.group : created;
 
-            toast.success(isIndividual ? 'Жеке курс түзүлдү' : 'Группа түзүлдү');
+            toast.success(
+                isIndividual
+                    ? t('instructorDashboard.groupsSection.toasts.individualCreated')
+                    : t('instructorDashboard.groupsSection.toasts.groupCreated')
+            );
             await loadGroups(selectedCourse.id);
             resetCreateForm();
             setEnrollUserSearch('');
@@ -502,24 +508,24 @@ const GroupsSection = ({ courses = [] }) => {
             if (createdGroup?.id) setEditingGroupId(String(createdGroup.id));
         } catch (error) {
             console.error('Failed to create group', error);
-            const message =
-                error.response?.data?.message || error.message || 'Группа түзүү мүмкүн болбоду';
-            toast.error(Array.isArray(message) ? message.join(', ') : message);
+            toast.error(
+                parseApiError(error, t('instructorDashboard.groupForm.toasts.createFailed')).message
+            );
         } finally {
             setSavingGroup(false);
         }
-    }, [selectedCourse, createForm, loadGroups, resetCreateForm]);
+    }, [selectedCourse, createForm, loadGroups, resetCreateForm, t]);
 
     const handleUpdateGroup = useCallback(async () => {
         if (!editingGroupId) {
-            toast.error('Өзгөртүү үчүн группа тандаңыз');
+            toast.error(t('instructorDashboard.groupsSection.toasts.selectGroupForEdit'));
             return;
         }
 
         const isIndividual = editForm.deliveryMode === 'individual';
 
         if (!editForm.name.trim() || (!isIndividual && !editForm.code.trim())) {
-            toast.error('Группа үчүн аталыш жана код милдеттүү');
+            toast.error(t('instructorDashboard.groupsSection.toasts.groupNameAndCodeRequired'));
             return;
         }
 
@@ -546,18 +552,18 @@ const GroupsSection = ({ courses = [] }) => {
 
             await updateCourseGroup(Number(editingGroupId), patch);
 
-            toast.success('Группа жаңыртылды');
+            toast.success(t('instructorDashboard.groupsSection.toasts.groupUpdated'));
             await loadGroups(selectedCourseId);
             setShowEditModal(false);
         } catch (error) {
             console.error('Failed to update group', error);
-            const message =
-                error.response?.data?.message || error.message || 'Группаны жаңыртуу мүмкүн болбоду';
-            toast.error(Array.isArray(message) ? message.join(', ') : message);
+            toast.error(
+                parseApiError(error, t('instructorDashboard.groupForm.toasts.updateFailed')).message
+            );
         } finally {
             setSavingGroupUpdate(false);
         }
-    }, [editingGroupId, editForm, loadGroups, selectedCourseId]);
+    }, [editingGroupId, editForm, loadGroups, selectedCourseId, t]);
 
     const loadGroupStudents = useCallback(async (group) => {
         if (!group?.courseId && !selectedCourseId) {
@@ -574,7 +580,7 @@ const GroupsSection = ({ courses = [] }) => {
             });
             const list = rows.map((student) => ({
                 id: student.id,
-                name: student.fullName || student.email || 'Студент',
+                name: student.fullName || student.email || t('instructorDashboard.groupsSection.fallbacks.student'),
                 email: student.email || '—',
                 enrolledAt: student.enrolledAt,
             }));
@@ -582,12 +588,14 @@ const GroupsSection = ({ courses = [] }) => {
             setGroupStudents(list);
         } catch (error) {
             console.error('Failed to load group students', error);
-            toast.error('Группанын студенттерин жүктөө мүмкүн болбоду');
+            toast.error(
+                parseApiError(error, t('instructorDashboard.enrollGroupStudentModal.toasts.studentsLoadFailed')).message
+            );
             setGroupStudents([]);
         } finally {
             setLoadingGroupStudents(false);
         }
-    }, [selectedCourseId]);
+    }, [selectedCourseId, t]);
 
     const handleOpenEnrollModal = useCallback((group) => {
         setEnrollGroup(group);
@@ -624,20 +632,20 @@ const GroupsSection = ({ courses = [] }) => {
         } catch (error) {
             if (generationPreviewRequestRef.current !== requestId) return;
             console.error('Failed to load generation preview', error);
-            const message =
-                error.response?.data?.message || error.message || 'Preview жүктөө мүмкүн болбоду';
-            toast.error(Array.isArray(message) ? message.join(', ') : message);
+            toast.error(
+                parseApiError(error, t('instructorDashboard.generateSessions.toasts.previewFailed')).message
+            );
             setGenerationPreview(null);
         } finally {
             if (generationPreviewRequestRef.current === requestId) {
                 setPreviewLoading(false);
             }
         }
-    }, []);
+    }, [t]);
 
     const handleOpenGenerateModal = useCallback((group) => {
         if (!Array.isArray(group?.scheduleBlocks) || !group.scheduleBlocks.length) {
-            toast.error('Адегенде группа үчүн дефолт график сактаңыз');
+            toast.error(t('instructorDashboard.groupsSection.toasts.defaultScheduleRequired'));
             return;
         }
 
@@ -648,7 +656,7 @@ const GroupsSection = ({ courses = [] }) => {
         setGenerationPreview(null);
         setShowGenerateModal(true);
         loadGenerationPreview(group, nextRange);
-    }, [loadGenerationPreview]);
+    }, [loadGenerationPreview, t]);
 
     const handleGenerateSessions = useCallback(async () => {
         if (!generationGroup?.id) return;
@@ -658,9 +666,9 @@ const GroupsSection = ({ courses = [] }) => {
             const result = await generateCourseGroupSessions(Number(generationGroup.id), generationForm);
             const createdCount = Number(result?.createdCount || 0);
             if (createdCount > 0) {
-                toast.success(`${createdCount} сессия түзүлдү`);
+                toast.success(t('instructorDashboard.groupsSection.toasts.sessionsCreated', { count: createdCount }));
             } else {
-                toast('Жаңы сессия жок, мурунтан барларын өткөрүп жиберди', {
+                toast(t('instructorDashboard.groupsSection.toasts.noNewSessions'), {
                     icon: 'ℹ️',
                 });
             }
@@ -669,13 +677,13 @@ const GroupsSection = ({ courses = [] }) => {
             setGenerationPreview(null);
         } catch (error) {
             console.error('Failed to generate sessions', error);
-            const message =
-                error.response?.data?.message || error.message || 'Сессияларды түзүү мүмкүн болбоду';
-            toast.error(Array.isArray(message) ? message.join(', ') : message);
+            toast.error(
+                parseApiError(error, t('instructorDashboard.generateSessions.toasts.generateFailed')).message
+            );
         } finally {
             setGeneratingSessions(false);
         }
-    }, [generationForm, generationGroup]);
+    }, [generationForm, generationGroup, t]);
 
     useEffect(() => {
         const shouldSearchStudents = showEnrollModal || (showCreateModal && createForm.deliveryMode === 'individual');
@@ -711,7 +719,9 @@ const GroupsSection = ({ courses = [] }) => {
             .catch((error) => {
                 console.error('Failed to fetch users', error);
                 if (!cancelled) {
-                    toast.error('Студенттерди издөөдө ката кетти');
+                    toast.error(
+                        parseApiError(error, t('instructorDashboard.enrollGroupStudentModal.toasts.studentSearchFailed')).message
+                    );
                     setStudentOptions([]);
                 }
             })
@@ -722,7 +732,7 @@ const GroupsSection = ({ courses = [] }) => {
         return () => {
             cancelled = true;
         };
-    }, [createForm.deliveryMode, enrollUserSearch, showCreateModal, showEnrollModal]);
+    }, [createForm.deliveryMode, enrollUserSearch, showCreateModal, showEnrollModal, t]);
 
     const handleEnrollStudent = useCallback(async () => {
         if (!selectedCourse || !enrollGroup) return;
@@ -730,7 +740,7 @@ const GroupsSection = ({ courses = [] }) => {
 
         const userIdValue = Number(enrollForm.userId);
         if (!userIdValue || Number.isNaN(userIdValue)) {
-            toast.error('Колдонуучу ID туура эмес');
+            toast.error(t('instructorDashboard.groupsSection.toasts.invalidUserId'));
             return;
         }
 
@@ -744,7 +754,7 @@ const GroupsSection = ({ courses = [] }) => {
                     : undefined,
             });
 
-            toast.success('Студент группага кошулду');
+            toast.success(t('instructorDashboard.groupsSection.toasts.studentAdded'));
             setShowEnrollModal(false);
             setEnrollGroup(null);
             setEnrollForm({ userId: '', discountPercentage: '' });
@@ -754,39 +764,39 @@ const GroupsSection = ({ courses = [] }) => {
             await loadGroups(selectedCourse.id);
         } catch (error) {
             console.error('Failed to enroll student to group', error);
-            const message =
-                error.response?.data?.message ||
-                error.message ||
-                'Студентти группага кошууда ката кетти';
-            toast.error(Array.isArray(message) ? message.join(', ') : message);
+            toast.error(
+                parseApiError(error, t('instructorDashboard.enrollGroupStudentModal.toasts.enrollFailed')).message
+            );
         } finally {
             setEnrolling(false);
         }
-    }, [selectedCourse, enrollGroup, enrollForm, loadGroupStudents, loadGroups]);
+    }, [selectedCourse, enrollGroup, enrollForm, loadGroupStudents, loadGroups, t]);
 
     if (!deliveryCourses.length) {
         return (
             <div className="space-y-6">
                 <DashboardSectionHeader
-                    eyebrow="Groups workspace"
-                    title="Группалар"
-                    description="Оффлайн жана онлайн түз эфир курстары үчүн группа, ростер жана кийинки сессия контексти ушул жерде башкарылат."
+                    eyebrow={t('instructorDashboard.groupsSection.header.eyebrow')}
+                    title={t('instructorDashboard.groupsSection.header.title')}
+                    description={t('instructorDashboard.groupsSection.header.description')}
                 />
                 <DashboardInsetPanel
-                    title="Delivery курстары табылган жок"
-                    description="Группа түзүү жана студентти группага каттоо үчүн алгач оффлайн же онлайн live курс керек."
+                    title={t('instructorDashboard.groupsSection.noDelivery.title')}
+                    description={t('instructorDashboard.groupsSection.noDelivery.description')}
                 >
                     <EmptyState
-                        title="Группага ылайыктуу курс жок"
-                        subtitle="Алгач delivery форматындагы курс түзүңүз. Video курстар группа талап кылбайт."
+                        title={t('instructorDashboard.groupsSection.noDelivery.emptyTitle')}
+                        subtitle={t('instructorDashboard.groupsSection.noDelivery.emptySubtitle')}
                         action={{
-                            label: 'Курс түзүү',
+                            label: t('instructorDashboard.groupsSection.actions.createCourse'),
                             onClick: () => navigate('/instructor/course/create'),
                         }}
                     />
                     {pendingDeliveryCourses.length ? (
                         <p className="mt-4 text-sm text-edubot-muted dark:text-slate-400">
-                            {pendingDeliveryCourses.length} delivery курс азырынча группага даяр эмес. Группа түзүү үчүн курс approved жана published болушу керек.
+                            {t('instructorDashboard.groupsSection.noDelivery.pendingCount', {
+                                count: pendingDeliveryCourses.length,
+                            })}
                         </p>
                     ) : null}
                 </DashboardInsetPanel>
@@ -797,14 +807,14 @@ const GroupsSection = ({ courses = [] }) => {
     return (
         <div className="space-y-6">
             <DashboardSectionHeader
-                eyebrow="Groups workspace"
-                title="Группалар"
-                description="Оффлайн жана онлайн түз эфир курстары үчүн группа академиялык контейнер болуп саналат: enrollment группага байланышат, сессиялар ошол группадан окуйт."
+                eyebrow={t('instructorDashboard.groupsSection.header.eyebrow')}
+                title={t('instructorDashboard.groupsSection.header.title')}
+                description={t('instructorDashboard.groupsSection.header.activeDescription')}
                 action={(
                     <div className="flex flex-wrap items-center gap-2">
                         <Link to={sessionsPath} className="dashboard-button-secondary">
                             <FiCalendar className="h-4 w-4" />
-                            Сессия workspace
+                            {t('instructorDashboard.groupsSection.actions.openSessions')}
                         </Link>
                         <button
                             type="button"
@@ -812,28 +822,28 @@ const GroupsSection = ({ courses = [] }) => {
                             className="dashboard-button-primary"
                         >
                             <FiPlus className="h-4 w-4" />
-                            Группа түзүү
+                            {t('instructorDashboard.groupsSection.actions.createGroup')}
                         </button>
                     </div>
                 )}
             />
 
             <div className="grid gap-4 md:grid-cols-4">
-                <DashboardMetricCard label="Группалар" value={metrics.total} icon={FiLayers} />
+                <DashboardMetricCard label={t('instructorDashboard.groupsSection.metrics.groups')} value={metrics.total} icon={FiLayers} />
                 <DashboardMetricCard
-                    label="Активдүү"
+                    label={t('instructorDashboard.groupsSection.metrics.active')}
                     value={metrics.active}
                     icon={FiUsers}
                     tone="green"
                 />
                 <DashboardMetricCard
-                    label="Пландалган"
+                    label={t('instructorDashboard.groupsSection.metrics.planned')}
                     value={metrics.planned}
                     icon={FiClock}
                     tone="amber"
                 />
                 <DashboardMetricCard
-                    label="Орундар"
+                    label={t('instructorDashboard.groupsSection.metrics.seats')}
                     value={metrics.seats}
                     icon={FiBookOpen}
                     tone="blue"
@@ -841,21 +851,21 @@ const GroupsSection = ({ courses = [] }) => {
             </div>
 
             <DashboardInsetPanel
-                title="Курс боюнча группалар"
-                description="Delivery курсту тандап, ошол курс астындагы группаларды көрүңүз. Кийинки кадамда enrollment ушул группага байланууга тийиш."
+                title={t('instructorDashboard.groupsSection.courseGroups.title')}
+                description={t('instructorDashboard.groupsSection.courseGroups.description')}
             >
                 <DashboardFilterBar gridClassName="lg:grid-cols-[minmax(0,1fr),auto]">
                     <label className="text-sm text-edubot-ink dark:text-white">
                         <span className="mb-1.5 inline-flex items-center gap-2 font-medium">
                             <FiBookOpen className="h-4 w-4 text-edubot-orange" />
-                            Delivery курс
+                            {t('instructorDashboard.groupsSection.courseGroups.courseLabel')}
                         </span>
                         <select
                             value={selectedCourseId}
                             onChange={(e) => setSelectedCourseId(e.target.value)}
                             className="dashboard-field dashboard-select"
                         >
-                            <option value="">Курс тандаңыз</option>
+                            <option value="">{t('instructorDashboard.groupsSection.courseGroups.selectCourse')}</option>
                             {deliveryCourses.map((course) => (
                                 <option key={course.id} value={course.id}>
                                     {course.title}
@@ -864,16 +874,18 @@ const GroupsSection = ({ courses = [] }) => {
                         </select>
                         {pendingDeliveryCourses.length ? (
                             <p className="mt-2 text-xs text-edubot-muted dark:text-slate-400">
-                                {pendingDeliveryCourses.length} delivery курс approved/published болмоюнча бул жерде көрсөтүлбөйт.
+                                {t('instructorDashboard.groupsSection.courseGroups.pendingHidden', {
+                                    count: pendingDeliveryCourses.length,
+                                })}
                             </p>
                         ) : null}
                     </label>
 
                     <div className="flex items-end">
                         <div className="dashboard-panel-muted rounded-2xl px-4 py-3 text-sm text-edubot-muted dark:text-slate-300">
-                            Enrollment anchor:
+                            {t('instructorDashboard.groupsSection.courseGroups.anchorLabel')}
                             <span className="ml-2 font-semibold text-edubot-ink dark:text-white">
-                                group
+                                {t('instructorDashboard.groupsSection.courseGroups.anchorValue')}
                             </span>
                         </div>
                     </div>
@@ -885,7 +897,7 @@ const GroupsSection = ({ courses = [] }) => {
                     ) : groups.length ? (
                         <div className="grid gap-4 md:grid-cols-2">
                             {groups.map((group) => {
-                                const formattedScheduleBlocks = formatScheduleBlocks(group.scheduleBlocks);
+                                const formattedScheduleBlocks = formatScheduleBlocks(group.scheduleBlocks, t);
                                 const scheduleSummary = group.scheduleNote || '';
                                 const hasDefaultSchedule = Boolean(scheduleSummary || formattedScheduleBlocks.length);
                                 const individual = isIndividualGroup(group);
@@ -905,18 +917,22 @@ const GroupsSection = ({ courses = [] }) => {
                                     <div className="flex items-start justify-between gap-3">
                                         <div className="min-w-0">
                                             <h3 className="text-lg font-semibold text-edubot-ink dark:text-white">
-                                                {group.name || `Group #${group.id}`}
+                                                {group.name || t('instructorDashboard.groupsSection.fallbacks.groupWithId', { id: group.id })}
                                             </h3>
                                             <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                                Code: {group.code || '—'}
+                                                {t('instructorDashboard.groupsSection.card.code', {
+                                                    code: group.code || '—',
+                                                })}
                                             </p>
                                             {individual ? (
                                                 <p className="mt-1 text-sm font-medium text-violet-700 dark:text-violet-200">
                                                     {individualStudentName
-                                                        ? `Жеке студент: ${individualStudentName}`
+                                                        ? t('instructorDashboard.groupsSection.card.individualStudent', {
+                                                            student: individualStudentName,
+                                                        })
                                                         : hasLoadedIndividualStudent
-                                                          ? 'Жеке студент табылган жок'
-                                                          : 'Жеке студент жүктөлүүдө...'}
+                                                          ? t('instructorDashboard.groupsSection.card.individualStudentNotFound')
+                                                          : t('instructorDashboard.groupsSection.card.individualStudentLoading')}
                                                 </p>
                                             ) : null}
                                         </div>
@@ -936,22 +952,22 @@ const GroupsSection = ({ courses = [] }) => {
                                             {group.status || 'planned'}
                                         </span>
                                         <span className={`rounded-full px-3 py-1 text-xs font-semibold ${deliveryModeTone(group.deliveryMode)}`}>
-                                            {deliveryModeLabel(group.deliveryMode)}
+                                            {getDeliveryModeLabel(group.deliveryMode, t)}
                                         </span>
                                     </div>
 
                                     <div className="mt-4 grid gap-3 sm:grid-cols-2">
                                         <div className="rounded-2xl border border-edubot-line/70 bg-edubot-surfaceAlt/60 px-4 py-3 dark:border-slate-700 dark:bg-slate-900/70">
                                             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
-                                                Формат
+                                                {t('instructorDashboard.groupsSection.card.format')}
                                             </p>
                                             <p className="mt-2 text-sm font-semibold text-edubot-ink dark:text-white">
-                                                {deliveryModeLabel(group.deliveryMode)}
+                                                {getDeliveryModeLabel(group.deliveryMode, t)}
                                             </p>
                                         </div>
                                         <div className="rounded-2xl border border-edubot-line/70 bg-edubot-surfaceAlt/60 px-4 py-3 dark:border-slate-700 dark:bg-slate-900/70">
                                             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
-                                                Период
+                                                {t('instructorDashboard.groupsSection.card.period')}
                                             </p>
                                             <p className="mt-2 text-sm font-semibold text-edubot-ink dark:text-white">
                                                 {formatDate(group.startDate)} - {formatDate(group.endDate)}
@@ -959,14 +975,14 @@ const GroupsSection = ({ courses = [] }) => {
                                         </div>
                                         <div className="rounded-2xl border border-edubot-line/70 bg-edubot-surfaceAlt/60 px-4 py-3 dark:border-slate-700 dark:bg-slate-900/70">
                                             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
-                                                Орун
+                                                {t('instructorDashboard.groupsSection.card.seats')}
                                             </p>
                                             <p className="mt-2 text-sm font-semibold text-edubot-ink dark:text-white">
                                                 {individual
                                                     ? `${group.activeStudentCount || 0}/1`
                                                     : group.seatLimit
                                                       ? `${group.seatLimit}`
-                                                      : 'Чектелбеген'}
+                                                      : t('instructorDashboard.groupsSection.card.unlimited')}
                                             </p>
                                         </div>
                                     </div>
@@ -974,20 +990,20 @@ const GroupsSection = ({ courses = [] }) => {
                                     <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-edubot-muted dark:text-slate-400">
                                         <span className="inline-flex items-center gap-1.5">
                                             <FiMapPin className="h-4 w-4" />
-                                            {group.location || 'Локация жок'}
+                                            {group.location || t('instructorDashboard.groupsSection.card.noLocation')}
                                         </span>
                                         <span className="inline-flex items-center gap-1.5">
                                             <FiCalendar className="h-4 w-4" />
-                                            {group.timezone || 'Timezone жок'}
+                                            {group.timezone || t('instructorDashboard.groupsSection.card.noTimezone')}
                                         </span>
                                     </div>
 
                                     <div className="mt-4 rounded-2xl border border-edubot-line/70 bg-edubot-surfaceAlt/60 px-4 py-3 dark:border-slate-700 dark:bg-slate-900/70">
                                         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
-                                            Дефолт график
+                                            {t('instructorDashboard.groupsSection.card.defaultSchedule')}
                                         </p>
                                         <p className="mt-2 text-sm font-semibold text-edubot-ink dark:text-white">
-                                            {scheduleSummary || (!formattedScheduleBlocks.length ? 'Азырынча коюлган эмес' : '')}
+                                            {scheduleSummary || (!formattedScheduleBlocks.length ? t('instructorDashboard.groupsSection.card.noSchedule') : '')}
                                         </p>
                                         {formattedScheduleBlocks.length ? (
                                             <div className={scheduleSummary ? 'mt-3 flex flex-wrap gap-2' : 'mt-2 flex flex-wrap gap-2'}>
@@ -1005,7 +1021,7 @@ const GroupsSection = ({ courses = [] }) => {
 
                                     <div className="mt-5 flex flex-wrap gap-2">
                                         <Link to={sessionsPath} className="dashboard-button-secondary">
-                                            Сессияларды башкаруу
+                                            {t('instructorDashboard.groupsSection.actions.manageSessions')}
                                         </Link>
                                         <button
                                             type="button"
@@ -1013,16 +1029,18 @@ const GroupsSection = ({ courses = [] }) => {
                                             className={hasDefaultSchedule ? 'dashboard-button-primary' : 'dashboard-button-secondary'}
                                         >
                                             <FiCalendar className="h-4 w-4" />
-                                            Сессия түзүү
+                                            {t('instructorDashboard.groupsSection.actions.generateSessions')}
                                         </button>
                                         <button
                                             type="button"
                                             onClick={() => handleOpenEnrollModal(group)}
                                             className="dashboard-button-secondary disabled:cursor-not-allowed disabled:opacity-60"
                                             disabled={individualGroupOccupied}
-                                            title={individualGroupOccupied ? 'Жеке курс бир гана активдүү студентке арналган' : undefined}
+                                            title={individualGroupOccupied ? t('instructorDashboard.groupsSection.card.individualLimitTitle') : undefined}
                                         >
-                                            {individual ? 'Жеке студент кошуу' : 'Студент кошуу'}
+                                            {individual
+                                                ? t('instructorDashboard.groupsSection.actions.addIndividualStudent')
+                                                : t('instructorDashboard.groupsSection.actions.addStudent')}
                                         </button>
                                         <button
                                             type="button"
@@ -1030,7 +1048,7 @@ const GroupsSection = ({ courses = [] }) => {
                                             className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-edubot-muted transition hover:bg-edubot-surfaceAlt hover:text-edubot-ink dark:text-slate-400 dark:hover:bg-slate-900/70 dark:hover:text-white"
                                         >
                                             <FiEdit3 className="h-4 w-4" />
-                                            Өзгөртүү
+                                            {t('instructorDashboard.groupsSection.actions.edit')}
                                         </button>
                                     </div>
                                 </div>
@@ -1039,16 +1057,18 @@ const GroupsSection = ({ courses = [] }) => {
                         </div>
                     ) : (
                         <EmptyState
-                            title={selectedCourse ? 'Бул курс боюнча группа жок' : 'Курс тандаңыз'}
+                            title={selectedCourse
+                                ? t('instructorDashboard.groupsSection.empty.noGroupsTitle')
+                                : t('instructorDashboard.groupsSection.empty.selectCourseTitle')}
                             subtitle={
                                 selectedCourse
-                                    ? 'Группа түзүлгөндөн кийин студент enrollment, сессия жана attendance ушул контейнерден башталат.'
-                                    : 'Delivery курсту тандасаңыз, анын группалары ушул жерде көрүнөт.'
+                                    ? t('instructorDashboard.groupsSection.empty.noGroupsSubtitle')
+                                    : t('instructorDashboard.groupsSection.empty.selectCourseSubtitle')
                             }
                             action={
                                 selectedCourse
                                     ? {
-                                          label: 'Группа түзүү',
+                                          label: t('instructorDashboard.groupsSection.actions.createGroup'),
                                           onClick: handleOpenCreateModal,
                                       }
                                     : undefined
@@ -1059,17 +1079,16 @@ const GroupsSection = ({ courses = [] }) => {
             </DashboardInsetPanel>
 
             <DashboardInsetPanel
-                title="Session workflow"
-                description="Group metadata modal аркылуу башкарылат. Session create/edit жана operational иштер Session workspace'те калат."
+                title={t('instructorDashboard.groupsSection.sessionProcess.title')}
+                description={t('instructorDashboard.groupsSection.sessionProcess.description')}
             >
                 <div className="dashboard-panel-muted flex flex-wrap items-center justify-between gap-3 rounded-2xl px-4 py-4">
                     <p className="text-sm text-edubot-muted dark:text-slate-300">
-                        Бул бөлүмдө группа enrollment жана metadata башкарылат. Attendance, homework, meeting жана
-                        session metadata өзүнчө session workflow болуп калат.
+                        {t('instructorDashboard.groupsSection.sessionProcess.body')}
                     </p>
                     <Link to={sessionsPath} className="dashboard-button-secondary">
                         <FiCalendar className="h-4 w-4" />
-                        Session workspace
+                        {t('instructorDashboard.groupsSection.actions.openSessions')}
                     </Link>
                 </div>
             </DashboardInsetPanel>

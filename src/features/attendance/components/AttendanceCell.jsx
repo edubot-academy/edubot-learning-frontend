@@ -1,4 +1,5 @@
 import { useCallback, memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import { 
   getStatusConfig, 
@@ -26,9 +27,10 @@ const AttendanceCell = memo(({
   size = 'default',
   onStatusChange,
   onSelectionChange,
-  className = '',
-}) => {
-  const statusConfig = getStatusConfig(currentStatus);
+	  className = '',
+	}) => {
+	  const { t } = useTranslation();
+	  const statusConfig = getStatusConfig(currentStatus);
   const colorClasses = getStatusColorClasses(currentStatus);
   const sizeConfig = CELL_SIZES[size];
   const Icon = statusConfig.icon;
@@ -90,9 +92,10 @@ const AttendanceCell = memo(({
     className,
   ].filter(Boolean).join(' ');
 
-  const ariaLabel = ACCESSIBILITY.labels.attendanceCell
-    .replace('{studentName}', studentName)
-    .replace('{sessionTitle}', sessionTitle || `Session ${sessionId}`);
+	  const ariaLabel = t(ACCESSIBILITY.labels.attendanceCell, {
+	    studentName,
+	    sessionTitle: sessionTitle || t('attendance.fallbacks.sessionWithId', { id: sessionId }),
+	  });
 
   return (
     <td
@@ -121,9 +124,9 @@ const AttendanceCell = memo(({
 
         {/* Status Text for larger sizes */}
         {(size === 'large' || size === 'default') && (
-          <span className={`${sizeConfig.fontSize} font-medium truncate`}>
-            {statusConfig.shortLabel}
-          </span>
+	          <span className={`${sizeConfig.fontSize} font-medium truncate`}>
+	            {t(statusConfig.shortLabelKey)}
+	          </span>
         )}
 
         {/* Selection indicator */}

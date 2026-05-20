@@ -15,6 +15,12 @@ import { parseApiError } from '@shared/api/error';
 import { AuthContext } from '../../../context/AuthContext';
 
 const ChatWorkspace = lazy(() => import('@components/ui/ChatWorkspace'));
+const CHAT_NOT_FOUND_MESSAGE = 'Chat not found';
+
+const isChatNotFoundError = (error) => {
+    const payload = error?.response?.data || {};
+    return error?.response?.status === 404 && payload.message === CHAT_NOT_FOUND_MESSAGE;
+};
 
 const toArray = (value) => {
     if (Array.isArray(value)) return value;
@@ -122,10 +128,7 @@ const ChatTab = () => {
             const res = await fetchInstructorChatMessages(activeChat.id);
             setMessages(res?.messages ?? []);
         } catch (error) {
-            if (
-                error?.response?.status === 404 &&
-                error?.response?.data?.message === 'Chat not found'
-            ) {
+            if (isChatNotFoundError(error)) {
                 try {
                     await sendInstructorChatMessage({
                         content: optimistic.content,
@@ -198,10 +201,7 @@ const ChatTab = () => {
             const res = await fetchInstructorChatMessages(activeChat.id);
             setMessages(res?.messages ?? []);
         } catch (error) {
-            if (
-                error?.response?.status === 404 &&
-                error?.response?.data?.message === 'Chat not found'
-            ) {
+            if (isChatNotFoundError(error)) {
                 try {
                     await sendInstructorChatMessage({
                         content: t('studentDashboard.chat.fileFallback', {

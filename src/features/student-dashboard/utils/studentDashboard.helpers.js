@@ -1,4 +1,6 @@
 import { JOIN_WINDOW_MS } from './studentDashboard.constants.js';
+import i18n from '../../../i18n';
+import { getCourseTypeLabel } from '@shared/i18n/enumLabels';
 
 const formatNotificationLabel = (key) =>
     key
@@ -51,9 +53,7 @@ const isOfflineOrLiveCourse = (item = {}) => {
 };
 
 const courseTypeLabel = (type) => {
-    if (type === 'offline') return 'Оффлайн';
-    if (type === 'online_live') return 'Онлайн түз эфир';
-    return 'Видео';
+    return getCourseTypeLabel(type, i18n.t.bind(i18n));
 };
 
 const formatCountdown = (targetMs, nowMs) => {
@@ -66,7 +66,7 @@ const formatCountdown = (targetMs, nowMs) => {
     ).padStart(2, '0')}`;
 };
 
-const formatSessionDate = (isoValue, { language = 'ru-RU', fallback = 'Белгисиз убакыт' } = {}) => {
+const formatSessionDate = (isoValue, { language = i18n.language, fallback = i18n.t('studentDashboard.overview.fallbacks.unknownTime') } = {}) => {
     if (!isoValue) return fallback;
     const date = new Date(isoValue);
     if (Number.isNaN(date.getTime())) return fallback;
@@ -83,7 +83,7 @@ const resolveInstructorName = (item = {}) =>
     item.teacherName ||
     item.instructor?.fullName ||
     item.teacher ||
-    'Инструктор';
+    i18n.t('studentDashboard.data.fallbacks.instructor');
 
 const resolveRecordings = (item = {}) => {
     if (Array.isArray(item.recordings)) return item.recordings;
@@ -91,7 +91,7 @@ const resolveRecordings = (item = {}) => {
         return [
             {
                 id: `rec-${item.id || '1'}`,
-                title: item.recordingTitle || 'Сабактын жазуусу',
+                title: item.recordingTitle || i18n.t('studentDashboard.overview.fallbacks.recordingTitle'),
                 url: item.recordingUrl,
             },
         ];

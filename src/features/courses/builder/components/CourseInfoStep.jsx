@@ -232,9 +232,15 @@ export const CourseInfoStep = ({
                             aria-describedby={`${fieldIds.languageCode}-error`}
                             className="w-full p-2 border rounded bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white disabled:opacity-50"
                         >
-                            <option value="ky">Кыргызча</option>
-                            <option value="ru">Русский</option>
-                            <option value="en">English</option>
+                            <option value="ky">
+                                {t('instructorDashboard.courseBuilder.info.languageOptions.ky')}
+                            </option>
+                            <option value="ru">
+                                {t('instructorDashboard.courseBuilder.info.languageOptions.ru')}
+                            </option>
+                            <option value="en">
+                                {t('instructorDashboard.courseBuilder.info.languageOptions.en')}
+                            </option>
                         </select>
                         <p id={`${fieldIds.languageCode}-error`} className="mt-1 text-xs text-rose-500">
                             {getError('languageCode')}

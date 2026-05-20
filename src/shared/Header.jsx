@@ -175,7 +175,7 @@ const Header = () => {
                 const unreadRes = await fetchUnreadNotificationsCount();
                 setUnreadNotifications(unreadRes?.count ?? 0);
             } catch (error) {
-                console.error('Билдирүүлөрдү жүктөөдө ката кетти:', error);
+                console.error('Failed to load unread notifications:', error);
             }
         };
 

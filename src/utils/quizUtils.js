@@ -1,3 +1,5 @@
+import i18n from '../i18n';
+
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
 export const createEmptyOption = (isCorrect = false) => ({
@@ -62,28 +64,28 @@ export const normalizeQuizForApi = (quiz) => {
 
 export const validateQuiz = (quiz) => {
     if (!quiz) {
-        return 'Квиз маалыматтары табылган жок.';
+        return i18n.t('quizUtils.validation.missingQuiz');
     }
 
     if (!quiz.questions?.length) {
-        return 'Кеминде бир суроо кошуңуз.';
+        return i18n.t('quizUtils.validation.addQuestion');
     }
 
     for (const [index, question] of quiz.questions.entries()) {
         const prompt = question.prompt?.trim();
         if (!prompt) {
-            return `Суроо ${index + 1} үчүн текст жазуу керек.`;
+            return i18n.t('quizUtils.validation.questionPromptRequired', { number: index + 1 });
         }
         if (!question.options || question.options.length < 2) {
-            return `Суроо ${index + 1} кеминде 2 вариантка ээ болушу керек.`;
+            return i18n.t('quizUtils.validation.questionNeedsOptions', { number: index + 1 });
         }
         const hasCorrect = question.options.some((opt) => opt.isCorrect);
         if (!hasCorrect) {
-            return `Суроо ${index + 1} үчүн туура жооп белгилеңиз.`;
+            return i18n.t('quizUtils.validation.questionNeedsCorrectAnswer', { number: index + 1 });
         }
         const hasEmpty = question.options.some((opt) => !opt.text?.trim());
         if (hasEmpty) {
-            return `Суроо ${index + 1} ичиндеги бардык варианттар толтурулушу керек.`;
+            return i18n.t('quizUtils.validation.questionOptionsRequired', { number: index + 1 });
         }
     }
 

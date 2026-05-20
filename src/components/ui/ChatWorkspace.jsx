@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import {
     FiArrowLeft,
@@ -18,13 +19,13 @@ const STATUS_PILL = {
 };
 
 const ChatWorkspace = ({
-    sidebarTitle = 'Сүйлөшүүлөр',
+    sidebarTitle,
     sidebarDescription,
     sidebarAction,
     stats = [],
     query,
     onQueryChange,
-    queryPlaceholder = 'Чат издөө',
+    queryPlaceholder,
     chatItems,
     activeChatId,
     onSelectChat,
@@ -48,12 +49,14 @@ const ChatWorkspace = ({
     actionsOpen,
     onToggleActions,
     onAttach,
-    composerPlaceholder = 'Билдирүү жаз...',
+    composerPlaceholder,
 }) => {
+    const { t } = useTranslation();
     const fileInputRef = useRef(null);
     const imageInputRef = useRef(null);
     const messagesRef = useRef(null);
     const [optimisticImageUrls, setOptimisticImageUrls] = useState({});
+    const resolvedSidebarTitle = sidebarTitle || t('chatWorkspace.sidebarTitle');
 
     useEffect(() => {
         const nextUrls = {};
@@ -76,7 +79,7 @@ const ChatWorkspace = ({
 
     const sidebarContent = (
         <DashboardInsetPanel
-            title={sidebarTitle}
+            title={resolvedSidebarTitle}
             description={sidebarDescription}
             action={sidebarAction}
             className="h-full"
@@ -102,7 +105,7 @@ const ChatWorkspace = ({
                     <input
                         value={query}
                         onChange={(e) => onQueryChange(e.target.value)}
-                        placeholder={queryPlaceholder}
+                        placeholder={queryPlaceholder || t('chatWorkspace.searchPlaceholder')}
                         className="dashboard-field dashboard-field-icon pl-10"
                     />
                 </div>
@@ -168,7 +171,7 @@ const ChatWorkspace = ({
         return (
             <div className="space-y-4">
                 {sidebarContent}
-                <DashboardInsetPanel title="Чатты тандаңыз" description={emptySelectionSubtitle}>
+                <DashboardInsetPanel title={t('chatWorkspace.selectChatTitle')} description={emptySelectionSubtitle}>
                     <EmptyState
                         title={emptySelectionTitle}
                         subtitle={emptySelectionSubtitle}
@@ -206,7 +209,7 @@ const ChatWorkspace = ({
                             <button
                                 onClick={onBack}
                                 className="dashboard-button-secondary !px-3"
-                                aria-label="Чаттарга кайтуу"
+                                aria-label={t('chatWorkspace.backToChats')}
                             >
                                 <FiArrowLeft className="h-4 w-4" />
                             </button>
@@ -225,12 +228,12 @@ const ChatWorkspace = ({
                         ref={messagesRef}
                         className="h-[280px] space-y-4 overflow-y-auto rounded-3xl border border-edubot-line/70 bg-edubot-surfaceAlt/35 px-4 py-4 dark:border-slate-700 dark:bg-slate-950/70 md:h-[300px] xl:h-[320px]"
                         role="log"
-                        aria-label="Чат билдирүүлөрү"
+                        aria-label={t('chatWorkspace.messagesLog')}
                     >
                         {messages.length === 0 ? (
                             <EmptyState
-                                title="Баарлашууну баштаңыз"
-                                subtitle="Бул чатка биринчи билдирүүнү жазыңыз."
+                                title={t('chatWorkspace.emptyMessages.title')}
+                                subtitle={t('chatWorkspace.emptyMessages.subtitle')}
                                 icon={<FiMessageCircle className="h-8 w-8 text-edubot-orange" />}
                                 className="py-10"
                             />
@@ -243,7 +246,12 @@ const ChatWorkspace = ({
                                         key={m.id}
                                         className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
                                         role="article"
-                                        aria-label={`${isMe ? 'Сиздин' : 'Алардын'} билдирүү: ${m.content || 'Файл'}`}
+                                        aria-label={t('chatWorkspace.messageAria', {
+                                            owner: isMe
+                                                ? t('chatWorkspace.messageOwners.me')
+                                                : t('chatWorkspace.messageOwners.them'),
+                                            content: m.content || t('chatWorkspace.fileFallback'),
+                                        })}
                                     >
                                         <div className="max-w-xs sm:max-w-md lg:max-w-lg">
                                             <div
@@ -258,14 +266,14 @@ const ChatWorkspace = ({
                                                 {m.type === 'image' ? (
                                                     <img
                                                         src={m.url || optimisticImageUrls[m.id]}
-                                                        alt="Чат сүрөтү"
+                                                        alt={t('chatWorkspace.imageAlt')}
                                                         className="h-auto max-w-full rounded-2xl"
                                                         loading="lazy"
                                                     />
                                                 ) : m.type === 'file' ? (
                                                     <div className="flex items-center gap-2">
                                                         <FiPaperclip className="h-4 w-4" />
-                                                        <span className="truncate">{m.file?.name || 'Файл'}</span>
+                                                        <span className="truncate">{m.file?.name || t('chatWorkspace.fileFallback')}</span>
                                                     </div>
                                                 ) : (
                                                     <p className="break-words whitespace-pre-wrap">{m.content}</p>
@@ -295,7 +303,7 @@ const ChatWorkspace = ({
                                     onClick={onToggleActions}
                                     className="flex h-11 w-11 items-center justify-center rounded-2xl bg-edubot-surfaceAlt text-edubot-orange transition hover:scale-105 dark:bg-slate-800 dark:text-edubot-soft"
                                     type="button"
-                                    aria-label="Файл кошуу"
+                                    aria-label={t('chatWorkspace.addAttachment')}
                                     aria-expanded={actionsOpen}
                                     aria-controls="attachment-menu"
                                 >
@@ -316,7 +324,7 @@ const ChatWorkspace = ({
                                             role="menuitem"
                                         >
                                             <FiPaperclip className="h-4 w-4 text-edubot-orange" />
-                                            <span>Файл</span>
+                                            <span>{t('chatWorkspace.attachmentFile')}</span>
                                         </button>
                                         <button
                                             onClick={() => {
@@ -326,7 +334,7 @@ const ChatWorkspace = ({
                                             role="menuitem"
                                         >
                                             <FiImage className="h-4 w-4 text-edubot-orange" />
-                                            <span>Сүрөт</span>
+                                            <span>{t('chatWorkspace.attachmentImage')}</span>
                                         </button>
                                     </div>
                                 ) : null}
@@ -338,10 +346,10 @@ const ChatWorkspace = ({
                                     onChange={(e) => onMessageChange(e.target.value)}
                                     onKeyDown={onKeyDown}
                                     className="dashboard-field h-11 w-full rounded-2xl"
-                                    placeholder={composerPlaceholder}
+                                    placeholder={composerPlaceholder || t('chatWorkspace.composerPlaceholder')}
                                     disabled={sending}
                                     type="text"
-                                    aria-label="Билдирүү киргизүү"
+                                    aria-label={t('chatWorkspace.composerAria')}
                                 />
                             </div>
 
@@ -350,7 +358,7 @@ const ChatWorkspace = ({
                                 disabled={!message.trim() || sending}
                                 className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-edubot-orange text-white transition hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50"
                                 type="submit"
-                                aria-label="Билдирүү жөнөтүү"
+                                aria-label={t('chatWorkspace.sendMessage')}
                             >
                                 {sending ? (
                                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -369,7 +377,7 @@ const ChatWorkspace = ({
                                     if (file) onAttach('file', file);
                                     e.target.value = '';
                                 }}
-                                aria-label="Файл тандао"
+                                aria-label={t('chatWorkspace.selectFile')}
                             />
                             <input
                                 ref={imageInputRef}
@@ -380,7 +388,7 @@ const ChatWorkspace = ({
                                     if (file) onAttach('image', file);
                                     e.target.value = '';
                                 }}
-                                aria-label="Сүрөт тандао"
+                                aria-label={t('chatWorkspace.selectImage')}
                             />
                         </div>
                     </footer>

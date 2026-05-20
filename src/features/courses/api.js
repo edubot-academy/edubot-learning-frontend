@@ -2,8 +2,11 @@ import axios from 'axios';
 import api, { clean } from '../../shared/api/client';
 import toast from 'react-hot-toast';
 import { COURSE_TYPE } from '@shared/contracts';
+import i18n from '../../i18n';
+import { parseApiError } from '@shared/api/error';
 
 const VALID_COURSE_TYPES = new Set(Object.values(COURSE_TYPE));
+const localizedError = (message) => Object.assign(new Error(message), { isLocalizedMessage: true });
 
 const withCourseType = (courseData = {}) => {
     if (!courseData || typeof courseData !== 'object') return courseData;
@@ -166,7 +169,7 @@ export const downloadCourseCertificatePdf = async (
         return true;
     } catch (error) {
         console.error('Error downloading certificate PDF:', error);
-        toast.error('Сертификат PDF жүктөө мүмкүн болбоду');
+        toast.error(i18n.t('courseApi.toasts.certificatePdfDownloadFailed'));
         throw error;
     }
 };
@@ -234,11 +237,11 @@ export const updateCourse = async (courseId, courseData) => {
 export const deleteCourse = async (courseId) => {
     try {
         const response = await api.delete(`/courses/${courseId}`);
-        toast.success('Course deleted successfully');
+        toast.success(i18n.t('courseApi.toasts.courseDeleted'));
         return response.data;
     } catch (error) {
         console.error('Error deleting course:', error);
-        toast.error('Failed to delete course');
+        toast.error(parseApiError(error, i18n.t('courseApi.toasts.courseDeleteFailed')).message);
         throw error;
     }
 };
@@ -431,14 +434,13 @@ export async function uploadLessonFile(courseId, sectionId, type, file, lessonOr
             params: { type, extension, lessonOrder },
         });
     } catch (err) {
-        const msg = err.response?.data?.message || err.message;
-        throw new Error(Array.isArray(msg) ? msg.join(', ') : msg);
+        throw localizedError(parseApiError(err, i18n.t('courseApi.errors.uploadUrlFailed')).message);
     }
 
     const { key, url, maxFileSize } = presign.data;
 
     if (file.size > maxFileSize) {
-        throw new Error(`File too large: ${file.size} > ${maxFileSize}`);
+        throw localizedError(i18n.t('courseApi.errors.fileTooLarge'));
     }
 
     try {
@@ -453,8 +455,7 @@ export async function uploadLessonFile(courseId, sectionId, type, file, lessonOr
             },
         });
     } catch (err) {
-        const msg = err.response?.statusText || err.message;
-        throw new Error(msg);
+        throw localizedError(parseApiError(err, i18n.t('courseApi.errors.fileUploadFailed')).message);
     }
 
     return key;

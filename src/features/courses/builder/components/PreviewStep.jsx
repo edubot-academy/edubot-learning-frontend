@@ -3,6 +3,7 @@
 // Extracted from Step 3 JSX in both components
 
 import CoursePreviewPanel from '@features/courses/components/CoursePreviewPanel';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Preview Step component
@@ -27,6 +28,7 @@ export const PreviewStep = ({
     handleSubmitForApproval,
     hasUnsavedChanges = false,
 }) => {
+    const { t } = useTranslation();
     // Map curriculum to the format expected by CoursePreviewPanel
     const mappedSections = curriculum.map((section) => ({
         ...section,
@@ -44,7 +46,7 @@ export const PreviewStep = ({
     // Add save draft action for create mode
     if (mode === 'create' && handleSaveDraft) {
         actions.push({
-            label: 'Сактап чыгуу',
+            label: t('instructorDashboard.courseBuilder.previewStep.actions.saveDraft'),
             onClick: handleSaveDraft,
             className: 'rounded-lg bg-gray-800 px-6 py-2 text-sm font-medium text-white',
         });
@@ -53,10 +55,12 @@ export const PreviewStep = ({
     // Add submit for approval action
     if (handleSubmitForApproval) {
         actions.push({
-            label: mode === 'create' ? 'Тастыктоого жөнөтүү' : 'Тастыктоого жөнөтүү',
+            label: t('instructorDashboard.courseBuilder.previewStep.actions.submitForApproval'),
             onClick: handleSubmitForApproval,
             disabled: hasUnsavedChanges,
-            title: hasUnsavedChanges ? 'Алгач өзгөрүүлөрдү сактаңыз' : undefined,
+            title: hasUnsavedChanges
+                ? t('instructorDashboard.courseBuilder.previewStep.actions.saveFirst')
+                : undefined,
             requiresClean: true,
             intent: 'submit-for-approval',
             className: 'rounded-lg bg-edubot-teal px-6 py-2 text-sm font-medium text-white',
@@ -71,21 +75,23 @@ export const PreviewStep = ({
                 }`}
             >
                 <p className="font-semibold">
-                    {mode === 'edit' ? 'Оңдоо текшерүүсү' : 'Курс текшерүүсү'}
+                    {mode === 'edit'
+                        ? t('instructorDashboard.courseBuilder.previewStep.editTitle')
+                        : t('instructorDashboard.courseBuilder.previewStep.createTitle')}
                 </p>
                 <p className="mt-1">
                     {mode === 'edit'
-                        ? 'Тастыктоого жөнөтүүдөн мурун өзгөрүүлөр сакталганын текшериңиз. Карап чыгуу бүткөндөн кийин гана өзгөртүлгөн мазмун студенттерге таасир этиши керек.'
-                        : 'Жергиликтүү draft ушул браузерде гана сакталат. Серверге сактоо жана карап чыгууга жөнөтүү үчүн төмөнкү аракеттерди колдонуңуз.'}
+                        ? t('instructorDashboard.courseBuilder.previewStep.editDescription')
+                        : t('instructorDashboard.courseBuilder.previewStep.createDescription')}
                 </p>
                 <ul className="mt-3 grid gap-1 text-xs sm:grid-cols-3">
-                    <li>• Курс маалыматтары толтурулган</li>
-                    <li>• Сабактарда бөгөттөөчү ката жок</li>
-                    <li>• Сакталбаган өзгөрүү калбаган</li>
+                    <li>• {t('instructorDashboard.courseBuilder.previewStep.checks.infoComplete')}</li>
+                    <li>• {t('instructorDashboard.courseBuilder.previewStep.checks.noBlockingErrors')}</li>
+                    <li>• {t('instructorDashboard.courseBuilder.previewStep.checks.noUnsavedChanges')}</li>
                 </ul>
                 {hasUnsavedChanges && (
                     <p className="mt-2 font-medium">
-                        Сакталбаган өзгөрүүлөр бар, ошондуктан тастыктоого жөнөтүү азырынча жабык.
+                        {t('instructorDashboard.courseBuilder.previewStep.unsavedWarning')}
                     </p>
                 )}
             </div>
@@ -94,7 +100,7 @@ export const PreviewStep = ({
                 sections={mappedSections}
                 getSectionTitle={getSectionTitle}
                 onBack={onBack}
-                coverAlt={mode === 'create' ? 'cover' : 'Курс сүрөтү'}
+                coverAlt={t('instructorDashboard.courseBuilder.info.coverAlt')}
                 actions={actions}
             />
         </div>

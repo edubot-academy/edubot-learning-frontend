@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import { MdVisibility, MdVisibilityOff } from 'react-icons/md';
 
@@ -17,6 +18,7 @@ const LabelPassword = ({
     onFocus,
     onBlur,
 }) => {
+    const { t } = useTranslation();
     const [focused, setFocused] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
@@ -79,7 +81,7 @@ const LabelPassword = ({
                         type={showPassword ? 'text' : 'password'}
                         name={name}
                         required={required}
-                        value={value} // ← Используем только локальное значение
+                        value={value}
                         onChange={handleChange}
                         onFocus={handleFocus}
                         onBlur={handleBlur}
@@ -94,7 +96,7 @@ const LabelPassword = ({
                         type="button"
                         className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-gray-500 transition hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-500 dark:text-[#a6adba] dark:hover:text-white"
                         onClick={togglePassword}
-                        aria-label={showPassword ? 'Сырсөздү жашыруу' : 'Сырсөздү көрсөтүү'}
+                        aria-label={showPassword ? t('formControls.hidePassword') : t('formControls.showPassword')}
                         aria-pressed={showPassword}
                     >
                         {showPassword ? <MdVisibility size={24} /> : <MdVisibilityOff size={24} />}

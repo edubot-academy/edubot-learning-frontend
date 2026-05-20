@@ -3,6 +3,7 @@
 
 import { createEmptyQuiz } from '../../../../utils/quizUtils';
 import { createEmptyChallenge } from '../../../../utils/challengeUtils';
+import i18n from '../../../../i18n';
 
 /**
  * Creates a lesson payload for API submission
@@ -115,7 +116,7 @@ export const hasLessonContent = (lesson) => {
  */
 export const getLessonDisplayName = (lesson, index) => {
     const title = lesson.title?.trim();
-    return title || `Сабак ${index + 1}`;
+    return title || i18n.t('instructorDashboard.courseBuilder.fallbacks.lesson', { number: index + 1 });
 };
 
 /**
@@ -140,25 +141,46 @@ export const isLessonComplete = (lesson) => {
  */
 export const getLessonStatus = (lesson) => {
     if (!lesson.title?.trim()) {
-        return { text: 'Аталыш жок', severity: 'error' };
+        return {
+            text: i18n.t('instructorDashboard.courseBuilder.lessonIssues.missingTitle'),
+            severity: 'error',
+        };
     }
 
     if (!hasLessonContent(lesson)) {
         switch (lesson.kind) {
             case 'video':
-                return { text: 'Видео жүктөлгөн эмес', severity: 'error' };
+                return {
+                    text: i18n.t('instructorDashboard.courseBuilder.lessonIssues.missingVideo'),
+                    severity: 'error',
+                };
             case 'article':
-                return { text: 'Макала толук эмес', severity: 'error' };
+                return {
+                    text: i18n.t('instructorDashboard.courseBuilder.lessonIssues.incompleteArticle'),
+                    severity: 'error',
+                };
             case 'quiz':
-                return { text: 'Квиз толук эмес', severity: 'error' };
+                return {
+                    text: i18n.t('instructorDashboard.courseBuilder.lessonIssues.incompleteQuiz'),
+                    severity: 'error',
+                };
             case 'code':
-                return { text: 'Код тапшырма толук эмес', severity: 'error' };
+                return {
+                    text: i18n.t('instructorDashboard.courseBuilder.lessonIssues.incompleteCode'),
+                    severity: 'error',
+                };
             default:
-                return { text: 'Мазмун жок', severity: 'error' };
+                return {
+                    text: i18n.t('instructorDashboard.courseBuilder.lessonIssues.missingContent'),
+                    severity: 'error',
+                };
         }
     }
 
-    return { text: 'Даяр', severity: 'success' };
+    return {
+        text: i18n.t('instructorDashboard.courseBuilder.lessonIssues.ready'),
+        severity: 'success',
+    };
 };
 
 /**
@@ -168,10 +190,10 @@ export const getLessonStatus = (lesson) => {
  */
 export const getLessonKindLabel = (kind) => {
     const labels = {
-        video: 'Видео',
-        article: 'Макала',
-        quiz: 'Квиз',
-        code: 'Код тапшырма',
+        video: i18n.t('instructorDashboard.courseBuilder.lessonKinds.video'),
+        article: i18n.t('instructorDashboard.courseBuilder.lessonKinds.article'),
+        quiz: i18n.t('instructorDashboard.courseBuilder.lessonKinds.quiz'),
+        code: i18n.t('instructorDashboard.courseBuilder.lessonKinds.code'),
     };
     return labels[kind] || kind;
 };
@@ -196,9 +218,16 @@ export const getLessonDurationText = (lesson) => {
     const minutes = Math.floor(lesson.duration / 60);
     const seconds = lesson.duration % 60;
 
-    if (minutes === 0) return `${seconds}с`;
-    if (seconds === 0) return `${minutes}м`;
-    return `${minutes}м ${seconds}с`;
+    if (minutes === 0) {
+        return i18n.t('instructorDashboard.courseBuilder.duration.seconds', { count: seconds });
+    }
+    if (seconds === 0) {
+        return i18n.t('instructorDashboard.courseBuilder.duration.minutes', { count: minutes });
+    }
+    return i18n.t('instructorDashboard.courseBuilder.duration.minutesSeconds', {
+        minutes,
+        seconds,
+    });
 };
 
 /**

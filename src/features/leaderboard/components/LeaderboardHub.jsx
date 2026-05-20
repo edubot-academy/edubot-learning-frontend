@@ -220,6 +220,7 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
             xp: currentUserWeeklyEntry?.xp || 0,
             streakDays: currentUserWeeklyEntry?.streakDays || 0,
             label: t('public.leaderboard.snapshotLabel', { track: trackMeta.label }),
+            t,
         });
 
         if (!mySummary) {

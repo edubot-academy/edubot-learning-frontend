@@ -27,21 +27,13 @@ import {
     resolveRecordings,
 } from '../../utils/studentDashboard.helpers.js';
 import { getDashboardPath } from '@shared/utils/navigation';
+import { getCourseTypeLabel } from '@shared/i18n/enumLabels';
 
 const getProgressTone = (value) => {
     if (value >= 80) return 'green';
     if (value >= 40) return 'blue';
     return 'amber';
 };
-
-const COURSE_TYPE_LABEL_KEYS = {
-    video: 'studentDashboard.courses.courseTypes.video',
-    offline: 'studentDashboard.courses.courseTypes.offline',
-    online_live: 'studentDashboard.courses.courseTypes.onlineLive',
-};
-
-const getCourseTypeLabel = (type, t) =>
-    t(COURSE_TYPE_LABEL_KEYS[type] || 'studentDashboard.courses.courseTypes.video');
 
 const getCourseModeLabel = (item, t) => {
     if (item.courseType === 'video') return t('studentDashboard.courses.courseModes.selfPaced');

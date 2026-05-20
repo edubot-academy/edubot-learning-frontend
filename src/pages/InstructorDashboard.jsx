@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../context/AuthContext';
 import useDashboardSwipeGestures from '../hooks/useDashboardSwipeGestures';
 import {
@@ -35,6 +36,7 @@ import {
 } from '../components/ui/dashboard';
 import { useDashboardKeyboardNavigation } from '../components/ui/dashboard/useDashboardKeyboardNavigation';
 import { getDashboardPath } from '@shared/utils/navigation';
+import { parseApiError } from '@shared/api/error';
 
 const AttendancePage = lazy(() => import('./Attendance'));
 const SessionWorkspacePage = lazy(() => import('./SessionWorkspace'));
@@ -50,6 +52,7 @@ const TabSuspense = ({ children }) => (
 
 const InstructorDashboard = () => {
     const { user } = useContext(AuthContext);
+    const { t } = useTranslation();
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const { activeTab, handleTabSelect } = useInstructorDashboardRouteState({
         navItems: NAV_ITEMS,
@@ -184,7 +187,7 @@ const InstructorDashboard = () => {
                 setDeliveryCategories(Array.isArray(categories) ? categories : []);
             } catch (error) {
                 console.error('Failed to load categories', error);
-                toast.error('Категориялар жүктөлгөн жок');
+                toast.error(t('instructorDashboard.shell.toasts.categoriesLoadError'));
             }
         }
 
@@ -200,7 +203,7 @@ const InstructorDashboard = () => {
                 setDeliveryCategories(Array.isArray(categories) ? categories : []);
             } catch (error) {
                 console.error('Failed to load categories', error);
-                toast.error('Категориялар жүктөлгөн жок');
+                toast.error(t('instructorDashboard.shell.toasts.categoriesLoadError'));
                 return;
             }
         }
@@ -221,7 +224,7 @@ const InstructorDashboard = () => {
 
     const handleCreateDeliveryCourse = async (payload) => {
         if (!payload?.title || !payload?.description || !payload?.categoryId) {
-            toast.error('Сураныч, аталыш, сүрөттөмө жана категорияны толтуруңуз.');
+            toast.error(t('instructorDashboard.shell.toasts.requiredFields'));
             return false;
         }
 
@@ -237,7 +240,7 @@ const InstructorDashboard = () => {
                 isPaid: Number(payload.price || 0) > 0,
             });
 
-            toast.success('Курс түзүлдү. Эми группа жана сессия түзө аласыз.');
+            toast.success(t('instructorDashboard.shell.toasts.deliveryCourseCreated'));
             closeDeliveryModal();
             handleTabSelect('courses');
 
@@ -247,7 +250,9 @@ const InstructorDashboard = () => {
             return true;
         } catch (error) {
             console.error('Failed to create delivery course', error);
-            toast.error('Курсту түзүүдө ката кетти.');
+            toast.error(
+                parseApiError(error, t('instructorDashboard.shell.toasts.deliveryCourseCreateError')).message
+            );
             return false;
         } finally {
             setCreatingDeliveryCourse(false);
@@ -258,7 +263,7 @@ const InstructorDashboard = () => {
         if (!editingDeliveryCourse?.id) return false;
 
         if (!payload?.title || !payload?.description || !payload?.categoryId) {
-            toast.error('Сураныч, аталыш, сүрөттөмө жана категорияны толтуруңуз.');
+            toast.error(t('instructorDashboard.shell.toasts.requiredFields'));
             return false;
         }
 
@@ -291,14 +296,16 @@ const InstructorDashboard = () => {
             }
             toast.success(
                 requiresReview
-                    ? 'Delivery курс жаңыртылды жана кайра карап чыгууга жөнөтүлдү'
-                    : 'Delivery курс жаңыртылды'
+                    ? t('instructorDashboard.shell.toasts.deliveryCourseUpdatedForReview')
+                    : t('instructorDashboard.shell.toasts.deliveryCourseUpdated')
             );
             closeEditDeliveryModal();
             return true;
         } catch (error) {
             console.error('Failed to update delivery course', error);
-            toast.error('Delivery курсту жаңыртууда ката кетти.');
+            toast.error(
+                parseApiError(error, t('instructorDashboard.shell.toasts.deliveryCourseUpdateError')).message
+            );
             return false;
         } finally {
             setUpdatingDeliveryCourse(false);
@@ -314,20 +321,18 @@ const InstructorDashboard = () => {
             if (!upsertCourse(pendingCourse)) {
                 markCoursePendingLocally(courseId);
             }
-            toast.success('Курс тастыктоого жөнөтүлдү');
+            toast.success(t('instructorDashboard.shell.toasts.courseSubmittedForApproval'));
             return true;
         } catch (error) {
             console.error('Failed to submit course for approval', error);
-            const message =
-                error?.response?.data?.message ||
-                error?.message ||
-                'Курсту тастыктоого жөнөтүү мүмкүн болбоду';
-            toast.error(Array.isArray(message) ? message.join(', ') : message);
+            toast.error(
+                parseApiError(error, t('instructorDashboard.shell.toasts.courseSubmitError')).message
+            );
             return false;
         } finally {
             setSubmittingCourseId(null);
         }
-    }, [markCoursePendingLocally, upsertCourse]);
+    }, [markCoursePendingLocally, t, upsertCourse]);
 
     const isTabLoading =
         loadingStudentCourses || loadingCourseStudents || loadingOfferings;
@@ -430,7 +435,7 @@ const InstructorDashboard = () => {
                         selectedCourseId={selectedStudentCourseId}
                         onSelectCourse={handleSelectStudentCourse}
                         disabledCourseCount={studentCourses.length - certificateCourses.length}
-                        disabledReason="Certificates are disabled for some tenant courses."
+                        disabledReason={t('instructorDashboard.shell.certificatesDisabledReason')}
                         courseStudents={courseStudents}
                         courseMeta={courseStudentsMeta}
                         loadingStudents={loadingCourseStudents}
@@ -524,8 +529,17 @@ const InstructorDashboard = () => {
         );
     };
 
+    const translatedNavItems = useMemo(
+        () =>
+            NAV_ITEMS.map((item) => ({
+                ...item,
+                label: item.labelKey ? t(item.labelKey) : item.label,
+            })),
+        [t]
+    );
+
     // Prepare navigation items for the standardized layout
-    const dashboardNavItems = NAV_ITEMS.map((item) => ({
+    const dashboardNavItems = translatedNavItems.map((item) => ({
         ...item,
         isActive: item.id === activeTab,
         onSelect: handleTabSelect,
@@ -536,20 +550,22 @@ const InstructorDashboard = () => {
         ? dashboardNavItems.filter((item) => activeWorkspaceGroup.tabs.includes(item.id))
         : [];
     const activeTabStatus = [
-        loadingProfile && 'Профиль жүктөлүүдө',
-        loadingCourses && 'Курстар жүктөлүүдө',
-        isTabLoading && 'Workspace жаңыланууда',
+        loadingProfile && t('instructorDashboard.shell.status.profileLoading'),
+        loadingCourses && t('instructorDashboard.shell.status.coursesLoading'),
+        isTabLoading && t('instructorDashboard.shell.status.workspaceUpdating'),
     ].filter(Boolean);
 
     // Prepare header actions
     const headerActions = [
         {
-            label: '📊 Аналитика',
+            label: t('instructorDashboard.shell.actions.analytics'),
             to: analyticsLink,
             variant: 'primary',
         },
         {
-            label: sidebarOpen ? 'Менюну жашыруу' : 'Менюну көрсөтүү',
+            label: sidebarOpen
+                ? t('instructorDashboard.shell.actions.hideMenu')
+                : t('instructorDashboard.shell.actions.showMenu'),
             onClick: () => setSidebarOpen((prev) => !prev),
             variant: 'secondary',
             className: 'hidden md:inline-flex',
@@ -561,7 +577,7 @@ const InstructorDashboard = () => {
         <DashboardHeader
             user={user}
             role="instructor"
-            subtitle="Курстарыңызды жана студенттерди толук көзөмөлдөңүз"
+            subtitle={t('instructorDashboard.shell.headerSubtitle')}
             actions={headerActions}
         />
     );
@@ -593,16 +609,24 @@ const InstructorDashboard = () => {
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                         <div>
                             <p className="text-xs font-semibold uppercase tracking-wide text-edubot-muted dark:text-slate-400">
-                                Инструктор бөлүмү
+                                {t('instructorDashboard.shell.workspaceSection')}
                             </p>
                             <h2 className="mt-1 text-base font-semibold text-edubot-ink dark:text-white">
-                                {activeWorkspaceGroup.label}
+                                {activeWorkspaceGroup.labelKey
+                                    ? t(activeWorkspaceGroup.labelKey)
+                                    : activeWorkspaceGroup.label}
                             </h2>
                             <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                {activeWorkspaceGroup.description}
+                                {activeWorkspaceGroup.descriptionKey
+                                    ? t(activeWorkspaceGroup.descriptionKey)
+                                    : activeWorkspaceGroup.description}
                             </p>
                             <p className="mt-1 text-xs font-medium text-edubot-muted dark:text-slate-500">
-                                {activeTabStatus.length ? activeTabStatus.join(' · ') : `${activeNavItem?.label || 'Бөлүм'} ачылды`}
+                                {activeTabStatus.length
+                                    ? activeTabStatus.join(' · ')
+                                    : t('instructorDashboard.shell.tabOpened', {
+                                        tab: activeNavItem?.label || t('instructorDashboard.shell.sectionFallback'),
+                                    })}
                             </p>
                         </div>
                         <div className="flex flex-wrap gap-2">

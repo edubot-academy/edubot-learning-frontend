@@ -1,7 +1,10 @@
+import { useTranslation } from 'react-i18next';
 import whatsapp from '@assets/icons/whatsapp_icon.svg';
 import { getWhatsAppUrl, SUPPORT_CONTACT } from '@shared/config/support';
 
 const StickyButton = () => {
+    const { t } = useTranslation();
+
     return (
         <div>
             <a
@@ -14,13 +17,13 @@ const StickyButton = () => {
                 }}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label={`WhatsApp аркылуу байланышуу: ${SUPPORT_CONTACT.phoneDisplay}`}
+                aria-label={t('stickyButton.whatsappAria', { phone: SUPPORT_CONTACT.phoneDisplay })}
             >
                 <div
                     className="w-10 h-10 rounded-full flex items-center justify-center"
                     style={{ backgroundColor: '#FFF7ED' }}
                 >
-                    <img src={whatsapp} alt="WhatsApp" className="w-6 h-6" />
+                    <img src={whatsapp} alt="" className="w-6 h-6" />
                 </div>
             </a>
 

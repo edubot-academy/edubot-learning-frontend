@@ -396,7 +396,11 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
                 handleUpdateLesson(sectionIndex, lessonIndex, 'resourceName', file.name);
             }
         } catch (err) {
-            toast.error(err.message || t('instructorDashboard.courseBuilder.toasts.fileUploadError'));
+            toast.error(
+                err?.isLocalizedMessage
+                    ? err.message
+                    : parseApiError(err, t('instructorDashboard.courseBuilder.toasts.fileUploadError')).message
+            );
         } finally {
             // Clear uploading state
             setCurriculum((prev) => {

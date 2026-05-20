@@ -7,6 +7,7 @@ import {
     COURSE_SESSION_STATUS,
     COURSE_TYPE,
 } from '@shared/contracts';
+import { getDeliveryModeLabel } from '@shared/i18n/enumLabels';
 import {
     fetchSessionInsights,
     fetchCourseSessions,
@@ -71,32 +72,30 @@ import { AuthContext } from '../context/AuthContext';
 
 const SESSION_MODE_META = {
     upcoming: {
-        label: 'Күтүүдө',
+        labelKey: 'groupSessions.workspace.page.sessionModes.upcoming',
         badgeClass:
             'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300',
         icon: FiClock,
     },
     live: {
-        label: 'Түз эфирде',
+        labelKey: 'groupSessions.workspace.page.sessionModes.live',
         badgeClass:
             'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300',
         icon: FiRadio,
     },
     completed: {
-        label: 'Аяктаган',
+        labelKey: 'groupSessions.workspace.page.sessionModes.completed',
         badgeClass:
             'border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300',
         icon: FiCheckCircle,
     },
     scheduled: {
-        label: 'Пландалган',
+        labelKey: 'groupSessions.workspace.page.sessionModes.scheduled',
         badgeClass:
             'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-300',
         icon: FiCalendar,
     },
 };
-
-const getDeliveryModeLabel = (value) => (value === 'individual' ? 'Жеке курс' : 'Группа');
 
 const getDeliveryModeBadgeClass = (value) =>
     value === 'individual'
@@ -104,22 +103,31 @@ const getDeliveryModeBadgeClass = (value) =>
         : 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-200';
 
 const SESSION_STATUS_OPTIONS = [
-    { value: COURSE_SESSION_STATUS.SCHEDULED, label: 'Пландалган' },
-    { value: COURSE_SESSION_STATUS.COMPLETED, label: 'Аяктады' },
-    { value: COURSE_SESSION_STATUS.CANCELLED, label: 'Жокко чыгарылды' },
+    {
+        value: COURSE_SESSION_STATUS.SCHEDULED,
+        labelKey: 'groupSessions.setup.status.scheduled',
+    },
+    {
+        value: COURSE_SESSION_STATUS.COMPLETED,
+        labelKey: 'groupSessions.setup.status.completed',
+    },
+    {
+        value: COURSE_SESSION_STATUS.CANCELLED,
+        labelKey: 'groupSessions.setup.status.cancelled',
+    },
 ];
 
 const SESSION_STATUS_META = {
     [COURSE_SESSION_STATUS.SCHEDULED]: {
-        label: 'Пландалган',
+        labelKey: 'groupSessions.setup.status.scheduled',
         tone: 'default',
     },
     [COURSE_SESSION_STATUS.COMPLETED]: {
-        label: 'Аяктады',
+        labelKey: 'groupSessions.setup.status.completed',
         tone: 'green',
     },
     [COURSE_SESSION_STATUS.CANCELLED]: {
-        label: 'Жокко чыгарылды',
+        labelKey: 'groupSessions.setup.status.cancelled',
         tone: 'red',
     },
 };
@@ -177,31 +185,31 @@ const getSessionMode = (session, nowMs) => {
     return 'completed';
 };
 
-const getSubmissionStatusMeta = (status) => {
+const getSubmissionStatusMeta = (status, t) => {
     const normalized = String(status || 'submitted').toLowerCase();
     if (['approved', 'completed', 'reviewed', 'accepted'].includes(normalized)) {
         return {
-            label: 'Бекитилди',
+            label: t('groupSessions.homeworkTab.reviewStates.approved'),
             badgeClass:
                 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300',
         };
     }
     if (['needs_revision'].includes(normalized)) {
         return {
-            label: 'Оңдоп кайра жиберүү',
+            label: t('groupSessions.homeworkTab.reviewStates.needsRevision'),
             badgeClass:
                 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300',
         };
     }
     if (['rejected', 'declined'].includes(normalized)) {
         return {
-            label: 'Кайтарылды',
+            label: t('groupSessions.homeworkTab.reviewStates.rejected'),
             badgeClass:
                 'border-red-200 bg-red-50 text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300',
         };
     }
     return {
-        label: 'Күтүүдө',
+        label: t('groupSessions.homeworkTab.reviewStates.pending'),
         badgeClass:
             'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300',
     };
@@ -465,7 +473,11 @@ const SessionWorkspace = () => {
                     return;
                 }
                 console.error(error);
-                toast.error(getWorkspaceErrorMessage(error, 'Кийинки аракеттерди жүктөө катасы.'));
+                toast.error(getWorkspaceErrorMessage(
+                    error,
+                    t('groupSessions.engagement.loadError'),
+                    getWorkspaceErrorStatusMessages(t)
+                ));
                 setSessionInsights(null);
             } finally {
                 if (
@@ -482,7 +494,7 @@ const SessionWorkspace = () => {
         return () => {
             cancelled = true;
         };
-    }, [selectedSessionId]);
+    }, [selectedSessionId, t]);
 
     const {
         addCourseAssetToSessionMaterials,
@@ -556,7 +568,7 @@ const SessionWorkspace = () => {
                     selectedCourse?.name ||
                     session.course?.title ||
                     session.course?.name ||
-                    'Сабак',
+                    t('groupSessions.workspace.page.fallbacks.course'),
                 type: normalizeCourseType(selectedCourse, session, selectedGroup),
                 startTime: toSessionTime(session.startsAt),
                 room: selectedGroup?.location || null,
@@ -567,7 +579,7 @@ const SessionWorkspace = () => {
                 joinUrl: resolveSessionJoinUrl(session),
                 joinAllowed: isJoinWindowOpen(session, nowMs),
             }));
-    }, [sessions, selectedCourseId, selectedCourse, selectedGroup, nowMs]);
+    }, [sessions, selectedCourseId, selectedCourse, selectedGroup, nowMs, t]);
 
     const handleCourseChange = (courseId) => {
         setWorkspaceCourse(courseId);
@@ -591,7 +603,7 @@ const SessionWorkspace = () => {
 
     const saveSessionNotes = async () => {
         if (!selectedSessionId) {
-            toast.error('Сессия тандаңыз.');
+            toast.error(t('groupSessions.workspace.page.toasts.selectSession'));
             return false;
         }
 
@@ -604,10 +616,10 @@ const SessionWorkspace = () => {
             const res = await fetchCourseSessions({ groupId: Number(selectedGroupId) });
             const list = toArray(res);
             setSessions(list);
-            toast.success('Жазуулар сакталды.');
+            toast.success(t('groupSessions.workspace.page.toasts.notesSaved'));
             return true;
         } catch (error) {
-            toast.error(getWorkspaceErrorMessage(error, 'Жазууларды сактоо катасы'));
+            toast.error(getWorkspaceErrorMessage(error, t('groupSessions.workspace.page.toasts.notesSaveError')));
             return false;
         } finally {
             setSavingSessionNotes(false);
@@ -620,22 +632,28 @@ const SessionWorkspace = () => {
         () => [
             {
                 tab: 'attendance',
-                label: 'Катышууну белгилөө',
-                description: `${attendanceStats.total} студент, ${attendanceStats.presentRate}% катышуу`,
+                label: t('groupSessions.workspace.page.primaryTools.attendance.label'),
+                description: t('groupSessions.workspace.page.primaryTools.attendance.description', {
+                    students: attendanceStats.total,
+                    rate: attendanceStats.presentRate,
+                }),
                 disabled: !selectedSessionId,
             },
             {
                 tab: 'materials',
-                label: 'Сабак ресурстары',
+                label: t('groupSessions.workspace.page.primaryTools.materials.label'),
                 description: selectedDeliveryType === COURSE_TYPE.ONLINE_LIVE
-                    ? 'Live шилтеме, жаздыруу жана материалдар'
-                    : 'Материалдар жана жаздыруулар',
+                    ? t('groupSessions.workspace.page.primaryTools.materials.liveDescription')
+                    : t('groupSessions.workspace.page.primaryTools.materials.defaultDescription'),
                 disabled: !selectedSessionId,
             },
             {
                 tab: 'homework',
-                label: 'Үй тапшырма',
-                description: `${homeworkStats.total} тапшырма, ${submissionStats.needsReview} жооп текшерүүдө`,
+                label: t('groupSessions.workspace.page.primaryTools.homework.label'),
+                description: t('groupSessions.workspace.page.primaryTools.homework.description', {
+                    homework: homeworkStats.total,
+                    review: submissionStats.needsReview,
+                }),
                 disabled: !selectedSessionId,
             },
         ],
@@ -646,6 +664,7 @@ const SessionWorkspace = () => {
             selectedDeliveryType,
             selectedSessionId,
             submissionStats.needsReview,
+            t,
         ]
     );
 
@@ -654,8 +673,8 @@ const SessionWorkspace = () => {
             {!loadingCourses && courses.length === 0 ? (
                 <div className="dashboard-panel p-6">
                     <EmptyState
-                        title="Session workspace азырынча жеткиликтүү эмес"
-                        subtitle="Бул бөлүм оффлайн же онлайн түз эфир форматындагы бекитилген курстар үчүн ачылат. Алгач ушундай курс түзүңүз же бекитилген курс кошулушун күтүңүз."
+                        title={t('groupSessions.workspace.page.emptyUnavailable.title')}
+                        subtitle={t('groupSessions.workspace.page.emptyUnavailable.subtitle')}
                     />
                 </div>
             ) : null}
@@ -664,31 +683,31 @@ const SessionWorkspace = () => {
                 <div className="space-y-6">
                     <DashboardWorkspaceHero
                         className="dashboard-panel"
-                        eyebrow="Instructor workbench"
-                        title="Сессия workspace"
-                        description="Instructor dashboard ичиндеги активдүү сессия борбору. Курс, группа жана сессия тандалгандан кийин катышуу, ресурстар жана үй тапшырма ошол контекстте иштейт."
+                        eyebrow={t('groupSessions.workspace.page.hero.eyebrow')}
+                        title={t('groupSessions.workspace.page.hero.title')}
+                        description={t('groupSessions.workspace.page.hero.description')}
                         metrics={(
                             <>
                                 <DashboardMetricCard
-                                    label="Бүгүнкү сессиялар"
+                                    label={t('groupSessions.workspace.page.metrics.today')}
                                     value={sessionsToday.length}
                                     icon={FiCalendar}
                                     className="min-h-[11rem] min-w-0"
                                 />
                                 <DashboardMetricCard
-                                    label="Катышуу %"
+                                    label={t('groupSessions.workspace.page.metrics.attendanceRate')}
                                     value={`${attendanceStats.presentRate}%`}
                                     icon={FiActivity}
                                     className="min-h-[11rem] min-w-0"
                                 />
                                 <DashboardMetricCard
-                                    label="Тапшырма жарыяланды"
+                                    label={t('groupSessions.workspace.page.metrics.homeworkPublished')}
                                     value={publishedHomework.length}
                                     icon={FiBookOpen}
                                     className="min-h-[11rem] min-w-0"
                                 />
                                 <DashboardMetricCard
-                                    label="Кооптуу студенттер"
+                                    label={t('groupSessions.workspace.page.metrics.riskStudents')}
                                     value={students.length - attendanceStats.present}
                                     icon={FiUsers}
                                     tone="amber"
@@ -702,10 +721,10 @@ const SessionWorkspace = () => {
                             <div className="flex flex-wrap items-start justify-between gap-3">
                                 <div className="max-w-2xl">
                                     <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-edubot-muted dark:text-slate-400">
-                                        Активдүү контекст
+                                        {t('groupSessions.workspace.page.activeContext.title')}
                                     </div>
                                     <p className="mt-2 text-sm leading-6 text-edubot-muted dark:text-slate-300">
-                                        Адегенде курс, группа жана сессияны так тандаңыз. Андан кийин катышуу, тапшырма жана ресурстар ошол активдүү сессиянын контекстинде иштейт.
+                                        {t('groupSessions.workspace.page.activeContext.description')}
                                     </p>
                                 </div>
                             </div>
@@ -715,7 +734,7 @@ const SessionWorkspace = () => {
                                     <div className="text-sm">
                                         <span className="mb-1.5 inline-flex items-center gap-2 font-medium text-edubot-ink dark:text-white">
                                             <FiBookOpen className="h-4 w-4 text-edubot-orange" />
-                                            Курс
+                                            {t('groupSessions.workspace.page.filters.course')}
                                         </span>
                                         <select
                                             value={selectedCourseId}
@@ -723,7 +742,7 @@ const SessionWorkspace = () => {
                                             disabled={loadingCourses}
                                             className="dashboard-select min-h-[3.5rem] w-full text-edubot-ink dark:text-white"
                                         >
-                                            <option value="">Курс тандаңыз</option>
+                                            <option value="">{t('groupSessions.workspace.page.filters.selectCourse')}</option>
                                             {courses.map((course) => (
                                                 <option key={course.id} value={course.id}>
                                                     {course.title || course.name}
@@ -734,7 +753,7 @@ const SessionWorkspace = () => {
                                     <div className="text-sm">
                                         <span className="mb-1.5 inline-flex items-center gap-2 font-medium text-edubot-ink dark:text-white">
                                             <FiLayers className="h-4 w-4 text-edubot-orange" />
-                                            Группа
+                                            {t('groupSessions.workspace.page.filters.group')}
                                         </span>
                                         <select
                                             value={selectedGroupId}
@@ -742,23 +761,23 @@ const SessionWorkspace = () => {
                                             disabled={!selectedCourseId || loadingGroups}
                                             className="dashboard-select min-h-[3.5rem] w-full text-edubot-ink disabled:opacity-60 dark:text-white"
                                         >
-                                            <option value="">Группа</option>
+                                            <option value="">{t('groupSessions.workspace.page.filters.selectGroup')}</option>
                                             {groups.map((group) => (
                                                 <option key={group.id} value={group.id}>
-                                                    {group.name || group.code || `Group #${group.id}`} · {getDeliveryModeLabel(group.deliveryMode)}
+                                                    {group.name || group.code || t('groupSessions.workspace.page.fallbacks.groupWithId', { id: group.id })} · {getDeliveryModeLabel(group.deliveryMode, t)}
                                                 </option>
                                             ))}
                                         </select>
                                         {selectedGroup ? (
                                             <span className={`mt-2 inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${getDeliveryModeBadgeClass(selectedGroup.deliveryMode)}`}>
-                                                {getDeliveryModeLabel(selectedGroup.deliveryMode)}
+                                                {getDeliveryModeLabel(selectedGroup.deliveryMode, t)}
                                             </span>
                                         ) : null}
                                     </div>
                                     <div className="text-sm">
                                         <span className="mb-1.5 inline-flex items-center gap-2 font-medium text-edubot-ink dark:text-white">
                                             <FiPlayCircle className="h-4 w-4 text-edubot-orange" />
-                                            Сессияны алмаштыруу
+                                            {t('groupSessions.workspace.page.filters.session')}
                                         </span>
                                         <select
                                             value={selectedSessionId}
@@ -766,10 +785,12 @@ const SessionWorkspace = () => {
                                             disabled={!selectedGroupId || loadingSessions}
                                             className="dashboard-select min-h-[3.5rem] w-full text-edubot-ink disabled:opacity-60 dark:text-white"
                                         >
-                                            <option value="">Сессия тандаңыз</option>
+                                            <option value="">{t('groupSessions.workspace.page.filters.selectSession')}</option>
                                             {sessions.map((session) => (
                                                 <option key={session.id} value={session.id}>
-                                                    {session.title || `Session #${session.sessionIndex || session.id}`}
+                                                    {session.title || t('groupSessions.workspace.page.fallbacks.sessionWithId', {
+                                                        id: session.sessionIndex || session.id,
+                                                    })}
                                                 </option>
                                             ))}
                                         </select>
@@ -780,12 +801,14 @@ const SessionWorkspace = () => {
                                     <div className="flex items-center justify-between gap-3">
                                         <div>
                                             <p className="text-sm font-semibold text-edubot-ink dark:text-white">
-                                                Тандалган группанын бүгүнкү сессиялары
+                                                {t('groupSessions.workspace.page.today.title')}
                                             </p>
                                             <p className="text-xs text-edubot-muted dark:text-slate-400">
                                                 {selectedGroup?.name || selectedGroup?.code
-                                                    ? `${selectedGroup?.name || selectedGroup?.code} үчүн сессияны ушул жерден тез алмаштырыңыз.`
-                                                    : 'Алгач группа тандаңыз, анан ошол группанын бүгүнкү сессиялары көрүнөт.'}
+                                                    ? t('groupSessions.workspace.page.today.descriptionForGroup', {
+                                                        group: selectedGroup?.name || selectedGroup?.code,
+                                                    })
+                                                    : t('groupSessions.workspace.page.today.descriptionEmpty')}
                                             </p>
                                         </div>
                                         <span className="rounded-full bg-edubot-surface px-3 py-1 text-xs font-semibold text-edubot-ink dark:bg-slate-900 dark:text-slate-200">
@@ -810,7 +833,7 @@ const SessionWorkspace = () => {
                                                             {session.courseTitle}
                                                         </p>
                                                         <p className="truncate text-xs text-edubot-muted dark:text-slate-400">
-                                                            {session.room || session.groupName || 'Group session'}
+                                                            {session.room || session.groupName || t('groupSessions.workspace.page.fallbacks.groupSession')}
                                                         </p>
                                                     </div>
                                                     <StatusBadge tone={(SESSION_MODE_META[session.mode] || SESSION_MODE_META.scheduled).tone || 'default'} className="gap-1 text-[11px]">
@@ -818,23 +841,27 @@ const SessionWorkspace = () => {
                                                             const SessionModeIcon = (SESSION_MODE_META[session.mode] || SESSION_MODE_META.scheduled).icon;
                                                             return <SessionModeIcon className="h-3.5 w-3.5" />;
                                                         })()}
-                                                        {(SESSION_MODE_META[session.mode] || SESSION_MODE_META.scheduled).label}
+                                                        {t((SESSION_MODE_META[session.mode] || SESSION_MODE_META.scheduled).labelKey)}
                                                     </StatusBadge>
                                                 </div>
                                                 <div className="mt-2 text-xs text-edubot-muted dark:text-slate-400">
                                                     {session.startTime}
                                                     {session.type === COURSE_TYPE.ONLINE_LIVE && session.mode === 'upcoming'
-                                                        ? ` • ${formatCountdown(new Date(session.startsAt).getTime(), nowMs)} калды`
+                                                        ? t('groupSessions.workspace.page.countdown.remainingInline', {
+                                                            value: formatCountdown(new Date(session.startsAt).getTime(), nowMs),
+                                                        })
                                                         : ''}
                                                     {session.type === COURSE_TYPE.ONLINE_LIVE && session.mode === 'live'
-                                                        ? ` • ${formatCountdown(new Date(session.endsAt).getTime(), nowMs)} калды`
+                                                        ? t('groupSessions.workspace.page.countdown.remainingInline', {
+                                                            value: formatCountdown(new Date(session.endsAt).getTime(), nowMs),
+                                                        })
                                                         : ''}
                                                 </div>
                                             </button>
                                         ))}
                                         {sessionsToday.length === 0 ? (
                                             <div className="flex min-h-[88px] w-full items-center justify-center rounded-[1.25rem] border border-dashed border-edubot-line/80 bg-white/70 px-4 text-sm text-edubot-muted dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-400">
-                                                Тандалган группада бүгүн сессия жок.
+                                                {t('groupSessions.workspace.page.today.empty')}
                                             </div>
                                         ) : null}
                                     </div>
@@ -865,10 +892,10 @@ const SessionWorkspace = () => {
                             <div className="space-y-3">
                                 <div>
                                     <p className="text-sm font-semibold text-edubot-ink dark:text-white">
-                                        Сессия даярдоо
+                                        {t('groupSessions.workspace.page.setup.title')}
                                     </p>
                                     <p className="mt-1 max-w-2xl text-sm text-edubot-muted dark:text-slate-400">
-                                        Түзүү жана түзөтүү аракеттери модалда калат. Негизги canvas активдүү сессияны жүргүзүүгө багытталган.
+                                        {t('groupSessions.workspace.page.setup.description')}
                                     </p>
                                 </div>
                                 <div className="flex flex-wrap gap-2">
@@ -889,7 +916,7 @@ const SessionWorkspace = () => {
                                         disabled={!selectedGroupId}
                                         className="dashboard-button-primary"
                                     >
-                                        Жаңы сессия түзүү
+                                        {t('groupSessions.workspace.page.actions.createSession')}
                                     </button>
                                     <button
                                         type="button"
@@ -900,36 +927,38 @@ const SessionWorkspace = () => {
                                         disabled={!selectedSessionId}
                                         className="rounded-2xl border border-edubot-line bg-white px-4 py-3 text-sm font-semibold text-edubot-ink transition hover:border-edubot-orange/40 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
                                     >
-                                        Сессияны түзөтүү
+                                        {t('groupSessions.workspace.page.actions.editSession')}
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => navigate(getDashboardPath('instructor', 'groups'))}
                                         className="rounded-2xl border border-edubot-line bg-transparent px-4 py-3 text-sm font-semibold text-edubot-ink transition hover:border-edubot-orange/40 dark:border-slate-700 dark:text-slate-200"
                                     >
-                                        Groups workspace ачуу
+                                        {t('groupSessions.workspace.page.actions.openGroups')}
                                     </button>
                                 </div>
                             </div>
 
                             <div className="min-w-[260px] space-y-2 rounded-[1.25rem] border border-edubot-line/80 bg-white/80 p-4 dark:border-slate-700 dark:bg-slate-950/80">
                                 <div className="text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
-                                    Контекст
+                                    {t('groupSessions.workspace.page.context.title')}
                                 </div>
                                 <div className="text-sm text-edubot-ink dark:text-white">
-                                    <span className="font-semibold">Курс:</span>{' '}
-                                    {selectedCourse?.title || selectedCourse?.name || 'Тандала элек'}
+                                    <span className="font-semibold">{t('groupSessions.workspace.page.context.course')}:</span>{' '}
+                                    {selectedCourse?.title || selectedCourse?.name || t('groupSessions.workspace.page.fallbacks.notSelected')}
                                 </div>
                                 <div className="text-sm text-edubot-ink dark:text-white">
-                                    <span className="font-semibold">Группа:</span>{' '}
-                                    {selectedGroup?.name || selectedGroup?.code || 'Тандала элек'}
+                                    <span className="font-semibold">{t('groupSessions.workspace.page.context.group')}:</span>{' '}
+                                    {selectedGroup?.name || selectedGroup?.code || t('groupSessions.workspace.page.fallbacks.notSelected')}
                                 </div>
                                 <div className="text-sm text-edubot-ink dark:text-white">
-                                    <span className="font-semibold">Сессия:</span>{' '}
+                                    <span className="font-semibold">{t('groupSessions.workspace.page.context.session')}:</span>{' '}
                                     {selectedSession?.title ||
                                         (selectedSession
-                                            ? `Session #${selectedSession.sessionIndex || selectedSession.id}`
-                                            : 'Тандала элек')}
+                                            ? t('groupSessions.workspace.page.fallbacks.sessionWithId', {
+                                                id: selectedSession.sessionIndex || selectedSession.id,
+                                            })
+                                            : t('groupSessions.workspace.page.fallbacks.notSelected'))}
                                 </div>
                             </div>
                         </div>
@@ -968,7 +997,7 @@ const SessionWorkspace = () => {
                                             onClick={() => setWorkspaceFeedback(null)}
                                             className="rounded-full border border-current px-3 py-1 text-xs font-semibold opacity-80 transition hover:opacity-100"
                                         >
-                                            Жабуу
+                                            {t('common.close')}
                                         </button>
                                     ) : null
                                 }
@@ -1031,22 +1060,26 @@ const SessionWorkspace = () => {
                                         <div className="flex items-center gap-2 font-medium text-edubot-ink dark:text-white">
                                             <StatusBadge tone={selectedModeMeta.tone || 'default'} className="gap-1">
                                                 <SelectedModeIcon className="h-3.5 w-3.5" />
-                                                {selectedModeMeta.label}
+                                                {t(selectedModeMeta.labelKey)}
                                             </StatusBadge>
-                                            Онлайн Live сессия
+                                            {t('groupSessions.workspace.page.livePanel.title')}
                                         </div>
                                         <div className="mt-1 text-edubot-muted dark:text-slate-300">
                                             {selectedSessionMode === 'upcoming' &&
-                                                `Башталышына: ${formatCountdown(
-                                                    new Date(selectedSession.startsAt).getTime(),
-                                                    nowMs
-                                                )}`}
+                                                t('groupSessions.workspace.page.livePanel.startsIn', {
+                                                    value: formatCountdown(
+                                                        new Date(selectedSession.startsAt).getTime(),
+                                                        nowMs
+                                                    ),
+                                                })}
                                             {selectedSessionMode === 'live' &&
-                                                `Аяктаганга чейин: ${formatCountdown(
-                                                    new Date(selectedSession.endsAt).getTime(),
-                                                    nowMs
-                                                )}`}
-                                            {selectedSessionMode === 'completed' && 'Сессия аяктады'}
+                                                t('groupSessions.workspace.page.livePanel.endsIn', {
+                                                    value: formatCountdown(
+                                                        new Date(selectedSession.endsAt).getTime(),
+                                                        nowMs
+                                                    ),
+                                                })}
+                                            {selectedSessionMode === 'completed' && t('groupSessions.workspace.page.livePanel.completed')}
                                         </div>
                                     </div>
                                     <button
@@ -1058,12 +1091,12 @@ const SessionWorkspace = () => {
                                         }
                                         className="dashboard-button-primary"
                                     >
-                                        Сабакка кирүү
+                                        {t('groupSessions.workspace.page.actions.joinClass')}
                                     </button>
                                     {!selectedSessionJoinAllowed &&
                                         selectedSessionMode !== 'completed' && (
                                             <div className="text-xs text-edubot-muted dark:text-slate-400">
-                                                Join 10 мүнөт калганда ачылат.
+                                                {t('groupSessions.workspace.page.livePanel.joinWindowHint')}
                                             </div>
                                         )}
                                 </div>
@@ -1073,30 +1106,30 @@ const SessionWorkspace = () => {
                             <div className="space-y-4">
                                 <div className="grid gap-3 md:grid-cols-5">
                                     <DashboardMetricCard
-                                        label="Жалпы студент"
+                                        label={t('groupSessions.workspace.page.attendanceMetrics.totalStudents')}
                                         value={attendanceStats.total}
                                         icon={FiUsers}
                                     />
                                     <DashboardMetricCard
-                                        label="Катышты"
+                                        label={t('attendance.status.present')}
                                         value={attendanceStats.present}
                                         tone="green"
                                         icon={FiCheckCircle}
                                     />
                                     <DashboardMetricCard
-                                        label="Кечикти"
+                                        label={t('attendance.status.late')}
                                         value={attendanceStats.late}
                                         tone="amber"
                                         icon={FiClock}
                                     />
                                     <DashboardMetricCard
-                                        label="Келген жок"
+                                        label={t('attendance.status.absent')}
                                         value={attendanceStats.absent}
                                         tone="red"
                                         icon={FiActivity}
                                     />
                                     <DashboardMetricCard
-                                        label="Уруксат менен"
+                                        label={t('attendance.status.excused')}
                                         value={attendanceStats.excused}
                                         tone="default"
                                         icon={FiAlertCircle}
@@ -1284,30 +1317,32 @@ const SessionHeaderContent = ({
             <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                     <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
-                        Active Session
+                        {t('groupSessions.workspace.page.header.activeSession')}
                     </div>
                     {selectedSession ? (
                         <StatusBadge tone={selectedModeMeta.tone || 'default'} className="gap-1">
                             <SelectedModeIcon className="h-3.5 w-3.5" />
-                            {selectedModeMeta.label}
+                            {t(selectedModeMeta.labelKey)}
                         </StatusBadge>
                     ) : null}
                     {selectedSession ? (
                         <StatusBadge tone={officialStatusMeta.tone} className="gap-1">
-                            {officialStatusMeta.label}
+                            {t(officialStatusMeta.labelKey)}
                         </StatusBadge>
                     ) : null}
                 </div>
                 <div className="mt-2 text-lg font-semibold text-edubot-ink dark:text-white">
                     {selectedSession?.title ||
                         (selectedSession
-                            ? `Session #${selectedSession.sessionIndex || selectedSession.id}`
-                            : 'Сессия тандала элек')}
+                            ? t('groupSessions.workspace.page.fallbacks.sessionWithId', {
+                                id: selectedSession.sessionIndex || selectedSession.id,
+                            })
+                            : t('groupSessions.workspace.page.fallbacks.noSession'))}
                 </div>
                 <div className="mt-1 text-sm text-edubot-muted dark:text-slate-300">
-                    {selectedCourse?.title || selectedCourse?.name || 'Курс тандаңыз'}
+                    {selectedCourse?.title || selectedCourse?.name || t('groupSessions.workspace.page.filters.selectCourse')}
                     {' • '}
-                    {selectedGroup?.name || selectedGroup?.code || 'Группа тандаңыз'}
+                    {selectedGroup?.name || selectedGroup?.code || t('groupSessions.workspace.page.filters.selectGroup')}
                     {selectedSession
                         ? ` • ${formatDisplayDate(
                             selectedSession.startsAt,
@@ -1328,7 +1363,7 @@ const SessionHeaderContent = ({
 
             <div className="flex flex-wrap items-center justify-end gap-2">
                 <label className="min-w-[11rem] text-xs font-semibold text-edubot-muted dark:text-slate-400">
-                    Сессия статусу
+                    {t('groupSessions.workspace.page.header.sessionStatus')}
                     <select
                         value={officialStatus}
                         onChange={(event) => onSessionStatusChange(event.target.value)}
@@ -1337,7 +1372,7 @@ const SessionHeaderContent = ({
                     >
                         {SESSION_STATUS_OPTIONS.map((option) => (
                             <option key={option.value} value={option.value}>
-                                {option.label}
+                                {t(option.labelKey)}
                             </option>
                         ))}
                     </select>
@@ -1350,7 +1385,9 @@ const SessionHeaderContent = ({
                         className="inline-flex min-h-[2.75rem] items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:border-emerald-300 disabled:cursor-not-allowed disabled:opacity-60 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300"
                     >
                         <FiCheckCircle className="h-4 w-4" />
-                        {savingSessionStatus ? 'Жаңыртылууда...' : 'Аяктады'}
+                        {savingSessionStatus
+                            ? t('groupSessions.workspace.page.header.updating')
+                            : t('groupSessions.setup.status.completed')}
                     </button>
                 ) : null}
                 {isOnlineLive && (
@@ -1364,7 +1401,7 @@ const SessionHeaderContent = ({
                         }
                         className="dashboard-button-primary"
                     >
-                        Сабакка кирүү
+                        {t('groupSessions.workspace.page.actions.joinClass')}
                     </button>
                 )}
             </div>
@@ -1388,7 +1425,7 @@ SessionHeaderContent.propTypes = {
     }),
     selectedModeMeta: PropTypes.shape({
         icon: PropTypes.elementType.isRequired,
-        label: PropTypes.string.isRequired,
+        labelKey: PropTypes.string.isRequired,
         tone: PropTypes.string,
     }).isRequired,
     selectedSession: PropTypes.shape({

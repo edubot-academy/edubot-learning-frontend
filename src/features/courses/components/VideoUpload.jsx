@@ -1,8 +1,11 @@
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import api from '@shared/api/client';
+import { parseApiError } from '@shared/api/error';
 
 const VideoUpload = ({ courseId, sectionId, onUploadSuccess }) => {
+    const { t } = useTranslation();
     const [uploading, setUploading] = useState(false);
     const [progress, setProgress] = useState(0);
     const [error, setError] = useState(null);
@@ -21,13 +24,13 @@ const VideoUpload = ({ courseId, sectionId, onUploadSuccess }) => {
             'video/x-ms-wmv',
         ];
         if (!validTypes.includes(file.type)) {
-            setError('Invalid file type. Please upload MP4, WebM, AVI, MOV, MKV, or WMV.');
+            setError(t('videoUpload.errors.invalidType'));
             return;
         }
 
         // Validate file size (1GB)
         if (file.size > 1024 * 1024 * 1024) {
-            setError('File size must be less than 1GB');
+            setError(t('videoUpload.errors.tooLarge'));
             return;
         }
 
@@ -60,7 +63,7 @@ const VideoUpload = ({ courseId, sectionId, onUploadSuccess }) => {
                 onUploadSuccess(response.data);
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to upload video');
+            setError(parseApiError(err, t('videoUpload.errors.uploadFailed')).message);
         } finally {
             setUploading(false);
             setProgress(0);
@@ -70,7 +73,9 @@ const VideoUpload = ({ courseId, sectionId, onUploadSuccess }) => {
     return (
         <div className="w-full max-w-md mx-auto p-4">
             <div className="mb-4">
-                <label className="block text-gray-700 text-sm font-bold mb-2">Upload Video</label>
+                <label className="block text-gray-700 text-sm font-bold mb-2">
+                    {t('videoUpload.label')}
+                </label>
                 <input
                     type="file"
                     accept="video/*"
@@ -88,7 +93,9 @@ const VideoUpload = ({ courseId, sectionId, onUploadSuccess }) => {
                             style={{ width: `${progress}%` }}
                         ></div>
                     </div>
-                    <p className="text-sm text-gray-600 mt-1">Uploading: {progress}%</p>
+                    <p className="text-sm text-gray-600 mt-1">
+                        {t('videoUpload.uploading', { progress })}
+                    </p>
                 </div>
             )}
 

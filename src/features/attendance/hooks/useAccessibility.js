@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ACCESSIBILITY, ATTENDANCE_STATUS_CONFIG, getNextStatus } from '../constants/attendanceConfig';
 
 /**
@@ -13,6 +14,7 @@ export const useAccessibility = ({
   onSelectionChange,
   onSave,
 }) => {
+  const { t } = useTranslation();
   const [focusedCell, setFocusedCell] = useState(null);
   const [announcement, setAnnouncement] = useState('');
   const announcementTimeoutRef = useRef(null);
@@ -51,8 +53,9 @@ export const useAccessibility = ({
         onStatusChange?.(studentId, sessionId, nextStatus);
 
         announce(
-          ACCESSIBILITY.announcements.statusChanged
-            .replace('{status}', nextConfig.label)
+          t(ACCESSIBILITY.announcements.statusChanged, {
+            status: t(nextConfig.labelKey),
+          })
         );
         break;
       }
@@ -100,7 +103,7 @@ export const useAccessibility = ({
       case 'Escape': {
         // Clear selection/focus
         setFocusedCell(null);
-        announce(ACCESSIBILITY.announcements.selectionCleared);
+        announce(t(ACCESSIBILITY.announcements.selectionCleared));
         break;
       }
 
@@ -109,8 +112,9 @@ export const useAccessibility = ({
         // Mark as absent (quick action)
         onStatusChange?.(studentId, sessionId, 'absent');
         announce(
-          ACCESSIBILITY.announcements.statusChanged
-            .replace('{status}', ATTENDANCE_STATUS_CONFIG.absent.label)
+          t(ACCESSIBILITY.announcements.statusChanged, {
+            status: t(ATTENDANCE_STATUS_CONFIG.absent.labelKey),
+          })
         );
         break;
       }
@@ -121,7 +125,7 @@ export const useAccessibility = ({
           // Ctrl/Cmd + S to save
           event.preventDefault();
           onSave?.();
-          announce(ACCESSIBILITY.announcements.changesSaved);
+          announce(t(ACCESSIBILITY.announcements.changesSaved));
         }
         break;
       }
@@ -138,7 +142,7 @@ export const useAccessibility = ({
             });
           });
           onSelectionChange?.(allCells);
-          announce('Бардык клеткалар тандалды');
+          announce(t('attendance.accessibility.announcements.allCellsSelected'));
         }
         break;
       }
@@ -146,7 +150,7 @@ export const useAccessibility = ({
       default:
         break;
     }
-  }, [students, sessions, attendanceData, onStatusChange, onSelectionChange, onSave, announce]);
+  }, [students, sessions, attendanceData, onStatusChange, onSelectionChange, onSave, announce, t]);
 
   // Focus management
   const setCellFocus = useCallback((studentId, sessionId) => {
@@ -182,16 +186,17 @@ export const useAccessibility = ({
     return {
       role: 'button',
       tabIndex: isFocused ? 0 : -1,
-      'aria-label': ACCESSIBILITY.labels.attendanceCell
-        .replace('{studentName}', student?.fullName || 'Unknown')
-        .replace('{sessionTitle}', session?.title || `Session ${sessionId}`),
+      'aria-label': t(ACCESSIBILITY.labels.attendanceCell, {
+        studentName: student?.fullName || t('attendance.cardView.unknownStudent'),
+        sessionTitle: session?.title || t('attendance.fallbacks.sessionWithId', { id: sessionId }),
+      }),
       'aria-pressed': currentStatus !== 'not_scheduled',
       'aria-describedby': `status-${studentId}-${sessionId}`,
       'data-student-id': studentId,
       'data-session-id': sessionId,
       'data-status': currentStatus,
     };
-  }, [students, sessions, focusedCell]);
+  }, [students, sessions, focusedCell, t]);
 
   // Get ARIA attributes for status buttons
   const getStatusButtonAriaProps = useCallback((studentId, status) => {
@@ -199,36 +204,39 @@ export const useAccessibility = ({
     const statusConfig = ATTENDANCE_STATUS_CONFIG[status];
 
     return {
-      'aria-label': ACCESSIBILITY.labels.statusButton
-        .replace('{studentName}', student?.fullName || 'Unknown')
-        .replace('{status}', statusConfig.label),
+      'aria-label': t(ACCESSIBILITY.labels.statusButton, {
+        studentName: student?.fullName || t('attendance.cardView.unknownStudent'),
+        status: t(statusConfig.labelKey),
+      }),
       'aria-pressed': false,
       role: 'button',
     };
-  }, [students]);
+  }, [students, t]);
 
   // Get ARIA attributes for bulk actions
   const getBulkActionAriaProps = useCallback((status) => {
     const statusConfig = ATTENDANCE_STATUS_CONFIG[status];
 
     return {
-      'aria-label': ACCESSIBILITY.labels.bulkAction.replace('{status}', statusConfig.label),
+      'aria-label': t(ACCESSIBILITY.labels.bulkAction, {
+        status: t(statusConfig.labelKey),
+      }),
       role: 'button',
     };
-  }, []);
+  }, [t]);
 
   // Keyboard shortcut help
   const getKeyboardShortcuts = useCallback(() => {
     return [
-      { key: ACCESSIBILITY.shortcuts.cycleStatus, description: 'Статусу өзгөртүү' },
-      { key: ACCESSIBILITY.shortcuts.selectMultiple, description: 'Көп тандао' },
-      { key: ACCESSIBILITY.shortcuts.clearSelection, description: 'Тандоону тазалоо' },
-      { key: ACCESSIBILITY.shortcuts.saveChanges, description: 'Өзгөртүүлөрдү сактоо' },
-      { key: 'Arrow Keys', description: 'Навигация' },
-      { key: 'Delete/Backspace', description: 'Келген жок деп белгиле' },
-      { key: 'Ctrl/Cmd + A', description: 'Баарын тандао' },
+      { key: ACCESSIBILITY.shortcuts.cycleStatus, description: t('attendance.accessibility.shortcuts.cycleStatus') },
+      { key: ACCESSIBILITY.shortcuts.selectMultiple, description: t('attendance.accessibility.shortcuts.selectMultiple') },
+      { key: ACCESSIBILITY.shortcuts.clearSelection, description: t('attendance.accessibility.shortcuts.clearSelection') },
+      { key: ACCESSIBILITY.shortcuts.saveChanges, description: t('attendance.accessibility.shortcuts.saveChanges') },
+      { key: 'Arrow Keys', description: t('attendance.accessibility.shortcuts.navigation') },
+      { key: 'Delete/Backspace', description: t('attendance.accessibility.shortcuts.markAbsent') },
+      { key: 'Ctrl/Cmd + A', description: t('attendance.accessibility.shortcuts.selectAll') },
     ];
-  }, []);
+  }, [t]);
 
   // Cleanup
   useEffect(() => {

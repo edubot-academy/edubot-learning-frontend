@@ -6,6 +6,32 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
 ---
 
+## [1.13.9] - 2026-05-21
+
+### Changed
+
+- Completed the frontend localization release across public, dashboard, attendance, course, instructor, assistant, integration, certificate, and shared UI surfaces for `ky`, `ru`, and `en`.
+- Centralized enum/status/option label rendering so backend machine values remain stable while visible labels resolve through translation keys.
+- Added `npm run audit:localization` to catch hardcoded production UI copy, direct backend message rendering, Cyrillic/Kyrgyz source literals, and missing static translation keys.
+- Updated the frontend localization plan with completed LOC-001 through LOC-007 work and remaining QA guidance.
+
+### Fixed
+
+- Removed tenant locale fallback from main app UI locale resolution so tenant configuration no longer decides the platform language.
+- Aligned forgot-password, post-login, and course-detail runtime translation namespaces with the shipped locale resources.
+- Replaced direct backend-message fallbacks with shared localized API error parsing in localized UI paths.
+- Corrected Kyrgyz product terminology and morphology for `студент`, `инструктор`, `группа`, and `панель` usage.
+
+### Verification
+
+- `npm test`
+- `npm run lint`
+- `npm run audit:localization -- --fail-on-findings`
+- `git diff --check -- docs/shared/architecture/LOCALIZATION_FRONTEND_PLAN.md package.json package-lock.json src scripts`
+- `npm run build`
+
+---
+
 ## [1.13.8] - 2026-05-20
 
 ### Changed

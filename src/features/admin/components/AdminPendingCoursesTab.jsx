@@ -10,12 +10,7 @@ import {
 } from '@components/ui/dashboard';
 import { FiBookOpen, FiCheckCircle, FiClock, FiEye, FiUser, FiXCircle } from 'react-icons/fi';
 import DeliveryCourseDetailsModal from './DeliveryCourseDetailsModal';
-
-const getCourseTypeLabel = (courseType, t) => {
-    if (courseType === 'offline') return t('adminPendingCourses.courseTypes.offline');
-    if (courseType === 'online_live') return t('adminPendingCourses.courseTypes.onlineLive');
-    return t('adminPendingCourses.courseTypes.video');
-};
+import { getCourseTypeLabel } from '@shared/i18n/enumLabels';
 
 const AdminPendingCoursesTab = ({ pendingCourses, onApprove, onReject }) => {
     const { i18n, t } = useTranslation();

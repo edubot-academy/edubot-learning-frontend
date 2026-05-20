@@ -5,6 +5,7 @@ import BasicModal from '@shared/ui/BasicModal';
 import CardType from '../../assets/icons/card_type.svg';
 import { checkoutManual } from '../cart/api';
 import { useCart } from '../../context/CartContext';
+import { parseApiError } from '@shared/api/error';
 
 const SuccessPaymentModal = ({ open, onClose, receipt }) => {
     const { t } = useTranslation();
@@ -82,11 +83,7 @@ const PaymentCourse = () => {
             });
             setIsSuccess(true);
         } catch (error) {
-            const message =
-                error?.response?.data?.message ||
-                error?.message ||
-                t('public.cart.payment.fallbackError');
-            toast.error(Array.isArray(message) ? message.join(', ') : message);
+            toast.error(parseApiError(error, t('public.cart.payment.fallbackError')).message);
         } finally {
             setIsLoading(false);
         }

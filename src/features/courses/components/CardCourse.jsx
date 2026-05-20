@@ -14,13 +14,7 @@ import UnauthModal from '../../../shared/ui/UnauthModal';
 import { formatMinutesToTime } from '../../../utils/timeUtils';
 import { getSectionsDurationMinutes } from '../utils/courseDuration';
 import { useTranslation } from 'react-i18next';
-
-const courseTypeLabel = (type, t) => {
-    const normalized = String(type || 'video').toLowerCase();
-    if (normalized === 'offline') return t('public.courseShared.offline');
-    if (normalized === 'online_live') return t('public.courseShared.onlineLive');
-    return t('public.courseShared.video');
-};
+import { getCourseTypeLabel } from '@shared/i18n/enumLabels';
 
 const formatPrice = (price, currency = 'KGS', t, language = 'ru-RU') => {
     if (!price && price !== 0) return t('public.courseShared.priceUnavailable');
@@ -221,7 +215,7 @@ const CardCourse = ({
                             </h3>
                             <div className="flex flex-wrap gap-1.5 my-2">
                                 <span className="text-[11px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">
-                                    {courseTypeLabel(courseType, t)}
+                                    {getCourseTypeLabel(courseType, t)}
                                 </span>
                                 {String(courseType || '').toLowerCase() === 'offline' &&
                                 location ? (

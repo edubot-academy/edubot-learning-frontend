@@ -1,6 +1,8 @@
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 
 const CourseBuilderStepNav = ({ step, onStepChange, items = [] }) => {
+    const { t } = useTranslation();
     // Map step keys to step numbers
     const keyToStepNumber = {
         'info': 1,
@@ -10,17 +12,17 @@ const CourseBuilderStepNav = ({ step, onStepChange, items = [] }) => {
 
     return (
         <nav
-            aria-label="Course builder steps"
+            aria-label={t('instructorDashboard.courseBuilder.aria.steps')}
             className="mb-6 flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm dark:border-slate-700 dark:bg-[#111111]"
         >
             {items.map((item, index) => {
                 const stepNumber = keyToStepNumber[item.key];
                 const isCurrent = step === stepNumber;
                 const stateLabel = isCurrent
-                    ? 'азыркы кадам'
+                    ? t('instructorDashboard.courseBuilder.aria.currentStep')
                     : item.completed
-                        ? 'аяктаган'
-                        : 'аяктай элек';
+                        ? t('instructorDashboard.courseBuilder.aria.completedStep')
+                        : t('instructorDashboard.courseBuilder.aria.incompleteStep');
 
                 return (
                     <button

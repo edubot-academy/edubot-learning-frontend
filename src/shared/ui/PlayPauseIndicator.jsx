@@ -8,29 +8,22 @@ const PlayPauseIndicator = ({ showFeedback, isPlaying, onHideFeedback }) => {
 
   useEffect(() => {
     if (showFeedback) {
-      // Показываем с анимацией появления
       setShouldRender(true);
-      // Небольшая задержка для запуска анимации появления
       setTimeout(() => {
         setIsAnimating(true);
       }, 10);
 
-      // Очищаем предыдущий таймаут
       clearTimeout(timeoutRef.current);
 
-      // Устанавливаем таймаут для скрытия с анимацией
       timeoutRef.current = setTimeout(() => {
-        // Начинаем анимацию исчезновения
         setIsAnimating(false);
 
-        // После завершения анимации скрываем компонент
         setTimeout(() => {
           setShouldRender(false);
           onHideFeedback();
-        }, 300); // Длительность анимации
-      }, 2700); // Показываем на 2.7 секунды, потом 0.3秒 на анимацию
+        }, 300);
+      }, 2700);
     } else {
-      // Если showFeedback стало false, запускаем анимацию исчезновения
       if (shouldRender) {
         setIsAnimating(false);
         setTimeout(() => {

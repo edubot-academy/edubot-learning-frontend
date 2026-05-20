@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import { useRef, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FiDownload } from 'react-icons/fi';
 import { getResourceMeta } from '../../../utils/lessonUtils';
 
@@ -25,6 +26,7 @@ const sanitizeHtml = async (html = '') => {
 };
 
 const ArticleLessonViewer = ({ lesson }) => {
+    const { t } = useTranslation();
     const [sanitizedContent, setSanitizedContent] = useState('');
     const contentRef = useRef(null);
     
@@ -52,13 +54,10 @@ const ArticleLessonViewer = ({ lesson }) => {
         };
     }, [lesson?.content]);
 
-    // Добавляем базовые стили для темного режима при монтировании
     useEffect(() => {
         if (contentRef.current && sanitizedContent) {
-            // Применяем базовые стили для контента
             const contentElement = contentRef.current;
             
-            // Добавляем классы для стилизации HTML элементов
             const styleElement = document.createElement('style');
             styleElement.textContent = `
                 .article-content.dark-mode h1,
@@ -122,9 +121,9 @@ const ArticleLessonViewer = ({ lesson }) => {
                 <div 
                     className="text-center text-gray-600 dark:text-gray-400 py-12"
                     role="status"
-                    aria-label="Мазмун бөгөттөлгөн"
+                    aria-label={t('public.courseShared.article.lockedAria')}
                 >
-                    Бул макаланы окуу үчүн курска катталыңыз.
+                    {t('public.courseShared.article.locked')}
                 </div>
             ) : sanitizedContent ? (
                 <div className="relative">
@@ -145,16 +144,16 @@ const ArticleLessonViewer = ({ lesson }) => {
                                    text-gray-700 dark:text-gray-300"
                         dangerouslySetInnerHTML={{ __html: sanitizedContent }}
                         role="article"
-                        aria-label="Макаланын мазмуну"
+                        aria-label={t('public.courseShared.article.contentAria')}
                     />
                 </div>
             ) : (
                 <p 
                     className="text-gray-500 dark:text-gray-400"
                     role="status"
-                    aria-label="Контент отсутствует"
+                    aria-label={t('public.courseShared.article.emptyAria')}
                 >
-                    Макала тексти кошула элек.
+                    {t('public.courseShared.article.empty')}
                 </p>
             )}
 
@@ -170,7 +169,10 @@ const ArticleLessonViewer = ({ lesson }) => {
                         target="_blank"
                         rel="noopener noreferrer"
                         download
-                        aria-label={`${resourceMeta.typeLabel} форматындагы, файл жуктоо ${resourceMeta.fileName}`}
+                        aria-label={t('public.courseShared.article.downloadResourceAria', {
+                            type: resourceMeta.typeLabel,
+                            fileName: resourceMeta.fileName,
+                        })}
                     >
                         <FiDownload
                             className="text-base flex-shrink-0 group-hover:scale-110 transition-transform"
@@ -183,7 +185,9 @@ const ArticleLessonViewer = ({ lesson }) => {
                         <span
                             className="text-xs uppercase text-gray-500 dark:text-gray-400 
                                      flex-shrink-0 ml-1"
-                            aria-label={`${resourceMeta.typeLabel} форматы`}
+                            aria-label={t('public.courseShared.article.resourceTypeAria', {
+                                type: resourceMeta.typeLabel,
+                            })}
                         >
                             {resourceMeta.typeLabel}
                         </span>

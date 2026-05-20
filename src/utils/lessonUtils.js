@@ -1,8 +1,10 @@
+import i18n from '../i18n';
+
 export function formatReadTime(seconds) {
     if (!seconds || isNaN(seconds)) return null;
 
     const minutes = Math.max(1, Math.round(Number(seconds) / 60));
-    return `${minutes} мин окуу`;
+    return i18n.t('lessonUtils.readTime', { count: minutes });
 }
 
 export function getResourceMeta(resourceKey = '', resourceName = '') {

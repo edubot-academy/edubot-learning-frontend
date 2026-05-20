@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import {
     approveCertificate,
@@ -22,6 +23,7 @@ import {
 } from '@shared/utils/tenantFeatures';
 
 export const useInstructorStudentWorkspace = ({ activeTab, user }) => {
+    const { t } = useTranslation();
     const [studentCourses, setStudentCourses] = useState([]);
     const [studentCoursesTotal, setStudentCoursesTotal] = useState(null);
     const [loadingStudentCourses, setLoadingStudentCourses] = useState(false);
@@ -99,14 +101,14 @@ export const useInstructorStudentWorkspace = ({ activeTab, user }) => {
         } catch (error) {
             console.error('Failed to load student courses', error);
             if (error?.response?.status === 403) {
-                setStudentsError('Бул курс сизге бекитилген эмес');
+                setStudentsError(t('adminCertificates.errors.courseNotAssigned'));
             } else {
-                toast.error('Студенттер тизмесин жүктөө мүмкүн болбоду');
+                toast.error(t('adminCertificates.errors.loadStudentCourses'));
             }
         } finally {
             setLoadingStudentCourses(false);
         }
-    }, [activeTab, user]);
+    }, [activeTab, t, user]);
 
     const loadCourseStudents = useCallback(
         async (courseId) => {
@@ -142,15 +144,15 @@ export const useInstructorStudentWorkspace = ({ activeTab, user }) => {
                 setCourseStudentsMeta(null);
 
                 if (error?.response?.status === 403) {
-                    setStudentsError('Бул курс сизге бекитилген эмес');
+                    setStudentsError(t('adminCertificates.errors.courseNotAssigned'));
                 } else {
-                    toast.error('Курс студенттерин жүктөө мүмкүн болбоду');
+                    toast.error(t('adminCertificates.errors.loadStudents'));
                 }
             } finally {
                 setLoadingCourseStudents(false);
             }
         },
-        [progressMax, progressMin, studentSearch, studentsPage]
+        [progressMax, progressMin, studentSearch, studentsPage, t]
     );
 
     const refreshCourseCertificates = useCallback(async () => {
@@ -218,7 +220,7 @@ export const useInstructorStudentWorkspace = ({ activeTab, user }) => {
         async (enabled) => {
             if (!selectedStudentCourseId) return;
             if (!certificatesFeatureEnabled) {
-                toast.error('Certificates are disabled for this tenant.');
+                toast.error(t('adminCertificates.toasts.featureDisabled'));
                 return;
             }
             setSavingCertificateSettings(true);
@@ -232,22 +234,22 @@ export const useInstructorStudentWorkspace = ({ activeTab, user }) => {
                     }
                 );
                 setCertificateSettings(updated);
-                toast.success('Сертификат эрежеси жаңыртылды');
+                toast.success(t('adminCertificates.toasts.ruleUpdated'));
             } catch (error) {
                 console.error('Failed to update certificate settings', error);
-                toast.error('Сертификат эрежесин жаңыртуу мүмкүн болбоду');
+                toast.error(t('adminCertificates.toasts.ruleUpdateError'));
             } finally {
                 setSavingCertificateSettings(false);
             }
         },
-        [certificateSettings, certificatesFeatureEnabled, selectedStudentCourseId]
+        [certificateSettings, certificatesFeatureEnabled, selectedStudentCourseId, t]
     );
 
     const handleSaveCertificateSettings = useCallback(
         async (payload) => {
             if (!selectedStudentCourseId) return false;
             if (!certificatesFeatureEnabled) {
-                toast.error('Certificates are disabled for this tenant.');
+                toast.error(t('adminCertificates.toasts.featureDisabled'));
                 return false;
             }
             setSavingCertificateSettings(true);
@@ -257,24 +259,24 @@ export const useInstructorStudentWorkspace = ({ activeTab, user }) => {
                     payload
                 );
                 setCertificateSettings(updated);
-                toast.success('Сертификат шаблону сакталды');
+                toast.success(t('adminCertificates.toasts.templateSaved'));
                 return true;
             } catch (error) {
                 console.error('Failed to save certificate settings', error);
-                toast.error('Сертификат шаблонун сактоо мүмкүн болбоду');
+                toast.error(t('adminCertificates.toasts.templateSaveError'));
                 return false;
             } finally {
                 setSavingCertificateSettings(false);
             }
         },
-        [certificatesFeatureEnabled, selectedStudentCourseId]
+        [certificatesFeatureEnabled, selectedStudentCourseId, t]
     );
 
     const handleRegenerateCertificates = useCallback(
         async () => {
             if (!selectedStudentCourseId) return false;
             if (!certificatesFeatureEnabled) {
-                toast.error('Certificates are disabled for this tenant.');
+                toast.error(t('adminCertificates.toasts.featureDisabled'));
                 return false;
             }
             setRegeneratingCertificates(true);
@@ -284,26 +286,28 @@ export const useInstructorStudentWorkspace = ({ activeTab, user }) => {
                 await refreshCourseCertificates();
                 toast.success(
                     result?.regeneratedCount
-                        ? `${result.regeneratedCount} сертификат жаңыртылды`
-                        : 'Жаңыртууга сертификат табылган жок'
+                        ? t('adminCertificates.toasts.regenerated', {
+                              count: result.regeneratedCount,
+                          })
+                        : t('adminCertificates.toasts.noneRegenerated')
                 );
                 return true;
             } catch (error) {
                 console.error('Failed to regenerate certificates', error);
-                toast.error('Сертификат PDF файлдарын жаңыртуу мүмкүн болбоду');
+                toast.error(t('adminCertificates.toasts.regenerateError'));
                 return false;
             } finally {
                 setRegeneratingCertificates(false);
             }
         },
-        [certificatesFeatureEnabled, loadCourseStudents, refreshCourseCertificates, selectedStudentCourseId]
+        [certificatesFeatureEnabled, loadCourseStudents, refreshCourseCertificates, selectedStudentCourseId, t]
     );
 
     const handleSaveCertificateAsset = useCallback(
         async (kind, file) => {
             if (!selectedStudentCourseId || !file) return null;
             if (!certificatesFeatureEnabled) {
-                toast.error('Certificates are disabled for this tenant.');
+                toast.error(t('adminCertificates.toasts.featureDisabled'));
                 return null;
             }
             setSavingCertificateAssetKind(kind);
@@ -315,30 +319,30 @@ export const useInstructorStudentWorkspace = ({ activeTab, user }) => {
                 setCertificateSettings(updated);
                 toast.success(
                     kind === 'signature'
-                        ? 'Кол коюу сакталды'
-                        : 'Экинчи бренд логотиби жүктөлдү'
+                        ? t('adminCertificates.toasts.signatureSaved')
+                        : t('adminCertificates.toasts.secondaryLogoUploaded')
                 );
                 return updated;
             } catch (error) {
                 console.error('Failed to save certificate asset', error);
                 toast.error(
                     kind === 'signature'
-                        ? 'Кол коюуну сактоо мүмкүн болбоду'
-                        : 'Сертификат активин жүктөө мүмкүн болбоду'
+                        ? t('adminCertificates.toasts.signatureSaveError')
+                        : t('adminCertificates.toasts.assetUploadError')
                 );
                 return null;
             } finally {
                 setSavingCertificateAssetKind(null);
             }
         },
-        [certificatesFeatureEnabled, selectedStudentCourseId]
+        [certificatesFeatureEnabled, selectedStudentCourseId, t]
     );
 
     const handleCertificateAction = useCallback(
         async (kind, student, displayOverrides = {}) => {
             if (!selectedStudentCourseId || !student) return;
             if (!certificatesFeatureEnabled) {
-                toast.error('Certificates are disabled for this tenant.');
+                toast.error(t('adminCertificates.toasts.featureDisabled'));
                 return;
             }
             setCertificateActionStudentId(student.id);
@@ -359,16 +363,16 @@ export const useInstructorStudentWorkspace = ({ activeTab, user }) => {
 
                 await loadCourseStudents(selectedStudentCourseId);
                 await refreshCourseCertificates();
-                toast.success('Сертификат жаңыртылды');
+                toast.success(t('adminCertificates.toasts.certificateUpdated'));
             } catch (error) {
                 console.error('Failed to update certificate', error);
-                toast.error('Сертификат аракетин аткаруу мүмкүн болбоду');
+                toast.error(t('adminCertificates.toasts.certificateActionError'));
             } finally {
                 setCertificateActionStudentId(null);
                 setCertificateActionKind(null);
             }
         },
-        [certificatesFeatureEnabled, loadCourseStudents, refreshCourseCertificates, selectedStudentCourseId]
+        [certificatesFeatureEnabled, loadCourseStudents, refreshCourseCertificates, selectedStudentCourseId, t]
     );
 
     const handleSelectStudentCourse = useCallback((courseId) => {

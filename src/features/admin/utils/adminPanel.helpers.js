@@ -1,3 +1,4 @@
+import i18n from '../../../i18n';
 import { MAX_VISIBLE_PAGES } from './adminPanel.constants';
 
 /**
@@ -31,7 +32,7 @@ export const calculateVisiblePages = (currentPage, totalPages, maxVisible = MAX_
  * @returns {string} Formatted number string
  */
 export const formatNumber = (value, options = {}) => {
-    return Number(value ?? 0).toLocaleString('ru-RU', {
+    return Number(value ?? 0).toLocaleString(i18n.language, {
         maximumFractionDigits: 0,
         ...options,
     });
@@ -50,7 +51,7 @@ export const formatPercent = (value) => `${Math.round(Number(value ?? 0))}%`;
  * @returns {string} Formatted currency string
  */
 export const formatCurrency = (value) => {
-    return `${formatNumber(value)} сом`;
+    return i18n.t('adminStats.currency.kgs', { amount: formatNumber(value) });
 };
 
 /**

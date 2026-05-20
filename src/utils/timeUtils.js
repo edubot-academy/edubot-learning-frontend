@@ -1,9 +1,11 @@
+import i18n from '../i18n';
+
 export function formatDuration(seconds) {
     if (!seconds || isNaN(seconds)) return null;
 
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
-    return `${mins} мүн ${secs} сек`;
+    return i18n.t('timeUtils.minutesSecondsShort', { minutes: mins, seconds: secs });
 }
 
 export function formatSecondsToTime(seconds) {
@@ -19,9 +21,9 @@ export function formatMinutesToTime(minutes) {
     const h = Math.floor(minutes / 60);
     const m = Math.round(minutes % 60);
 
-    if (h > 0 && m > 0) return `${h} саат ${m} мин`;
-    if (h > 0) return `${h} саат`;
-    return `${m} мин`;
+    if (h > 0 && m > 0) return i18n.t('timeUtils.hoursMinutesShort', { hours: h, minutes: m });
+    if (h > 0) return i18n.t('timeUtils.hoursShort', { count: h });
+    return i18n.t('timeUtils.minutesShort', { count: m });
 }
 
 export function formatHoursToTime(hours) {
@@ -30,9 +32,9 @@ export function formatHoursToTime(hours) {
     const h = Math.floor(totalMinutes / 60);
     const m = totalMinutes % 60;
 
-    if (h > 0 && m > 0) return `${h} саат ${m} мин`;
-    if (h > 0) return `${h} саат`;
-    return `${m} мин`;
+    if (h > 0 && m > 0) return i18n.t('timeUtils.hoursMinutesShort', { hours: h, minutes: m });
+    if (h > 0) return i18n.t('timeUtils.hoursShort', { count: h });
+    return i18n.t('timeUtils.minutesShort', { count: m });
 }
 export function secondsToMinutesInput(seconds) {
     if (!seconds || Number.isNaN(Number(seconds))) return '';

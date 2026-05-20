@@ -9,15 +9,18 @@ import {
     sendAiChatMessage,
 } from '@services/api';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import { FiMoreHorizontal, FiPaperclip, FiMic } from 'react-icons/fi';
 import Loader from '@shared/ui/Loader';
 import ConfirmationModal from '@shared/ui/ConfirmationModal';
+import { parseApiError } from '@shared/api/error';
 
-const formatTime = (dateString) => {
+const formatTime = (dateString, language = 'ky') => {
     if (!dateString) return '';
     try {
         const date = new Date(dateString);
-        return date.toLocaleTimeString('ru-RU', {
+        const locale = language === 'ru' ? 'ru-RU' : language === 'en' ? 'en-US' : 'ky-KG';
+        return date.toLocaleTimeString(locale, {
             hour: '2-digit',
             minute: '2-digit',
         });
@@ -26,13 +29,16 @@ const formatTime = (dateString) => {
     }
 };
 
-const EmptyState = ({ loading }) => (
-    <div className="text-center text-gray-500 text-sm py-8">
-        {loading
-            ? <Loader fullScreen={false} />
-            : 'Бул чатта азырынча суроолор жок. Алгачкы суроону жазыңыз.'}
-    </div>
-);
+const EmptyState = ({ loading }) => {
+    const { t } = useTranslation();
+    return (
+        <div className="text-center text-gray-500 text-sm py-8">
+            {loading
+                ? <Loader fullScreen={false} />
+                : t('assistantPanel.empty.noQuestions')}
+        </div>
+    );
+};
 EmptyState.propTypes = {
     loading: PropTypes.bool,
 };
@@ -45,6 +51,7 @@ const sortChats = (items = []) =>
     );
 
 const AiAssistantPanel = ({ courseId, languageCode = 'ru' }) => {
+    const { t, i18n } = useTranslation();
     const [prompts, setPrompts] = useState([]);
     const [chats, setChats] = useState([]);
     const [activeChatId, setActiveChatId] = useState(null);
@@ -78,11 +85,11 @@ const AiAssistantPanel = ({ courseId, languageCode = 'ru' }) => {
             setMessages(data || []);
         } catch (error) {
             console.error(error);
-            toast.error('Маалыматты жүктөө мүмкүн болбоду');
+            toast.error(parseApiError(error, t('assistantPanel.toasts.messagesLoadFailed')).message);
         } finally {
             setLoadingMessages(false);
         }
-    }, []);
+    }, [t]);
 
     const handleCreateChat = useCallback(
         async (silent = false) => {
@@ -92,16 +99,16 @@ const AiAssistantPanel = ({ courseId, languageCode = 'ru' }) => {
                 setActiveChatId(newChat.id);
                 setMessages([]);
                 if (!silent) {
-                    toast.success('Жаңы чат түзүлдү');
+                    toast.success(t('assistantPanel.toasts.chatCreated'));
                 }
             } catch (error) {
                 console.error(error);
-                toast.error('Чат түзүүдө ката кетти');
+                toast.error(parseApiError(error, t('assistantPanel.toasts.chatCreateFailed')).message);
             } finally {
                 setMenuOpen(false);
             }
         },
-        [courseId, languageCode]
+        [courseId, languageCode, t]
     );
 
     const loadChats = useCallback(async () => {
@@ -119,11 +126,11 @@ const AiAssistantPanel = ({ courseId, languageCode = 'ru' }) => {
             }
         } catch (error) {
             console.error(error);
-            toast.error('Чатты жүктөө мүмкүн болбоду');
+            toast.error(parseApiError(error, t('assistantPanel.toasts.chatsLoadFailed')).message);
         } finally {
             setLoadingChats(false);
         }
-    }, [courseId, handleCreateChat, loadMessages]);
+    }, [courseId, handleCreateChat, loadMessages, t]);
 
     useEffect(() => {
         loadPrompts();
@@ -155,10 +162,10 @@ const AiAssistantPanel = ({ courseId, languageCode = 'ru' }) => {
                 setActiveChatId(null);
                 await handleCreateChat(true);
             }
-            toast.success('Чат өчүрүлдү');
+            toast.success(t('assistantPanel.toasts.chatDeleted'));
         } catch (error) {
             console.error(error);
-            toast.error('Чатты өчүрүү мүмкүн болбоду');
+            toast.error(parseApiError(error, t('assistantPanel.toasts.chatDeleteFailed')).message);
         } finally {
             setMenuOpen(false);
             setDeleteConfirmOpen(false);
@@ -190,7 +197,7 @@ const AiAssistantPanel = ({ courseId, languageCode = 'ru' }) => {
             );
         } catch (error) {
             console.error(error);
-            toast.error('Суроону жөнөтүү мүмкүн болбоду');
+            toast.error(parseApiError(error, t('assistantPanel.toasts.sendFailed')).message);
             if (!messageOverride) {
                 setInputValue(trimmed);
             }
@@ -223,7 +230,7 @@ const AiAssistantPanel = ({ courseId, languageCode = 'ru' }) => {
                         >
                             <p className="whitespace-pre-wrap break-words">{message.content}</p>
                             <span className="block text-[11px] text-gray-500 mt-1 text-right">
-                                {formatTime(message.createdAt)}
+                                {formatTime(message.createdAt, i18n.language)}
                             </span>
                         </div>
                     </div>
@@ -236,11 +243,12 @@ const AiAssistantPanel = ({ courseId, languageCode = 'ru' }) => {
         <>
         <div className="bg-white border border-gray-200 rounded-[28px] shadow-sm p-6 md:p-8 relative overflow-hidden">
             <div className="absolute top-6 right-6 z-10">
-                <button
-                    type="button"
-                    onClick={() => setMenuOpen((prev) => !prev)}
-                    className="w-11 h-11 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:text-gray-900 bg-white shadow-sm"
-                >
+                    <button
+                        type="button"
+                        onClick={() => setMenuOpen((prev) => !prev)}
+                        aria-label={t('assistantPanel.actions.openMenu')}
+                        className="w-11 h-11 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:text-gray-900 bg-white shadow-sm"
+                    >
                     <FiMoreHorizontal size={20} />
                 </button>
                 {menuOpen && (
@@ -250,7 +258,7 @@ const AiAssistantPanel = ({ courseId, languageCode = 'ru' }) => {
                             onClick={() => handleCreateChat(false)}
                             className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm"
                         >
-                            Жаңы баарлашуу
+                            {t('assistantPanel.actions.newChat')}
                         </button>
                         <button
                             type="button"
@@ -258,7 +266,7 @@ const AiAssistantPanel = ({ courseId, languageCode = 'ru' }) => {
                             className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm text-red-500"
                             disabled={!activeChatId}
                         >
-                            Баарлашууну өчүрүү
+                            {t('assistantPanel.actions.deleteChat')}
                         </button>
                     </div>
                 )}
@@ -266,12 +274,12 @@ const AiAssistantPanel = ({ courseId, languageCode = 'ru' }) => {
 
             <div className="flex items-start justify-between gap-4 flex-wrap">
                 <div>
-                    <p className="text-sm uppercase tracking-wide text-gray-400">EDU</p>
+                    <p className="text-sm uppercase tracking-wide text-gray-400">{t('assistantPanel.hero.eyebrow')}</p>
                     <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
-                        <span className="text-[#FF6B00]">EDU</span> AI Assistent
+                        <span className="text-[#FF6B00]">{t('assistantPanel.hero.brand')}</span> {t('assistantPanel.hero.titleSuffix')}
                     </h2>
                     <p className="text-gray-600 mt-2 max-w-2xl">
-                        Биздин жасалма интеллект сизге жоопторду тез табууга, натыйжалуураак үйрөнүүгө жана күн сайын өсүүгө жардам берет.
+                        {t('assistantPanel.hero.description')}
                     </p>
                 </div>
             </div>
@@ -279,10 +287,12 @@ const AiAssistantPanel = ({ courseId, languageCode = 'ru' }) => {
             <div className="flex flex-col items-center text-center py-6">
                 <div className="w-40 h-40 rounded-full bg-gradient-to-br from-[#FF8008] to-[#FF4B1F] shadow-inner" />
                 <p className="mt-4 text-sm text-gray-500">
-                    Чат: {activeChat?.title || 'Аталышы жок'}
+                    {t('assistantPanel.chat.label', {
+                        title: activeChat?.title || t('assistantPanel.chat.untitled'),
+                    })}
                 </p>
                 <p className="mt-2 text-lg font-semibold text-[#FF6B00]">
-                    Салам! Кандай жардам керек?
+                    {t('assistantPanel.chat.greeting')}
                 </p>
             </div>
 
@@ -295,7 +305,7 @@ const AiAssistantPanel = ({ courseId, languageCode = 'ru' }) => {
                 {prompts.length > 0 && (
                     <div>
                         <p className="text-xs uppercase tracking-wide text-gray-400 font-semibold mb-2">
-                            Тез сунуштар
+                            {t('assistantPanel.prompts.title')}
                         </p>
                         <div className="flex flex-wrap gap-2">
                             {prompts.map((prompt) => (
@@ -315,7 +325,7 @@ const AiAssistantPanel = ({ courseId, languageCode = 'ru' }) => {
                     <textarea
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
-                        placeholder="Сурооңузду ушул жерге жазыңыз..."
+                        placeholder={t('assistantPanel.input.placeholder')}
                         className="w-full border border-gray-200 rounded-2xl bg-white px-4 py-3 text-sm text-gray-900 shadow-sm resize-none min-h-[80px] focus:outline-none focus:ring-2 focus:ring-[#FFB37C]"
                         rows={3}
                     />
@@ -324,14 +334,16 @@ const AiAssistantPanel = ({ courseId, languageCode = 'ru' }) => {
                             <button
                                 type="button"
                                 className="w-11 h-11 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-800"
-                                title="Файлды тиркөө"
+                                title={t('assistantPanel.input.attachFile')}
+                                aria-label={t('assistantPanel.input.attachFile')}
                             >
                                 <FiPaperclip />
                             </button>
                             <button
                                 type="button"
                                 className="w-11 h-11 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-800"
-                                title="Үн киргизүү (жакында)"
+                                title={t('assistantPanel.input.voiceInputSoon')}
+                                aria-label={t('assistantPanel.input.voiceInputSoon')}
                             >
                                 <FiMic />
                             </button>
@@ -342,7 +354,7 @@ const AiAssistantPanel = ({ courseId, languageCode = 'ru' }) => {
                             disabled={sending || !inputValue.trim()}
                             className="px-6 py-3 rounded-2xl bg-gradient-to-r from-[#FF7E21] to-[#FF5F3D] text-white text-sm font-semibold shadow disabled:opacity-60 disabled:cursor-not-allowed"
                         >
-                            {sending ? 'Жүктөлүдөө' : 'Жүктөө'}
+                            {sending ? t('assistantPanel.input.sending') : t('assistantPanel.input.send')}
                         </button>
                     </div>
                 </div>
@@ -352,10 +364,10 @@ const AiAssistantPanel = ({ courseId, languageCode = 'ru' }) => {
             isOpen={deleteConfirmOpen}
             onClose={() => setDeleteConfirmOpen(false)}
             onConfirm={confirmDeleteChat}
-            title="Баарлашууну өчүрүү"
-            message="Учурдагы чатты чын эле өчүргүңүз келеби?"
-            confirmLabel="Өчүрүү"
-            cancelLabel="Жокко чыгаруу"
+            title={t('assistantPanel.deleteModal.title')}
+            message={t('assistantPanel.deleteModal.message')}
+            confirmLabel={t('assistantPanel.deleteModal.confirm')}
+            cancelLabel={t('common.cancel')}
             confirmVariant="danger"
         />
         </>

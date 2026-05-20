@@ -9,6 +9,8 @@
  * - ready: Video ready to play
  * - failed: Transcode failed with error message
  */
+import { useTranslation } from 'react-i18next';
+
 const TranscodingStatusBadge = ({
   status = 'missing',
   error = null,
@@ -17,39 +19,42 @@ const TranscodingStatusBadge = ({
   onForceRetry = null,
   playbackType = null,
 }) => {
+  const { t } = useTranslation();
   const statusConfig = {
     missing: {
-      label: 'No Video',
+      label: t('adminCourses.transcode.status.missing'),
       color: 'bg-gray-200 text-gray-800',
       icon: '⚠️',
       show: true,
     },
     uploaded: {
-      label: 'Ready to Transcode',
+      label: t('adminCourses.transcode.status.uploaded'),
       color: 'bg-blue-100 text-blue-800',
       icon: '📽️',
       show: true,
     },
     starting: {
-      label: playbackType === 'hls' ? 'Stuck - Force Retry Needed' : 'Starting Transcode...',
+      label: playbackType === 'hls'
+        ? t('adminCourses.transcode.status.stuck')
+        : t('adminCourses.transcode.status.starting'),
       color: playbackType === 'hls' ? 'bg-orange-100 text-orange-800' : 'bg-yellow-100 text-yellow-800 animate-pulse',
       icon: playbackType === 'hls' ? '⚠️' : '⏳',
       show: true,
     },
     processing: {
-      label: 'Transcoding in Progress',
+      label: t('adminCourses.transcode.status.processing'),
       color: 'bg-yellow-100 text-yellow-800 animate-pulse',
       icon: '⚙️',
       show: true,
     },
     ready: {
-      label: 'Ready to Play',
+      label: t('adminCourses.transcode.status.ready'),
       color: 'bg-green-100 text-green-800',
       icon: '✅',
       show: true,
     },
     failed: {
-      label: 'Transcode Failed',
+      label: t('adminCourses.transcode.status.failed'),
       color: 'bg-red-100 text-red-800',
       icon: '❌',
       show: true,
@@ -67,7 +72,14 @@ const TranscodingStatusBadge = ({
       className={`inline-flex items-center gap-2 px-3 py-2 rounded-md ${config.color}`}
       role="status"
       aria-live="polite"
-      aria-label={`Video transcoding status: ${config.label}${error ? `. ${error}` : ''}`}
+      aria-label={
+        error
+          ? t('adminCourses.transcode.statusAriaWithError', {
+              status: config.label,
+              error,
+            })
+          : t('adminCourses.transcode.statusAria', { status: config.label })
+      }
       title={error || config.label}
     >
       <span className="text-base" aria-hidden="true">{config.icon}</span>
@@ -81,10 +93,10 @@ const TranscodingStatusBadge = ({
         <button
           onClick={onRetry}
           className="ml-2 px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-          aria-label="Retry video transcoding"
-          title="Retry transcoding"
+          aria-label={t('adminCourses.transcode.retry.aria')}
+          title={t('adminCourses.transcode.retry.shortTitle')}
         >
-          Retry
+          {t('adminCourses.transcode.retry.shortButton')}
         </button>
       )}
 
@@ -92,10 +104,10 @@ const TranscodingStatusBadge = ({
         <button
           onClick={onForceRetry}
           className="ml-2 px-2 py-1 text-xs bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors"
-          aria-label="Force retry stuck transcoding"
-          title="Force restart stuck transcoding"
+          aria-label={t('adminCourses.transcode.retry.forceAria')}
+          title={t('adminCourses.transcode.retry.forceTitle')}
         >
-          Force Retry
+          {t('adminCourses.transcode.retry.forceButton')}
         </button>
       )}
     </div>

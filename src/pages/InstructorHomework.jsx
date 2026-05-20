@@ -16,6 +16,7 @@ import {
     TENANT_FEATURES,
 } from '@shared/utils/tenantFeatures';
 import { getDashboardPath } from '@shared/utils/navigation';
+import { parseApiError } from '@shared/api/error';
 
 const toArray = (payload) => {
     if (Array.isArray(payload)) return payload;
@@ -42,8 +43,7 @@ const getHomeworkErrorMessage = (error, fallback, t) => {
     const status = error?.response?.status;
     if (status === 401) return t('instructorHomework.errors.unauthorized');
     if (status === 403) return t('instructorHomework.errors.forbidden');
-    const message = error?.response?.data?.message || fallback;
-    return Array.isArray(message) ? message.join(', ') : message;
+    return parseApiError(error, fallback).message;
 };
 
 const formatDisplayDate = (value, fallback, language) => {

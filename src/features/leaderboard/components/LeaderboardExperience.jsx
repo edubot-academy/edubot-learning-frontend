@@ -866,22 +866,25 @@ const inferChallengeAction = (item = {}, t) => {
     }
 
     const haystack = `${item.title || ''} ${item.detail || ''} ${item.value || ''}`.toLowerCase();
+    const hasKeyword = (key) =>
+        t(`public.leaderboard.challenge.keywords.${key}`, { returnObjects: true })
+            .some((keyword) => haystack.includes(String(keyword).toLowerCase()));
 
-    if (haystack.includes('тест')) {
+    if (hasKeyword('progress')) {
         return {
             to: getDashboardPath('student', 'progress'),
             label: t('public.leaderboard.challenge.actions.progress'),
             kind: 'progress',
         };
     }
-    if (haystack.includes('сабак') || haystack.includes('курс')) {
+    if (hasKeyword('course')) {
         return {
             to: getDashboardPath('student', 'my-courses'),
             label: t('public.leaderboard.challenge.actions.course'),
             kind: 'course',
         };
     }
-    if (haystack.includes('серия') || haystack.includes('эртең')) {
+    if (hasKeyword('continue')) {
         return {
             to: getDashboardPath('student', 'my-courses'),
             label: t('public.leaderboard.challenge.actions.continue'),
@@ -1302,7 +1305,7 @@ const normalizeSkillKey = (value = '') =>
     String(value)
         .trim()
         .toLowerCase()
-        .replace(/[^a-z0-9а-яөүңё]+/gi, '');
+        .replace(/[^\p{L}0-9]+/giu, '');
 
 export const SkillSpotlightGrid = ({
     boards = [],

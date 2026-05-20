@@ -2,6 +2,8 @@ import {
     COURSE_SESSION_STATUS,
     COURSE_TYPE,
 } from '@shared/contracts';
+import { parseApiError } from '@shared/api/error';
+import { getCourseTypeLabel as getSharedCourseTypeLabel } from '@shared/i18n/enumLabels';
 
 export const JOIN_WINDOW_MS = 10 * 60 * 1000;
 
@@ -197,9 +199,7 @@ export const normalizeCourseType = (course, session, group) =>
 
 export const getCourseTypeLabel = (type, t) => {
     if (typeof t === 'function') {
-        if (type === COURSE_TYPE.OFFLINE) return t('groupSessions.setup.delivery.offline');
-        if (type === COURSE_TYPE.ONLINE_LIVE) return t('groupSessions.setup.delivery.onlineLive');
-        return t('groupSessions.setup.delivery.video');
+        return getSharedCourseTypeLabel(type, t);
     }
     if (type === COURSE_TYPE.OFFLINE) return 'Offline';
     if (type === COURSE_TYPE.ONLINE_LIVE) return 'Online live';
@@ -210,8 +210,7 @@ export const getWorkspaceErrorMessage = (error, fallback, statusMessages = {}) =
     const status = error?.response?.status;
     if (status === 401) return statusMessages.unauthorized || 'Your session expired. Sign in again.';
     if (status === 403) return statusMessages.forbidden || 'This course, group, or session is not assigned to you.';
-    const message = error?.response?.data?.message || error?.message || fallback;
-    return Array.isArray(message) ? message.join(', ') : message;
+    return parseApiError(error, fallback).message;
 };
 
 export const getWorkspaceErrorStatusMessages = (t) =>

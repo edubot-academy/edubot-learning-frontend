@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import { toast } from 'react-hot-toast';
 import {
@@ -32,6 +33,7 @@ const RefactoredAttendanceTableView = ({
   onAttendanceUpdate,
   className = '',
 }) => {
+  const { t, i18n } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [students, setStudents] = useState([]);
@@ -50,6 +52,23 @@ const RefactoredAttendanceTableView = ({
     customStartDate: '',
     customEndDate: '',
   });
+  const language = i18n.resolvedLanguage || i18n.language || undefined;
+
+  const getSessionTitle = useCallback((session = {}) => (
+    session.title || t('attendance.fallbacks.sessionWithId', { id: session.sessionIndex || session.id })
+  ), [t]);
+
+  const formatSessionDate = useCallback((value, fallback = '-') => {
+    if (!value) return fallback;
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return t('attendance.fallbacks.unknownDate');
+
+    return date.toLocaleDateString(language, {
+      month: 'short',
+      day: 'numeric',
+    });
+  }, [language, t]);
 
   const loadData = useCallback(async () => {
     if (!groupId) return;
@@ -107,11 +126,11 @@ const RefactoredAttendanceTableView = ({
     } catch (loadError) {
       console.error('Failed to load attendance data:', loadError);
       setError(loadError);
-      toast.error('Жүктөөдө ката кетти');
+      toast.error(t('attendance.legacy.loadError'));
     } finally {
       setLoading(false);
     }
-  }, [groupId]);
+  }, [groupId, t]);
 
   useEffect(() => {
     loadData();
@@ -198,20 +217,20 @@ const RefactoredAttendanceTableView = ({
           onAttendanceUpdate();
         }
 
-        toast.success(`${updates.length} катышуу ийгиликтүү жаңыртылды!`);
+        toast.success(t('attendance.toasts.bulkUpdateSuccess', { count: updates.length }));
       } catch (saveError) {
         console.error('Failed to save attendance:', saveError);
-        toast.error('Катышууну сактоо мүмкүн болбоду');
+        toast.error(t('attendance.table.toasts.saveFailed'));
       } finally {
         setUpdatingCells(new Set());
       }
     },
-    [courseId, onAttendanceUpdate]
+    [courseId, onAttendanceUpdate, t]
   );
 
   const handleSave = useCallback(async () => {
     if (pendingChanges.size === 0) {
-      toast('Сактоо үчүн өзгөртүүлөр жок');
+      toast(t('attendance.table.toasts.noChangesToSave'));
       return;
     }
 
@@ -224,7 +243,7 @@ const RefactoredAttendanceTableView = ({
     );
 
     await handleBulkUpdate(updates);
-  }, [pendingChanges, handleBulkUpdate]);
+  }, [pendingChanges, handleBulkUpdate, t]);
 
   const accessibility = useAccessibility({
     students,
@@ -282,8 +301,8 @@ const RefactoredAttendanceTableView = ({
       return (
         <AttendanceEmptyState
           type="students"
-          title="Студенттер жок"
-          subtitle="Бул группада студенттер жок же жүктөөдө ката кетти"
+          title={t('attendance.empty.noStudentsTitle')}
+          subtitle={t('attendance.empty.noStudentsDescription')}
         />
       );
     }
@@ -292,8 +311,8 @@ const RefactoredAttendanceTableView = ({
       return (
         <AttendanceEmptyState
           type="filtered"
-          title="Натыйжалар жок"
-          subtitle="Сиздин фильтриңизге ылайык натыйжалар табылган жок"
+          title={t('attendance.empty.noRecordsTitle')}
+          subtitle={t('attendance.empty.noRecordsDescription')}
         />
       );
     }
@@ -347,7 +366,7 @@ const RefactoredAttendanceTableView = ({
                         }}
                         className="h-4 w-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500 dark:border-gray-600 dark:bg-gray-800 dark:text-orange-500"
                       />
-                      <span className="truncate">Студент</span>
+                      <span className="truncate">{t('attendance.metrics.students')}</span>
                     </div>
                   </th>
 
@@ -358,22 +377,17 @@ const RefactoredAttendanceTableView = ({
                     >
                       <div className="space-y-1">
                         <div className="font-medium text-xs leading-tight">
-                          {session.title || `Сессия ${session.sessionIndex}`}
+                          {getSessionTitle(session)}
                         </div>
                         <div className="text-xs text-gray-400 dark:text-gray-500">
-                          {session.startsAt
-                            ? new Date(session.startsAt).toLocaleDateString('ky-KG', {
-                              month: 'short',
-                              day: 'numeric',
-                            })
-                            : '-'}
+                          {formatSessionDate(session.startsAt)}
                         </div>
                       </div>
                     </th>
                   ))}
 
                   <th className="sticky right-0 z-20 min-w-[100px] max-w-[120px] border-l border-gray-200 bg-gray-50 px-3 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400">
-                    Жыйынтык
+                    {t('attendance.table.summary')}
                   </th>
                 </tr>
               </thead>
@@ -427,7 +441,7 @@ const RefactoredAttendanceTableView = ({
                           />
 
                           <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gray-200 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
-                            {(student.fullName || 'Unknown')
+                            {(student.fullName || t('attendance.cardView.unknownStudent'))
                               .split(' ')
                               .filter(Boolean)
                               .map((n) => n[0])
@@ -460,9 +474,9 @@ const RefactoredAttendanceTableView = ({
                           >
                             <AttendanceCell
                               studentId={student.id}
-                              studentName={student.fullName}
+                              studentName={student.fullName || t('attendance.cardView.unknownStudent')}
                               sessionId={session.id}
-                              sessionTitle={session.title}
+                              sessionTitle={getSessionTitle(session)}
                               sessionDate={session.startsAt}
                               currentStatus={
                                 attendanceData[student.id]?.[session.id] || 'not_scheduled'
@@ -532,7 +546,7 @@ const RefactoredAttendanceTableView = ({
               : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
               }`}
           >
-            Таблица
+            {t('attendance.view.table')}
           </button>
           <button
             type="button"
@@ -542,7 +556,7 @@ const RefactoredAttendanceTableView = ({
               : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
               }`}
           >
-            Карталар
+            {t('attendance.view.cards')}
           </button>
           {students.length > PERFORMANCE_THRESHOLDS.VIRTUAL_SCROLLING_THRESHOLD && (
             <button
@@ -553,7 +567,7 @@ const RefactoredAttendanceTableView = ({
                 : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
                 }`}
             >
-              Оптималдуу
+              {t('attendance.view.virtualized')}
             </button>
           )}
         </div>
@@ -566,24 +580,20 @@ const RefactoredAttendanceTableView = ({
               {selectedCells.size > 0 && (
                 <>
                   <div className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                    {selectedCells.size} клетка тандалды
+                    {t('attendance.bulk.selection.cellsSelected', { count: selectedCells.size })}
                   </div>
                   <div className="text-xs text-blue-700 dark:text-blue-300">
-                    {
-                      new Set(Array.from(selectedCells).map((cell) => cell.split('-')[0])).size
-                    }{' '}
-                    студент •{' '}
-                    {
-                      new Set(Array.from(selectedCells).map((cell) => cell.split('-')[1])).size
-                    }{' '}
-                    сессия
+                    {t('attendance.bulk.selection.summary', {
+                      students: new Set(Array.from(selectedCells).map((cell) => cell.split('-')[0])).size,
+                      sessions: new Set(Array.from(selectedCells).map((cell) => cell.split('-')[1])).size,
+                    })}
                   </div>
                 </>
               )}
 
               {pendingChanges.size > 0 && (
                 <div className="text-sm font-medium text-orange-600 dark:text-orange-400">
-                  {pendingChanges.size} өзгөртүү сакталган эмес
+                  {t('attendance.table.unsavedChanges', { count: pendingChanges.size })}
                 </div>
               )}
             </div>
@@ -596,7 +606,7 @@ const RefactoredAttendanceTableView = ({
                   disabled={loading}
                   className="dashboard-button-primary px-3 py-1 text-xs disabled:opacity-50"
                 >
-                  {loading ? 'Сакталууда...' : 'Сактоо'}
+                  {loading ? t('attendance.actions.saving') : t('attendance.actions.save')}
                 </button>
               )}
 
@@ -606,7 +616,7 @@ const RefactoredAttendanceTableView = ({
                   onClick={() => setSelectedCells(new Set())}
                   className="rounded px-3 py-1 text-xs text-blue-700 hover:bg-blue-100 dark:text-blue-300 dark:hover:bg-blue-900/30"
                 >
-                  Тандоону тазалоо
+                  {t('attendance.bulk.actions.clearSelection')}
                 </button>
               )}
             </div>
@@ -629,7 +639,7 @@ const RefactoredAttendanceTableView = ({
 
       <AttendanceLoadingOverlay
         isVisible={loading && !students.length}
-        message="Катышуу маалыматы жүктөлүүдө..."
+        message={t('attendance.legacy.loadingData')}
       />
 
       {accessibility.announcement && (

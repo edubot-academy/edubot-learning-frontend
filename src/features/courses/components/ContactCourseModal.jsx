@@ -5,6 +5,7 @@ import BasicModal from '@shared/ui/BasicModal';
 import { SUPPORT_CONTACT } from '@shared/config/support';
 import { submitContactMessage } from '@services/api';
 import { useTranslation } from 'react-i18next';
+import { parseApiError } from '@shared/api/error';
 
 const formatPrice = (price, t) => {
     if (!price && price !== 0) return t('public.courseShared.priceUnavailable');
@@ -20,13 +21,7 @@ const formatPrice = (price, t) => {
 const normalizePhone = (phone) => phone.replace(/[^\d+]/g, '');
 
 const getApiErrorMessage = (error, fallback) => {
-    const data = error?.response?.data;
-
-    if (typeof data === 'string') return data;
-    if (typeof data?.message === 'string') return data.message;
-    if (typeof data?.error === 'string') return data.error;
-
-    return fallback;
+    return parseApiError(error, fallback).message;
 };
 
 const getApiFieldErrors = (error) => {
@@ -374,7 +369,7 @@ const ContactCourseModal = ({
                                 ${errors.email ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}
                                 ${isSubmitting ? 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed' : 'bg-white dark:bg-gray-800'}
                                 dark:text-white dark:placeholder-gray-400`}
-                            placeholder="example@mail.com"
+                            placeholder={t('public.courseShared.contactModal.emailPlaceholder')}
                             autoComplete="email"
                             aria-invalid={Boolean(errors.email)}
                             aria-describedby={
