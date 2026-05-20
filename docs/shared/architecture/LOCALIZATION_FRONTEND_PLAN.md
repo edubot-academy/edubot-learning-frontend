@@ -1,6 +1,6 @@
 # Main Frontend Localization Plan
 
-Last updated: 2026-05-20.
+Last updated: 2026-05-21.
 
 This plan defines the localization work needed in the main EduBot Learning frontend.
 
@@ -45,7 +45,7 @@ Partially addressed:
 - `i18next` and `react-i18next` are installed and initialized with baseline `ky`, `ru`, and `en` resources.
 - The main header and mobile drawer have a language switcher and localized navigation/search labels.
 - Public-facing pages are localized for the first release slice: home, courses, course details, about, contact, login, and signup.
-- API error parsing now prefers stable backend error codes for known high-frequency errors while preserving backend message fallback.
+- API error parsing now prefers stable backend error codes, supports `error.code`, top-level `code`, top-level `errorCode`, backend `messageKey`/`labelKey`, and localized category fallbacks for broader backend code families without leaking raw backend prose.
 - Admin/company management surfaces have been expanded beyond locale controls: company list/detail/settings/members/courses, platform tenant detail, admin shell, admin stats, users, companies, contacts, AI prompts, skills, pending courses, courses/categories/enrollment/transcode, certificate admin actions, and notification center/widget now read common UI copy from translation resources.
 - Shared reusable surfaces have localized fallback copy: analytics cards/charts/tables/progress states, media/video fallback states, skip navigation, setup account, generic progress label, chat redirect fallback, unauthorized access fallback, forgot-password recovery modal, post-login favourite/cart feedback, cart-provider result messages, shared chat workspace defaults, confirmation modal defaults, shared phone/search/password form controls, dashboard sidebar/layout accessibility labels, shared time/read/relative-time formatting, quiz/challenge utility messages, sticky WhatsApp button ARIA, sidebar overlay labels, and student dashboard course-opening toasts.
 - Instructor delivery/group-management localization has started with course/student data-load messages, instructor course list, instructor profile feedback, the instructor overview dashboard/mobile summary, instructor analytics workspace, instructor homework queue, create/edit course page shells, shared course builder workflow, internal leaderboard, public certificate download/verification pages, shared ratings/review components, course review/feedback surfaces, delivery course create/edit, offering management dashboard, offering create/edit, course group form, group enrollment, offering enrollment, session generation, group-session setup/homework/attendance/activity/resource workflows, group-session notes/engagement surfaces, localized selection/attendance/activity/resource workspace toasts, and AI workspace dashboard surfaces, including headings, delivery-mode cards, filters, metrics, cards, fields, student picker, delivery notices, weekly schedule controls, statuses, preview states, setup steps, active-language dates, recommendations, charts, and actions.
@@ -55,7 +55,7 @@ Partially addressed:
 
 Remaining gaps:
 
-- Error handling still needs broader adoption in feature-specific toast paths, especially remaining instructor certificate/reporting and lower-traffic admin flows.
+- Error handling still needs deeper per-code copy for lower-traffic backend codes, but shared parsing and category-level fallbacks now cover the main backend code families without exposing raw backend messages.
 - Dashboard/admin/internal localization is partially complete, but large surfaces still have hardcoded strings outside the current completed slice.
 - Translation key parity tests exist for current resources; they need to scale as feature namespaces are added.
 
@@ -156,21 +156,21 @@ Acceptance criteria:
 
 ### Phase 4. Error Code Translation
 
-Status: Partially complete. Shared API error parsing now extracts stable codes, maps the first high-frequency backend codes to localized messages, and uses the localized generic fallback. CSRF retry detection prefers `CSRF_TOKEN_INVALID` while preserving the old message fallback. Several admin, company, certificate, category, user, enrollment, and transcode paths now call `parseApiError`. Remaining work is replacing feature-specific direct `error.response.data.message` usage with the shared helper.
+Status: Release-ready for the shared frontend/backend contract layer. Shared API error parsing now extracts stable codes from `error.code`, top-level `code`, and top-level `errorCode`; prefers backend `messageKey`/`labelKey` when present; maps known high-frequency backend codes to localized messages; and uses localized category fallbacks for broader backend code families such as auth, tenant, company, course, lesson, media, AI, enrollment, attendance, certificate, CRM integration, group/session, homework, student, notification, and leaderboard. CSRF retry detection prefers `CSRF_TOKEN_INVALID` while preserving the old message fallback. Direct backend message rendering is audited and currently clean for configured production-source patterns.
 
 Estimated effort: 1 day for high-frequency errors; ongoing for full coverage.
 
 Tasks:
 
-- Add a small error translation helper that prefers `error.response.data.code`.
-- Keep fallback to backend `message`.
+- Add a small error translation helper that prefers `messageKey`/`labelKey`, then stable backend error code, then a localized fallback.
+- Avoid using backend `message`/`error` prose as user-facing copy unless a surface is explicitly admin/debug-only.
 - Replace CSRF retry detection with the backend error code when available.
-- Translate common auth, tenant/company, course, lesson, AI, notification, enrollment, and certificate codes as they surface in UI flows.
+- Translate common auth, tenant/company, course, lesson, AI, notification, enrollment, and certificate codes as they surface in UI flows, and keep category-level fallbacks for codes that do not yet have specific copy.
 
 Acceptance criteria:
 
 - Known backend error codes produce localized user-facing messages.
-- Unknown errors still show a reasonable fallback.
+- Unknown errors still show a reasonable localized fallback and do not leak raw backend prose.
 - Existing CSRF retry behavior continues to work.
 
 ### Phase 5. Incremental UI Copy Localization
@@ -386,17 +386,22 @@ Progress:
 - Leaderboard fallback metadata now uses the shared API error parser and localized leaderboard fallback copy.
 - Course file-upload preparation, file-size, and upload failure paths now throw localized errors, and course-builder upload feedback preserves only explicitly localized thrown errors.
 - Course details load failure and admin transcode history details now use the shared API error parser with localized fallbacks.
-- Current scans for direct `response.data.message`/`data.message` rendering in production source are clean for the audited patterns. Remaining `error.message` uses are localized local errors or shared display components that render caller-provided messages.
+- Shared API error parsing now supports `error.code`, top-level `code`, top-level `errorCode`, backend `messageKey`/`labelKey`, specific code translations, and category-level localized fallbacks for broad backend code families.
+- Instructor and student dashboard chat recovery no longer compares the backend English text `Chat not found`; both flows now branch on stable backend chat-not-found codes.
+- Public contact field validation no longer renders backend validation prose directly. It prefers backend `messageKey`/`labelKey` or stable field error codes, then falls back to frontend-owned localized validation copy.
+- Current scans for direct `response.data.message`/`data.message`/`data.error` rendering and exact backend prose comparisons in production source are clean for the audited patterns. Remaining `error.message` uses are localized local errors or shared display components that render caller-provided messages.
 
 Problem:
 
 - Previously, some feature code displayed `error.response.data.message`, `data.message`, or hardcoded toast strings directly.
+- Previously, some feature code depended on exact backend English prose for behavior, for example chat recovery checking `Chat not found`.
 - Backend messages may be untranslated, inconsistent, too technical, or not suitable as final UI copy, so frontend code should continue using stable codes and localized fallbacks.
 
 Tasks:
 
 - Use `parseApiError` or a shared localized helper for new backend error surfaces.
-- Prefer backend stable error codes where available.
+- Prefer backend `messageKey`/`labelKey` when present, then backend stable error codes.
+- Never branch business/UI behavior on exact backend prose; request or add a stable backend code instead.
 - Add missing error codes to the `errors` namespace as backend contracts grow.
 - Keep a safe localized fallback for unknown errors.
 - Review success, warning, info, and validation toasts for the same localization standard when adding new features.
@@ -547,7 +552,7 @@ Status: Complete.
 
 Progress:
 
-- Added `npm run audit:localization`, a dependency-free Node audit that scans production `src/**/*.js(x)` files for hardcoded JSX text, literal UI props, toast literals, direct backend message rendering, missing static `t('...')` keys, and Cyrillic/Kyrgyz source text outside locale resources.
+- Added `npm run audit:localization`, a dependency-free Node audit that scans production `src/**/*.js(x)` files for hardcoded JSX text, literal UI props, toast literals, direct backend `message`/`error` rendering, exact backend prose comparisons, missing static `t('...')` keys, and Cyrillic/Kyrgyz source text outside locale resources.
 - The audit reports findings without failing by default, and supports `-- --fail-on-findings` when the known backlog is low enough for CI gating.
 - Current audit baseline: 0 findings after excluding intentional demo/test/generated/resource surfaces and marking reviewed technical literals with `l10n-audit-ignore`.
 
@@ -557,7 +562,7 @@ Problem:
 
 Tasks:
 
-- Add an audit script or lint-like check for JSX text, placeholder/title/aria-label literals, toast literals, and missing static translation keys.
+- Add an audit script or lint-like check for JSX text, placeholder/title/aria-label literals, toast literals, direct backend prose usage, exact backend prose comparisons, and missing static translation keys.
 - Allow explicit exceptions for brand names, technical IDs, test files, example/demo files, and backend-provided content.
 - Include the audit command in localization QA docs and optionally CI once the known backlog is reduced.
 - Current explicit exception: `src/examples/**` contains unused demo snippets and should be excluded from hardcoded-copy counts unless those examples become routable product UI.
@@ -573,7 +578,7 @@ npm run audit:localization -- --fail-on-findings
 
 Acceptance criteria:
 
-- New hardcoded UI strings are caught during review or CI.
+- New hardcoded UI strings, direct backend prose rendering, and exact backend prose comparisons are caught during review or CI.
 - Static translation keys used by production source resolve in the default locale resource tree.
 - The audit has documented false-positive rules.
 - The scan count is currently 0 for the configured production-source audit.

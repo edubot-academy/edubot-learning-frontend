@@ -51,7 +51,12 @@ const CHECKS = [
     {
         name: 'raw-backend-message',
         description: 'Direct backend message rendering',
-        pattern: /\b[A-Za-z_$][\w$]*(?:\?\.|\.)response(?:\?\.|\.)data(?:\?\.|\.)message|\bresponse(?:\?\.|\.)data(?:\?\.|\.)message/,
+        pattern: /\b[A-Za-z_$][\w$]*(?:\?\.|\.)response(?:\?\.|\.)data(?:\?\.|\.)(?:message|error)\b|\bresponse(?:\?\.|\.)data(?:\?\.|\.)(?:message|error)\b/,
+    },
+    {
+        name: 'backend-message-comparison',
+        description: 'Exact comparison against backend prose',
+        pattern: /\b(?:payload|data)(?:\?\.|\.)(?:message|error)\s*(?:===|!==)\s*['"`][A-Za-z]|\b(?:message|errorMessage)\s*(?:===|!==)\s*['"`][A-Za-z]/,
     },
 ];
 

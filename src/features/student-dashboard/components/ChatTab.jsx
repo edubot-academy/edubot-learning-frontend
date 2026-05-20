@@ -11,15 +11,17 @@ import {
     fetchCourseDetails,
 } from '@services/api';
 import Loader from '@shared/ui/Loader';
-import { parseApiError } from '@shared/api/error';
+import { API_ERROR_CODES, getApiErrorCode, parseApiError } from '@shared/api/error';
 import { AuthContext } from '../../../context/AuthContext';
 
 const ChatWorkspace = lazy(() => import('@components/ui/ChatWorkspace'));
-const CHAT_NOT_FOUND_MESSAGE = 'Chat not found';
+const CHAT_NOT_FOUND_CODES = new Set([
+    API_ERROR_CODES.CHAT_NOT_FOUND,
+    API_ERROR_CODES.INSTRUCTOR_CHAT_NOT_FOUND,
+]);
 
 const isChatNotFoundError = (error) => {
-    const payload = error?.response?.data || {};
-    return error?.response?.status === 404 && payload.message === CHAT_NOT_FOUND_MESSAGE;
+    return error?.response?.status === 404 && CHAT_NOT_FOUND_CODES.has(getApiErrorCode(error));
 };
 
 const toArray = (value) => {

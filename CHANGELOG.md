@@ -6,6 +6,30 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
 ---
 
+## [1.13.12] - 2026-05-21
+
+### Changed
+
+- Hardened frontend/backend localization error handling so API errors now resolve `messageKey`/`labelKey`, top-level `errorCode`, exact known codes, and localized category fallbacks before falling back to generic copy.
+- Extended backend error fallback coverage for broad code families including auth, tenant/company, course, lesson, media, AI, enrollment, attendance, certificate, CRM integration, groups/sessions, homework, student, notification, and leaderboard.
+- Updated localization QA documentation to mark the frontend/backend connection layer as release-ready while keeping exact per-code translations as incremental backlog.
+
+### Fixed
+
+- Replaced instructor and student chat recovery checks against the backend English text `Chat not found` with stable backend error-code checks.
+- Prevented public contact form field validation from rendering backend prose directly; field errors now prefer backend keys/codes and otherwise use localized frontend validation copy.
+- Strengthened the localization audit to catch direct backend `message`/`error` rendering and exact backend prose comparisons in production source.
+
+### Verification
+
+- `npm run audit:localization -- --fail-on-findings`
+- `npm test -- --run src/shared/api/error.spec.js src/shared/api/client.spec.js src/i18n/resources.spec.js src/i18n/locale.spec.js`
+- `npm run lint`
+- `git diff --check -- CHANGELOG.md docs/shared/architecture/LOCALIZATION_FRONTEND_PLAN.md package.json package-lock.json scripts src`
+- `npm run build`
+
+---
+
 ## [1.13.11] - 2026-05-21
 
 ### Changed

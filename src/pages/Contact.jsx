@@ -151,7 +151,28 @@ const getApiErrorMessage = (error, fallback) => {
     return parseApiError(error, fallback).message;
 };
 
-const getApiFieldErrors = (error) => {
+const getApiFieldErrorMessage = (value, fieldName, t) => {
+    const fallback = t(`public.contact.validation.${fieldName}`, {
+        defaultValue: t('public.contact.fallbackError'),
+    });
+
+    if (value && typeof value === 'object') {
+        const translationKey = value.messageKey || value.labelKey;
+        if (translationKey) {
+            const translated = t(translationKey, { defaultValue: '' });
+            if (translated) return translated;
+        }
+
+        if (value.code) {
+            const translated = t(`errors.${value.code}`, { defaultValue: '' });
+            if (translated) return translated;
+        }
+    }
+
+    return fallback;
+};
+
+const getApiFieldErrors = (error, t) => {
     const data = error?.response?.data;
     const source = data?.errors || data?.fieldErrors || data?.validationErrors;
 
@@ -161,7 +182,11 @@ const getApiFieldErrors = (error) => {
         const fieldName = CONTACT_FIELD_ERROR_KEYS[key];
         if (!fieldName) return acc;
 
-        acc[fieldName] = Array.isArray(value) ? value.join(' ') : String(value);
+        const messages = Array.isArray(value)
+            ? value.map((item) => getApiFieldErrorMessage(item, fieldName, t))
+            : [getApiFieldErrorMessage(value, fieldName, t)];
+
+        acc[fieldName] = [...new Set(messages)].join(' ');
         return acc;
     }, {});
 };
@@ -641,7 +666,7 @@ const ContactPage = () => {
             setFormData({ name: '', email: '', phone: '', message: '' });
             setErrors({});
         } catch (error) {
-            const apiFieldErrors = getApiFieldErrors(error);
+            const apiFieldErrors = getApiFieldErrors(error, t);
 
             if (Object.keys(apiFieldErrors).length > 0) {
                 setErrors(apiFieldErrors);

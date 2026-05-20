@@ -243,7 +243,34 @@ export const shared = {
         AUTH_TOKEN_INVALID: "Your session has expired. Sign in again.",
         AUTH_CREDENTIALS_INVALID: "Email or password is incorrect.",
         COMPANY_LOCALE_UNSUPPORTED: "The company language is not supported.",
-        TENANT_CONTEXT_MISMATCH: "This action is not available for the selected tenant."
+        TENANT_CONTEXT_MISMATCH: "This action is not available for the selected tenant.",
+        CHAT_NOT_FOUND: "Chat was not found.",
+        INSTRUCTOR_CHAT_NOT_FOUND: "Chat was not found.",
+        categories: {
+            ai: "AI assistant request could not be completed.",
+            attendance: "Attendance request could not be completed.",
+            auth: "Authentication request could not be completed.",
+            cart: "Cart request could not be completed.",
+            certificate: "Certificate request could not be completed.",
+            company: "Company request could not be completed.",
+            course: "Course request could not be completed.",
+            enrollment: "Enrollment request could not be completed.",
+            favorite: "Favourite request could not be completed.",
+            group: "Group request could not be completed.",
+            homework: "Homework request could not be completed.",
+            integration: "Integration request could not be completed.",
+            leaderboard: "Leaderboard request could not be completed.",
+            lesson: "Lesson request could not be completed.",
+            media: "Media request could not be completed.",
+            meeting: "Meeting request could not be completed.",
+            notification: "Notification request could not be completed.",
+            offering: "Offering request could not be completed.",
+            session: "Session request could not be completed.",
+            skill: "Skill request could not be completed.",
+            student: "Student request could not be completed.",
+            tenant: "Tenant request could not be completed.",
+            user: "User request could not be completed."
+        }
     },
     notifications: {
         widget: {

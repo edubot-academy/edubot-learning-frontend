@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import i18n from '../../i18n';
-import { API_ERROR_CODES, getApiErrorCode, parseApiError } from './error';
+import {
+    API_ERROR_CODES,
+    getApiErrorCode,
+    getLocalizedBackendMessage,
+    parseApiError,
+} from './error';
 
 describe('API error helpers', () => {
     beforeEach(async () => {
@@ -9,6 +14,9 @@ describe('API error helpers', () => {
 
     it('extracts stable error codes from top-level and nested payloads', () => {
         expect(getApiErrorCode({ response: { data: { code: 'TOP_LEVEL' } } })).toBe('TOP_LEVEL');
+        expect(getApiErrorCode({ response: { data: { errorCode: 'ERROR_CODE' } } })).toBe(
+            'ERROR_CODE'
+        );
         expect(getApiErrorCode({ response: { data: { error: { code: 'NESTED' } } } })).toBe(
             'NESTED'
         );
@@ -46,5 +54,37 @@ describe('API error helpers', () => {
                 'Fallback message'
             ).message
         ).toBe('Fallback message');
+    });
+
+    it('uses localized category fallbacks for known backend code families', () => {
+        expect(
+            parseApiError(
+                {
+                    response: {
+                        data: {
+                            code: 'COURSE_NOT_FOUND',
+                            message: 'Backend message',
+                        },
+                    },
+                },
+                'Fallback message'
+            ).message
+        ).toBe('Курс боюнча сурам аткарылган жок.');
+    });
+
+    it('prefers backend translation keys over backend prose', () => {
+        expect(
+            getLocalizedBackendMessage(
+                {
+                    response: {
+                        data: {
+                            messageKey: 'errors.AUTHENTICATION_REQUIRED',
+                            message: 'Backend message',
+                        },
+                    },
+                },
+                'Fallback message'
+            )
+        ).toBe('Кирип, кайра аракет кылыңыз.');
     });
 });
