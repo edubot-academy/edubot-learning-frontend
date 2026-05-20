@@ -51,6 +51,7 @@ import { isForbiddenError, parseApiError } from '../../../../shared/api/error';
 export const useCourseBuilderCurriculum = (courseBuilderState) => {
     const { t } = useTranslation();
     const {
+        courseInfo,
         curriculum,
         setCurriculum,
         setOriginalSections,
@@ -89,8 +90,8 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
 
     // Section operations
     const handleAddSection = useCallback(() => {
-        setCurriculum(addSection(curriculum));
-    }, [curriculum, setCurriculum]);
+        setCurriculum(addSection(curriculum, courseInfo.languageCode || 'ky'));
+    }, [courseInfo.languageCode, curriculum, setCurriculum]);
 
     const handleUpdateSectionTitle = useCallback((index, title) => {
         setCurriculum((prev) => {

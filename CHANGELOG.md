@@ -6,6 +6,29 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
 ---
 
+## [1.13.8] - 2026-05-20
+
+### Changed
+
+- Localized the admin analytics overview route for `ky`, `ru`, and `en`, including hero copy, filters, metrics, course analytics tables, trend charts, fallbacks, and load-error feedback.
+- Localized shared UI fallback copy for `ky`, `ru`, and `en`, including student access denial, modal close labels, default loaders, button loading labels, search placeholders, dropdown completion text, and tab transition loading overlays.
+- Localized shared mobile dashboard tab labels and overflow menu accessibility text for `ky`, `ru`, and `en`.
+- Localized reusable dashboard error states for `ky`, `ru`, and `en`, including network, permission, not-found, server, loading-error, and error-boundary fallbacks.
+- Localized progressive dashboard loader labels for `ky`, `ru`, and `en`.
+- Localized shared dashboard header role labels, descriptions, user fallback, and status chips for `ky`, `ru`, and `en`.
+- Localized shared floating action button default action labels and accessibility text for `ky`, `ru`, and `en`.
+- Localized course builder generated section defaults and step navigation labels for `ky`, `ru`, and `en`.
+- Updated the frontend localization plan to reflect completed attendance, course-builder, quiz/challenge playback, and admin analytics coverage.
+
+### Verification
+
+- `npm test`
+- `npm run lint`
+- `git diff --check`
+- `npm run build`
+
+---
+
 ## [1.13.7] - 2026-05-20
 
 ### Changed

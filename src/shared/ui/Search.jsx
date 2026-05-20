@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { BiSearch } from 'react-icons/bi'; // иконка search
 
 export default function Search() {
+    const { t } = useTranslation();
     const [isFocused, setIsFocused] = useState(false);
     const [value, setValue] = useState('');
 
@@ -26,7 +28,7 @@ export default function Search() {
                     onChange={(e) => setValue(e.target.value)}
                     onFocus={() => setIsFocused(true)}
                     onBlur={() => setIsFocused(false)}
-                    placeholder={isFocused || value ? '' : 'Поиск'}
+                    placeholder={isFocused || value ? '' : t('common.search')}
                     className={`ml-2 w-full h-full outline-none text-base bg-transparent
                         ${isFocused || value 
                             ? 'text-[#EA580C] dark:text-[#F97316]' 

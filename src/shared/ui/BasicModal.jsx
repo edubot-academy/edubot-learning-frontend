@@ -1,6 +1,7 @@
 import { useId, useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 
 // Animation variants for basic modal types
 const ANIMATION_VARIANTS = {
@@ -36,6 +37,7 @@ const BasicModal = ({
     className = '',
     contentClassName = '',
 }) => {
+    const { t } = useTranslation();
     const titleId = useId();
     const descriptionId = useId();
     const [localIsOpen, setLocalIsOpen] = useState(isOpen);
@@ -196,8 +198,8 @@ const BasicModal = ({
                                     type="button"
                                     onClick={handleCloseClick}
                                     className="rounded-full p-2 text-gray-400 transition-colors duration-200 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                                    aria-label="Жабуу"
-                                    title="Жабуу (ESC)"
+                                    aria-label={t('common.close')}
+                                    title={t('common.closeEsc')}
                                 >
                                     <svg
                                         className="h-5 w-5"

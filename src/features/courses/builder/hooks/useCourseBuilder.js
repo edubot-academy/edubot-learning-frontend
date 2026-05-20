@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 // Import our shared modules
 import {
     DEFAULT_COURSE_INFO,
-    DEFAULT_CURRICULUM,
+    createDefaultCurriculum,
 } from '../constants';
 import { getStepItems } from '../utils';
 import {
@@ -61,6 +61,9 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
     const navigate = useNavigate();
     const { t } = useTranslation();
     const tRef = useRef(t);
+    const defaultCurriculumRef = useRef(
+        createDefaultCurriculum(DEFAULT_COURSE_INFO.languageCode)
+    );
     const [courseId, setCourseId] = useState(initialCourseId);
     const lastCoverPreviewUrlRef = useRef('');
     const pendingCoverNameRef = useRef('');
@@ -75,7 +78,7 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
     const [infoTouched, setInfoTouched] = useState({});
 
     // Curriculum state
-    const [curriculum, setCurriculum] = useState(DEFAULT_CURRICULUM);
+    const [curriculum, setCurriculum] = useState(() => defaultCurriculumRef.current);
 
     // UI state
     const [expandedSections, setExpandedSections] = useState({});
@@ -146,6 +149,7 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
         mode,
         navigate,
         deleteSection,
+        t,
     };
 
     // Use sub-hooks
@@ -317,9 +321,10 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
         }
 
         draftDiscardedRef.current = true;
+        defaultCurriculumRef.current = createDefaultCurriculum(DEFAULT_COURSE_INFO.languageCode);
         localStorage.removeItem('draftCourse');
         setCourseInfo(DEFAULT_COURSE_INFO);
-        setCurriculum(DEFAULT_CURRICULUM);
+        setCurriculum(defaultCurriculumRef.current);
         setStep(1);
         setCourseId(null);
         setInfoTouched({});
@@ -351,7 +356,7 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
         const hasUserInput =
             Object.keys(infoTouched).length > 0 ||
             JSON.stringify(courseInfo) !== JSON.stringify(DEFAULT_COURSE_INFO) ||
-            JSON.stringify(curriculum) !== JSON.stringify(DEFAULT_CURRICULUM) ||
+            JSON.stringify(curriculum) !== JSON.stringify(defaultCurriculumRef.current) ||
             step !== 1 ||
             courseId !== null;
 
@@ -388,7 +393,7 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
     }, [courseInfo.coverImageUrl]);
 
     // Get step items
-    const stepItems = getStepItems(step, courseInfo, curriculum);
+    const stepItems = getStepItems(step, courseInfo, curriculum, t);
 
     // Curriculum statistics
     const curriculumStats = getCurriculumStats(curriculum, t);
@@ -400,7 +405,7 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
         const baseline =
             mode === 'edit' || originalSections.length > 0
                 ? originalSections
-                : DEFAULT_CURRICULUM;
+                : defaultCurriculumRef.current;
 
         return JSON.stringify(curriculum) !== JSON.stringify(baseline);
     }, [curriculum, mode, originalSections]);

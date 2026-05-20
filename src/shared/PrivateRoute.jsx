@@ -1,41 +1,47 @@
 import { useContext, useEffect, useState } from 'react';
 import { Link, Navigate, Outlet, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../context/AuthContext';
 import Loader from '@shared/ui/Loader';
 import { fetchStudentAccessState } from '@features/student/api';
 import { hasAllowedRole } from '@shared/utils/roles';
 
-const StudentAccessFallback = ({ accessState }) => (
-    <div className="min-h-screen flex items-center justify-center px-6">
-        <div className="w-full max-w-xl rounded-2xl border border-orange-100 bg-white p-8 shadow-sm text-center">
-            <h2 className="mb-4 text-2xl font-bold">Окуу мүмкүнчүлүгү активдүү эмес</h2>
-            <p className="mb-3 text-gray-600">
-                {accessState?.message ||
-                    'Сизде азырынча активдүү жазылуу жок. Менеджериңиз же администратор менен байланышыңыз.'}
-            </p>
-            {accessState?.latestEnrollment ? (
-                <p className="mb-6 text-sm text-gray-500">
-                    Акыркы жазылуу: {accessState.latestEnrollment.courseName || 'Курс'} ·{' '}
-                    {accessState.latestEnrollment.enrollmentStatus}
+const StudentAccessFallback = ({ accessState }) => {
+    const { t } = useTranslation();
+
+    return (
+        <div className="min-h-screen flex items-center justify-center px-6">
+            <div className="w-full max-w-xl rounded-2xl border border-orange-100 bg-white p-8 shadow-sm text-center">
+                <h2 className="mb-4 text-2xl font-bold">{t('studentAccessFallback.title')}</h2>
+                <p className="mb-3 text-gray-600">
+                    {accessState?.message || t('studentAccessFallback.description')}
                 </p>
-            ) : null}
-            <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
-                <Link
-                    to="/courses"
-                    className="rounded-lg bg-orange-500 px-4 py-3 font-semibold text-white hover:bg-orange-600"
-                >
-                    Курстарды көрүү
-                </Link>
-                <Link
-                    to="/login"
-                    className="rounded-lg border border-gray-200 px-4 py-3 font-semibold text-gray-700 hover:bg-gray-50"
-                >
-                    Башка аккаунт менен кирүү
-                </Link>
+                {accessState?.latestEnrollment ? (
+                    <p className="mb-6 text-sm text-gray-500">
+                        {t('studentAccessFallback.latestEnrollment', {
+                            course: accessState.latestEnrollment.courseName || t('studentAccessFallback.courseFallback'),
+                            status: accessState.latestEnrollment.enrollmentStatus,
+                        })}
+                    </p>
+                ) : null}
+                <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+                    <Link
+                        to="/courses"
+                        className="rounded-lg bg-orange-500 px-4 py-3 font-semibold text-white hover:bg-orange-600"
+                    >
+                        {t('studentAccessFallback.actions.viewCourses')}
+                    </Link>
+                    <Link
+                        to="/login"
+                        className="rounded-lg border border-gray-200 px-4 py-3 font-semibold text-gray-700 hover:bg-gray-50"
+                    >
+                        {t('studentAccessFallback.actions.loginOther')}
+                    </Link>
+                </div>
             </div>
         </div>
-    </div>
-);
+    );
+};
 
 const PrivateRoute = ({ allowedRoles, requireStudentAccess = false }) => {
     const { user } = useContext(AuthContext);

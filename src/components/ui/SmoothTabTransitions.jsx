@@ -1,5 +1,6 @@
 
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 /**
  * SmoothTabTransition - Eliminates tab flickering by managing content transitions
@@ -15,6 +16,7 @@ const SmoothTabTransition = ({
     isDataLoaded = false,
     loadingDelay = 300
 }) => {
+    const { t } = useTranslation();
     const [showContent, setShowContent] = useState(true);
     const [showLoader, setShowLoader] = useState(false);
     const loadingTimerRef = useRef(null);
@@ -67,7 +69,7 @@ const SmoothTabTransition = ({
                     <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-lg border border-gray-200 dark:border-gray-700">
                         <div className="flex items-center gap-3">
                             <div className="animate-spin rounded-full border-2 border-gray-300 border-t-blue-600 w-5 h-5"></div>
-                            <span className="text-sm text-gray-600 dark:text-gray-400">Жүктөлүүдө...</span>
+                            <span className="text-sm text-gray-600 dark:text-gray-400">{t('common.loadingEllipsis')}</span>
                         </div>
                     </div>
                 </div>

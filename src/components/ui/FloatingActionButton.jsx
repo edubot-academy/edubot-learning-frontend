@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { FiPlus, FiBook, FiUserPlus, FiVideo } from "react-icons/fi";
 import PropTypes from "prop-types";
 import { getDashboardPath } from "@shared/utils/navigation";
@@ -14,6 +15,7 @@ const FloatingActionButton = ({
     className = "",
     role = "instructor",
 }) => {
+    const { t } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
@@ -42,21 +44,21 @@ const FloatingActionButton = ({
             instructor: [
                 {
                     id: "create-course",
-                    label: "Жаңы курс",
+                    label: t("floatingActionButton.actions.createCourse"),
                     icon: <FiBook className="w-5 h-5" />,
                     color: "bg-blue-500 hover:bg-blue-600",
                     onClick: () => navigate("/instructor/course/create"),
                 },
                 {
                     id: "add-student",
-                    label: "Студент кошуу",
+                    label: t("floatingActionButton.actions.addStudent"),
                     icon: <FiUserPlus className="w-5 h-5" />,
                     color: "bg-green-500 hover:bg-green-600",
                     onClick: () => navigate(getDashboardPath("instructor", "students")),
                 },
                 {
                     id: "create-session",
-                    label: "Live сессия",
+                    label: t("floatingActionButton.actions.createSession"),
                     icon: <FiVideo className="w-5 h-5" />,
                     color: "bg-purple-500 hover:bg-purple-600",
                     onClick: () => navigate(getDashboardPath("instructor", "sessions")),
@@ -65,14 +67,14 @@ const FloatingActionButton = ({
             student: [
                 {
                     id: "join-course",
-                    label: "Курска кошулуу",
+                    label: t("floatingActionButton.actions.joinCourse"),
                     icon: <span className="text-lg">🎓</span>,
                     color: "bg-blue-500 hover:bg-blue-600",
                     onClick: () => navigate("/courses"),
                 },
                 {
                     id: "ask-question",
-                    label: "Суроо берүү",
+                    label: t("floatingActionButton.actions.askQuestion"),
                     icon: <span className="text-lg">❓</span>,
                     color: "bg-green-500 hover:bg-green-600",
                     onClick: () => navigate(getDashboardPath("student", "chat")),
@@ -81,14 +83,14 @@ const FloatingActionButton = ({
             admin: [
                 {
                     id: "add-user",
-                    label: "Колдонуучу кошуу",
+                    label: t("floatingActionButton.actions.addUser"),
                     icon: <span className="text-lg">👥</span>,
                     color: "bg-blue-500 hover:bg-blue-600",
                     onClick: () => navigate("/admin"),
                 },
                 {
                     id: "create-company",
-                    label: "Компания түзүү",
+                    label: t("floatingActionButton.actions.createCompany"),
                     icon: <span className="text-lg">🏢</span>,
                     color: "bg-purple-500 hover:bg-purple-600",
                     onClick: () => navigate(getDashboardPath("admin", "companies")),
@@ -97,14 +99,14 @@ const FloatingActionButton = ({
             assistant: [
                 {
                     id: "view-analytics",
-                    label: "Аналитика",
+                    label: t("floatingActionButton.actions.viewAnalytics"),
                     icon: <span className="text-lg">📊</span>,
                     color: "bg-blue-500 hover:bg-blue-600",
                     onClick: () => navigate("/assistant"),
                 },
             ],
         }),
-        [navigate]
+        [navigate, t]
     );
 
     const roleActions = actions.length > 0 ? actions : defaultActions[role] || [];
@@ -274,7 +276,7 @@ const FloatingActionButton = ({
                     } ${className}`}
                 style={wrapperStyle}
                 role="region"
-                aria-label="Quick actions menu"
+                aria-label={t("floatingActionButton.menu")}
             >
                 <div
                     id="fab-actions-menu"
@@ -283,7 +285,7 @@ const FloatingActionButton = ({
                             : "opacity-0 invisible pointer-events-none"
                         }`}
                     role="menu"
-                    aria-label="Quick actions"
+                    aria-label={t("floatingActionButton.quickActions")}
                     aria-orientation="vertical"
                 >
                     {roleActions.map((action, index) => (
@@ -329,8 +331,8 @@ const FloatingActionButton = ({
                                 ? "cursor-grab"
                                 : "cursor-pointer"
                         } ${isOpen ? "rotate-45 scale-110" : "rotate-0 scale-100 hover:scale-110"}`}
-                    title="Тез аракеттер"
-                    aria-label="Тез аракеттер менюсун ачуу же жабуу"
+                    title={t("floatingActionButton.quickActions")}
+                    aria-label={t("floatingActionButton.toggle")}
                     aria-expanded={isOpen}
                     aria-controls="fab-actions-menu"
                 >

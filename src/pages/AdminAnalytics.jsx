@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { fetchAdminOverviewAnalytics } from '@services/api';
 import { toast } from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import { FiAlertCircle, FiBarChart2, FiBookOpen, FiCheckCircle, FiRefreshCw, FiTrendingUp, FiUsers } from 'react-icons/fi';
 import { AnalyticsDataTable, AnalyticsLineChart } from '@components/analytics';
 import {
@@ -10,6 +11,7 @@ import {
     DashboardWorkspaceHero,
 } from '@components/ui/dashboard';
 import MobileQuickActions from '@components/analytics/MobileQuickActions';
+import { parseApiError } from '../shared/api/error';
 
 const metricNumber = (value, fallback = 0) => {
     const num = Number(value);
@@ -17,9 +19,15 @@ const metricNumber = (value, fallback = 0) => {
 };
 
 const AdminAnalyticsPage = () => {
+    const { t } = useTranslation();
+    const tRef = useRef(t);
     const [filters, setFilters] = useState({ from: '', to: '' });
     const [loading, setLoading] = useState(false);
     const [overview, setOverview] = useState(null);
+
+    useEffect(() => {
+        tRef.current = t;
+    }, [t]);
 
     const requestFilters = useMemo(
         () => ({
@@ -36,8 +44,7 @@ const AdminAnalyticsPage = () => {
             setOverview(overviewRes || null);
         } catch (error) {
             console.error(error);
-            const message = error?.response?.data?.message || 'Analytics loading error';
-            toast.error(Array.isArray(message) ? message.join(', ') : message);
+            toast.error(parseApiError(error, tRef.current('adminAnalytics.toasts.loadError')).message);
         } finally {
             setLoading(false);
         }
@@ -60,9 +67,9 @@ const AdminAnalyticsPage = () => {
 
             <div className="mx-auto max-w-6xl space-y-6 px-4 lg:px-6">
                 <DashboardWorkspaceHero
-                    eyebrow="Analytics overview"
-                    title="Административдик Аналитика"
-                    description="Платформанын жалпы көрүнүшү, колдонуучулар метрикалары, курстардын жетишкендиги жана киреше боюнча маалымат."
+                    eyebrow={t('adminAnalytics.hero.eyebrow')}
+                    title={t('adminAnalytics.hero.title')}
+                    description={t('adminAnalytics.hero.description')}
                     action={(
                         <button
                             type="button"
@@ -71,31 +78,31 @@ const AdminAnalyticsPage = () => {
                             className="dashboard-button-primary disabled:opacity-60"
                         >
                             <FiRefreshCw className="h-4 w-4" />
-                            {loading ? 'Жүктөлүүдө...' : 'Жаңылоо'}
+                            {loading ? t('adminAnalytics.actions.loading') : t('adminAnalytics.actions.refresh')}
                         </button>
                     )}
                     metrics={(
                         <>
                             <DashboardMetricCard
-                                label="Бардык колдонуучулар"
+                                label={t('adminAnalytics.metrics.totalUsers')}
                                 value={metricNumber(overview?.summary?.totalUsers)}
                                 icon={FiUsers}
                                 tone="blue"
                             />
                             <DashboardMetricCard
-                                label="Окуучулар"
+                                label={t('adminAnalytics.metrics.students')}
                                 value={metricNumber(overview?.summary?.totalStudents)}
                                 icon={FiUsers}
                                 tone="green"
                             />
                             <DashboardMetricCard
-                                label="Курстар"
+                                label={t('adminAnalytics.metrics.courses')}
                                 value={metricNumber(overview?.summary?.totalCourses)}
                                 icon={FiBookOpen}
                                 tone="amber"
                             />
                             <DashboardMetricCard
-                                label="Катышуулар"
+                                label={t('adminAnalytics.metrics.enrollments')}
                                 value={metricNumber(overview?.summary?.totalEnrollments)}
                                 icon={FiCheckCircle}
                                 tone="red"
@@ -106,7 +113,7 @@ const AdminAnalyticsPage = () => {
                     <div id="admin-analytics-filters">
                         <DashboardFilterBar gridClassName="xl:grid-cols-[1fr_1fr_280px]">
                             <div>
-                                <label className="mb-2 block text-sm font-medium text-edubot-ink dark:text-white">Күндөн</label>
+                                <label className="mb-2 block text-sm font-medium text-edubot-ink dark:text-white">{t('adminAnalytics.filters.from')}</label>
                                 <input
                                     type="date"
                                     value={filters.from || ''}
@@ -115,7 +122,7 @@ const AdminAnalyticsPage = () => {
                                 />
                             </div>
                             <div>
-                                <label className="mb-2 block text-sm font-medium text-edubot-ink dark:text-white">Күнгө чейин</label>
+                                <label className="mb-2 block text-sm font-medium text-edubot-ink dark:text-white">{t('adminAnalytics.filters.to')}</label>
                                 <input
                                     type="date"
                                     value={filters.to || ''}
@@ -131,10 +138,12 @@ const AdminAnalyticsPage = () => {
                                         </div>
                                         <div>
                                             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
-                                                Фильтр абалы
+                                                {t('adminAnalytics.filters.status')}
                                             </p>
                                             <p className="mt-1 text-sm text-edubot-ink dark:text-white">
-                                                {filters.from || filters.to ? 'Күн аралыгы тандалды' : 'Бардык убакыт'}
+                                                {filters.from || filters.to
+                                                    ? t('adminAnalytics.filters.rangeSelected')
+                                                    : t('adminAnalytics.filters.allTime')}
                                             </p>
                                         </div>
                                     </div>
@@ -145,18 +154,18 @@ const AdminAnalyticsPage = () => {
                 </DashboardWorkspaceHero>
 
                 <DashboardInsetPanel
-                    title="Курс аналитикасы"
-                    description="Эң күчтүү курстарды жана көңүл бурууну талап кылган курстарды бир компакттуу блокто салыштырыңыз."
+                    title={t('adminAnalytics.courseAnalytics.title')}
+                    description={t('adminAnalytics.courseAnalytics.description')}
                 >
                     <div className="mb-4 grid gap-3 sm:grid-cols-2">
                         <DashboardMetricCard
-                            label="Эң мыкты курс"
+                            label={t('adminAnalytics.courseAnalytics.metrics.topCourses')}
                             value={overview?.charts?.topCourses?.length || 0}
                             icon={FiTrendingUp}
                             tone="green"
                         />
                         <DashboardMetricCard
-                            label="Тобокел курстар"
+                            label={t('adminAnalytics.courseAnalytics.metrics.riskCourses')}
                             value={overview?.charts?.lowPerformingCourses?.length || 0}
                             icon={FiAlertCircle}
                             tone="amber"
@@ -164,11 +173,14 @@ const AdminAnalyticsPage = () => {
                     </div>
                     <div className="grid gap-6 lg:grid-cols-2">
                         <AnalyticsDataTable
-                            title="Эң мыкты курстар"
-                            subtitle="Окуучулар көп катышкан курстар"
-                            columns={['Курс', 'Катышуулар']}
+                            title={t('adminAnalytics.courseAnalytics.topCourses.title')}
+                            subtitle={t('adminAnalytics.courseAnalytics.topCourses.subtitle')}
+                            columns={[
+                                t('adminAnalytics.columns.course'),
+                                t('adminAnalytics.columns.enrollments'),
+                            ]}
                             data={overview?.charts?.topCourses?.map((item) => [
-                                item.title || `Курс #${item.courseId}`,
+                                item.title || t('adminAnalytics.fallbacks.courseWithId', { id: item.courseId }),
                                 metricNumber(item.enrollments),
                             ]) || []}
                             searchable
@@ -176,11 +188,15 @@ const AdminAnalyticsPage = () => {
                             pageSize={5}
                         />
                         <AnalyticsDataTable
-                            title="Көңүл бурууну талап кылган курстар"
-                            subtitle="Аяктоо жана орточо прогресс төмөн курстар"
-                            columns={['Курс', 'Аяктоо деңгээли', 'Орточо прогресс']}
+                            title={t('adminAnalytics.courseAnalytics.lowPerforming.title')}
+                            subtitle={t('adminAnalytics.courseAnalytics.lowPerforming.subtitle')}
+                            columns={[
+                                t('adminAnalytics.columns.course'),
+                                t('adminAnalytics.columns.completionRate'),
+                                t('adminAnalytics.columns.averageProgress'),
+                            ]}
                             data={overview?.charts?.lowPerformingCourses?.map((item) => [
-                                item.title || `Курс #${item.courseId}`,
+                                item.title || t('adminAnalytics.fallbacks.courseWithId', { id: item.courseId }),
                                 `${metricNumber(item.completionRate)}%`,
                                 `${metricNumber(item.avgProgress)}%`,
                             ]) || []}
@@ -192,18 +208,18 @@ const AdminAnalyticsPage = () => {
                 </DashboardInsetPanel>
 
                 <DashboardInsetPanel
-                    title="Тренд отчету"
-                    description="Катышуу жана киреше динамикасын убакыт боюнча караңыз."
+                    title={t('adminAnalytics.trends.title')}
+                    description={t('adminAnalytics.trends.description')}
                 >
                     <div className="mb-4 grid gap-3 sm:grid-cols-2">
                         <DashboardMetricCard
-                            label="Катышуу чекити"
+                            label={t('adminAnalytics.trends.metrics.enrollmentPoints')}
                             value={overview?.charts?.enrollmentsTrend?.length || 0}
                             icon={FiUsers}
                             tone="blue"
                         />
                         <DashboardMetricCard
-                            label="Киреше чекити"
+                            label={t('adminAnalytics.trends.metrics.revenuePoints')}
                             value={overview?.charts?.revenueTrend?.length || 0}
                             icon={FiTrendingUp}
                             tone="green"
@@ -211,8 +227,8 @@ const AdminAnalyticsPage = () => {
                     </div>
                     <div className="grid gap-6 lg:grid-cols-2">
                         <AnalyticsLineChart
-                            title="Катышуу тренддери"
-                            subtitle="Убакыттын ичиндеги окуучулардын катышуусу"
+                            title={t('adminAnalytics.trends.enrollments.title')}
+                            subtitle={t('adminAnalytics.trends.enrollments.subtitle')}
                             data={overview?.charts?.enrollmentsTrend || []}
                             labelKey="period"
                             dataKey="count"
@@ -224,8 +240,8 @@ const AdminAnalyticsPage = () => {
                         />
 
                         <AnalyticsLineChart
-                            title="Киреше тренддери"
-                            subtitle="Убакыттын ичиндеги платформанын кирешеси"
+                            title={t('adminAnalytics.trends.revenue.title')}
+                            subtitle={t('adminAnalytics.trends.revenue.subtitle')}
                             data={overview?.charts?.revenueTrend || []}
                             labelKey="period"
                             dataKey="amount"

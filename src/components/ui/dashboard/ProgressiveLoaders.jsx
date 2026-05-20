@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { DashboardOverviewSkeleton, DashboardTableSkeleton } from './DashboardSkeletons';
 
 /**
@@ -217,6 +218,7 @@ const ProgressiveTableLoader = ({
     renderRow = null,
     rowsPerPage = 10
 }) => {
+    const { t } = useTranslation();
     const [visibleRows, setVisibleRows] = useState([]);
     const [loadedRows, setLoadedRows] = useState(0);
 
@@ -265,7 +267,7 @@ const ProgressiveTableLoader = ({
                 <div className="text-center py-4">
                     <div className="inline-flex items-center gap-2 text-sm text-gray-500">
                         <div className="animate-spin rounded-full border-2 border-gray-300 border-t-blue-600 w-4 h-4"></div>
-                        Жүктөлүүдө...
+                        {t('common.loadingEllipsis')}
                     </div>
                 </div>
             )}
@@ -283,6 +285,7 @@ const ProgressiveImageLoader = ({
     className = '',
     onLoad = null
 }) => {
+    const { t } = useTranslation();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
     const [imageSrc, setImageSrc] = useState(null);
@@ -325,7 +328,7 @@ const ProgressiveImageLoader = ({
                     <svg className="w-8 h-8 mx-auto mb-2" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                     </svg>
-                    <p className="text-sm">Сүрөт жүктөлүп жатат</p>
+                    <p className="text-sm">{t('dashboardLoaders.imageLoading')}</p>
                 </div>
             </div>
         );
@@ -348,13 +351,14 @@ const DashboardProgressIndicator = ({
     completedSections = [],
     showPercentage = true
 }) => {
+    const { t } = useTranslation();
     const progress = sections.length > 0 ? (completedSections.length / sections.length) * 100 : 0;
 
     return (
         <div className="space-y-2">
             {showPercentage && (
                 <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
-                    <span>Жүктөлүү прогресси</span>
+                    <span>{t('dashboardLoaders.progress')}</span>
                     <span>{Math.round(progress)}%</span>
                 </div>
             )}

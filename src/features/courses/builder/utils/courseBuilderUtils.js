@@ -1,7 +1,7 @@
 // General course builder utility functions
 // Extracted from common patterns in CreateCourse.jsx and EditInstructorCourse.jsx
 
-import { DEFAULT_LESSON, DEFAULT_SECTION } from '../constants';
+import { DEFAULT_LESSON, DEFAULT_SECTION, getDefaultSectionTitle } from '../constants';
 import { getCourseInfoErrors, validateCurriculumStructure } from '../validation';
 
 /**
@@ -105,10 +105,10 @@ export const createEmptyLesson = () => ({
  * @param {number} index - Section index for title generation
  * @returns {Object} - Default section structure
  */
-export const createEmptySection = (index = 1) => ({
+export const createEmptySection = (index = 1, languageCode = 'ky') => ({
     ...DEFAULT_SECTION,
     tempId: generateTempId(),
-    sectionTitle: `Бөлүм ${index}`,
+    sectionTitle: getDefaultSectionTitle(languageCode, index),
     lessons: [...DEFAULT_SECTION.lessons],
 });
 
@@ -136,10 +136,13 @@ export const reorderExpandedMap = (prevMap, count, fromIdx, toIdx) => {
  * @param {Function} getIssueCount - Function to get issue count
  * @returns {Array} - Section chip data
  */
-export const generateSectionChips = (sections, getIssueCount) => {
+export const generateSectionChips = (sections, getIssueCount, t) => {
     return sections.map((section, sIdx) => {
         const hasIssues = getIssueCount(section) > 0;
-        const label = section.sectionTitle?.trim() || section.title?.trim() || `Бөлүм ${sIdx + 1}`;
+        const label =
+            section.sectionTitle?.trim() ||
+            section.title?.trim() ||
+            getDefaultSectionTitle(t, sIdx + 1);
         return {
             id: sIdx,
             label,
@@ -186,26 +189,30 @@ export const safeClone = (obj) => {
  * @param {Array} curriculum - Curriculum array
  * @returns {Array} - Step items with completion status
  */
-export const getStepItems = (currentStep, courseInfo, curriculum) => {
+export const getStepItems = (currentStep, courseInfo, curriculum, t) => {
     const step1Completed = currentStep > 1 || (currentStep === 1 && Object.keys(getCourseInfoErrors(courseInfo)).length === 0);
     const step2Completed = currentStep > 2 || (currentStep === 2 && validateCurriculumStructure(curriculum));
+    const label = (key, fallback) =>
+        typeof t === 'function'
+            ? t(`instructorDashboard.courseBuilder.stepLabels.${key}`, { defaultValue: fallback })
+            : fallback;
 
     return [
         {
             key: 'info',
-            label: 'Курс маалыматы',
+            label: label('info', 'Курс маалыматы'),
             completed: step1Completed,
             enabled: true, // Always allow navigation
         },
         {
             key: 'curriculum',
-            label: 'Окуу мазмуну',
+            label: label('curriculum', 'Окуу мазмуну'),
             completed: step2Completed,
             enabled: true, // Always allow navigation
         },
         {
             key: 'media',
-            label: 'Медиа жана башкаруу',
+            label: label('media', 'Медиа жана башкаруу'),
             completed: currentStep > 2,
             enabled: true, // Always allow navigation
         },

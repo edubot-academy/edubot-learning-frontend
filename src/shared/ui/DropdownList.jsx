@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export default function DropdownList() {
+    const { t } = useTranslation();
     const items = ['Item 1', 'Item 2', 'Item 3', 'Item 4', 'Item 5', 'Item 6'];
 
     const [isOpenSimple, setIsOpenSimple] = useState(false);
@@ -109,7 +111,7 @@ export default function DropdownList() {
                             <span className="text-gray-400 mr-2">🔍</span>
                             <input
                                 type="text"
-                                placeholder="Поиск"
+                                placeholder={t('common.search')}
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 className="flex-1 outline-none text-sm text-gray-700 placeholder-gray-400"
@@ -137,7 +139,7 @@ export default function DropdownList() {
                             onClick={() => setIsOpenSearch(false)}
                             className="bg-orange-500 text-white py-2 font-medium hover:bg-orange-600 transition"
                         >
-                            Готово
+                            {t('common.done')}
                         </button>
                     </div>
                 )}

@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 import { FaArrowRight } from 'react-icons/fa6';
 
 const Button = ({
@@ -8,12 +9,13 @@ const Button = ({
     type = 'button',
     disabled = false,
     loading = false,
-    loadingLabel = 'Жүктөлүүдө',
+    loadingLabel,
     icon = false,
     className = '',
     onClick,
     ...props
 }) => {
+    const { t } = useTranslation();
     const base =
         'inline-flex items-center justify-center gap-2 rounded-lg font-medium ' +
         'transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 ' +
@@ -46,6 +48,7 @@ const Button = ({
 
     const isDisabled = disabled || loading;
     const resolvedIcon = icon === true ? <FaArrowRight className="text-sm md:text-base" /> : icon;
+    const resolvedLoadingLabel = loadingLabel || t('common.loading');
 
     return (
         <button
@@ -62,7 +65,7 @@ const Button = ({
                     aria-hidden="true"
                 />
             )}
-            {loading && <span className="sr-only">{loadingLabel}</span>}
+            {loading && <span className="sr-only">{resolvedLoadingLabel}</span>}
             {children}
             {!loading && resolvedIcon}
         </button>

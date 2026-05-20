@@ -1,5 +1,6 @@
 
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 const DashboardHeader = ({
   user,
@@ -8,7 +9,8 @@ const DashboardHeader = ({
   actions = [],
   className = '',
 }) => {
-  const userName = user?.fullName || user?.email || 'Колдонуучу';
+  const { t } = useTranslation();
+  const userName = user?.fullName || user?.email || t('common.userFallback');
   const userInitials = userName
     .split(' ')
     .filter(Boolean)
@@ -17,13 +19,8 @@ const DashboardHeader = ({
     .join('');
 
   const getRoleLabel = () => {
-    const labels = {
-      instructor: 'Инструктор Панели',
-      student: 'Окуучу Панели',
-      admin: 'Админ Панели',
-      assistant: 'Ассистент Панели',
-    };
-    return labels[role] || 'Панель';
+    const label = t(`dashboardHeader.roles.${role}`, { defaultValue: '' });
+    return label || t('dashboardHeader.roles.default');
   };
 
   return (
@@ -48,17 +45,17 @@ const DashboardHeader = ({
                 {userName}
               </h1>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-100/80 md:text-base">
-                {subtitle || getRoleDescription(role)}
+                {subtitle || getRoleDescription(role, t)}
               </p>
             </div>
           </div>
 
           <div className="mt-5 flex flex-wrap gap-2">
             <span className="rounded-full border border-white/12 bg-white/8 px-3 py-1 text-xs font-medium text-white/80">
-              EduBot Workspace
+              {t('dashboardHeader.chips.workspace')}
             </span>
             <span className="rounded-full border border-white/12 bg-black/10 px-3 py-1 text-xs font-medium text-white/75">
-              Live dashboard shell
+              {t('dashboardHeader.chips.liveShell')}
             </span>
           </div>
         </div>
@@ -106,14 +103,9 @@ const getButtonClasses = (variant = 'primary') => {
   return variants[variant] || variants.primary;
 };
 
-const getRoleDescription = (role) => {
-  const descriptions = {
-    instructor: 'Курстарыңызды, сессияларды жана студенттик активдүүлүктү бир жерден башкарыңыз.',
-    student: 'Окуу прогрессиңизди көзөмөлдөп, маанилүү тапшырмаларга тез кайтыңыз.',
-    admin: 'Платформанын операциялык абалын жана негизги башкаруу агымдарын көзөмөлдөңүз.',
-    assistant: 'Инструкторлорду колдоп, күнүмдүк операцияларды ылдам аткарыңыз.',
-  };
-  return descriptions[role] || 'Панель функциялары';
+const getRoleDescription = (role, t) => {
+  const description = t(`dashboardHeader.descriptions.${role}`, { defaultValue: '' });
+  return description || t('dashboardHeader.descriptions.default');
 };
 
 export default DashboardHeader;

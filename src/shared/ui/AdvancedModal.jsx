@@ -1,6 +1,7 @@
 import { useId, useState, useEffect, useRef, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 
 // Animation variants for different modal types
 const ANIMATION_VARIANTS = {
@@ -41,6 +42,7 @@ const AdvancedModal = ({
     loading = false,
     className = '',
 }) => {
+    const { t } = useTranslation();
     const titleId = useId();
     const subtitleId = useId();
     const [localIsOpen, setLocalIsOpen] = useState(isOpen);
@@ -320,8 +322,8 @@ const AdvancedModal = ({
                                     onClick={handleCloseClick}
                                     disabled={preventClose || loading}
                                     className="rounded-full p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:text-gray-300 dark:hover:bg-gray-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    aria-label="Жабуу"
-                                    title="Жабуу (ESC)"
+                                    aria-label={t('common.close')}
+                                    title={t('common.closeEsc')}
                                 >
                                     <svg
                                         className="w-5 h-5"
@@ -347,7 +349,7 @@ const AdvancedModal = ({
                             {loading && (
                                 <div className="flex items-center justify-center py-8" role="status">
                                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" aria-hidden="true"></div>
-                                    <span className="ml-3 text-gray-600 dark:text-gray-400">Жүктөлүүдө...</span>
+                                    <span className="ml-3 text-gray-600 dark:text-gray-400">{t('common.loadingEllipsis')}</span>
                                 </div>
                             )}
                             {!loading && children}

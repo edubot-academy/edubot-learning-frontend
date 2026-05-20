@@ -16,9 +16,18 @@ export const DEFAULT_COURSE_INFO = {
     requirementsText: '',
 };
 
-export const DEFAULT_CURRICULUM = [
+export const getDefaultSectionTitle = (languageCode = 'ky', index = 1) => {
+    const labels = {
+        en: 'Section',
+        ru: 'Раздел',
+        ky: 'Бөлүм',
+    };
+    return `${labels[languageCode] || labels.ky} ${index}`;
+};
+
+export const createDefaultCurriculum = (languageCode = 'ky') => [
     {
-        sectionTitle: 'Бөлүм 1',
+        sectionTitle: getDefaultSectionTitle(languageCode, 1),
         skillId: '',
         lessons: [
             {
@@ -37,6 +46,8 @@ export const DEFAULT_CURRICULUM = [
         ],
     },
 ];
+
+export const DEFAULT_CURRICULUM = createDefaultCurriculum();
 
 export const DEFAULT_LESSON = {
     title: '',
@@ -59,9 +70,9 @@ export const DEFAULT_SECTION = {
 };
 
 export const STEP_ITEMS = [
-    { key: 'info', label: 'Курс маалыматы', completed: false },
-    { key: 'curriculum', label: 'Окуу мазмуну', completed: false },
-    { key: 'media', label: 'Медиа жане баскаруу', completed: false },
+    { key: 'info', labelKey: 'instructorDashboard.courseBuilder.stepLabels.info', completed: false },
+    { key: 'curriculum', labelKey: 'instructorDashboard.courseBuilder.stepLabels.curriculum', completed: false },
+    { key: 'media', labelKey: 'instructorDashboard.courseBuilder.stepLabels.media', completed: false },
 ];
 
 export const CURRICULUM_WORKSPACE_SECTIONS = Object.freeze({

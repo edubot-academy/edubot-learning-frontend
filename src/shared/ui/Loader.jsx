@@ -1,18 +1,21 @@
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 
 const Loader = ({
   size = 40,
   fullScreen = false,
-  label = 'Жүктөлүүдө',
+  label,
   className = '',
 }) => {
+  const { t } = useTranslation();
   const dimension = typeof size === 'number' ? `${size}px` : size;
+  const resolvedLabel = label || t('common.loading');
 
   return (
     <div
       role="status"
       aria-live="polite"
-      aria-label={label}
+      aria-label={resolvedLabel}
       className={`flex items-center justify-center ${
         fullScreen ? 'w-full h-screen' : 'w-full h-full'
       } ${className}`}
@@ -24,7 +27,7 @@ const Loader = ({
           height: dimension,
         }}
       />
-      <span className="sr-only">{label}</span>
+      <span className="sr-only">{resolvedLabel}</span>
     </div>
   );
 };

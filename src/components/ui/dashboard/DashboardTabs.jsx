@@ -1,38 +1,22 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 
 const DashboardTabs = ({ items, activeId, onSelect, maxVisible = 4 }) => {
+  const { t } = useTranslation();
   const [showMore, setShowMore] = useState(false);
 
   const visibleItems = items.slice(0, maxVisible);
   const hiddenItems = items.slice(maxVisible);
 
   const getTabLabel = (item) => {
-    const mobileLabels = {
-      overview: 'Башкы',
-      courses: 'Курс',
-      students: 'Окуучулар',
-      analytics: 'Аналитика',
-      ai: 'AI',
-      attendance: 'Катышуу',
-      homework: 'Тапшырма',
-      profile: 'Профиль',
-      schedule: 'График',
-      tasks: 'Тапшырма',
-      progress: 'Прогресс',
-      notifications: 'Билдирүү',
-      chat: 'Чат',
-      leaderboard: 'Рейтинг',
-      sessions: 'Сессия',
-      offerings: 'Агымдар',
-      stats: 'Стат',
-      users: 'Колд.',
-      companies: 'Компания',
-      contacts: 'Байланыш',
-      'ai-prompts': 'AI',
-      integration: 'Интегр.',
-    };
-    return mobileLabels[item.id] || item.label;
+    if (item.labelKey) {
+      const itemLabel = t(item.labelKey, { defaultValue: '' });
+      if (itemLabel) return itemLabel;
+    }
+
+    const translatedLabel = t(`dashboardTabs.labels.${item.id}`, { defaultValue: '' });
+    return translatedLabel || item.label;
   };
 
   const renderTabIcon = (item) => {
@@ -85,7 +69,7 @@ const DashboardTabs = ({ items, activeId, onSelect, maxVisible = 4 }) => {
     <div className="md:hidden">
       <div className="fixed inset-x-0 bottom-0 z-[60] px-3 pb-3 pt-2">
         <div className="mx-auto max-w-2xl rounded-[1.75rem] border border-edubot-line/80 bg-white/92 p-2 shadow-edubot-glow backdrop-blur-xl dark:border-slate-700 dark:bg-slate-900/92">
-          <nav className="flex items-center justify-around gap-1" aria-label="Dashboard sections">
+          <nav className="flex items-center justify-around gap-1" aria-label={t('dashboardTabs.sections')}>
             {visibleItems.map((item) => {
               const isActive = item.id === activeId;
               return (
@@ -113,9 +97,10 @@ const DashboardTabs = ({ items, activeId, onSelect, maxVisible = 4 }) => {
                     {renderTabIcon(item)}
                   </span>
                   <span
-                    className={`text-[11px] font-semibold leading-tight transition-all duration-200 ${
+                    className={`max-w-full truncate text-[11px] font-semibold leading-tight transition-all duration-200 ${
                       isActive ? 'text-white' : 'text-edubot-ink dark:text-slate-200'
                     }`}
+                    title={getTabLabel(item)}
                   >
                     {getTabLabel(item)}
                   </span>
@@ -140,7 +125,7 @@ const DashboardTabs = ({ items, activeId, onSelect, maxVisible = 4 }) => {
                   ⋯
                 </span>
                 <span className="text-[11px] font-semibold text-edubot-ink dark:text-slate-200">
-                  Дагы
+                  {t('dashboardTabs.more')}
                 </span>
               </button>
             )}
@@ -151,17 +136,17 @@ const DashboardTabs = ({ items, activeId, onSelect, maxVisible = 4 }) => {
               id="more-options-menu"
               className="absolute inset-x-3 bottom-[5.75rem] z-50 mx-auto max-w-2xl rounded-panel border border-edubot-line/90 bg-[#fffaf5] p-3 shadow-[0_28px_60px_-24px_rgba(15,23,42,0.45)] dark:border-slate-700 dark:bg-slate-900"
               role="menu"
-              aria-label="Көбүрөөк опциялар"
+              aria-label={t('dashboardTabs.moreOptions')}
             >
               <div className="mb-3 flex items-center justify-between">
                 <h3 className="text-base font-semibold text-edubot-ink dark:text-gray-100">
-                  Көбүрөөк опциялар
+                  {t('dashboardTabs.moreOptions')}
                 </h3>
                 <button
                   type="button"
                   onClick={() => setShowMore(false)}
                   className="rounded-xl p-2 text-edubot-muted transition hover:bg-edubot-surfaceAlt hover:text-edubot-ink dark:text-gray-400 dark:hover:bg-slate-800 dark:hover:text-gray-200 touch-manipulation active:scale-95"
-                  aria-label="Жабуу"
+                  aria-label={t('common.close')}
                 >
                   <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -213,7 +198,8 @@ DashboardTabs.propTypes = {
   items: PropTypes.arrayOf(
     PropTypes.shape({
       id: PropTypes.string.isRequired,
-      label: PropTypes.string.isRequired,
+      label: PropTypes.string,
+      labelKey: PropTypes.string,
       icon: PropTypes.oneOfType([PropTypes.element, PropTypes.func]),
       category: PropTypes.oneOf(['primary', 'secondary', 'progress', 'personal', 'content', 'users', 'analytics', 'admin', 'other']),
       workspaceGroup: PropTypes.string,

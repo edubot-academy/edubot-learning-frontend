@@ -2,18 +2,19 @@
 // Extracted from section operations in CreateCourse.jsx and EditInstructorCourse.jsx
 
 import { createEmptyLesson, generateTempId } from './courseBuilderUtils';
+import { getDefaultSectionTitle } from '../constants';
 
 /**
  * Adds a new section to the curriculum
  * @param {Array} curriculum - Current curriculum array
  * @returns {Array} - Updated curriculum with new section
  */
-export const addSection = (curriculum) => {
+export const addSection = (curriculum, languageCode) => {
     return [
         ...curriculum,
         {
             tempId: generateTempId(),
-            sectionTitle: `Бөлүм ${curriculum.length + 1}`,
+            sectionTitle: getDefaultSectionTitle(languageCode, curriculum.length + 1),
             skillId: '',
             lessons: [],
         },
