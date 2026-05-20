@@ -60,7 +60,7 @@ const DashboardHeader = ({
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 lg:max-w-[45%] lg:justify-end">
+        <div className="flex min-w-0 flex-wrap items-center gap-3 lg:max-w-[45%] lg:justify-end">
           {actions.map((action, index) =>
             action.to ? (
               <Link
@@ -68,9 +68,11 @@ const DashboardHeader = ({
                 to={action.to}
                 className={`${getButtonClasses(action.variant)} ${action.className || ''}`}
                 onClick={action.onClick}
+                aria-label={action.ariaLabel || action.label}
+                title={action.title || action.label}
               >
                 {action.icon && <span className="shrink-0">{action.icon}</span>}
-                <span>{action.label}</span>
+                <span className="min-w-0 whitespace-normal text-center leading-tight">{action.label}</span>
               </Link>
             ) : (
               <button
@@ -79,9 +81,11 @@ const DashboardHeader = ({
                 className={`${getButtonClasses(action.variant)} ${action.className || ''}`}
                 disabled={action.disabled}
                 type={action.type || 'button'}
+                aria-label={action.ariaLabel || action.label}
+                title={action.title || action.label}
               >
                 {action.icon && <span className="shrink-0">{action.icon}</span>}
-                <span>{action.label}</span>
+                <span className="min-w-0 whitespace-normal text-center leading-tight">{action.label}</span>
               </button>
             )
           )}
@@ -93,7 +97,7 @@ const DashboardHeader = ({
 
 const getButtonClasses = (variant = 'primary') => {
   const base =
-    'inline-flex min-h-[44px] items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-semibold transition-all duration-300 touch-manipulation';
+    'inline-flex min-h-[44px] min-w-0 max-w-full items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-semibold transition-all duration-300 touch-manipulation';
 
   const variants = {
     primary: `${base} bg-white text-edubot-dark shadow-lg shadow-black/10 hover:-translate-y-0.5 hover:bg-edubot-surface`,

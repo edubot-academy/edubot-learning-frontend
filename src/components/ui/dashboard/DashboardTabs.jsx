@@ -72,6 +72,7 @@ const DashboardTabs = ({ items, activeId, onSelect, maxVisible = 4 }) => {
           <nav className="flex items-center justify-around gap-1" aria-label={t('dashboardTabs.sections')}>
             {visibleItems.map((item) => {
               const isActive = item.id === activeId;
+              const label = getTabLabel(item);
               return (
                 <button
                   key={item.id}
@@ -88,6 +89,8 @@ const DashboardTabs = ({ items, activeId, onSelect, maxVisible = 4 }) => {
                       : 'text-edubot-muted hover:bg-edubot-surfaceAlt dark:text-slate-300 dark:hover:bg-slate-800'
                   }`}
                   aria-current={isActive ? 'page' : undefined}
+                  aria-label={label}
+                  title={label}
                 >
                   <span
                     className={`mb-1 flex h-8 w-8 items-center justify-center rounded-full transition-all duration-200 ${
@@ -97,12 +100,11 @@ const DashboardTabs = ({ items, activeId, onSelect, maxVisible = 4 }) => {
                     {renderTabIcon(item)}
                   </span>
                   <span
-                    className={`max-w-full truncate text-[11px] font-semibold leading-tight transition-all duration-200 ${
+                    className={`line-clamp-2 max-w-full overflow-hidden text-[11px] font-semibold leading-tight transition-all duration-200 ${
                       isActive ? 'text-white' : 'text-edubot-ink dark:text-slate-200'
                     }`}
-                    title={getTabLabel(item)}
                   >
-                    {getTabLabel(item)}
+                    {label}
                   </span>
                 </button>
               );
@@ -157,6 +159,7 @@ const DashboardTabs = ({ items, activeId, onSelect, maxVisible = 4 }) => {
               <div className="max-h-[min(20rem,calc(100vh-12rem))] space-y-1.5 overflow-y-auto pr-1">
                 {hiddenItems.map((item) => {
                   const isActive = item.id === activeId;
+                  const label = getTabLabel(item);
                   return (
                     <button
                       key={item.id}
@@ -173,14 +176,16 @@ const DashboardTabs = ({ items, activeId, onSelect, maxVisible = 4 }) => {
                       }`}
                       role="menuitemradio"
                       aria-checked={isActive}
+                      aria-label={label}
+                      title={label}
                     >
                       <span className={`mr-3 flex h-8 w-8 items-center justify-center rounded-full ${
                         isActive ? 'bg-white/18 text-white' : 'bg-black/5 text-slate-700 dark:bg-white/10 dark:text-slate-100'
                       }`}>
                         {renderTabIcon(item)}
                       </span>
-                      <span className={`font-medium leading-tight ${isActive ? 'text-white' : 'text-slate-900 dark:text-white'}`}>
-                        {getTabLabel(item)}
+                      <span className={`min-w-0 flex-1 whitespace-normal break-words font-medium leading-tight ${isActive ? 'text-white' : 'text-slate-900 dark:text-white'}`}>
+                        {label}
                       </span>
                     </button>
                   );

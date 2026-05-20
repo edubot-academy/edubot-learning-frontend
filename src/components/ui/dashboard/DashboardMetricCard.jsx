@@ -30,7 +30,7 @@ const DashboardMetricCard = ({ label, value, icon: Icon, tone = 'default', class
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/50 via-transparent to-edubot-orange/10 opacity-70 transition-opacity duration-300 group-hover:opacity-100 dark:from-white/5 dark:to-edubot-soft/10" />
         <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-edubot-orange/10 blur-2xl transition-all duration-300 group-hover:scale-125 group-hover:opacity-100 dark:bg-edubot-soft/10" />
         <div className="flex min-w-0 items-start justify-between gap-3">
-            <div className="relative min-w-0 flex-1 pr-1 text-[10px] font-semibold uppercase leading-[1.35] tracking-[0.1em] opacity-75 sm:text-[11px]">
+            <div className="relative min-w-0 flex-1 break-words pr-1 text-[10px] font-semibold uppercase leading-[1.35] tracking-[0.1em] opacity-75 sm:text-[11px]">
                 {formatMetricLabel(label)}
             </div>
             {Icon ? (
@@ -43,7 +43,7 @@ const DashboardMetricCard = ({ label, value, icon: Icon, tone = 'default', class
                 </div>
             ) : null}
         </div>
-        <div className="relative mt-3 text-[1.8rem] font-semibold leading-none transition-transform duration-300 group-hover:translate-x-0.5 sm:text-[1.95rem]">
+        <div className="relative mt-3 break-words text-[1.8rem] font-semibold leading-none transition-transform duration-300 group-hover:translate-x-0.5 sm:text-[1.95rem]">
             {value}
         </div>
     </div>

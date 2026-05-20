@@ -97,7 +97,7 @@ const DashboardSidebar = ({
                                                 key={item.id}
                                                 type="button"
                                                 onClick={() => onSelect(item.id)}
-                                                title={!resolvedOpen ? item.label : undefined}
+                                                title={item.label}
                                                 data-dashboard-nav-item
                                                 className={`w-full flex items-center ${resolvedOpen ? 'justify-start' : 'justify-center'
                                                     } rounded-xl px-3 py-2 text-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-edubot-orange/40 ${isActive
@@ -114,7 +114,7 @@ const DashboardSidebar = ({
                                                     />
                                                 )}
                                                 {resolvedOpen && (
-                                                    <span className={`font-medium text-sm transition-all duration-300 ${isActive ? 'text-white' : ''} dark:text-gray-200`}>
+                                                    <span className={`min-w-0 whitespace-normal break-words text-left text-sm font-medium leading-tight transition-all duration-300 ${isActive ? 'text-white' : ''} dark:text-gray-200`}>
                                                         {item.label}
                                                     </span>
                                                 )}

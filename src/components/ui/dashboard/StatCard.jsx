@@ -79,13 +79,13 @@ const StatCard = ({
           )}
         </div>
 
-        <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">{label}</p>
-        <p className="text-3xl font-bold text-slate-900 dark:text-white bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-200 bg-clip-text text-transparent">
+        <p className="mb-1 break-words text-sm font-medium leading-snug text-slate-600 dark:text-slate-400">{label}</p>
+        <p className="break-words bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-3xl font-bold text-slate-900 text-transparent dark:from-white dark:to-slate-200 dark:text-white">
           {value}
         </p>
 
         {subtitle && (
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{subtitle}</p>
+          <p className="mt-1 break-words text-xs leading-snug text-slate-500 dark:text-slate-400">{subtitle}</p>
         )}
 
         {trend && (

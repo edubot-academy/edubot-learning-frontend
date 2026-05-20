@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import i18n from '../../../i18n';
@@ -49,5 +49,34 @@ describe('DashboardTabs', () => {
         expect(screen.getByRole('button', { name: /Certs/i })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /Groups/i })).toBeInTheDocument();
         expect(screen.queryByText('Студенттер')).not.toBeInTheDocument();
+    });
+
+    it('keeps compact mobile tabs accessible when localized labels are long', async () => {
+        await i18n.changeLanguage('en');
+        const longLabel = 'Detailed certificate configuration and approval workflow';
+
+        render(
+            <DashboardTabs
+                items={[
+                    { id: 'custom-certificates', label: longLabel },
+                    { id: 'custom-attendance', label: 'Attendance review and bulk actions' },
+                ]}
+                activeId="custom-certificates"
+                onSelect={() => {}}
+                maxVisible={1}
+            />
+        );
+
+        const visibleTab = screen.getByRole('button', { name: longLabel });
+        expect(visibleTab).toHaveAttribute('aria-label', longLabel);
+        expect(visibleTab).toHaveAttribute('title', longLabel);
+
+        fireEvent.click(screen.getByRole('button', { name: /more/i }));
+
+        const hiddenTab = screen.getByRole('menuitemradio', {
+            name: 'Attendance review and bulk actions',
+        });
+        expect(hiddenTab).toHaveAttribute('aria-label', 'Attendance review and bulk actions');
+        expect(hiddenTab).toHaveAttribute('title', 'Attendance review and bulk actions');
     });
 });

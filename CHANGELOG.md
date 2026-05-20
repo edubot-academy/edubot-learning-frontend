@@ -6,6 +6,23 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
 ---
 
+## [1.13.11] - 2026-05-21
+
+### Changed
+
+- Hardened compact dashboard navigation, sidebar labels, header actions, and metric cards for longer localized Kyrgyz/Russian text while preserving full accessible labels.
+- Removed the redundant LOC-009 backlog item because tenant locale separation is already documented and covered by locale resolution tests.
+
+### Verification
+
+- `npm test`
+- `npm run lint`
+- `npm run audit:localization -- --fail-on-findings`
+- `git diff --check -- CHANGELOG.md docs/shared/architecture/LOCALIZATION_FRONTEND_PLAN.md package.json package-lock.json src`
+- `npm run build`
+
+---
+
 ## [1.13.10] - 2026-05-21
 
 ### Changed

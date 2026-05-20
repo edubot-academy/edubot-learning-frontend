@@ -582,6 +582,15 @@ Acceptance criteria:
 
 Priority: Medium.
 
+Status: Complete.
+
+Progress:
+
+- Hardened compact mobile dashboard tabs so long localized labels use two-line clamping visually while preserving full `aria-label` and `title` values.
+- Hardened dashboard sidebar labels, dashboard header actions, and shared metric cards so longer Kyrgyz/Russian labels can wrap instead of forcing horizontal overflow.
+- Added regression coverage for compact dashboard tabs with long labels and overflow-menu items.
+- Smoke-tested the release gate across `ky`, `ru`, and `en` resource loading with the full test/build suite.
+
 Problem:
 
 - Kyrgyz and Russian strings can be longer than English or existing compact tab labels.
@@ -598,29 +607,6 @@ Acceptance criteria:
 - Text does not overlap, truncate critical meaning, or overflow controls in common viewports.
 - Compact controls have accessible full labels.
 - Layout changes preserve usability in all supported locales.
-
-### LOC-009. Keep Tenant Locale Separate From Main App UI Locale
-
-Priority: Medium.
-
-Problem:
-
-- The main app creates and edits company/tenant locale settings, but those settings are for tenant-hosted runtime defaults.
-- Main app UI language and tenant/company scope must remain separate.
-- Stale cross-app docs may imply that opening a company in the main app should switch the main app UI language to `company.locale`.
-
-Tasks:
-
-- Document that platform/admin UI language is independent from company default locale.
-- Document that `company.locale` is edited by the main app but consumed as a tenant default by the tenant learning frontend and backend-owned tenant output.
-- Ensure API requests keep using UI locale only for `Accept-Language`.
-- Ensure tenant/company identity remains in tenant/company scope headers or route state, not inferred from UI language.
-
-Acceptance criteria:
-
-- User-selected `edubot_locale` wins consistently.
-- Main app does not use active `company.locale` as UI language fallback.
-- No code path infers tenant/company identity from UI language.
 
 ## Testing Plan
 
