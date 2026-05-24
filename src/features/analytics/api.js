@@ -19,10 +19,11 @@ const ensureIsoDateTime = (value, fieldName) => {
 };
 
 // Updated filter normalization for simplified new API
-const normalizeAnalyticsFilters = ({ from, to } = {}) =>
+const normalizeAnalyticsFilters = ({ from, to, companyId } = {}) =>
     clean({
         from: ensureIsoDateTime(from, 'from'),
         to: ensureIsoDateTime(to, 'to'),
+        companyId: ensurePositiveInt(companyId, 'companyId'),
     });
 
 const normalizeInstructorQuery = ({ from, to, instructorId } = {}) =>
@@ -40,12 +41,13 @@ const normalizeStudentQuery = ({ from, to, studentId } = {}) =>
     });
 
 // Legacy filter normalization (kept for backward compatibility)
-const normalizeLegacyAnalyticsFilters = ({ from, to, courseId, groupId } = {}) =>
+const normalizeLegacyAnalyticsFilters = ({ from, to, courseId, groupId, companyId } = {}) =>
     clean({
         from: ensureIsoDateTime(from, 'from'),
         to: ensureIsoDateTime(to, 'to'),
         courseId: ensurePositiveInt(courseId, 'courseId'),
         groupId: ensurePositiveInt(groupId, 'groupId'),
+        companyId: ensurePositiveInt(companyId, 'companyId'),
     });
 
 const normalizeLegacyInstructorQuery = ({ from, to, courseId, groupId, instructorId } = {}) =>

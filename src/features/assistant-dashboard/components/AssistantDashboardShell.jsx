@@ -14,17 +14,11 @@ import {
     ASSISTANT_ATTENDANCE_WORKSPACE_DECISION,
     NAV_ITEMS,
 } from "../utils/assistantDashboard.constants";
-import AssistantCompanyState from "./AssistantCompanyState";
 import AssistantCourseStats from "./AssistantCourseStats";
 import AssistantStudentTable from "./AssistantStudentTable";
 
 const AssistantDashboardShell = ({
     activeTab,
-    activeCompany,
-    activeCompanyId,
-    assistantNeedsSelect,
-    assistantNoCompany,
-    companies,
     courseCounts,
     courseSelections,
     courses,
@@ -36,13 +30,11 @@ const AssistantDashboardShell = ({
     handleEnroll,
     handleTabSelect,
     handleUnenroll,
-    isAssistant,
     isSearchTooShort,
     loading,
     lastEnrollmentFeedback,
     pendingEnrollmentAction,
     search,
-    setActiveCompanyId,
     setCourseSelections,
     setCurrentPage,
     setSearch,
@@ -102,13 +94,13 @@ const AssistantDashboardShell = ({
                                 <div className="grid gap-3 md:grid-cols-2">
                                     <div className="dashboard-panel-muted rounded-3xl p-4">
                                         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
-                                            {t('assistantDashboard.overview.company.label')}
+                                            {t('assistantDashboard.overview.scope.label')}
                                         </p>
                                         <p className="mt-2 text-lg font-semibold text-edubot-ink dark:text-white">
-                                            {activeCompany?.name || t('assistantDashboard.overview.company.fallback')}
+                                            {t('assistantDashboard.overview.scope.title')}
                                         </p>
                                         <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                            {t('assistantDashboard.overview.company.description')}
+                                            {t('assistantDashboard.overview.scope.description')}
                                         </p>
                                     </div>
                                     <div className="dashboard-panel-muted rounded-3xl p-4">
@@ -260,10 +252,7 @@ const AssistantDashboardShell = ({
             <DashboardHeader
                 user={{ fullName: user?.fullName || t('assistantDashboard.header.userFallback'), email: user?.email || "" }}
                 role="assistant"
-                subtitle={isAssistant && activeCompany
-                    ? t('assistantDashboard.header.companySubtitle', { company: activeCompany.name })
-                    : t('assistantDashboard.header.defaultSubtitle')
-                }
+                subtitle={t('assistantDashboard.header.defaultSubtitle')}
                 actions={headerActions}
             />
 
@@ -293,15 +282,7 @@ const AssistantDashboardShell = ({
             mobileTabs={mobileTabs}
             headerContent={headerContent}
         >
-            <AssistantCompanyState
-                assistantNoCompany={assistantNoCompany}
-                assistantNeedsSelect={assistantNeedsSelect}
-                companies={companies}
-                activeCompanyId={activeCompanyId}
-                setActiveCompanyId={setActiveCompanyId}
-            />
-
-            {!assistantNoCompany && !assistantNeedsSelect && renderMainContent()}
+            {renderMainContent()}
 
             <FloatingActionButton role="assistant" />
         </DashboardLayout>

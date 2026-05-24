@@ -137,7 +137,7 @@ const AppRoutes = () => {
                     <Route element={<PrivateRoute allowedRoles={['assistant']} />}>
                         <Route path="/assistant" element={<AssistantDashboard />} />
                     </Route>
-                    <Route element={<PrivateRoute />}>
+                    <Route element={<PrivateRoute allowedRoles={['admin']} />}>
                         <Route path="/companies/:id/courses" element={<CompanyCourses />} />
                         <Route path="/companies" element={<CompanyList />} />
                         <Route path="/companies/:id" element={<CompanyDetail />} />

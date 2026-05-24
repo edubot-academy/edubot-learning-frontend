@@ -2,7 +2,6 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import i18n from '.';
-import AssistantCompanyState from '@features/assistant-dashboard/components/AssistantCompanyState';
 import AttendanceTable from '@features/attendance/components/AttendanceTable';
 import VideoUpload from '@features/courses/components/VideoUpload';
 import Catalog from '@pages/catalog/Catalog';
@@ -62,16 +61,6 @@ describe('localized production surfaces', () => {
         expect(
             screen.getByText('Add students to this group to start tracking attendance.')
         ).toBeInTheDocument();
-    });
-
-    it('renders assistant company access copy from the active locale', async () => {
-        await i18n.changeLanguage('ky');
-
-        render(<AssistantCompanyState assistantNoCompany companies={[]} />);
-
-        expect(screen.getByText('Ассистент жеткиликтүүлүгү')).toBeInTheDocument();
-        expect(screen.getByText('Тенант дайындалган эмес')).toBeInTheDocument();
-        expect(screen.getByText('Тенантка кирүү укугу керек')).toBeInTheDocument();
     });
 
     it('renders video upload label from the active locale', async () => {

@@ -8,8 +8,6 @@ import {
     FiBell,
     FiBarChart2,
     FiTag,
-    FiActivity,
-    FiCalendar,
     FiTrendingUp,
     FiCheckSquare,
 } from 'react-icons/fi';
@@ -27,8 +25,6 @@ export const ADMIN_TABS = [
     ADMIN_DASHBOARD_TABS.SKILLS,
     ADMIN_DASHBOARD_TABS.AI_PROMPTS,
     ADMIN_DASHBOARD_TABS.NOTIFICATIONS,
-    ADMIN_DASHBOARD_TABS.INTEGRATION,
-    ADMIN_DASHBOARD_TABS.ATTENDANCE,
     ADMIN_DASHBOARD_TABS.ANALYTICS,
 ];
 
@@ -71,8 +67,6 @@ export const ADMIN_WORKSPACE_GROUPS = Object.freeze({
             ADMIN_DASHBOARD_TABS.SKILLS,
             ADMIN_DASHBOARD_TABS.AI_PROMPTS,
             ADMIN_DASHBOARD_TABS.NOTIFICATIONS,
-            ADMIN_DASHBOARD_TABS.INTEGRATION,
-            ADMIN_DASHBOARD_TABS.ATTENDANCE,
         ]),
     }),
 });
@@ -185,22 +179,6 @@ const RAW_NAV_ITEMS = [
         icon: FiBell,
         category: 'admin',
         priority: 3,
-    },
-    {
-        id: ADMIN_DASHBOARD_TABS.INTEGRATION,
-        label: 'Integrations',
-        labelKey: 'adminPanel.tabs.integration',
-        icon: FiActivity,
-        category: 'admin',
-        priority: 4,
-    },
-    {
-        id: ADMIN_DASHBOARD_TABS.ATTENDANCE,
-        label: 'Attendance',
-        labelKey: 'adminPanel.tabs.attendance',
-        icon: FiCalendar,
-        category: 'admin',
-        priority: 5,
     },
 ];
 

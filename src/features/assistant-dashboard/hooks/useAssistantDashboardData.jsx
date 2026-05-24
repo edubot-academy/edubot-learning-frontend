@@ -1,21 +1,7 @@
-import { useEffect } from "react";
 import { useAssistantEnrollmentActions } from "./useAssistantEnrollmentActions.jsx";
-import { useAssistantCompanyState } from "./useAssistantCompanyState.js";
 import { useAssistantWorkspaceData } from "./useAssistantWorkspaceData.js";
 
-export const useAssistantDashboardData = (user) => {
-    const {
-        activeCompany,
-        activeCompanyId,
-        assistantCompanyPending,
-        assistantNeedsSelect,
-        assistantNoCompany,
-        companies,
-        isAssistant,
-        loadCompanies,
-        setActiveCompanyId,
-    } = useAssistantCompanyState(user);
-
+export const useAssistantDashboardData = () => {
     const {
         courseCounts,
         courseSelections,
@@ -37,17 +23,7 @@ export const useAssistantDashboardData = (user) => {
         students,
         totalPages,
         totalStudents,
-    } = useAssistantWorkspaceData({
-        activeCompanyId,
-        assistantCompanyPending,
-        assistantNoCompany,
-        assistantNeedsSelect,
-        isAssistant,
-    });
-
-    useEffect(() => {
-        loadCompanies();
-    }, [loadCompanies]);
+    } = useAssistantWorkspaceData();
 
     const {
         getActionKey,
@@ -75,20 +51,12 @@ export const useAssistantDashboardData = (user) => {
         courseSelections,
         totalPages,
         loading,
-        companies,
-        activeCompanyId,
-        activeCompany,
         coursesById,
-        assistantCompanyPending,
-        assistantNoCompany,
-        assistantNeedsSelect,
         isSearchTooShort,
-        isAssistant,
 
         // Actions
         setCurrentPage,
         setSearch,
-        setActiveCompanyId,
         setCourseSelections,
         handleEnroll,
         handleUnenroll,

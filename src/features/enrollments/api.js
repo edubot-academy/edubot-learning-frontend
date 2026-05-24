@@ -1,8 +1,17 @@
 import api from '../../shared/api/client';
 import { validateManualEnrollmentContext } from './policy';
 
+const companyScopeConfig = (companyId) => {
+    if (companyId === undefined || companyId === null || companyId === '') return undefined;
+    return {
+        headers: {
+            'X-Company-Id': parseInt(companyId, 10),
+        },
+    };
+};
+
 export const enrollUserInCourse = async (userId, courseId, options = {}) => {
-    const { discountPercentage, offeringId, groupId, courseType } = options || {};
+    const { companyId, discountPercentage, offeringId, groupId, courseType } = options || {};
     try {
         validateManualEnrollmentContext({ courseType, offeringId, groupId });
         const response = await api.post('/enrollments/enroll', {
@@ -11,7 +20,7 @@ export const enrollUserInCourse = async (userId, courseId, options = {}) => {
             discountPercentage,
             offeringId,
             groupId: groupId !== undefined && groupId !== null ? parseInt(groupId, 10) : undefined,
-        });
+        }, companyScopeConfig(companyId));
         return response.data;
     } catch (error) {
         console.error('Error enrolling user:', error);
@@ -19,9 +28,12 @@ export const enrollUserInCourse = async (userId, courseId, options = {}) => {
     }
 };
 
-export const unenrollUserFromCourse = async (userId, courseId) => {
+export const unenrollUserFromCourse = async (userId, courseId, options = {}) => {
     try {
-        const response = await api.delete(`/enrollments/${parseInt(courseId, 10)}/unenroll/${parseInt(userId, 10)}`);
+        const response = await api.delete(
+            `/enrollments/${parseInt(courseId, 10)}/unenroll/${parseInt(userId, 10)}`,
+            companyScopeConfig(options?.companyId)
+        );
         return response.data;
     } catch (error) {
         console.error('Error enrolling user:', error);
@@ -29,11 +41,14 @@ export const unenrollUserFromCourse = async (userId, courseId) => {
     }
 };
 
-export const fetchEnrollment = async (courseId, userId) => {
+export const fetchEnrollment = async (courseId, userId, options = {}) => {
     try {
         const params = { courseId: parseInt(courseId, 10) };
         if (userId) params.userId = parseInt(userId, 10);
-        const response = await api.get('/enrollments/check', { params });
+        const response = await api.get('/enrollments/check', {
+            ...companyScopeConfig(options?.companyId),
+            params,
+        });
         return response.data;
     } catch (error) {
         console.error('Error fetching enrollment:', error);
@@ -41,12 +56,12 @@ export const fetchEnrollment = async (courseId, userId) => {
     }
 };
 
-export const checkEnrollments = async (courseIds, userIds = []) => {
+export const checkEnrollments = async (courseIds, userIds = [], options = {}) => {
     try {
         const response = await api.post('/enrollments/bulk-check', {
             courseIds: courseIds.map(id => parseInt(id, 10)),
             userIds: userIds.map(id => parseInt(id, 10)),
-        });
+        }, companyScopeConfig(options?.companyId));
         return response.data;
     } catch (error) {
         console.error('Error in bulk enrollment check:', error);

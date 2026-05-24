@@ -6,6 +6,31 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
 ---
 
+## [1.14.0] - 2026-05-24
+
+### Changed
+
+- Removed the main-app admin integration and attendance tabs, including stale dashboard tab constants, so admin navigation matches the supported platform management surface.
+- Simplified the main-app assistant dashboard to operate outside tenant context, removing tenant selection state while keeping student, course, enrollment, and attendance workspace views available for main-app assistants.
+- Restricted company management routes to main platform admins while preserving superadmin access through the existing admin-compatible role check.
+- Added explicit tenant scope support for enrollment API calls and admin analytics filters without injecting tenant headers globally into the main app.
+- Split Vite production chunks by app locale, React/vendor groups, charts, media, icons, and sanitizer code so release builds no longer emit large chunk warnings.
+
+### Fixed
+
+- Removed stale assistant tenant-access localization coverage after tenant dashboard selection was removed from the main app assistant surface.
+- Removed stale integration health/risk/event API exports after the admin integration tab was retired.
+
+### Verification
+
+- `npm test -- --run`
+- `npm run lint`
+- `npm run build`
+- `npm run audit:localization`
+- `git diff --check`
+
+---
+
 ## [1.13.12] - 2026-05-21
 
 ### Changed

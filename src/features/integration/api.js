@@ -57,29 +57,3 @@ export const activateIntegrationEnrollment = async (enrollmentId, payload) => {
     );
     return data;
 };
-
-export const fetchIntegrationRiskSummary = async () => {
-    const { data } = await api.get('/admin/integration/risk-summary');
-    return data;
-};
-
-export const fetchIntegrationHealth = async () => {
-    const { data } = await api.get('/admin/integration/health');
-    return data;
-};
-
-export const fetchEnrollmentStatusEvents = async ({ page = 1, limit = 20 } = {}) => {
-    const { data } = await api.get('/admin/integration/events', {
-        params: clean({
-            page,
-            limit,
-            eventType: 'enrollment_status_changed',
-        }),
-    });
-    return data;
-};
-
-export const fetchIntegrationEventDetail = async (id) => {
-    const { data } = await api.get(`/admin/integration/events/${id}`);
-    return data;
-};

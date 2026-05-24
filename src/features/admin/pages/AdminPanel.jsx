@@ -6,8 +6,6 @@ import toast from 'react-hot-toast';
 import NotificationsWidget from '@features/notifications/components/NotificationsWidget';
 import NotificationsTab from '@features/notifications/components/NotificationsTab';
 import ConfirmationModal from '@shared/ui/ConfirmationModal';
-import IntegrationTab from '@features/integration/components/IntegrationTab';
-import AttendancePage from '../../../pages/Attendance';
 import AdminAnalyticsPage from '../../../pages/AdminAnalytics';
 
 // Import standardized dashboard components
@@ -42,6 +40,7 @@ import { useAdminCoursesDomain } from '../hooks/useAdminCoursesDomain';
 import { useAdminCertificatesDomain } from '../hooks/useAdminCertificatesDomain';
 import { useTranslation } from 'react-i18next';
 import { parseApiError } from '@shared/api/error';
+import { ADMIN_DASHBOARD_TABS } from '@shared/constants/dashboardTabs';
 
 const AdminPanel = () => {
     const { t } = useTranslation();
@@ -66,8 +65,15 @@ const AdminPanel = () => {
     } = useAdminUsersFilters();
     // Tab state
     const { activeTab, handleTabSelect } = useAdminTabState();
+    const canReadGlobalAnalytics = user?.role === 'superadmin';
 
     useDashboardKeyboardNavigation();
+
+    useEffect(() => {
+        if (activeTab === ADMIN_DASHBOARD_TABS.ANALYTICS && !canReadGlobalAnalytics) {
+            handleTabSelect(ADMIN_DASHBOARD_TABS.STATS);
+        }
+    }, [activeTab, canReadGlobalAnalytics, handleTabSelect]);
 
     // Event handlers
     const requestConfirmation = useCallback((config) => {
@@ -563,14 +569,8 @@ const AdminPanel = () => {
                     />
                 );
 
-            case 'integration':
-                return <IntegrationTab />;
-
-            case 'attendance':
-                return <AttendancePage embedded />;
-
             case 'analytics':
-                return <AdminAnalyticsPage />;
+                return canReadGlobalAnalytics ? <AdminAnalyticsPage /> : null;
 
             default:
                 // For other tabs, render the original inline components
@@ -580,12 +580,14 @@ const AdminPanel = () => {
     };
 
     // Prepare navigation items for the standardized layout
-    const dashboardNavItems = NAV_ITEMS.map((item) => ({
-        ...item,
-        label: t(item.labelKey, { defaultValue: item.label }),
-        isActive: item.id === activeTab,
-        onSelect: handleTabSelect,
-    }));
+    const dashboardNavItems = NAV_ITEMS
+        .filter((item) => item.id !== ADMIN_DASHBOARD_TABS.ANALYTICS || canReadGlobalAnalytics)
+        .map((item) => ({
+            ...item,
+            label: t(item.labelKey, { defaultValue: item.label }),
+            isActive: item.id === activeTab,
+            onSelect: handleTabSelect,
+        }));
     const activeNavItem = dashboardNavItems.find((item) => item.id === activeTab);
     const activeWorkspaceGroup = ADMIN_WORKSPACE_GROUP_BY_ID[activeNavItem?.workspaceGroup];
     const relatedWorkspaceTabs = activeWorkspaceGroup

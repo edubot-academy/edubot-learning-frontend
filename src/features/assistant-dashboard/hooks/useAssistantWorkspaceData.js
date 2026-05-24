@@ -5,7 +5,6 @@ import {
     checkEnrollments,
     fetchCourses,
     fetchUsers,
-    listCompanyCourses,
 } from "@services/api";
 import {
     buildCourseCounts,
@@ -18,12 +17,8 @@ const ITEMS_PER_PAGE = 10;
 const MIN_SEARCH_LENGTH = 3;
 
 export const useAssistantWorkspaceData = ({
-    activeCompanyId,
     assistantCompanyPending,
-    assistantNeedsSelect,
-    assistantNoCompany,
-    isAssistant,
-}) => {
+} = {}) => {
     const { t } = useTranslation();
     const [currentPage, setCurrentPage] = useState(1);
     const [search, setSearch] = useState("");
@@ -66,13 +61,12 @@ export const useAssistantWorkspaceData = ({
         const studentIds = students.map((student) => student.id).join(",");
 
         return [
-            activeCompanyId ?? "",
             currentPage,
             search.trim(),
             courseIds,
             studentIds,
         ].join("|");
-    }, [activeCompanyId, courses, currentPage, search, students]);
+    }, [courses, currentPage, search, students]);
 
     useEffect(() => {
         mutationContextRef.current = mutationContext;
@@ -159,28 +153,15 @@ export const useAssistantWorkspaceData = ({
     }, []);
 
     const loadPublishedCourses = useCallback(async (shouldApply = () => true) => {
-        const coursesContext = isAssistant ? `company:${activeCompanyId ?? ""}` : "all";
+        const coursesContext = "all";
 
         if (coursesContextRef.current === coursesContext) {
             return coursesRef.current;
         }
 
-        let publishedCourses = [];
-
-        if (isAssistant) {
-            if (activeCompanyId) {
-                const companyRes = await listCompanyCourses(activeCompanyId, {
-                    page: 1,
-                    q: "",
-                });
-                const items = companyRes?.items ?? companyRes?.courses ?? [];
-                publishedCourses = filterPublishedCourses(items);
-            }
-        } else {
-            const coursesRes = await fetchCourses();
-            const allCourses = coursesRes?.courses ?? [];
-            publishedCourses = filterPublishedCourses(allCourses);
-        }
+        const coursesRes = await fetchCourses();
+        const allCourses = coursesRes?.courses ?? [];
+        const publishedCourses = filterPublishedCourses(allCourses);
 
         if (!shouldApply()) {
             return null;
@@ -190,19 +171,12 @@ export const useAssistantWorkspaceData = ({
         coursesRef.current = publishedCourses;
         setCourses(publishedCourses);
         return publishedCourses;
-    }, [activeCompanyId, isAssistant]);
+    }, []);
 
     const loadStudentsAndCourses = useCallback(async () => {
         if (assistantCompanyPending) {
             requestSeqRef.current += 1;
             setLoading(true);
-            return;
-        }
-
-        if (assistantNoCompany || assistantNeedsSelect) {
-            requestSeqRef.current += 1;
-            resetDashboardData();
-            setLoading(false);
             return;
         }
 
@@ -259,8 +233,6 @@ export const useAssistantWorkspaceData = ({
         }
     }, [
         assistantCompanyPending,
-        assistantNeedsSelect,
-        assistantNoCompany,
         currentPage,
         loadPublishedCourses,
         resetDashboardData,

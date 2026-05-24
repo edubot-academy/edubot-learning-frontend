@@ -2,6 +2,54 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath, URL } from 'node:url';
 
+const vendorChunk = (id) => {
+    const normalizedId = id.replace(/\\/g, '/');
+
+    if (normalizedId.includes('/src/i18n/locales/en')) {
+        return 'app-i18n-en';
+    }
+
+    if (normalizedId.includes('/src/i18n/locales/ky')) {
+        return 'app-i18n-ky';
+    }
+
+    if (normalizedId.includes('/src/i18n/locales/ru')) {
+        return 'app-i18n-ru';
+    }
+
+    if (normalizedId.includes('/src/i18n/')) {
+        return 'app-i18n-core';
+    }
+
+    if (!id.includes('node_modules')) return undefined;
+
+    if (/[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/.test(id)) {
+        return 'react-vendor';
+    }
+
+    if (id.includes('react-icons')) {
+        return 'icons';
+    }
+
+    if (id.includes('i18next') || id.includes('react-i18next')) {
+        return 'i18n-vendor';
+    }
+
+    if (id.includes('chart.js') || id.includes('react-chartjs-2')) {
+        return 'charts';
+    }
+
+    if (id.includes('hls.js') || /[\\/]node_modules[\\/]hls[\\/]/.test(id)) {
+        return 'media';
+    }
+
+    if (id.includes('dompurify')) {
+        return 'sanitizer';
+    }
+
+    return 'vendor';
+};
+
 // https://vite.dev/config/
 export default defineConfig({
     plugins: [react()],
@@ -27,11 +75,7 @@ export default defineConfig({
     build: {
         rollupOptions: {
             output: {
-                manualChunks: {
-                    react: ['react', 'react-dom'],
-                    router: ['react-router-dom'],
-                    icons: ['react-icons'],
-                },
+                manualChunks: vendorChunk,
             },
         },
     },

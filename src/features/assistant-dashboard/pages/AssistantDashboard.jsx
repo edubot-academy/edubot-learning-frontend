@@ -24,33 +24,21 @@ const AssistantDashboard = () => {
         courseSelections,
         totalPages,
         loading,
-        companies,
-        activeCompanyId,
-        activeCompany,
         coursesById,
-        assistantNoCompany,
-        assistantNeedsSelect,
         isSearchTooShort,
-        isAssistant,
         setCurrentPage,
         setSearch,
-        setActiveCompanyId,
         setCourseSelections,
         handleEnroll,
         handleUnenroll,
         getActionKey,
         lastEnrollmentFeedback,
         pendingEnrollmentAction,
-    } = useAssistantDashboardData(user);
+    } = useAssistantDashboardData();
 
     return (
         <AssistantDashboardShell
             activeTab={activeTab}
-            activeCompany={activeCompany}
-            activeCompanyId={activeCompanyId}
-            assistantNeedsSelect={assistantNeedsSelect}
-            assistantNoCompany={assistantNoCompany}
-            companies={companies}
             courseCounts={courseCounts}
             courseSelections={courseSelections}
             courses={courses}
@@ -62,13 +50,11 @@ const AssistantDashboard = () => {
             getActionKey={getActionKey}
             handleTabSelect={handleTabSelect}
             handleUnenroll={handleUnenroll}
-            isAssistant={isAssistant}
             isSearchTooShort={isSearchTooShort}
             loading={loading}
             lastEnrollmentFeedback={lastEnrollmentFeedback}
             pendingEnrollmentAction={pendingEnrollmentAction}
             search={search}
-            setActiveCompanyId={setActiveCompanyId}
             setCourseSelections={setCourseSelections}
             setCurrentPage={setCurrentPage}
             setSearch={setSearch}

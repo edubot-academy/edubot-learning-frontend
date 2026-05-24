@@ -149,35 +149,6 @@ export const dashboard = {
             loginOther: "Log in with another account"
         }
     },
-    assistantCompanyState: {
-        eyebrow: "Assistant access",
-        noCompany: {
-            title: "No tenant assigned",
-            description: "Your assistant account is not connected to a tenant yet. Ask a platform admin or tenant admin to add you before working with students and courses.",
-            emptyTitle: "Tenant access is required",
-            emptySubtitle: "Assistant tools are tenant-scoped so student, course, and attendance actions stay inside the right company dashboard."
-        },
-        select: {
-            title: "Choose a tenant dashboard",
-            description: "You are connected to multiple tenants. Select the company context before reviewing students, attendance, or enrollments.",
-            label: "Tenant dashboard",
-            placeholder: "Select a tenant"
-        },
-        context: {
-            roster: {
-                title: "Student roster",
-                text: "Student search, enrollment actions, and attendance context are scoped to the selected tenant."
-            },
-            courses: {
-                title: "Course access",
-                text: "Course load and assignment tools use the tenant selection to avoid cross-company changes."
-            },
-            operations: {
-                title: "Daily operations",
-                text: "Pick the tenant you are helping today before changing enrollments or checking attendance."
-            }
-        }
-    },
     assistantDashboard: {
         nav: {
             overview: "Overview",
@@ -193,7 +164,6 @@ export const dashboard = {
             userFallback: "Assistant",
             hideMenu: "Hide menu",
             showMenu: "Show menu",
-            companySubtitle: "As an assistant, you are viewing courses for {{company}}.",
             defaultSubtitle: "Support instructors with daily student and course operations."
         },
         metrics: {
@@ -203,8 +173,7 @@ export const dashboard = {
             courses: "Courses"
         },
         toasts: {
-            loadFailed: "Could not load dashboard data.",
-            companiesLoadFailed: "Could not load companies."
+            loadFailed: "Could not load dashboard data."
         },
         pagination: {
             previous: "Previous",
@@ -221,12 +190,12 @@ export const dashboard = {
             },
             workflow: {
                 title: "Work queue",
-                description: "Main tasks and current company context."
+                description: "Main app student and course tasks."
             },
-            company: {
-                label: "Company",
-                fallback: "Selected company",
-                description: "You are managing student and course operations for this company as an assistant."
+            scope: {
+                label: "Scope",
+                title: "Main app workspace",
+                description: "Tenant-private courses and company data are handled in tenant dashboards, not here."
             },
             signal: {
                 label: "Decision signal",
