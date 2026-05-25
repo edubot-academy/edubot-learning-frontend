@@ -10,7 +10,7 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
 ### Fixed
 
-- Prevented top-instructor portrait photos from being cropped awkwardly by rendering instructor images with a contained foreground and soft background fill.
+- Prevented top-instructor portrait photos from cropping off faces by using a top-biased cover crop.
 
 ### Verification
 

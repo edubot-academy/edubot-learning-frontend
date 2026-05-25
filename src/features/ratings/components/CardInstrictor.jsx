@@ -68,19 +68,8 @@ const CardInstructor = ({
                     onError={(e) => {
                         e.currentTarget.src = NoImage;
                     }}
-                    alt=""
-                    aria-hidden="true"
-                    className="absolute inset-0 h-full w-full scale-110 object-cover opacity-35 blur-lg"
-                    loading="lazy"
-                    decoding="async"
-                />
-                <img
-                    src={avatarUrl || NoImage}
-                    onError={(e) => {
-                        e.currentTarget.src = NoImage;
-                    }}
                     alt={instructorName}
-                    className="relative z-[1] h-full w-full object-contain"
+                    className="h-full w-full object-cover object-[center_20%]"
                     width="480"
                     height="360"
                     loading="lazy"
