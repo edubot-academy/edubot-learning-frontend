@@ -68,10 +68,25 @@ const CardInstructor = ({
                     onError={(e) => {
                         e.currentTarget.src = NoImage;
                     }}
-                    alt={instructorName}
-                    className="h-full w-full object-cover"
+                    alt=""
+                    aria-hidden="true"
+                    className="absolute inset-0 h-full w-full scale-110 object-cover opacity-35 blur-lg"
+                    loading="lazy"
+                    decoding="async"
                 />
-                <div className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-gray-900 shadow-sm dark:bg-gray-950/85 dark:text-white">
+                <img
+                    src={avatarUrl || NoImage}
+                    onError={(e) => {
+                        e.currentTarget.src = NoImage;
+                    }}
+                    alt={instructorName}
+                    className="relative z-[1] h-full w-full object-contain"
+                    width="480"
+                    height="360"
+                    loading="lazy"
+                    decoding="async"
+                />
+                <div className="absolute left-3 top-3 z-[2] rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-gray-900 shadow-sm dark:bg-gray-950/85 dark:text-white">
                     {t('ratings.card.topInstructor')}
                 </div>
             </div>

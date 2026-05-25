@@ -6,6 +6,18 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
 ---
 
+## [1.14.2] - 2026-05-25
+
+### Fixed
+
+- Prevented top-instructor portrait photos from being cropped awkwardly by rendering instructor images with a contained foreground and soft background fill.
+
+### Verification
+
+- `npm run build`
+
+---
+
 ## [1.14.1] - 2026-05-25
 
 ### Fixed
