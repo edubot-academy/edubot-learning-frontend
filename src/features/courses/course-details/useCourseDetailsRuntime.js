@@ -16,6 +16,7 @@ import {
     submitLessonQuiz,
     fetchLessonChallenge,
     submitLessonChallenge,
+    fetchStudentCourses,
 } from '@services/api';
 import { isForbiddenError, parseApiError } from '@shared/api/error';
 import { isPlatformAdmin } from '@shared/utils/roles';
@@ -27,6 +28,7 @@ import {
     findLessonById,
     getStoredActiveSectionId,
     isRuntimeActivityLesson,
+    isCourseInStudentPortalList,
     loadChallengeStateFromStorage,
     normalizeCourseSections,
     parseResumeParams,
@@ -601,6 +603,12 @@ export const useInitialCourseDetailsLoad = ({
                     if (user.role === 'student') {
                         try {
                             enrollment = await fetchEnrollment(courseId, user.id);
+                            if (!enrollment.enrolled) {
+                                const studentCourses = await fetchStudentCourses(user.id);
+                                enrollment = {
+                                    enrolled: isCourseInStudentPortalList(studentCourses, courseId),
+                                };
+                            }
                         } catch (err) {
                             if (!isForbiddenError(err)) {
                                 throw err;

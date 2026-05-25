@@ -5,6 +5,7 @@ import {
     findAdjacentLessons,
     getChallengeStorageKey,
     getStoredActiveSectionId,
+    isCourseInStudentPortalList,
     isRuntimeActivityLesson,
     loadChallengeStateFromStorage,
     normalizeCourseSections,
@@ -65,6 +66,14 @@ describe('courseDetailsUtils', () => {
             locked: true,
         });
         expect(normalized[1].lessons[0].locked).toBe(false);
+    });
+
+    it('detects active student portal course access across response shapes', () => {
+        expect(isCourseInStudentPortalList([{ courseId: 7 }], 7)).toBe(true);
+        expect(isCourseInStudentPortalList({ items: [{ id: 7 }] }, '7')).toBe(true);
+        expect(isCourseInStudentPortalList({ items: [{ course: { id: 7 } }] }, 7)).toBe(true);
+        expect(isCourseInStudentPortalList({ items: [{ courseId: 8 }] }, 7)).toBe(false);
+        expect(isCourseInStudentPortalList(null, 7)).toBe(false);
     });
 
     it('selects initial lessons by resume, last viewed, completed, then first lesson priority', () => {

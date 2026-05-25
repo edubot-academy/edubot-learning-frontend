@@ -6,6 +6,22 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
 ---
 
+## [1.14.1] - 2026-05-25
+
+### Fixed
+
+- Restored main-app student access to enrolled video course lessons when the legacy enrollment check returns false but the student portal course list confirms active course access.
+- Kept public course details behavior unchanged while adding a student-only access fallback before lesson sections are locked.
+
+### Verification
+
+- `npm test -- src/features/courses/course-details/courseDetailsUtils.spec.js`
+- `npm run lint`
+- `npm run build`
+- `git diff --check`
+
+---
+
 ## [1.14.0] - 2026-05-24
 
 ### Changed

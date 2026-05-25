@@ -67,6 +67,22 @@ export const normalizeCourseSections = (sectionData = [], isEnrolled = false) =>
         }))
         .sort((a, b) => a.order - b.order);
 
+export const isCourseInStudentPortalList = (payload, courseId) => {
+    const normalizedCourseId = String(courseId ?? '');
+    if (!normalizedCourseId) return false;
+
+    const items = Array.isArray(payload?.items)
+        ? payload.items
+        : Array.isArray(payload)
+          ? payload
+          : [];
+
+    return items.some((item) => {
+        const itemCourseId = item?.courseId ?? item?.id ?? item?.course?.id;
+        return String(itemCourseId ?? '') === normalizedCourseId;
+    });
+};
+
 export const findLessonById = (sections, lessonId) => {
     if (!lessonId) return null;
 
