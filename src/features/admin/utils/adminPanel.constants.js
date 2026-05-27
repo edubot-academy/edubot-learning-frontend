@@ -24,6 +24,7 @@ export const ADMIN_TABS = [
     ADMIN_DASHBOARD_TABS.CERTIFICATES,
     ADMIN_DASHBOARD_TABS.SKILLS,
     ADMIN_DASHBOARD_TABS.AI_PROMPTS,
+    ADMIN_DASHBOARD_TABS.AI_LMS,
     ADMIN_DASHBOARD_TABS.NOTIFICATIONS,
     ADMIN_DASHBOARD_TABS.ANALYTICS,
 ];
@@ -66,6 +67,7 @@ export const ADMIN_WORKSPACE_GROUPS = Object.freeze({
         tabs: Object.freeze([
             ADMIN_DASHBOARD_TABS.SKILLS,
             ADMIN_DASHBOARD_TABS.AI_PROMPTS,
+            ADMIN_DASHBOARD_TABS.AI_LMS,
             ADMIN_DASHBOARD_TABS.NOTIFICATIONS,
         ]),
     }),
@@ -165,12 +167,20 @@ const RAW_NAV_ITEMS = [
         priority: 1,
     },
     {
+        id: ADMIN_DASHBOARD_TABS.AI_LMS,
+        label: 'AI LMS settings',
+        labelKey: 'adminPanel.tabs.aiLms',
+        icon: FiCpu,
+        category: 'admin',
+        priority: 2,
+    },
+    {
         id: ADMIN_DASHBOARD_TABS.SKILLS,
         label: 'Skills',
         labelKey: 'adminPanel.tabs.skills',
         icon: FiTag,
         category: 'admin',
-        priority: 2,
+        priority: 3,
     },
     {
         id: ADMIN_DASHBOARD_TABS.NOTIFICATIONS,
@@ -178,7 +188,7 @@ const RAW_NAV_ITEMS = [
         labelKey: 'adminPanel.tabs.notifications',
         icon: FiBell,
         category: 'admin',
-        priority: 3,
+        priority: 4,
     },
 ];
 

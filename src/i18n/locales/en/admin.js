@@ -19,6 +19,7 @@ export const admin = {
             contacts: "Contacts",
             analytics: "Analytics",
             aiPrompts: "AI prompts",
+            aiLms: "AI LMS settings",
             skills: "Skills",
             notifications: "Notifications",
             integration: "Integrations",
@@ -294,6 +295,62 @@ export const admin = {
             note: "Note"
         },
         note: "Detailed management for delivery courses happens through the group, session, and enrollment tabs."
+    },
+    adminAiLms: {
+        eyebrow: "AI LMS",
+        title: "AI LMS settings",
+        description: "Enable structured AI LMS draft tools and usage limits for tenants or independent instructors.",
+        metrics: {
+            scope: "Scope",
+            enabledFeatures: "Enabled features",
+            limits: "Configured limits"
+        },
+        scope: {
+            title: "Rollout scope",
+            description: "Choose the tenant or independent instructor that should see AI LMS controls.",
+            tenant: "Tenant",
+            independentInstructor: "Independent instructor",
+            userId: "Instructor user ID",
+            selectInstructor: "Select instructor",
+            loadingInstructors: "Loading instructors..."
+        },
+        settings: {
+            title: "Feature settings",
+            description: "The frontend only shows AI controls when this scope is enabled and the feature is selected.",
+            enabled: "Enable AI LMS for this scope"
+        },
+        limits: {
+            title: "Feature limits",
+            description: "Set conservative limits before enabling a feature in production.",
+            enabled: "Enabled",
+            daily: "Daily",
+            monthly: "Monthly"
+        },
+        features: {
+            feedback_draft: "Feedback draft",
+            lesson_quiz_draft: "Quiz draft",
+            homework_draft: "Homework draft",
+            lesson_kit: "Lesson kit",
+            worksheet_draft: "Worksheet draft",
+            course_draft: "Course draft",
+            message_draft: "Student message draft"
+        },
+        actions: {
+            reload: "Reload",
+            loading: "Loading...",
+            saving: "Saving...",
+            saved: "Saved",
+            saveSettings: "Save settings",
+            saveLimit: "Save limit"
+        },
+        toasts: {
+            loadError: "Could not load AI LMS settings.",
+            settingsSaved: "AI LMS settings saved.",
+            settingsSaveError: "Could not save AI LMS settings.",
+            limitSaved: "AI LMS feature limit saved.",
+            limitSaveError: "Could not save AI LMS feature limit.",
+            instructorsLoadError: "Could not load instructors."
+        }
     },
     adminAiPrompts: {
         eyebrow: "AI prompts",

@@ -67,7 +67,14 @@ const CreateCourse = () => {
         stepItems,
         draftLoadedAt,
         lastDraftSavedAt,
+        aiCourseDraftEnabled,
+        aiCourseDraft,
+        aiCourseDrafting,
+        aiCourseDraftError,
         discardDraft,
+        requestAiCourseDraft,
+        useAiCourseDraft,
+        cancelAiCourseDraft,
 
         // Course Info Operations
         handleCourseSubmit,
@@ -82,6 +89,20 @@ const CreateCourse = () => {
         handleUpdateLesson,
         handleDeleteLesson,
         handleQuizChange,
+        aiLessonQuizDraftEnabled,
+        aiLessonQuizDraft,
+        aiLessonQuizDraftingKey,
+        aiLessonQuizDraftError,
+        handleRequestAiLessonQuizDraft,
+        handleUseAiLessonQuizDraft,
+        handleCancelAiLessonQuizDraft,
+        aiLessonKitDraftEnabled,
+        aiLessonKitDraft,
+        aiLessonKitDraftingKey,
+        aiLessonKitDraftError,
+        handleRequestAiLessonKitDraft,
+        handleUseAiLessonKitDraft,
+        handleCancelAiLessonKitDraft,
         handleChallengeChange,
         handleFileUpload,
         handleSectionDrop,
@@ -255,6 +276,13 @@ const CreateCourse = () => {
                     categories={categories}
                     mode="create"
                     handleCourseSubmit={handleCourseSubmit}
+                    aiCourseDraftEnabled={aiCourseDraftEnabled}
+                    aiCourseDraft={aiCourseDraft?.output}
+                    aiCourseDrafting={aiCourseDrafting}
+                    aiCourseDraftError={aiCourseDraftError}
+                    onRequestAiCourseDraft={requestAiCourseDraft}
+                    onUseAiCourseDraft={useAiCourseDraft}
+                    onCancelAiCourseDraft={cancelAiCourseDraft}
                 />
             )}
 
@@ -282,6 +310,20 @@ const CreateCourse = () => {
                     handleUpdateLesson={handleUpdateLesson}
                     handleDeleteLesson={handleDeleteLesson}
                     handleQuizChange={handleQuizChange}
+                    aiLessonQuizDraftEnabled={aiLessonQuizDraftEnabled}
+                    aiLessonQuizDraft={aiLessonQuizDraft}
+                    aiLessonQuizDraftingKey={aiLessonQuizDraftingKey}
+                    aiLessonQuizDraftError={aiLessonQuizDraftError}
+                    handleRequestAiLessonQuizDraft={handleRequestAiLessonQuizDraft}
+                    handleUseAiLessonQuizDraft={handleUseAiLessonQuizDraft}
+                    handleCancelAiLessonQuizDraft={handleCancelAiLessonQuizDraft}
+                    aiLessonKitDraftEnabled={aiLessonKitDraftEnabled}
+                    aiLessonKitDraft={aiLessonKitDraft}
+                    aiLessonKitDraftingKey={aiLessonKitDraftingKey}
+                    aiLessonKitDraftError={aiLessonKitDraftError}
+                    handleRequestAiLessonKitDraft={handleRequestAiLessonKitDraft}
+                    handleUseAiLessonKitDraft={handleUseAiLessonKitDraft}
+                    handleCancelAiLessonKitDraft={handleCancelAiLessonKitDraft}
                     handleChallengeChange={handleChallengeChange}
                     handleFileUpload={handleFileUpload}
                     handleSectionDrop={handleSectionDrop}

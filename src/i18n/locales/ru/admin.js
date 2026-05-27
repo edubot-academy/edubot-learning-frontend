@@ -19,6 +19,7 @@ export const admin = {
             contacts: "Контакты",
             analytics: "Аналитика",
             aiPrompts: "AI-промпты",
+            aiLms: "Настройки AI LMS",
             skills: "Навыки",
             notifications: "Уведомления",
             integration: "Интеграции",
@@ -294,6 +295,62 @@ export const admin = {
             note: "Примечание"
         },
         note: "Детальное управление курсами с группами выполняется через вкладки групп, сессий и записей."
+    },
+    adminAiLms: {
+        eyebrow: "AI LMS",
+        title: "Настройки AI LMS",
+        description: "Включайте структурированные AI LMS черновики и лимиты для тенантов или независимых инструкторов.",
+        metrics: {
+            scope: "Область",
+            enabledFeatures: "Включенные функции",
+            limits: "Лимиты"
+        },
+        scope: {
+            title: "Область rollout",
+            description: "Выберите тенанта или независимого инструктора, которому должны быть видны AI LMS элементы.",
+            tenant: "Тенант",
+            independentInstructor: "Независимый инструктор",
+            userId: "User ID инструктора",
+            selectInstructor: "Выберите инструктора",
+            loadingInstructors: "Загрузка инструкторов..."
+        },
+        settings: {
+            title: "Настройки функций",
+            description: "Фронтенд показывает AI элементы только когда эта область и функция включены.",
+            enabled: "Включить AI LMS для этой области"
+        },
+        limits: {
+            title: "Лимиты функций",
+            description: "Задайте консервативные лимиты перед включением функции в production.",
+            enabled: "Включено",
+            daily: "Дневной",
+            monthly: "Месячный"
+        },
+        features: {
+            feedback_draft: "Черновик обратной связи",
+            lesson_quiz_draft: "Черновик теста",
+            homework_draft: "Черновик домашнего задания",
+            lesson_kit: "Комплект урока",
+            worksheet_draft: "Черновик рабочего листа",
+            course_draft: "Черновик курса",
+            message_draft: "Черновик сообщения студенту"
+        },
+        actions: {
+            reload: "Обновить",
+            loading: "Загрузка...",
+            saving: "Сохранение...",
+            saved: "Сохранено",
+            saveSettings: "Сохранить настройки",
+            saveLimit: "Сохранить лимит"
+        },
+        toasts: {
+            loadError: "Не удалось загрузить настройки AI LMS.",
+            settingsSaved: "Настройки AI LMS сохранены.",
+            settingsSaveError: "Не удалось сохранить настройки AI LMS.",
+            limitSaved: "Лимит AI LMS функции сохранен.",
+            limitSaveError: "Не удалось сохранить лимит AI LMS функции.",
+            instructorsLoadError: "Не удалось загрузить инструкторов."
+        }
     },
     adminAiPrompts: {
         eyebrow: "AI-промпты",

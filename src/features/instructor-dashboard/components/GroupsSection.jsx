@@ -18,6 +18,7 @@ import {
     createCourseGroup,
     createIndividualCourseGroup,
     enrollUserInCourse,
+    fetchCourseDeliveryContext,
     fetchCourseGroups,
     fetchCourseGroupSessionGenerationPreview,
     fetchUsers,
@@ -113,6 +114,8 @@ const statusTone = {
 };
 
 const isIndividualGroup = (group = {}) => group.deliveryMode === 'individual';
+const isOpenForEnrollment = (group = {}) => ['open', 'active'].includes(String(group.status || ''));
+const hasGroupLiveMeeting = (group = {}) => Boolean(group.meetingProvider || group.meetingUrl);
 
 const deliveryModeTone = (value) =>
     value === 'individual'
@@ -214,6 +217,7 @@ const GroupsSection = ({ courses = [] }) => {
     const requestedCourseId = searchParams.get('courseId');
     const [selectedCourseId, setSelectedCourseId] = useState('');
     const [groups, setGroups] = useState([]);
+    const [deliveryContext, setDeliveryContext] = useState(null);
     const [individualStudentsByGroupId, setIndividualStudentsByGroupId] = useState({});
     const [loadingGroups, setLoadingGroups] = useState(false);
     const [showEnrollModal, setShowEnrollModal] = useState(false);
@@ -271,17 +275,28 @@ const GroupsSection = ({ courses = [] }) => {
         () => groups.find((group) => String(group.id) === String(editingGroupId)) || null,
         [groups, editingGroupId]
     );
+    const selectedCourseNeedsSession = Boolean(deliveryContext?.readiness?.issues?.includes?.('session_schedule_required'));
+    const selectedCourseNeedsLiveMeeting = Boolean(deliveryContext?.readiness?.issues?.includes?.('live_meeting_required'));
+    const canEnrollInGroup = useCallback((group) => {
+        if (!isOpenForEnrollment(group)) return false;
+        if (normalizeCourseType(selectedCourse) !== 'online_live') return true;
+        return !selectedCourseNeedsSession && (!selectedCourseNeedsLiveMeeting || hasGroupLiveMeeting(group));
+    }, [selectedCourse, selectedCourseNeedsLiveMeeting, selectedCourseNeedsSession]);
 
     const loadGroups = useCallback(async (courseId) => {
         if (!courseId) {
             setGroups([]);
+            setDeliveryContext(null);
             setIndividualStudentsByGroupId({});
             return;
         }
 
         setLoadingGroups(true);
         try {
-            const response = await fetchCourseGroups({ courseId: Number(courseId) });
+            const [response, context] = await Promise.all([
+                fetchCourseGroups({ courseId: Number(courseId) }),
+                fetchCourseDeliveryContext(Number(courseId)).catch(() => null),
+            ]);
             const items = Array.isArray(response)
                 ? response
                 : Array.isArray(response?.items)
@@ -290,9 +305,11 @@ const GroupsSection = ({ courses = [] }) => {
                         ? response.data
                         : [];
             setGroups(items);
+            setDeliveryContext(context);
         } catch (error) {
             console.error('Failed to load course groups', error);
             setGroups([]);
+            setDeliveryContext(null);
             setIndividualStudentsByGroupId({});
             toast.error(
                 parseApiError(error, t('instructorDashboard.groupForm.toasts.loadFailed')).message
@@ -455,6 +472,19 @@ const GroupsSection = ({ courses = [] }) => {
             return;
         }
 
+        const isOnlineLiveIndividual = isIndividual && normalizeCourseType(selectedCourse) === 'online_live';
+        if (
+            isOnlineLiveIndividual &&
+            (!createForm.startDate || !hasCompleteScheduleBlock(createForm.scheduleBlocks))
+        ) {
+            toast.error(t('instructorDashboard.groupsSection.toasts.firstSessionScheduleRequired'));
+            return;
+        }
+        if (isOnlineLiveIndividual && !hasGroupLiveMeeting(createForm)) {
+            toast.error(t('instructorDashboard.groupsSection.toasts.liveMeetingRequired'));
+            return;
+        }
+
         if (
             isIndividual &&
             createForm.createFirstSession &&
@@ -482,7 +512,7 @@ const GroupsSection = ({ courses = [] }) => {
                 ? await createIndividualCourseGroup({
                       ...commonPayload,
                       studentId: studentIdValue,
-                      createFirstSession: Boolean(createForm.createFirstSession),
+                      createFirstSession: isOnlineLiveIndividual || Boolean(createForm.createFirstSession),
                   })
                 : await createCourseGroup({
                       ...commonPayload,
@@ -598,6 +628,10 @@ const GroupsSection = ({ courses = [] }) => {
     }, [selectedCourseId, t]);
 
     const handleOpenEnrollModal = useCallback((group) => {
+        if (!canEnrollInGroup(group)) {
+            toast.error(t('instructorDashboard.groupsSection.toasts.enrollmentNotReady'));
+            return;
+        }
         setEnrollGroup(group);
         setEnrollForm({ userId: '', discountPercentage: '' });
         setEnrollUserSearch('');
@@ -605,7 +639,7 @@ const GroupsSection = ({ courses = [] }) => {
         setShowDropdown(false);
         setShowEnrollModal(true);
         loadGroupStudents(group);
-    }, [loadGroupStudents]);
+    }, [canEnrollInGroup, loadGroupStudents, t]);
 
     const handleOpenCreateModal = useCallback(() => {
         resetCreateForm();
@@ -908,6 +942,7 @@ const GroupsSection = ({ courses = [] }) => {
                                 const individualStudent = individualStudentsByGroupId[group.id];
                                 const individualStudentName = getStudentDisplayName(individualStudent);
                                 const individualGroupOccupied = individual && Number(group.activeStudentCount || 0) >= 1;
+                                const enrollmentReady = canEnrollInGroup(group);
 
                                 return (
                                 <div
@@ -1035,8 +1070,12 @@ const GroupsSection = ({ courses = [] }) => {
                                             type="button"
                                             onClick={() => handleOpenEnrollModal(group)}
                                             className="dashboard-button-secondary disabled:cursor-not-allowed disabled:opacity-60"
-                                            disabled={individualGroupOccupied}
-                                            title={individualGroupOccupied ? t('instructorDashboard.groupsSection.card.individualLimitTitle') : undefined}
+                                            disabled={individualGroupOccupied || !enrollmentReady}
+                                            title={individualGroupOccupied
+                                                ? t('instructorDashboard.groupsSection.card.individualLimitTitle')
+                                                : !enrollmentReady
+                                                  ? t('instructorDashboard.groupsSection.toasts.enrollmentNotReady')
+                                                  : undefined}
                                         >
                                             {individual
                                                 ? t('instructorDashboard.groupsSection.actions.addIndividualStudent')

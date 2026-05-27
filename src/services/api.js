@@ -2,6 +2,7 @@ export * from '../features/auth/api';
 export * from '../features/users/api';
 export * from '../features/courses/api';
 export * from '../features/ai/api';
+export * from '../features/aiLms/api';
 export * from '../features/categories/api';
 export * from '../features/progress/api';
 export * from '../features/student/api';

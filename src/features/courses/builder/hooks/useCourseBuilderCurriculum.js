@@ -1,7 +1,7 @@
 // Curriculum operations for useCourseBuilder hook
 // Extracted from CreateCourse.jsx and EditInstructorCourse.jsx
 
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 
@@ -42,6 +42,13 @@ import { getVideoDuration } from '../../../../utils/videoUtils';
 import { ensureQuizShape, normalizeQuizForApi } from '../../../../utils/quizUtils';
 import { ensureChallengeShape, normalizeChallengeForApi } from '../../../../utils/challengeUtils';
 import { isForbiddenError, parseApiError } from '../../../../shared/api/error';
+import {
+    acceptAiGeneration,
+    generateAiLessonKit,
+    generateAiLessonQuizDraft,
+    getAiLmsCapabilities,
+    rejectAiGeneration,
+} from '../../../aiLms/api';
 
 /**
  * Curriculum operations hook
@@ -75,6 +82,84 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
     // Refs for dirty tracking (edit mode)
     const dirtySectionIdsRef = useRef(new Set());
     const dirtyLessonIdsRef = useRef(new Set());
+    const [aiLessonQuizDraftEnabled, setAiLessonQuizDraftEnabled] = useState(false);
+    const [aiLessonQuizDraft, setAiLessonQuizDraft] = useState(null);
+    const [aiLessonQuizDraftingKey, setAiLessonQuizDraftingKey] = useState('');
+    const [aiLessonQuizDraftError, setAiLessonQuizDraftError] = useState('');
+    const [aiLessonKitDraftEnabled, setAiLessonKitDraftEnabled] = useState(false);
+    const [aiLessonKitDraft, setAiLessonKitDraft] = useState(null);
+    const [aiLessonKitDraftingKey, setAiLessonKitDraftingKey] = useState('');
+    const [aiLessonKitDraftError, setAiLessonKitDraftError] = useState('');
+
+    useEffect(() => {
+        let cancelled = false;
+        getAiLmsCapabilities(courseId)
+            .then((capabilities) => {
+                if (!cancelled) {
+                    setAiLessonQuizDraftEnabled(Boolean(capabilities?.lessonQuizDraft?.enabled));
+                    setAiLessonKitDraftEnabled(Boolean(capabilities?.lessonKit?.enabled));
+                }
+            })
+            .catch(() => {
+                if (!cancelled) {
+                    setAiLessonQuizDraftEnabled(false);
+                    setAiLessonKitDraftEnabled(false);
+                }
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [courseId]);
+
+    const quizDraftToEditorQuiz = useCallback((output) => ({
+        passingScore: output?.passingScore ?? 70,
+        timeLimitSeconds: null,
+        questions: (output?.questions || []).map((question) => {
+            const options = (question.options || [])
+                .filter((option) => option?.text?.trim())
+                .map((option) => ({
+                    id: undefined,
+                    text: option.text,
+                    isCorrect: Boolean(option.isCorrect),
+                }));
+
+            if (!options.some((option) => option.isCorrect) && options.length > 0) {
+                options[0].isCorrect = true;
+            }
+
+            return {
+                id: undefined,
+                prompt: question.prompt || '',
+                options,
+            };
+        }).filter((question) => question.prompt.trim() && question.options.length >= 2),
+    }), []);
+
+    const lessonKitToArticleContent = useCallback((output) => {
+        const lines = [];
+        if (output?.summary) {
+            lines.push(output.summary.trim());
+        }
+        if (output?.objectives?.length) {
+            lines.push('', `## ${t('ai.lessonKitObjectives')}`);
+            output.objectives.forEach((objective) => lines.push(`- ${objective}`));
+        }
+        if (output?.vocabulary?.length) {
+            lines.push('', `## ${t('ai.lessonKitVocabulary')}`);
+            output.vocabulary.forEach((item) => {
+                lines.push(`- **${item.term}**: ${item.definition}`);
+            });
+        }
+        if (output?.examples?.length) {
+            lines.push('', `## ${t('ai.lessonKitExamples')}`);
+            output.examples.forEach((example) => lines.push(`- ${example}`));
+        }
+        if (output?.homeworkIdea) {
+            lines.push('', `## ${t('ai.lessonKitHomeworkIdea')}`, output.homeworkIdea);
+        }
+        return lines.join('\n').trim();
+    }, [t]);
 
     // Mark section as dirty (edit mode)
     const markSectionDirtyByIndex = useCallback((sectionIndex, sourceSections = curriculum) => {
@@ -203,6 +288,142 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
             return updated;
         });
     }, [setCurriculum, markLessonDirtyByIndex]);
+
+    const handleRequestAiLessonQuizDraft = useCallback(async (sectionIndex, lessonIndex) => {
+        const lesson = curriculum?.[sectionIndex]?.lessons?.[lessonIndex];
+        if (!lesson?.id) {
+            toast.error(t('ai.lessonDraftRequiresSavedLesson'));
+            return;
+        }
+
+        const draftKey = `${sectionIndex}-${lessonIndex}`;
+        setAiLessonQuizDraftingKey(draftKey);
+        setAiLessonQuizDraftError('');
+        try {
+            const draft = await generateAiLessonQuizDraft(lesson.id, {
+                language: courseInfo.languageCode || 'ky',
+                questionCount: Math.max(3, lesson.quiz?.questions?.length || 3),
+                includeExplanations: false,
+            });
+            setAiLessonQuizDraft({ key: draftKey, generationId: draft.generationId, output: draft.output });
+            toast.success(t('ai.quizDraftReady'));
+        } catch (error) {
+            const message = parseApiError(error, t('ai.quizDraftFailed')).message;
+            setAiLessonQuizDraftError(message);
+            toast.error(message);
+        } finally {
+            setAiLessonQuizDraftingKey('');
+        }
+    }, [courseInfo.languageCode, curriculum, t]);
+
+    const handleUseAiLessonQuizDraft = useCallback(async (sectionIndex, lessonIndex) => {
+        if (!aiLessonQuizDraft || aiLessonQuizDraft.key !== `${sectionIndex}-${lessonIndex}`) return;
+
+        const nextQuiz = quizDraftToEditorQuiz(aiLessonQuizDraft.output);
+        if (!nextQuiz.questions.length) {
+            setAiLessonQuizDraftError(t('ai.quizDraftInvalid'));
+            return;
+        }
+
+        try {
+            await acceptAiGeneration(aiLessonQuizDraft.generationId);
+            handleQuizChange(sectionIndex, lessonIndex, nextQuiz);
+            setAiLessonQuizDraft(null);
+            setAiLessonQuizDraftError('');
+            toast.success(t('ai.quizDraftAccepted'));
+        } catch (error) {
+            toast.error(parseApiError(error, t('ai.feedbackDraftActionFailed')).message);
+        }
+    }, [aiLessonQuizDraft, handleQuizChange, quizDraftToEditorQuiz, t]);
+
+    const handleCancelAiLessonQuizDraft = useCallback(async () => {
+        if (!aiLessonQuizDraft) return;
+
+        try {
+            await rejectAiGeneration(aiLessonQuizDraft.generationId);
+            setAiLessonQuizDraft(null);
+            setAiLessonQuizDraftError('');
+            toast.success(t('ai.quizDraftRejected'));
+        } catch (error) {
+            toast.error(parseApiError(error, t('ai.feedbackDraftActionFailed')).message);
+        }
+    }, [aiLessonQuizDraft, t]);
+
+    const handleRequestAiLessonKitDraft = useCallback(async (sectionIndex, lessonIndex) => {
+        const section = curriculum?.[sectionIndex];
+        const lesson = section?.lessons?.[lessonIndex];
+        if (!lesson?.id) {
+            toast.error(t('ai.lessonDraftRequiresSavedLesson'));
+            return;
+        }
+
+        const draftKey = `${sectionIndex}-${lessonIndex}`;
+        setAiLessonKitDraftingKey(draftKey);
+        setAiLessonKitDraftError('');
+        try {
+            const draft = await generateAiLessonKit(lesson.id, {
+                language: courseInfo.languageCode || 'ky',
+                focus: lesson.title?.trim() || section.sectionTitle || section.title || undefined,
+                includeHomeworkIdea: true,
+            });
+            setAiLessonKitDraft({ key: draftKey, generationId: draft.generationId, output: draft.output });
+            toast.success(t('ai.lessonKitDraftReady'));
+        } catch (error) {
+            const message = parseApiError(error, t('ai.lessonKitDraftFailed')).message;
+            setAiLessonKitDraftError(message);
+            toast.error(message);
+        } finally {
+            setAiLessonKitDraftingKey('');
+        }
+    }, [courseInfo.languageCode, curriculum, t]);
+
+    const handleUseAiLessonKitDraft = useCallback(async (sectionIndex, lessonIndex) => {
+        if (!aiLessonKitDraft || aiLessonKitDraft.key !== `${sectionIndex}-${lessonIndex}`) return;
+
+        const content = lessonKitToArticleContent(aiLessonKitDraft.output);
+        if (!content) {
+            setAiLessonKitDraftError(t('ai.lessonKitDraftInvalid'));
+            return;
+        }
+
+        try {
+            await acceptAiGeneration(aiLessonKitDraft.generationId);
+            setCurriculum((prev) => {
+                const updated = [...prev];
+                const lesson = { ...updated[sectionIndex].lessons[lessonIndex] };
+                lesson.kind = 'article';
+                lesson.previewVideo = false;
+                lesson.videoKey = '';
+                lesson.content = content;
+                lesson.duration = lesson.duration || 600;
+                updated[sectionIndex] = {
+                    ...updated[sectionIndex],
+                    lessons: updated[sectionIndex].lessons.map((item, index) => index === lessonIndex ? lesson : item),
+                };
+                markLessonDirtyByIndex(sectionIndex, lessonIndex, updated);
+                markSectionDirtyByIndex(sectionIndex, updated);
+                return updated;
+            });
+            setAiLessonKitDraft(null);
+            setAiLessonKitDraftError('');
+            toast.success(t('ai.lessonKitDraftAccepted'));
+        } catch (error) {
+            toast.error(parseApiError(error, t('ai.feedbackDraftActionFailed')).message);
+        }
+    }, [aiLessonKitDraft, lessonKitToArticleContent, markLessonDirtyByIndex, markSectionDirtyByIndex, setCurriculum, t]);
+
+    const handleCancelAiLessonKitDraft = useCallback(async () => {
+        if (!aiLessonKitDraft) return;
+
+        try {
+            await rejectAiGeneration(aiLessonKitDraft.generationId);
+            setAiLessonKitDraft(null);
+            setAiLessonKitDraftError('');
+            toast.success(t('ai.lessonKitDraftRejected'));
+        } catch (error) {
+            toast.error(parseApiError(error, t('ai.feedbackDraftActionFailed')).message);
+        }
+    }, [aiLessonKitDraft, t]);
 
     const handleChallengeChange = useCallback((sectionIndex, lessonIndex, newChallenge) => {
         setCurriculum((prev) => {
@@ -775,6 +996,20 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
 
         // Content operations
         handleQuizChange,
+        aiLessonQuizDraftEnabled,
+        aiLessonQuizDraft,
+        aiLessonQuizDraftingKey,
+        aiLessonQuizDraftError,
+        handleRequestAiLessonQuizDraft,
+        handleUseAiLessonQuizDraft,
+        handleCancelAiLessonQuizDraft,
+        aiLessonKitDraftEnabled,
+        aiLessonKitDraft,
+        aiLessonKitDraftingKey,
+        aiLessonKitDraftError,
+        handleRequestAiLessonKitDraft,
+        handleUseAiLessonKitDraft,
+        handleCancelAiLessonKitDraft,
         handleChallengeChange,
         handleFileUpload,
 

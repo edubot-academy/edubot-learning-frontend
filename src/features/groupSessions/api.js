@@ -252,6 +252,24 @@ export const uploadSessionMaterial = async (id, file) => {
     return data;
 };
 
+export const createGeneratedSessionMaterial = async (id, payload = {}) => {
+    const sessionId = ensurePositiveInt(id, 'id');
+    const title = ensureNonEmptyString(payload.title, 'title');
+    const content = ensureNonEmptyString(payload.content, 'content');
+    const format = String(payload.format || '').trim().toLowerCase();
+
+    if (!['pdf', 'docx'].includes(format)) {
+        throw new Error('format must be one of: pdf, docx');
+    }
+
+    const { data } = await api.post(`/group-sessions/${sessionId}/materials/generated`, {
+        title,
+        content,
+        format,
+    });
+    return data;
+};
+
 export const fetchSessionActivities = async (id) => {
     const sessionId = ensurePositiveInt(id, 'id');
     const { data } = await api.get(`/group-sessions/${sessionId}/activities`);

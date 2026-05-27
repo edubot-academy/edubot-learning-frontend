@@ -1,7 +1,9 @@
 // Course Info Step component
 // Shared between CreateCourse and EditInstructorCourse
 // Extracted from Step 1 JSX in both components
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import AiGenerationDrawer from '../../../aiLms/components/AiGenerationDrawer';
 
 /**
  * Course Info Step component
@@ -25,9 +27,17 @@ export const CourseInfoStep = ({
     categories,
     mode = 'create',
     handleCourseSubmit,
+    aiCourseDraftEnabled = false,
+    aiCourseDraft = null,
+    aiCourseDrafting = false,
+    aiCourseDraftError = '',
+    onRequestAiCourseDraft,
+    onUseAiCourseDraft,
+    onCancelAiCourseDraft,
     disabled = false,
 }) => {
     const { t } = useTranslation();
+    const [isAiCourseDrawerOpen, setIsAiCourseDrawerOpen] = useState(false);
     const fieldIds = {
         title: 'course-info-title',
         subtitle: 'course-info-subtitle',
@@ -52,6 +62,89 @@ export const CourseInfoStep = ({
                     </p>
                 </div>
             )}
+
+            {mode === 'create' && aiCourseDraftEnabled ? (
+                <section className="rounded-2xl border border-sky-200 bg-sky-50 p-5 text-sm dark:border-sky-900 dark:bg-sky-950/30">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                            <p className="font-semibold text-slate-900 dark:text-white">{t('ai.courseDraft')}</p>
+                            <p className="mt-1 text-slate-600 dark:text-slate-300">{t('ai.courseDraftHelp')}</p>
+                        </div>
+                        <button
+                            type="button"
+                            className="rounded border border-sky-300 bg-white px-3 py-1.5 text-sm font-medium text-sky-800 hover:bg-sky-100 disabled:opacity-50 dark:border-sky-700 dark:bg-slate-900 dark:text-sky-200"
+                            onClick={() => setIsAiCourseDrawerOpen(true)}
+                            disabled={disabled}
+                        >
+                            {aiCourseDraft ? t('ai.openPreview') : t('ai.openGenerator')}
+                        </button>
+                    </div>
+                    <AiGenerationDrawer
+                        isOpen={isAiCourseDrawerOpen}
+                        title={t('ai.courseDraft')}
+                        description={t('ai.courseDraftHelp')}
+                        onClose={() => setIsAiCourseDrawerOpen(false)}
+                        footer={(
+                            <div className="flex flex-wrap justify-end gap-2">
+                                {aiCourseDraft ? (
+                                    <>
+                                        <button
+                                            type="button"
+                                            className="dashboard-button-secondary"
+                                            onClick={onCancelAiCourseDraft}
+                                            disabled={disabled}
+                                        >
+                                            {t('ai.cancelDraft')}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="dashboard-button-primary"
+                                            onClick={onUseAiCourseDraft}
+                                            disabled={disabled}
+                                        >
+                                            {t('ai.useDraft')}
+                                        </button>
+                                    </>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        className="dashboard-button-primary disabled:opacity-60"
+                                        onClick={onRequestAiCourseDraft}
+                                        disabled={disabled || aiCourseDrafting || !courseInfo.title?.trim()}
+                                    >
+                                        {aiCourseDrafting ? t('ai.generating') : t('ai.suggestCourse')}
+                                    </button>
+                                )}
+                            </div>
+                        )}
+                    >
+                        <div className="space-y-4">
+                            <div className="rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-sm text-slate-600 dark:border-sky-900 dark:bg-sky-950/30 dark:text-slate-300">
+                                {t('ai.courseDraftHelp')}
+                            </div>
+                            {aiCourseDraft ? (
+                                <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+                                    <p className="font-medium text-slate-900 dark:text-white">{aiCourseDraft.title}</p>
+                                    <p className="mt-1 text-slate-600 dark:text-slate-300">{aiCourseDraft.description}</p>
+                                    {aiCourseDraft.sections?.length ? (
+                                        <ol className="mt-3 list-decimal space-y-2 pl-5 text-slate-600 dark:text-slate-300">
+                                            {aiCourseDraft.sections.slice(0, 4).map((section, index) => (
+                                                <li key={`${section.title}-${index}`}>
+                                                    {section.title}
+                                                    {section.lessons?.length ? (
+                                                        <span className="text-slate-500"> · {t('ai.lessonCount', { count: section.lessons.length })}</span>
+                                                    ) : null}
+                                                </li>
+                                            ))}
+                                        </ol>
+                                    ) : null}
+                                </div>
+                            ) : null}
+                            {aiCourseDraftError ? <p className="text-sm text-rose-600">{aiCourseDraftError}</p> : null}
+                        </div>
+                    </AiGenerationDrawer>
+                </section>
+            ) : null}
 
             {/* Basic Information */}
             <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 p-5 shadow-sm">

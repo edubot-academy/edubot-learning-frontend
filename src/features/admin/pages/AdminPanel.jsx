@@ -19,6 +19,7 @@ import AdminCoursesTab from '../components/AdminCoursesTab';
 import AdminCompaniesTab from '../components/AdminCompaniesTab';
 import AdminSkillsTab from '../components/AdminSkillsTab';
 import AdminAiPromptsTab from '../components/AdminAiPromptsTab';
+import AdminAiLmsSettingsTab from '../components/AdminAiLmsSettingsTab';
 import AdminContactsTab from '../components/AdminContactsTab';
 import AdminPendingCoursesTab from '../components/AdminPendingCoursesTab';
 import { CertificatesSection } from '@features/instructor-dashboard';
@@ -344,7 +345,7 @@ const AdminPanel = () => {
     }, [activeTab, aiPromptCourseId, loadPromptsForCourse]);
 
     useEffect(() => {
-        if (activeTab === 'companies') {
+        if (activeTab === 'companies' || activeTab === 'ai-lms') {
             loadCompanies();
         }
     }, [companySearch, activeTab, loadCompanies]);
@@ -538,6 +539,9 @@ const AdminPanel = () => {
                         onDeletePrompt={handleDeletePrompt}
                     />
                 );
+
+            case 'ai-lms':
+                return <AdminAiLmsSettingsTab companies={companies} />;
 
             case 'notifications':
                 return (

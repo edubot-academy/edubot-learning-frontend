@@ -1337,6 +1337,8 @@ export const instructor = {
                 individualNameRequired: "Жеке курс үчүн аталыш милдеттүү.",
                 studentRequired: "Жеке курс үчүн студентти тандаңыз.",
                 firstSessionScheduleRequired: "Биринчи сессия үчүн баштоо датасын жана толук график блогун кошуңуз.",
+                liveMeetingRequired: "Жеке онлайн live курс түзүүдөн мурун жолугушуу платформасын же шилтемесин кошуңуз.",
+                enrollmentNotReady: "Группа ачылып, live сессиялар жолугушуу маалыматы менен пландалмайынча каттоо жабык.",
                 individualCreated: "Жеке курс түзүлдү.",
                 groupCreated: "Группа түзүлдү.",
                 selectGroupForEdit: "Өзгөртүү үчүн группа тандаңыз.",

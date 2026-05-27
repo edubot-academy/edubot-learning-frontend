@@ -99,7 +99,15 @@ export const parseApiError = (error, fallbackMessage = i18n.t('errors.generic'))
     const status = error?.response?.status ?? null;
 
     const code = getApiErrorCode(error);
-    const requestId = payload?.requestId || stableError?.requestId || null;
+    const headers = error?.response?.headers || {};
+    const requestId =
+        stableError?.requestId ||
+        payload?.requestId ||
+        stableError?.traceId ||
+        payload?.traceId ||
+        headers['x-request-id'] ||
+        headers['x-correlation-id'] ||
+        null;
     const timestamp = payload?.timestamp || stableError?.timestamp || null;
 
     return {

@@ -1,9 +1,23 @@
 import InlineRichText from '@shared/ui/InlineRichText';
 import { createEmptyQuestion, createEmptyQuiz, cloneQuiz } from '@utils/quizUtils';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import AiGenerationDrawer from '../../aiLms/components/AiGenerationDrawer';
 
-const LessonQuizEditor = ({ quiz, onChange, disabled = false }) => {
+const LessonQuizEditor = ({
+    quiz,
+    onChange,
+    disabled = false,
+    aiDraftEnabled = false,
+    aiDraft = null,
+    aiDrafting = false,
+    aiDraftError = '',
+    onRequestAiDraft,
+    onUseAiDraft,
+    onCancelAiDraft,
+}) => {
     const { t } = useTranslation();
+    const [isAiDrawerOpen, setIsAiDrawerOpen] = useState(false);
     const safeQuiz = quiz ?? createEmptyQuiz();
 
     const updateQuiz = (updater) => {
@@ -143,6 +157,111 @@ const LessonQuizEditor = ({ quiz, onChange, disabled = false }) => {
                 <code>**{t('instructorDashboard.courseBuilder.quiz.boldSample')}**</code>{' '}
                 {t('instructorDashboard.courseBuilder.quiz.and')} <code>`{t('instructorDashboard.courseBuilder.quiz.codeSample')}`</code>.
             </p>
+
+            {aiDraftEnabled ? (
+                <section className="rounded-lg border border-sky-200 bg-sky-50 p-4 text-sm dark:border-sky-900 dark:bg-sky-950/30">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                            <p className="font-semibold text-slate-900 dark:text-white">
+                                {t('ai.quizDraft')}
+                            </p>
+                            <p className="text-slate-600 dark:text-slate-300">
+                                {t('ai.quizDraftHelp')}
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            className="rounded border border-sky-300 bg-white px-3 py-1.5 text-sm font-medium text-sky-800 hover:bg-sky-100 disabled:opacity-50 dark:border-sky-700 dark:bg-slate-900 dark:text-sky-200"
+                            onClick={() => setIsAiDrawerOpen(true)}
+                            disabled={disabled}
+                        >
+                            {aiDraft ? t('ai.openPreview') : t('ai.openGenerator')}
+                        </button>
+                    </div>
+                    <AiGenerationDrawer
+                        isOpen={isAiDrawerOpen}
+                        title={t('ai.quizDraft')}
+                        description={t('ai.quizDraftHelp')}
+                        onClose={() => setIsAiDrawerOpen(false)}
+                        footer={(
+                            <div className="flex flex-wrap justify-end gap-2">
+                                {aiDraft ? (
+                                    <>
+                                        <button
+                                            type="button"
+                                            className="dashboard-button-secondary"
+                                            onClick={onCancelAiDraft}
+                                            disabled={disabled}
+                                        >
+                                            {t('ai.cancelDraft')}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="dashboard-button-primary"
+                                            onClick={onUseAiDraft}
+                                            disabled={disabled}
+                                        >
+                                            {t('ai.useDraft')}
+                                        </button>
+                                    </>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        className="dashboard-button-primary disabled:opacity-60"
+                                        onClick={onRequestAiDraft}
+                                        disabled={disabled || aiDrafting}
+                                    >
+                                        {aiDrafting ? t('ai.generating') : t('ai.suggestQuiz')}
+                                    </button>
+                                )}
+                            </div>
+                        )}
+                    >
+                        <div className="space-y-4">
+                            <div className="grid gap-2 text-xs text-slate-600 dark:text-slate-300 sm:grid-cols-3">
+                                <div className="rounded-2xl border border-sky-100 bg-sky-50 px-3 py-2 dark:border-sky-900 dark:bg-sky-950/30">
+                                    <span className="font-semibold text-slate-900 dark:text-white">{t('ai.quizDraftFlow.createsLabel')}</span>
+                                    <span className="mt-1 block">{t('ai.quizDraftFlow.creates')}</span>
+                                </div>
+                                <div className="rounded-2xl border border-sky-100 bg-sky-50 px-3 py-2 dark:border-sky-900 dark:bg-sky-950/30">
+                                    <span className="font-semibold text-slate-900 dark:text-white">{t('ai.quizDraftFlow.appliesLabel')}</span>
+                                    <span className="mt-1 block">{t('ai.quizDraftFlow.applies')}</span>
+                                </div>
+                                <div className="rounded-2xl border border-sky-100 bg-sky-50 px-3 py-2 dark:border-sky-900 dark:bg-sky-950/30">
+                                    <span className="font-semibold text-slate-900 dark:text-white">{t('ai.quizDraftFlow.nextLabel')}</span>
+                                    <span className="mt-1 block">{t('ai.quizDraftFlow.next')}</span>
+                                </div>
+                            </div>
+                            {aiDraft ? (
+                                <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+                                    <p className="font-semibold text-slate-900 dark:text-white">{aiDraft.title}</p>
+                                    {aiDraft.description ? (
+                                        <p className="mt-1 text-slate-600 dark:text-slate-300">{aiDraft.description}</p>
+                                    ) : null}
+                                    <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                                        {t('ai.questionCount', { count: aiDraft.questions?.length ?? 0 })}
+                                    </p>
+                                    <div className="mt-3 space-y-3">
+                                        {(aiDraft.questions || []).map((question, questionIndex) => (
+                                            <div key={`${question.prompt || 'question'}-${questionIndex}`} className="rounded-2xl border border-sky-100 bg-sky-50/60 p-3 dark:border-sky-900 dark:bg-sky-950/30">
+                                                <p className="text-sm font-semibold text-slate-900 dark:text-white">{questionIndex + 1}. {question.prompt}</p>
+                                                <ul className="mt-2 space-y-1 text-xs text-slate-600 dark:text-slate-300">
+                                                    {(question.options || []).map((option, optionIndex) => (
+                                                        <li key={`${option.text || 'option'}-${optionIndex}`} className={option.isCorrect ? 'font-semibold text-emerald-700 dark:text-emerald-300' : ''}>
+                                                            {option.isCorrect ? `${t('ai.quizDraftCorrect')} ` : ''}{option.text}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : null}
+                            {aiDraftError ? <p className="text-sm text-rose-600">{aiDraftError}</p> : null}
+                        </div>
+                    </AiGenerationDrawer>
+                </section>
+            ) : null}
 
             <div className="space-y-6">
                 {safeQuiz.questions.map((question, qIdx) => (

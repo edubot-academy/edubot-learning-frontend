@@ -67,6 +67,20 @@ const EditInstructorCourse = () => {
         handleUpdateLesson,
         handleDeleteLesson,
         handleQuizChange,
+        aiLessonQuizDraftEnabled,
+        aiLessonQuizDraft,
+        aiLessonQuizDraftingKey,
+        aiLessonQuizDraftError,
+        handleRequestAiLessonQuizDraft,
+        handleUseAiLessonQuizDraft,
+        handleCancelAiLessonQuizDraft,
+        aiLessonKitDraftEnabled,
+        aiLessonKitDraft,
+        aiLessonKitDraftingKey,
+        aiLessonKitDraftError,
+        handleRequestAiLessonKitDraft,
+        handleUseAiLessonKitDraft,
+        handleCancelAiLessonKitDraft,
         handleChallengeChange,
         handleFileUpload,
         handleSectionDrop,
@@ -219,6 +233,20 @@ const EditInstructorCourse = () => {
                     handleUpdateLesson={handleUpdateLesson}
                     handleDeleteLesson={handleDeleteLesson}
                     handleQuizChange={handleQuizChange}
+                    aiLessonQuizDraftEnabled={aiLessonQuizDraftEnabled}
+                    aiLessonQuizDraft={aiLessonQuizDraft}
+                    aiLessonQuizDraftingKey={aiLessonQuizDraftingKey}
+                    aiLessonQuizDraftError={aiLessonQuizDraftError}
+                    handleRequestAiLessonQuizDraft={handleRequestAiLessonQuizDraft}
+                    handleUseAiLessonQuizDraft={handleUseAiLessonQuizDraft}
+                    handleCancelAiLessonQuizDraft={handleCancelAiLessonQuizDraft}
+                    aiLessonKitDraftEnabled={aiLessonKitDraftEnabled}
+                    aiLessonKitDraft={aiLessonKitDraft}
+                    aiLessonKitDraftingKey={aiLessonKitDraftingKey}
+                    aiLessonKitDraftError={aiLessonKitDraftError}
+                    handleRequestAiLessonKitDraft={handleRequestAiLessonKitDraft}
+                    handleUseAiLessonKitDraft={handleUseAiLessonKitDraft}
+                    handleCancelAiLessonKitDraft={handleCancelAiLessonKitDraft}
                     handleChallengeChange={handleChallengeChange}
                     handleFileUpload={handleFileUpload}
                     handleSectionDrop={handleSectionDrop}

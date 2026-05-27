@@ -232,6 +232,12 @@ export const fetchCourseGroups = async ({ courseId, status } = {}) => {
     return data;
 };
 
+export const fetchCourseDeliveryContext = async (courseId) => {
+    const id = ensurePositiveInt(courseId, 'courseId');
+    const { data } = await api.get(`/courses/${id}/delivery-context`);
+    return data;
+};
+
 export const fetchCourseGroupStudents = async (
     groupId,
     { page = 1, limit = 200, q, progressGte, progressLte } = {}

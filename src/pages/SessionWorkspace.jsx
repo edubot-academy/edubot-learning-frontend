@@ -1191,6 +1191,7 @@ const SessionWorkspace = () => {
                                 selectedSourceVideoCourseId={selectedSourceVideoCourseId}
                                 selectedDeliveryType={selectedDeliveryType}
                                 selectedGroupLocation={selectedGroup?.location || ''}
+                                selectedSession={selectedSession}
                                 selectedSessionId={selectedSessionId}
                                 selectedSessionJoinAllowed={selectedSessionJoinAllowed}
                                 selectedSessionJoinUrl={selectedSessionJoinUrl}
@@ -1260,6 +1261,7 @@ const SessionWorkspace = () => {
                         {activeTab === 'activities' && (
                             <SessionActivitiesTab
                                 activities={Array.isArray(selectedSession?.activities) ? selectedSession.activities : []}
+                                selectedSession={selectedSession}
                                 canEdit={Boolean(selectedSessionId)}
                                 onCreateActivity={createActivityItem}
                                 onUpdateActivity={updateActivityItem}

@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import {
     DEFAULT_COURSE_INFO,
     createDefaultCurriculum,
+    getDefaultSectionTitle,
 } from '../constants';
 import { getStepItems } from '../utils';
 import {
@@ -28,6 +29,12 @@ import { useCourseBuilderCurriculum } from './useCourseBuilderCurriculum';
 import { deleteSection } from '../../api';
 import { fetchSkills } from '../../../skills/api';
 import { isForbiddenError, parseApiError } from '../../../../shared/api/error';
+import {
+    acceptAiGeneration,
+    generateAiCourseDraft,
+    getAiLmsCapabilities,
+    rejectAiGeneration,
+} from '../../../aiLms/api';
 import {
     loadCreateCourseBuilderData,
     loadEditCourseBuilderData,
@@ -101,6 +108,10 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
     const [lastDraftSavedAt, setLastDraftSavedAt] = useState('');
     const [draftHydrated, setDraftHydrated] = useState(mode !== 'create');
     const draftDiscardedRef = useRef(false);
+    const [aiCourseDraftEnabled, setAiCourseDraftEnabled] = useState(false);
+    const [aiCourseDraft, setAiCourseDraft] = useState(null);
+    const [aiCourseDrafting, setAiCourseDrafting] = useState(false);
+    const [aiCourseDraftError, setAiCourseDraftError] = useState('');
 
     // Confirmation state
     const [confirmDelete, setConfirmDelete] = useState({
@@ -334,6 +345,115 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
         return { cleared: true, preservedServerDraft: false };
     }, [courseId, mode]);
 
+    const courseDraftToCurriculum = useCallback((output) => {
+        const sections = Array.isArray(output?.sections) ? output.sections : [];
+        if (!sections.length) return curriculum;
+
+        const mappedSections = sections.map((section, sectionIndex) => ({
+            sectionTitle:
+                section.title ||
+                getDefaultSectionTitle(output?.languageCode || courseInfo.languageCode || 'ky', sectionIndex + 1),
+            skillId: '',
+            lessons: (Array.isArray(section.lessons) ? section.lessons : []).map((lesson, lessonIndex) => {
+                const objectiveText = Array.isArray(lesson.objectives) && lesson.objectives.length
+                    ? `\n\n${lesson.objectives.map((objective) => `- ${objective}`).join('\n')}`
+                    : '';
+                return {
+                    title:
+                        lesson.title ||
+                        t('instructorDashboard.courseBuilder.fallbacks.lesson', { number: lessonIndex + 1 }),
+                    content: `${lesson.description || section.description || output.description || ''}${objectiveText}`.trim(),
+                    kind: 'article',
+                    videoKey: '',
+                    videoUrl: '',
+                    duration: 600,
+                    resources: [],
+                    quiz: null,
+                    challenge: null,
+                    uploading: { video: false, resource: false },
+                    uploadProgress: { video: 0, resource: 0 },
+                };
+            }),
+        })).filter((section) => section.lessons.length > 0);
+
+        return mappedSections.length ? mappedSections : curriculum;
+    }, [courseInfo.languageCode, curriculum, t]);
+
+    const requestAiCourseDraft = useCallback(async () => {
+        const topic = courseInfo.title?.trim();
+        if (!topic) {
+            setAiCourseDraftError(t('ai.courseDraftTopicRequired'));
+            return;
+        }
+
+        setAiCourseDrafting(true);
+        setAiCourseDraftError('');
+        try {
+            const draft = await generateAiCourseDraft({
+                language: courseInfo.languageCode || 'ky',
+                topic,
+                targetAudience: courseInfo.description?.trim() || undefined,
+                courseType: 'video',
+                sectionCount: 4,
+                lessonsPerSection: 4,
+            });
+            setAiCourseDraft({ generationId: draft.generationId, output: draft.output });
+            toast.success(t('ai.courseDraftReady'));
+        } catch (error) {
+            const message = parseApiError(error, t('ai.courseDraftFailed')).message;
+            setAiCourseDraftError(message);
+            toast.error(message);
+        } finally {
+            setAiCourseDrafting(false);
+        }
+    }, [courseInfo.description, courseInfo.languageCode, courseInfo.title, t]);
+
+    const useAiCourseDraft = useCallback(async () => {
+        if (!aiCourseDraft?.output) return;
+
+        const output = aiCourseDraft.output;
+        try {
+            await acceptAiGeneration(aiCourseDraft.generationId);
+            setCourseInfo((prev) => ({
+                ...prev,
+                title: output.title || prev.title,
+                subtitle: output.subtitle || prev.subtitle,
+                description: output.description || prev.description,
+                languageCode: output.languageCode || prev.languageCode || 'ky',
+                learningOutcomesText: Array.isArray(output.learningOutcomes)
+                    ? output.learningOutcomes.join('\n')
+                    : prev.learningOutcomesText,
+            }));
+            setInfoTouched((prev) => ({
+                ...prev,
+                title: true,
+                subtitle: true,
+                description: true,
+                languageCode: true,
+                learningOutcomesText: true,
+            }));
+            setCurriculum(courseDraftToCurriculum(output));
+            setAiCourseDraft(null);
+            setAiCourseDraftError('');
+            toast.success(t('ai.courseDraftAccepted'));
+        } catch (error) {
+            toast.error(parseApiError(error, t('ai.feedbackDraftActionFailed')).message);
+        }
+    }, [aiCourseDraft, courseDraftToCurriculum, setCourseInfo, setCurriculum, setInfoTouched, t]);
+
+    const cancelAiCourseDraft = useCallback(async () => {
+        if (!aiCourseDraft) return;
+
+        try {
+            await rejectAiGeneration(aiCourseDraft.generationId);
+            setAiCourseDraft(null);
+            setAiCourseDraftError('');
+            toast.success(t('ai.courseDraftRejected'));
+        } catch (error) {
+            toast.error(parseApiError(error, t('ai.feedbackDraftActionFailed')).message);
+        }
+    }, [aiCourseDraft, t]);
+
     // Effects
     useEffect(() => {
         tRef.current = t;
@@ -343,6 +463,26 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
     useEffect(() => {
         loadInitialData();
     }, [loadInitialData]);
+
+    useEffect(() => {
+        if (mode !== 'create') {
+            setAiCourseDraftEnabled(false);
+            return undefined;
+        }
+
+        let cancelled = false;
+        getAiLmsCapabilities(courseId)
+            .then((capabilities) => {
+                if (!cancelled) setAiCourseDraftEnabled(Boolean(capabilities?.courseDraft?.enabled));
+            })
+            .catch(() => {
+                if (!cancelled) setAiCourseDraftEnabled(false);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [courseId, mode]);
 
     useEffect(() => {
         if (mode === 'create' && draftHydrated) {
@@ -465,6 +605,10 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
         setConfirmDelete,
         draftLoadedAt,
         lastDraftSavedAt,
+        aiCourseDraftEnabled,
+        aiCourseDraft,
+        aiCourseDrafting,
+        aiCourseDraftError,
 
         // Computed values
         stepItems,
@@ -481,6 +625,9 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
         loadSkillsList,
         saveDraft,
         discardDraft,
+        requestAiCourseDraft,
+        useAiCourseDraft,
+        cancelAiCourseDraft,
 
         // Mode info
         mode,

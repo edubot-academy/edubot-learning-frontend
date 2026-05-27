@@ -13,8 +13,12 @@ import {
     FiTrash2,
     FiUsers,
     FiX,
+    FiZap,
 } from 'react-icons/fi';
 import { DashboardInsetPanel } from '../../../components/ui/dashboard';
+import { parseApiError } from '../../../shared/api/error';
+import { acceptAiGeneration, generateAiFeedbackDraft, generateAiSessionQuizDraft, getAiLmsCapabilities, rejectAiGeneration } from '../../aiLms/api';
+import AiGenerationDrawer from '../../aiLms/components/AiGenerationDrawer';
 
 const ACTIVITY_TYPE_OPTIONS = [
     { value: 'discussion', labelKey: 'groupSessions.activities.types.discussion', icon: FiMessageSquare },
@@ -158,12 +162,28 @@ const ActivityEditor = ({
     onSave,
     saving,
     saveLabel,
+    aiQuizDraftEnabled,
+    aiQuizDraft,
+    aiQuizDrafting,
+    aiQuizDraftError,
+    onRequestAiQuizDraft,
+    onUseAiQuizDraft,
+    onCancelAiQuizDraft,
 }) => {
     const { t } = useTranslation();
+    const [isAiDrawerOpen, setIsAiDrawerOpen] = useState(false);
+    const [quizBrief, setQuizBrief] = useState({
+        topic: activity.title || '',
+        questionCount: String(Math.max(3, activity.questions?.length || 3)),
+        difficulty: '',
+        questionMode: 'mixed',
+        includeExplanations: false,
+    });
     const meta = typeMeta[activity.type] || typeMeta.discussion;
     const currentStatusOption =
         ACTIVITY_STATUS_OPTIONS.find((option) => option.value === activity.status) ||
         ACTIVITY_STATUS_OPTIONS[0];
+    const quizDraftOutput = aiQuizDraft || null;
 
     return (
         <div className="rounded-[1.5rem] border border-edubot-line/80 bg-white p-4 dark:border-slate-700 dark:bg-slate-950">
@@ -271,6 +291,112 @@ const ActivityEditor = ({
                             {t('groupSessions.activities.actions.toggle')}
                         </span>
                     </summary>
+
+                    {aiQuizDraftEnabled ? (
+                        <section className="mt-4 rounded-[1.25rem] border border-sky-200 bg-sky-50 p-4 text-sm dark:border-sky-900 dark:bg-sky-950/30">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <p className="font-semibold text-edubot-ink dark:text-white">{t('ai.quizDraft')}</p>
+                                    <p className="mt-1 text-edubot-muted dark:text-slate-300">{t('ai.quizDraftHelp')}</p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsAiDrawerOpen(true)}
+                                    className="inline-flex min-h-10 items-center gap-2 rounded-full border border-sky-300 bg-white px-4 py-2 text-sm font-semibold text-sky-800 transition hover:bg-sky-100 dark:border-sky-700 dark:bg-slate-950 dark:text-sky-200"
+                                >
+                                    <FiZap className="h-4 w-4" />
+                                    {aiQuizDraft ? t('ai.openPreview') : t('ai.openGenerator')}
+                                </button>
+                            </div>
+                            <AiGenerationDrawer
+                                isOpen={isAiDrawerOpen}
+                                title={t('ai.quizDraft')}
+                                description={t('ai.quizDraftHelp')}
+                                onClose={() => setIsAiDrawerOpen(false)}
+                                footer={(
+                                    <div className="flex flex-wrap justify-end gap-2">
+                                        {aiQuizDraft ? (
+                                            <>
+                                                <button type="button" onClick={onCancelAiQuizDraft} className="dashboard-button-secondary">
+                                                    {t('ai.cancelDraft')}
+                                                </button>
+                                                <button type="button" onClick={onUseAiQuizDraft} className="dashboard-button-primary">
+                                                    {t('ai.useDraft')}
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <button
+                                                type="button"
+                                                onClick={() => onRequestAiQuizDraft(quizBrief)}
+                                                disabled={aiQuizDrafting}
+                                                className="dashboard-button-primary disabled:opacity-60"
+                                            >
+                                                {aiQuizDrafting ? t('ai.generating') : t('ai.suggestQuiz')}
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
+                            >
+                                <div className="space-y-4">
+                                    <div className="grid gap-2 text-xs text-edubot-muted dark:text-slate-300 sm:grid-cols-3">
+                                        <div className="rounded-2xl border border-sky-100 bg-sky-50 px-3 py-2 dark:border-sky-900 dark:bg-sky-950/30">
+                                            <span className="font-semibold text-edubot-ink dark:text-white">{t('ai.quizDraftFlow.createsLabel')}</span>
+                                            <span className="mt-1 block">{t('ai.quizDraftFlow.creates')}</span>
+                                        </div>
+                                        <div className="rounded-2xl border border-sky-100 bg-sky-50 px-3 py-2 dark:border-sky-900 dark:bg-sky-950/30">
+                                            <span className="font-semibold text-edubot-ink dark:text-white">{t('ai.quizDraftFlow.appliesLabel')}</span>
+                                            <span className="mt-1 block">{t('ai.quizDraftFlow.applies')}</span>
+                                        </div>
+                                        <div className="rounded-2xl border border-sky-100 bg-sky-50 px-3 py-2 dark:border-sky-900 dark:bg-sky-950/30">
+                                            <span className="font-semibold text-edubot-ink dark:text-white">{t('ai.quizDraftFlow.nextLabel')}</span>
+                                            <span className="mt-1 block">{t('ai.quizDraftFlow.next')}</span>
+                                        </div>
+                                    </div>
+                                    <div className="grid gap-3 md:grid-cols-2">
+                                        <input value={quizBrief.topic} onChange={(event) => setQuizBrief((prev) => ({ ...prev, topic: event.target.value }))} placeholder={t('ai.quizBrief.topicPlaceholder')} className="dashboard-field" />
+                                        <input type="number" min="1" max="20" value={quizBrief.questionCount} onChange={(event) => setQuizBrief((prev) => ({ ...prev, questionCount: event.target.value }))} aria-label={t('ai.quizBrief.questionCount')} className="dashboard-field" />
+                                        <select value={quizBrief.difficulty} onChange={(event) => setQuizBrief((prev) => ({ ...prev, difficulty: event.target.value }))} className="dashboard-field dashboard-select">
+                                            <option value="">{t('ai.quizBrief.difficultyAuto')}</option>
+                                            <option value="beginner">{t('ai.homeworkBrief.difficultyBeginner')}</option>
+                                            <option value="intermediate">{t('ai.homeworkBrief.difficultyIntermediate')}</option>
+                                            <option value="advanced">{t('ai.homeworkBrief.difficultyAdvanced')}</option>
+                                        </select>
+                                        <select value={quizBrief.questionMode} onChange={(event) => setQuizBrief((prev) => ({ ...prev, questionMode: event.target.value }))} className="dashboard-field dashboard-select">
+                                            <option value="mixed">{t('ai.quizBrief.modeMixed')}</option>
+                                            <option value="single_choice">{t('groupSessions.activities.quiz.singleChoice')}</option>
+                                            <option value="multiple_choice">{t('groupSessions.activities.quiz.multipleChoice')}</option>
+                                        </select>
+                                    </div>
+                                    <label className="inline-flex items-center gap-2 text-sm font-semibold text-edubot-muted dark:text-slate-300">
+                                        <input type="checkbox" checked={quizBrief.includeExplanations} onChange={(event) => setQuizBrief((prev) => ({ ...prev, includeExplanations: event.target.checked }))} className="h-4 w-4 rounded border-edubot-line text-edubot-orange focus:ring-edubot-orange" />
+                                        {t('ai.quizBrief.includeExplanations')}
+                                    </label>
+                                    {quizDraftOutput ? (
+                                        <div className="rounded-2xl border border-edubot-line bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+                                            <p className="font-semibold text-edubot-ink dark:text-white">{quizDraftOutput.title}</p>
+                                            {quizDraftOutput.description ? <p className="mt-1 text-edubot-muted dark:text-slate-300">{quizDraftOutput.description}</p> : null}
+                                            <p className="mt-2 text-xs text-edubot-muted dark:text-slate-400">{t('ai.questionCount', { count: quizDraftOutput.questions?.length ?? 0 })}</p>
+                                            <div className="mt-3 space-y-3">
+                                                {(quizDraftOutput.questions || []).map((question, questionIndex) => (
+                                                    <div key={`${question.prompt || 'question'}-${questionIndex}`} className="rounded-2xl border border-sky-100 bg-sky-50/60 p-3 dark:border-sky-900 dark:bg-sky-950/30">
+                                                        <p className="text-sm font-semibold text-edubot-ink dark:text-white">{questionIndex + 1}. {question.prompt}</p>
+                                                        <ul className="mt-2 space-y-1 text-xs text-edubot-muted dark:text-slate-300">
+                                                            {(question.options || []).map((option, optionIndex) => (
+                                                                <li key={`${option.text || 'option'}-${optionIndex}`} className={option.isCorrect ? 'font-semibold text-emerald-700 dark:text-emerald-300' : ''}>
+                                                                    {option.isCorrect ? `${t('ai.quizDraftCorrect')} ` : ''}{option.text}
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ) : null}
+                                    {aiQuizDraftError ? <p className="text-sm text-rose-600">{aiQuizDraftError}</p> : null}
+                                </div>
+                            </AiGenerationDrawer>
+                        </section>
+                    ) : null}
 
                     <div className="mt-4 flex items-center justify-end">
                         <button
@@ -394,6 +520,7 @@ const SessionActivitiesTab = ({
     loadingResponsesId,
     reviewingSubmissionId,
     activityResponseFilter,
+    selectedSession,
 }) => {
     const { i18n, t } = useTranslation();
     const [isCreating, setIsCreating] = useState(false);
@@ -404,6 +531,14 @@ const SessionActivitiesTab = ({
     const [reviewDrafts, setReviewDrafts] = useState({});
     const [responseFilters, setResponseFilters] = useState({});
     const [reviewEditingIds, setReviewEditingIds] = useState({});
+    const [aiDrafts, setAiDrafts] = useState({});
+    const [aiDraftingId, setAiDraftingId] = useState(null);
+    const [aiDraftErrors, setAiDraftErrors] = useState({});
+    const [aiFeedbackDraftEnabled, setAiFeedbackDraftEnabled] = useState(false);
+    const [aiSessionQuizDraftEnabled, setAiSessionQuizDraftEnabled] = useState(false);
+    const [aiQuizDraft, setAiQuizDraft] = useState(null);
+    const [aiQuizDraftingTarget, setAiQuizDraftingTarget] = useState('');
+    const [aiQuizDraftError, setAiQuizDraftError] = useState('');
 
     useEffect(() => {
         if (editingId && !activities.some((activity) => String(activity.id) === String(editingId))) {
@@ -411,6 +546,41 @@ const SessionActivitiesTab = ({
             setEditDraft(null);
         }
     }, [activities, editingId]);
+
+    useEffect(() => {
+        const courseId = selectedSession?.courseId;
+        if (!selectedSession) {
+            setAiFeedbackDraftEnabled(false);
+            setAiSessionQuizDraftEnabled(false);
+            return;
+        }
+        let cancelled = false;
+        getAiLmsCapabilities(courseId)
+            .then((capabilities) => {
+                if (!cancelled) {
+                    setAiFeedbackDraftEnabled(Boolean(capabilities?.feedbackDraft?.enabled));
+                    setAiSessionQuizDraftEnabled(Boolean(capabilities?.lessonQuizDraft?.enabled));
+                }
+            })
+            .catch(() => {
+                if (!cancelled) {
+                    setAiFeedbackDraftEnabled(false);
+                    setAiSessionQuizDraftEnabled(false);
+                }
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [selectedSession]);
+
+    useEffect(() => {
+        setAiDrafts({});
+        setAiDraftingId(null);
+        setAiDraftErrors({});
+        setAiQuizDraft(null);
+        setAiQuizDraftingTarget('');
+        setAiQuizDraftError('');
+    }, [selectedSession?.id]);
 
     useEffect(() => {
         if (!expandedResponsesId) return;
@@ -542,6 +712,83 @@ const SessionActivitiesTab = ({
         }));
     };
 
+    const quizDraftToActivity = (output, current) => {
+        const questions = (output?.questions || [])
+            .map((question) => {
+                const options = (question.options || [])
+                    .filter((option) => option?.text?.trim())
+                    .map((option) => ({
+                        text: option.text,
+                        isCorrect: Boolean(option.isCorrect),
+                    }));
+                if (!options.some((option) => option.isCorrect) && options.length > 0) {
+                    options[0].isCorrect = true;
+                }
+                return {
+                    prompt: question.prompt || '',
+                    questionMode: question.questionMode || 'single_choice',
+                    options,
+                };
+            })
+            .filter((question) => question.prompt.trim() && question.options.length >= 2);
+
+        return {
+            ...current,
+            title: output?.title || current.title,
+            description: output?.description || current.description,
+            type: 'quiz',
+            questions: questions.length ? questions : current.questions,
+        };
+    };
+
+    const requestAiQuizDraft = async (target, brief = {}) => {
+        const sessionId = selectedSession?.id;
+        if (!sessionId) return;
+        const current = target === 'edit' ? editDraft : createDraft;
+        setAiQuizDraftingTarget(target);
+        setAiQuizDraftError('');
+        try {
+            const draft = await generateAiSessionQuizDraft(sessionId, {
+                language: i18n.language || 'ky',
+                topic: brief.topic?.trim() || current?.title || selectedSession?.title || selectedSession?.sessionTitle || undefined,
+                questionCount: Math.min(20, Math.max(1, Number(brief.questionCount) || current?.questions?.length || 3)),
+                difficulty: brief.difficulty || undefined,
+                questionMode: brief.questionMode === 'mixed' ? undefined : brief.questionMode,
+                includeExplanations: Boolean(brief.includeExplanations),
+            });
+            setAiQuizDraft({ target, generationId: draft.generationId, output: draft.output || {} });
+        } catch (error) {
+            const parsed = parseApiError(error, t('ai.quizDraftFailed'));
+            setAiQuizDraftError(parsed.requestId ? t('ai.requestId', { requestId: parsed.requestId }) : parsed.message);
+        } finally {
+            setAiQuizDraftingTarget('');
+        }
+    };
+
+    const applyAiQuizDraft = async (target) => {
+        if (!aiQuizDraft || aiQuizDraft.target !== target) return;
+        const setter = target === 'edit' ? setEditDraft : setCreateDraft;
+        try {
+            await acceptAiGeneration(aiQuizDraft.generationId);
+            setter((current) => quizDraftToActivity(aiQuizDraft.output, current || createEmptyActivity('quiz')));
+            setAiQuizDraft(null);
+            setAiQuizDraftError('');
+        } catch {
+            setAiQuizDraftError(t('ai.feedbackDraftActionFailed'));
+        }
+    };
+
+    const cancelAiQuizDraft = async () => {
+        if (!aiQuizDraft) return;
+        try {
+            await rejectAiGeneration(aiQuizDraft.generationId);
+            setAiQuizDraft(null);
+            setAiQuizDraftError('');
+        } catch {
+            setAiQuizDraftError(t('ai.feedbackDraftActionFailed'));
+        }
+    };
+
     const beginCreate = () => {
         setIsCreating(true);
         setCreateDraft(createEmptyActivity());
@@ -592,6 +839,95 @@ const SessionActivitiesTab = ({
         const ok = await onReviewSubmission(activityId, rowId, draft.status, draft.reviewComment, draft.score);
         if (ok !== false) {
             setReviewEditingIds((prev) => ({ ...prev, [rowId]: false }));
+        }
+    };
+
+    const requestAiFeedbackDraft = async (rowId) => {
+        setAiDraftingId(String(rowId));
+        setAiDraftErrors((prev) => {
+            const next = { ...prev };
+            delete next[rowId];
+            return next;
+        });
+        try {
+            const draft = await generateAiFeedbackDraft(rowId, {
+                submissionType: 'session_activity',
+                language: i18n.language || 'ky',
+                tone: 'encouraging',
+                includeScoreSuggestion: true,
+            });
+            setAiDrafts((prev) => ({
+                ...prev,
+                [rowId]: {
+                    generationId: draft.generationId,
+                    output: draft.output || {},
+                },
+            }));
+        } catch (error) {
+            const parsed = parseApiError(error, t('ai.feedbackDraftFailed'));
+            setAiDraftErrors((prev) => ({
+                ...prev,
+                [rowId]: parsed.requestId ? t('ai.requestId', { requestId: parsed.requestId }) : parsed.message,
+            }));
+        } finally {
+            setAiDraftingId(null);
+        }
+    };
+
+    const applyAiFeedbackDraft = async (rowId, draft) => {
+        const aiDraft = aiDrafts[rowId];
+        if (!aiDraft) return;
+        try {
+            await acceptAiGeneration(aiDraft.generationId);
+            setReviewDrafts((prev) => ({
+                ...prev,
+                [rowId]: {
+                    ...draft,
+                    reviewComment: aiDraft.output?.feedback || draft.reviewComment || '',
+                    score:
+                        aiDraft.output?.suggestedScore === undefined || aiDraft.output?.suggestedScore === null
+                            ? draft.score
+                            : String(aiDraft.output.suggestedScore),
+                },
+            }));
+            setAiDrafts((prev) => {
+                const next = { ...prev };
+                delete next[rowId];
+                return next;
+            });
+            setAiDraftErrors((prev) => {
+                const next = { ...prev };
+                delete next[rowId];
+                return next;
+            });
+        } catch {
+            setAiDraftErrors((prev) => ({
+                ...prev,
+                [rowId]: t('ai.feedbackDraftActionFailed'),
+            }));
+        }
+    };
+
+    const cancelAiDraft = async (rowId) => {
+        const aiDraft = aiDrafts[rowId];
+        if (!aiDraft) return;
+        try {
+            await rejectAiGeneration(aiDraft.generationId);
+            setAiDrafts((prev) => {
+                const next = { ...prev };
+                delete next[rowId];
+                return next;
+            });
+            setAiDraftErrors((prev) => {
+                const next = { ...prev };
+                delete next[rowId];
+                return next;
+            });
+        } catch {
+            setAiDraftErrors((prev) => ({
+                ...prev,
+                [rowId]: t('ai.feedbackDraftActionFailed'),
+            }));
         }
     };
 
@@ -676,6 +1012,13 @@ const SessionActivitiesTab = ({
                             onSave={saveCreate}
                             saving={creating}
                             saveLabel={t('groupSessions.activities.actions.saveActivity')}
+                            aiQuizDraftEnabled={aiSessionQuizDraftEnabled}
+                            aiQuizDraft={aiQuizDraft?.target === 'create' ? aiQuizDraft.output : null}
+                            aiQuizDrafting={aiQuizDraftingTarget === 'create'}
+                            aiQuizDraftError={aiQuizDraft?.target === 'create' ? aiQuizDraftError : ''}
+                            onRequestAiQuizDraft={(brief) => requestAiQuizDraft('create', brief)}
+                            onUseAiQuizDraft={() => applyAiQuizDraft('create')}
+                            onCancelAiQuizDraft={cancelAiQuizDraft}
                         />
                     </div>
                 ) : null}
@@ -708,6 +1051,13 @@ const SessionActivitiesTab = ({
                                         onSave={saveEdit}
                                         saving={String(savingActivityId) === String(activity.id)}
                                         saveLabel={t('groupSessions.activities.actions.saveChanges')}
+                                        aiQuizDraftEnabled={aiSessionQuizDraftEnabled}
+                                        aiQuizDraft={aiQuizDraft?.target === 'edit' ? aiQuizDraft.output : null}
+                                        aiQuizDrafting={aiQuizDraftingTarget === 'edit'}
+                                        aiQuizDraftError={aiQuizDraft?.target === 'edit' ? aiQuizDraftError : ''}
+                                        onRequestAiQuizDraft={(brief) => requestAiQuizDraft('edit', brief)}
+                                        onUseAiQuizDraft={() => applyAiQuizDraft('edit')}
+                                        onCancelAiQuizDraft={cancelAiQuizDraft}
                                     />
                                 );
                             }
@@ -962,6 +1312,7 @@ const SessionActivitiesTab = ({
                                                             Boolean(row.reviewComment) ||
                                                             Boolean(row.reviewedAt);
                                                         const isEditingReview = Boolean(reviewEditingIds[row.id]) || !hasSavedReview;
+                                                        const aiDraft = aiDrafts[row.id];
                                                         return (
                                                             <div key={`submission-${row.id}`} className="rounded-2xl border border-edubot-line/80 bg-white p-4 dark:border-slate-700 dark:bg-slate-950">
                                                                 <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1075,52 +1426,106 @@ const SessionActivitiesTab = ({
                                                                     </div>
                                                                 ) : null}
                                                                 {isEditingReview ? (
-                                                                    <div className="mt-4 grid gap-3 lg:grid-cols-[180px,120px,minmax(0,1fr),auto]">
-                                                                        <select
-                                                                            value={draft.status}
-                                                                            onChange={(event) => setReviewDrafts((prev) => ({ ...prev, [row.id]: { ...draft, status: event.target.value } }))}
-                                                                            className="dashboard-field dashboard-select"
-                                                                        >
-                                                                            <option value="submitted">{t('groupSessions.activities.submissionStatus.submitted')}</option>
-                                                                            <option value="approved">{t('groupSessions.activities.review.approve')}</option>
-                                                                            <option value="needs_revision">{t('groupSessions.activities.review.requestRevision')}</option>
-                                                                            <option value="rejected">{t('groupSessions.activities.review.reject')}</option>
-                                                                        </select>
-                                                                        <input
-                                                                            type="number"
-                                                                            min="0"
-                                                                            max="1000"
-                                                                            value={draft.score}
-                                                                            onChange={(event) => setReviewDrafts((prev) => ({ ...prev, [row.id]: { ...draft, score: event.target.value } }))}
-                                                                            placeholder={t('groupSessions.activities.review.scorePlaceholder')}
-                                                                            className="dashboard-field"
-                                                                        />
-                                                                        <input
-                                                                            value={draft.reviewComment}
-                                                                            onChange={(event) => setReviewDrafts((prev) => ({ ...prev, [row.id]: { ...draft, reviewComment: event.target.value } }))}
-                                                                            placeholder={t('groupSessions.activities.review.commentPlaceholder')}
-                                                                            className="dashboard-field"
-                                                                        />
-                                                                        <div className="flex items-center gap-2">
-                                                                            {hasSavedReview ? (
+                                                                    <div className="mt-4 space-y-3">
+                                                                        {aiFeedbackDraftEnabled ? (
+                                                                        <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 dark:border-amber-500/30 dark:bg-amber-500/10">
+                                                                            <div className="flex flex-wrap items-center gap-2">
                                                                                 <button
                                                                                     type="button"
-                                                                                    onClick={() => setReviewEditingIds((prev) => ({ ...prev, [row.id]: false }))}
-                                                                                    className="inline-flex min-h-11 items-center justify-center rounded-full border border-edubot-line bg-white px-4 py-2.5 text-sm font-semibold text-edubot-ink transition hover:border-edubot-orange/40 hover:text-edubot-orange dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                                                                                    onClick={() => requestAiFeedbackDraft(row.id)}
+                                                                                    disabled={String(aiDraftingId) === String(row.id) || String(reviewingSubmissionId) === String(row.id)}
+                                                                                    className="inline-flex min-h-10 items-center gap-2 rounded-full border border-edubot-line bg-white px-4 py-2 text-sm font-semibold text-edubot-ink transition hover:border-edubot-orange/40 hover:text-edubot-orange disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                                                                                 >
-                                                                                    {t('groupSessions.activities.actions.collapse')}
+                                                                                    <FiZap className="h-4 w-4" />
+                                                                                    {String(aiDraftingId) === String(row.id) ? t('ai.generating') : t('ai.suggestFeedback')}
                                                                                 </button>
+                                                                                {aiDraft ? (
+                                                                                    <>
+                                                                                        <button type="button" onClick={() => applyAiFeedbackDraft(row.id, draft)} className="inline-flex min-h-10 items-center rounded-full border border-edubot-line bg-white px-4 py-2 text-sm font-semibold text-edubot-ink transition hover:border-edubot-orange/40 hover:text-edubot-orange dark:border-slate-700 dark:bg-slate-950 dark:text-white">
+                                                                                            {t('ai.useDraft')}
+                                                                                        </button>
+                                                                                        <button type="button" onClick={() => cancelAiDraft(row.id)} className="inline-flex min-h-10 items-center rounded-full border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-600 transition hover:border-red-300 dark:border-red-500/30 dark:bg-slate-950 dark:text-red-300">
+                                                                                            {t('ai.cancelDraft')}
+                                                                                        </button>
+                                                                                    </>
+                                                                                ) : null}
+                                                                            </div>
+                                                                            {aiDraft ? (
+                                                                                <div className="mt-3 space-y-2">
+                                                                                    <div className="text-xs font-semibold uppercase tracking-[0.12em] text-amber-700 dark:text-amber-300">
+                                                                                        {t('ai.feedbackDraft')}
+                                                                                    </div>
+                                                                                    <textarea
+                                                                                        value={aiDraft.output?.feedback || ''}
+                                                                                        onChange={(event) => setAiDrafts((prev) => ({
+                                                                                            ...prev,
+                                                                                            [row.id]: {
+                                                                                                ...prev[row.id],
+                                                                                                output: {
+                                                                                                    ...(prev[row.id]?.output || {}),
+                                                                                                    feedback: event.target.value,
+                                                                                                },
+                                                                                            },
+                                                                                        }))}
+                                                                                        rows={3}
+                                                                                        className="dashboard-field"
+                                                                                        aria-label={t('ai.feedbackDraft')}
+                                                                                    />
+                                                                                    {aiDraft.output?.nextStep ? (
+                                                                                        <p className="text-xs leading-5 text-edubot-muted dark:text-slate-300">{aiDraft.output.nextStep}</p>
+                                                                                    ) : null}
+                                                                                </div>
                                                                             ) : null}
-                                                                            <button
-                                                                                type="button"
-                                                                                onClick={() => saveReviewDraft(activity.id, row.id, draft)}
-                                                                                disabled={String(reviewingSubmissionId) === String(row.id)}
-                                                                                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-edubot-orange px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-105 disabled:opacity-60"
+                                                                            {aiDraftErrors[row.id] ? <p className="mt-2 text-xs text-red-600 dark:text-red-300">{aiDraftErrors[row.id]}</p> : null}
+                                                                        </div>
+                                                                        ) : null}
+                                                                        <div className="grid gap-3 lg:grid-cols-[180px,120px,minmax(0,1fr),auto]">
+                                                                            <select
+                                                                                value={draft.status}
+                                                                                onChange={(event) => setReviewDrafts((prev) => ({ ...prev, [row.id]: { ...draft, status: event.target.value } }))}
+                                                                                className="dashboard-field dashboard-select"
                                                                             >
-                                                                                {String(reviewingSubmissionId) === String(row.id)
-                                                                                    ? t('groupSessions.activities.actions.saving')
-                                                                                    : t('groupSessions.activities.actions.save')}
-                                                                            </button>
+                                                                                <option value="submitted">{t('groupSessions.activities.submissionStatus.submitted')}</option>
+                                                                                <option value="approved">{t('groupSessions.activities.review.approve')}</option>
+                                                                                <option value="needs_revision">{t('groupSessions.activities.review.requestRevision')}</option>
+                                                                                <option value="rejected">{t('groupSessions.activities.review.reject')}</option>
+                                                                            </select>
+                                                                            <input
+                                                                                type="number"
+                                                                                min="0"
+                                                                                max="1000"
+                                                                                value={draft.score}
+                                                                                onChange={(event) => setReviewDrafts((prev) => ({ ...prev, [row.id]: { ...draft, score: event.target.value } }))}
+                                                                                placeholder={t('groupSessions.activities.review.scorePlaceholder')}
+                                                                                className="dashboard-field"
+                                                                            />
+                                                                            <input
+                                                                                value={draft.reviewComment}
+                                                                                onChange={(event) => setReviewDrafts((prev) => ({ ...prev, [row.id]: { ...draft, reviewComment: event.target.value } }))}
+                                                                                placeholder={t('groupSessions.activities.review.commentPlaceholder')}
+                                                                                className="dashboard-field"
+                                                                            />
+                                                                            <div className="flex items-center gap-2">
+                                                                                {hasSavedReview ? (
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        onClick={() => setReviewEditingIds((prev) => ({ ...prev, [row.id]: false }))}
+                                                                                        className="inline-flex min-h-11 items-center justify-center rounded-full border border-edubot-line bg-white px-4 py-2.5 text-sm font-semibold text-edubot-ink transition hover:border-edubot-orange/40 hover:text-edubot-orange dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                                                                                    >
+                                                                                        {t('groupSessions.activities.actions.collapse')}
+                                                                                    </button>
+                                                                                ) : null}
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => saveReviewDraft(activity.id, row.id, draft)}
+                                                                                    disabled={String(reviewingSubmissionId) === String(row.id)}
+                                                                                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-edubot-orange px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-105 disabled:opacity-60"
+                                                                                >
+                                                                                    {String(reviewingSubmissionId) === String(row.id)
+                                                                                        ? t('groupSessions.activities.actions.saving')
+                                                                                        : t('groupSessions.activities.actions.save')}
+                                                                                </button>
+                                                                            </div>
                                                                         </div>
                                                                     </div>
                                                                 ) : null}
@@ -1189,6 +1594,9 @@ SessionActivitiesTab.propTypes = {
     reviewingSubmissionId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     savedAt: PropTypes.string,
     savingActivityId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    selectedSession: PropTypes.shape({
+        courseId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    }),
     activityResponseFilter: PropTypes.string,
 };
 
@@ -1200,6 +1608,7 @@ SessionActivitiesTab.defaultProps = {
     reviewingSubmissionId: null,
     savedAt: '',
     savingActivityId: null,
+    selectedSession: null,
 };
 
 export default SessionActivitiesTab;

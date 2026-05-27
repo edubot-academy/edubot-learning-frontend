@@ -1,11 +1,15 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { FiExternalLink, FiPaperclip, FiPlayCircle } from 'react-icons/fi';
+import { FiExternalLink, FiPaperclip, FiPlayCircle, FiZap } from 'react-icons/fi';
 import { COURSE_TYPE, MEETING_PROVIDER } from '@shared/contracts';
 import { DashboardInsetPanel, EmptyState } from '../../../components/ui/dashboard';
 import BasicModal from '@shared/ui/BasicModal';
 import { toast } from 'react-hot-toast';
+import { parseApiError } from '../../../shared/api/error';
+import { acceptAiGeneration, generateAiWorksheetDraft, getAiLmsCapabilities, rejectAiGeneration } from '../../aiLms/api';
+import AiGenerationDrawer from '../../aiLms/components/AiGenerationDrawer';
+import { createGeneratedSessionMaterial } from '../api';
 
 const VideoPlayer = lazy(() => import('@shared/VideoPlayer'));
 
@@ -54,6 +58,7 @@ const SessionResourcesTab = ({
     selectedDeliveryType,
     selectedSourceVideoCourseId,
     selectedGroupLocation,
+    selectedSession,
     selectedSessionId,
     selectedSessionJoinAllowed,
     selectedSessionJoinUrl,
@@ -66,7 +71,7 @@ const SessionResourcesTab = ({
     syncingRecordings,
     uploadingMaterialFile,
 }) => {
-    const { t } = useTranslation();
+    const { i18n, t } = useTranslation();
     const isOnlineLive = selectedDeliveryType === COURSE_TYPE.ONLINE_LIVE;
     const fileInputRef = useRef(null);
     const previewContainerRef = useRef(null);
@@ -79,6 +84,20 @@ const SessionResourcesTab = ({
     const [pendingDeleteIndex, setPendingDeleteIndex] = useState(null);
     const [courseAssetQuery, setCourseAssetQuery] = useState('');
     const [expandedSections, setExpandedSections] = useState({});
+    const [aiWorksheetDraftEnabled, setAiWorksheetDraftEnabled] = useState(false);
+    const [isAiWorksheetDrawerOpen, setIsAiWorksheetDrawerOpen] = useState(false);
+    const [aiWorksheetDraft, setAiWorksheetDraft] = useState(null);
+    const [aiWorksheetText, setAiWorksheetText] = useState('');
+    const [aiWorksheetBrief, setAiWorksheetBrief] = useState({
+        topic: '',
+        format: 'practice',
+        difficulty: '',
+        activityCount: '4',
+        includeAnswerKey: true,
+    });
+    const [aiWorksheetDrafting, setAiWorksheetDrafting] = useState(false);
+    const [creatingWorksheetMaterialFormat, setCreatingWorksheetMaterialFormat] = useState('');
+    const [aiWorksheetDraftError, setAiWorksheetDraftError] = useState('');
     const existingMaterialKeys = useMemo(
         () =>
             new Set(
@@ -96,8 +115,40 @@ const SessionResourcesTab = ({
         setPreviewVideo(null);
         setInlineNotice(null);
         setIsAssetLibraryOpen(false);
+        setIsAiWorksheetDrawerOpen(false);
         setPendingDeleteIndex(null);
+        setAiWorksheetDraft(null);
+        setAiWorksheetText('');
+        setCreatingWorksheetMaterialFormat('');
+        setAiWorksheetDraftError('');
+        setAiWorksheetBrief({
+            topic: '',
+            format: 'practice',
+            difficulty: '',
+            activityCount: '4',
+            includeAnswerKey: true,
+        });
     }, [selectedSessionId]);
+
+    useEffect(() => {
+        if (!selectedSession) {
+            setAiWorksheetDraftEnabled(false);
+            return undefined;
+        }
+
+        let cancelled = false;
+        getAiLmsCapabilities(selectedSession.courseId)
+            .then((capabilities) => {
+                if (!cancelled) setAiWorksheetDraftEnabled(Boolean(capabilities?.worksheetDraft?.enabled));
+            })
+            .catch(() => {
+                if (!cancelled) setAiWorksheetDraftEnabled(false);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [selectedSession]);
 
     useEffect(() => {
         setCourseAssetQuery('');
@@ -160,12 +211,14 @@ const SessionResourcesTab = ({
     };
 
     const copyToClipboard = async (value, successMessage) => {
-        if (!value) return;
+        if (!value) return false;
         try {
             await navigator.clipboard.writeText(value);
             toast.success(successMessage);
+            return true;
         } catch {
             toast.error(t('groupSessions.resources.toasts.copyFailed'));
+            return false;
         }
     };
 
@@ -302,6 +355,85 @@ const SessionResourcesTab = ({
         return saved;
     };
 
+    const worksheetDraftToText = (output) => {
+        const lines = [output?.title, '', output?.instructions].filter((line) => line !== undefined && line !== null);
+        (output?.sections || []).forEach((section) => {
+            lines.push('', `## ${section.title}`);
+            (section.items || []).forEach((item) => lines.push(`- ${item}`));
+        });
+        if (output?.answerKey?.length) {
+            lines.push('', `## ${t('ai.answerKey')}`);
+            output.answerKey.forEach((answer) => lines.push(`- ${answer}`));
+        }
+        return lines.join('\n').trim();
+    };
+
+    const requestAiWorksheetDraft = async () => {
+        if (!selectedSessionId) return;
+        setAiWorksheetDrafting(true);
+        setAiWorksheetDraftError('');
+        try {
+            const draft = await generateAiWorksheetDraft(Number(selectedSessionId), {
+                language: i18n.language || 'ky',
+                topic: aiWorksheetBrief.topic?.trim() || selectedSession?.title || selectedSession?.sessionTitle || undefined,
+                difficulty: aiWorksheetBrief.difficulty || undefined,
+                activityCount: Math.min(20, Math.max(1, Number(aiWorksheetBrief.activityCount) || 4)),
+                includeAnswerKey: Boolean(aiWorksheetBrief.includeAnswerKey),
+                format: aiWorksheetBrief.format,
+            });
+            setAiWorksheetDraft({ generationId: draft.generationId, output: draft.output || {} });
+            setAiWorksheetText(worksheetDraftToText(draft.output || {}));
+        } catch (error) {
+            const parsed = parseApiError(error, t('ai.worksheetDraftFailed'));
+            setAiWorksheetDraftError(parsed.requestId ? t('ai.requestId', { requestId: parsed.requestId }) : parsed.message);
+        } finally {
+            setAiWorksheetDrafting(false);
+        }
+    };
+
+    const createAiWorksheetMaterialFile = async (format) => {
+        if (!aiWorksheetDraft || !aiWorksheetText.trim()) return;
+        try {
+            setCreatingWorksheetMaterialFormat(format);
+            const title = aiWorksheetDraft.output?.title || aiWorksheetBrief.topic || selectedSession?.title || 'worksheet';
+            const generated = await createGeneratedSessionMaterial(selectedSessionId, {
+                title,
+                content: aiWorksheetText,
+                format,
+            });
+            const saved = await onSaveMaterials([...selectedSessionMaterials, generated], {
+                successMessage: t('groupSessions.resources.notices.fileAdded', { title: generated.title }),
+            });
+            if (saved) {
+                setAiWorksheetDraft(null);
+                setAiWorksheetText('');
+                setAiWorksheetDraftError('');
+                setIsAiWorksheetDrawerOpen(false);
+                try {
+                    await acceptAiGeneration(aiWorksheetDraft.generationId);
+                } catch {
+                    toast.error(t('ai.worksheetDraftStatusUpdateFailed'));
+                }
+            }
+        } catch {
+            setAiWorksheetDraftError(t('ai.worksheetMaterialCreateFailed'));
+        } finally {
+            setCreatingWorksheetMaterialFormat('');
+        }
+    };
+
+    const cancelAiWorksheetDraft = async () => {
+        if (!aiWorksheetDraft) return;
+        try {
+            await rejectAiGeneration(aiWorksheetDraft.generationId);
+            setAiWorksheetDraft(null);
+            setAiWorksheetText('');
+            setAiWorksheetDraftError('');
+        } catch {
+            setAiWorksheetDraftError(t('ai.feedbackDraftActionFailed'));
+        }
+    };
+
     if (!selectedSessionId) {
         return (
             <EmptyState
@@ -372,6 +504,107 @@ const SessionResourcesTab = ({
                                 {inlineNotice.message}
                             </div>
                         )}
+
+                        {aiWorksheetDraftEnabled ? (
+                            <section className="rounded-3xl border border-sky-200 bg-sky-50 p-4 text-sm dark:border-sky-900 dark:bg-sky-950/30">
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <div>
+                                        <p className="font-semibold text-edubot-ink dark:text-white">{t('ai.worksheetDraft')}</p>
+                                        <p className="mt-1 text-edubot-muted dark:text-slate-300">{t('ai.worksheetDraftHelp')}</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsAiWorksheetDrawerOpen(true)}
+                                        className="inline-flex min-h-10 items-center gap-2 rounded-full border border-sky-300 bg-white px-4 py-2 text-sm font-semibold text-sky-800 transition hover:bg-sky-100 dark:border-sky-700 dark:bg-slate-950 dark:text-sky-200"
+                                    >
+                                        <FiZap className="h-4 w-4" />
+                                        {aiWorksheetDraft ? t('ai.openPreview') : t('ai.openGenerator')}
+                                    </button>
+                                </div>
+                                <AiGenerationDrawer
+                                    isOpen={isAiWorksheetDrawerOpen}
+                                    title={t('ai.worksheetDraft')}
+                                    description={t('ai.worksheetDraftHelp')}
+                                    onClose={() => setIsAiWorksheetDrawerOpen(false)}
+                                    footer={(
+                                        <div className="flex flex-wrap justify-end gap-2">
+                                            {aiWorksheetDraft ? (
+                                                <>
+                                                    <button type="button" onClick={cancelAiWorksheetDraft} className="dashboard-button-secondary">
+                                                        {t('ai.cancelDraft')}
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => createAiWorksheetMaterialFile('pdf')}
+                                                        disabled={!aiWorksheetText.trim() || savingMaterials || creatingWorksheetMaterialFormat}
+                                                        className="dashboard-button-primary disabled:opacity-60"
+                                                    >
+                                                        {creatingWorksheetMaterialFormat === 'pdf' ? t('groupSessions.resources.actions.saving') : t('ai.createPdfMaterial')}
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => createAiWorksheetMaterialFile('docx')}
+                                                        disabled={!aiWorksheetText.trim() || savingMaterials || creatingWorksheetMaterialFormat}
+                                                        className="dashboard-button-secondary disabled:opacity-60"
+                                                    >
+                                                        {creatingWorksheetMaterialFormat === 'docx' ? t('groupSessions.resources.actions.saving') : t('ai.createDocxMaterial')}
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <button type="button" onClick={requestAiWorksheetDraft} disabled={aiWorksheetDrafting} className="dashboard-button-primary disabled:opacity-60">
+                                                    {aiWorksheetDrafting ? t('ai.generating') : t('ai.suggestWorksheet')}
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+                                >
+                                    <div className="space-y-4">
+                                        <div className="grid gap-2 text-xs text-edubot-muted dark:text-slate-300 sm:grid-cols-3">
+                                            <div className="rounded-2xl border border-sky-100 bg-sky-50 px-3 py-2 dark:border-sky-900 dark:bg-sky-950/30">
+                                                <span className="font-semibold text-edubot-ink dark:text-white">{t('ai.worksheetDraftFlow.createsLabel')}</span>
+                                                <span className="mt-1 block">{t('ai.worksheetDraftFlow.creates')}</span>
+                                            </div>
+                                            <div className="rounded-2xl border border-sky-100 bg-sky-50 px-3 py-2 dark:border-sky-900 dark:bg-sky-950/30">
+                                                <span className="font-semibold text-edubot-ink dark:text-white">{t('ai.worksheetDraftFlow.appliesLabel')}</span>
+                                                <span className="mt-1 block">{t('ai.worksheetDraftFlow.applies')}</span>
+                                            </div>
+                                            <div className="rounded-2xl border border-sky-100 bg-sky-50 px-3 py-2 dark:border-sky-900 dark:bg-sky-950/30">
+                                                <span className="font-semibold text-edubot-ink dark:text-white">{t('ai.worksheetDraftFlow.nextLabel')}</span>
+                                                <span className="mt-1 block">{t('ai.worksheetDraftFlow.next')}</span>
+                                            </div>
+                                        </div>
+                                        <div className="grid gap-3 md:grid-cols-2">
+                                            <input value={aiWorksheetBrief.topic} onChange={(event) => setAiWorksheetBrief((prev) => ({ ...prev, topic: event.target.value }))} placeholder={t('ai.worksheetBrief.topicPlaceholder')} className="dashboard-field" />
+                                            <select value={aiWorksheetBrief.format} onChange={(event) => setAiWorksheetBrief((prev) => ({ ...prev, format: event.target.value }))} className="dashboard-field dashboard-select">
+                                                <option value="practice">{t('ai.worksheetBrief.formatPractice')}</option>
+                                                <option value="handout">{t('ai.worksheetBrief.formatHandout')}</option>
+                                                <option value="discussion">{t('ai.worksheetBrief.formatDiscussion')}</option>
+                                                <option value="recap">{t('ai.worksheetBrief.formatRecap')}</option>
+                                            </select>
+                                            <select value={aiWorksheetBrief.difficulty} onChange={(event) => setAiWorksheetBrief((prev) => ({ ...prev, difficulty: event.target.value }))} className="dashboard-field dashboard-select">
+                                                <option value="">{t('ai.homeworkBrief.difficultyAuto')}</option>
+                                                <option value="beginner">{t('ai.homeworkBrief.difficultyBeginner')}</option>
+                                                <option value="intermediate">{t('ai.homeworkBrief.difficultyIntermediate')}</option>
+                                                <option value="advanced">{t('ai.homeworkBrief.difficultyAdvanced')}</option>
+                                            </select>
+                                            <input type="number" min="1" max="20" value={aiWorksheetBrief.activityCount} onChange={(event) => setAiWorksheetBrief((prev) => ({ ...prev, activityCount: event.target.value }))} aria-label={t('ai.worksheetBrief.activityCount')} className="dashboard-field" />
+                                        </div>
+                                        <label className="inline-flex items-center gap-2 text-sm font-semibold text-edubot-muted dark:text-slate-300">
+                                            <input type="checkbox" checked={aiWorksheetBrief.includeAnswerKey} onChange={(event) => setAiWorksheetBrief((prev) => ({ ...prev, includeAnswerKey: event.target.checked }))} className="h-4 w-4 rounded border-edubot-line text-edubot-orange focus:ring-edubot-orange" />
+                                            {t('ai.worksheetBrief.includeAnswerKey')}
+                                        </label>
+                                        {aiWorksheetDraft ? (
+                                            <div className="space-y-2">
+                                                <label className="text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">{t('ai.worksheetDraftPreview')}</label>
+                                                <textarea value={aiWorksheetText} onChange={(event) => setAiWorksheetText(event.target.value)} rows={14} className="dashboard-field min-h-[360px]" aria-label={t('ai.worksheetDraft')} />
+                                                <p className="text-xs text-edubot-muted dark:text-slate-400">{t('ai.worksheetDraftNextStep')}</p>
+                                            </div>
+                                        ) : null}
+                                        {aiWorksheetDraftError ? <p className="text-sm text-rose-600">{aiWorksheetDraftError}</p> : null}
+                                    </div>
+                                </AiGenerationDrawer>
+                            </section>
+                        ) : null}
 
                         {materialComposerMode !== 'idle' && (
                             <div className="rounded-3xl border border-edubot-line/70 bg-edubot-surface/55 p-4 dark:border-slate-700 dark:bg-slate-950/70">
@@ -1054,6 +1287,12 @@ SessionResourcesTab.propTypes = {
     showCourseAssetReuse: PropTypes.bool.isRequired,
     selectedDeliveryType: PropTypes.string.isRequired,
     selectedGroupLocation: PropTypes.string,
+    selectedSession: PropTypes.shape({
+        courseId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+        id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+        sessionTitle: PropTypes.string,
+        title: PropTypes.string,
+    }),
     selectedSessionId: PropTypes.string,
     selectedSessionJoinAllowed: PropTypes.bool.isRequired,
     selectedSessionJoinUrl: PropTypes.string,
@@ -1076,6 +1315,7 @@ SessionResourcesTab.propTypes = {
 
 SessionResourcesTab.defaultProps = {
     selectedGroupLocation: '',
+    selectedSession: null,
     selectedSessionId: '',
     selectedSessionJoinUrl: '',
     selectedSourceVideoCourseId: '',

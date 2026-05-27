@@ -1337,6 +1337,8 @@ export const instructor = {
                 individualNameRequired: "Individual course name is required.",
                 studentRequired: "Select a student for the individual course.",
                 firstSessionScheduleRequired: "Add a start date and a complete schedule block for the first session.",
+                liveMeetingRequired: "Add a meeting provider or meeting URL before creating an online live individual course.",
+                enrollmentNotReady: "Enrollment is locked until this group is open and live sessions are scheduled with meeting details.",
                 individualCreated: "Individual course created.",
                 groupCreated: "Group created.",
                 selectGroupForEdit: "Select a group to edit.",

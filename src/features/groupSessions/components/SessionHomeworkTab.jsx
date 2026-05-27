@@ -18,6 +18,7 @@ import {
     FiSearch,
     FiTrash2,
     FiXCircle,
+    FiZap,
 } from 'react-icons/fi';
 import BasicModal from '../../../shared/ui/BasicModal';
 import {
@@ -28,6 +29,13 @@ import {
     StatusBadge,
 } from '../../../components/ui/dashboard';
 import { parseApiError } from '../../../shared/api/error';
+import {
+    acceptAiGeneration,
+    generateAiFeedbackDraft,
+    generateAiHomeworkDraft,
+    getAiLmsCapabilities,
+    rejectAiGeneration,
+} from '../../aiLms/api';
 import { fetchSessionHomeworkAttachmentBlob, deleteSessionHomework } from '../../homework/api';
 import HomeworkModal from './HomeworkModal';
 
@@ -116,6 +124,14 @@ const SessionHomeworkTab = ({
         comment: '',
         studentName: '',
     });
+    const [aiDraft, setAiDraft] = useState(null);
+    const [aiDraftLoading, setAiDraftLoading] = useState(false);
+    const [aiDraftError, setAiDraftError] = useState('');
+    const [aiFeedbackDraftEnabled, setAiFeedbackDraftEnabled] = useState(false);
+    const [aiHomeworkDraft, setAiHomeworkDraft] = useState(null);
+    const [aiHomeworkDraftLoading, setAiHomeworkDraftLoading] = useState(false);
+    const [aiHomeworkDraftError, setAiHomeworkDraftError] = useState('');
+    const [aiHomeworkDraftEnabled, setAiHomeworkDraftEnabled] = useState(false);
     const [deleteModal, setDeleteModal] = useState({
         open: false,
         homeworkId: null,
@@ -135,6 +151,32 @@ const SessionHomeworkTab = ({
             }
         };
     }, [previewState.url]);
+
+    useEffect(() => {
+        const courseId = selectedSession?.courseId || selectedHomework?.courseId;
+        if (!selectedSessionId) {
+            setAiFeedbackDraftEnabled(false);
+            setAiHomeworkDraftEnabled(false);
+            return;
+        }
+        let cancelled = false;
+        getAiLmsCapabilities(courseId)
+            .then((capabilities) => {
+                if (!cancelled) {
+                    setAiFeedbackDraftEnabled(Boolean(capabilities?.feedbackDraft?.enabled));
+                    setAiHomeworkDraftEnabled(Boolean(capabilities?.homeworkDraft?.enabled));
+                }
+            })
+            .catch(() => {
+                if (!cancelled) {
+                    setAiFeedbackDraftEnabled(false);
+                    setAiHomeworkDraftEnabled(false);
+                }
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [selectedHomework?.courseId, selectedSession?.courseId, selectedSessionId]);
 
     const filteredReviewItems = useMemo(() => {
         const matchesFilter = (item) => {
@@ -221,6 +263,8 @@ const SessionHomeworkTab = ({
             mode,
             homework,
         });
+        setAiHomeworkDraft(null);
+        setAiHomeworkDraftError('');
     }, []);
 
     const closeHomeworkModal = useCallback(() => {
@@ -229,6 +273,8 @@ const SessionHomeworkTab = ({
             mode: 'create',
             homework: null,
         });
+        setAiHomeworkDraft(null);
+        setAiHomeworkDraftError('');
     }, []);
 
     const handleHomeworkSubmit = useCallback(async (formData) => {
@@ -289,6 +335,123 @@ const SessionHomeworkTab = ({
             comment: existingComment,
             studentName: item?.fullName || '',
         });
+        setAiDraft(null);
+        setAiDraftError('');
+    };
+
+    const closeReviewModalWithAiReset = () => {
+        setAiDraft(null);
+        setAiDraftError('');
+        closeReviewModal();
+    };
+
+    const requestAiFeedbackDraft = async () => {
+        if (!reviewModal.submissionId) return;
+        setAiDraftLoading(true);
+        setAiDraftError('');
+        try {
+            const draft = await generateAiFeedbackDraft(reviewModal.submissionId, {
+                submissionType: 'homework',
+                language: i18n.language || 'ky',
+                tone: 'encouraging',
+                includeScoreSuggestion: true,
+            });
+            setAiDraft({
+                generationId: draft.generationId,
+                output: draft.output || {},
+            });
+            toast.success(t('ai.feedbackDraftReady'));
+        } catch (error) {
+            const parsed = parseApiError(error, t('ai.feedbackDraftFailed'));
+            setAiDraftError(parsed.requestId ? t('ai.requestId', { requestId: parsed.requestId }) : parsed.message);
+            toast.error(parsed.message);
+        } finally {
+            setAiDraftLoading(false);
+        }
+    };
+
+    const useAiDraft = async () => {
+        if (!aiDraft) return false;
+        try {
+            await acceptAiGeneration(aiDraft.generationId);
+            setReviewModal((current) => ({
+                ...current,
+                comment: aiDraft.output?.feedback || current.comment,
+            }));
+            setAiDraft(null);
+            setAiDraftError('');
+            toast.success(t('ai.feedbackDraftAccepted'));
+            return true;
+        } catch (error) {
+            toast.error(parseApiError(error, t('ai.feedbackDraftActionFailed')).message);
+            return false;
+        }
+    };
+
+    const cancelAiDraft = async () => {
+        if (!aiDraft) return;
+        try {
+            await rejectAiGeneration(aiDraft.generationId);
+            setAiDraft(null);
+            setAiDraftError('');
+            toast.success(t('ai.feedbackDraftRejected'));
+        } catch (error) {
+            toast.error(parseApiError(error, t('ai.feedbackDraftActionFailed')).message);
+        }
+    };
+
+    const requestAiHomeworkDraft = async (brief = {}) => {
+        if (!selectedSessionId) return;
+        setAiHomeworkDraftLoading(true);
+        setAiHomeworkDraftError('');
+        try {
+            const draft = await generateAiHomeworkDraft(selectedSessionId, {
+                language: i18n.language || 'ky',
+                topic: brief.topic || selectedSession?.title || '',
+                ...(brief.difficulty ? { difficulty: brief.difficulty } : {}),
+                ...(brief.maxScore !== undefined && brief.maxScore !== null && brief.maxScore !== ''
+                    ? { maxScore: Number(brief.maxScore) }
+                    : {}),
+                includeRubric: brief.includeRubric !== false,
+            });
+            setAiHomeworkDraft({
+                generationId: draft.generationId,
+                output: draft.output || {},
+            });
+            toast.success(t('ai.homeworkDraftReady'));
+        } catch (error) {
+            const parsed = parseApiError(error, t('ai.homeworkDraftFailed'));
+            setAiHomeworkDraftError(parsed.requestId ? t('ai.requestId', { requestId: parsed.requestId }) : parsed.message);
+            toast.error(parsed.message);
+        } finally {
+            setAiHomeworkDraftLoading(false);
+        }
+    };
+
+    const useAiHomeworkDraft = async () => {
+        if (!aiHomeworkDraft) return false;
+        try {
+            await acceptAiGeneration(aiHomeworkDraft.generationId);
+            setAiHomeworkDraft(null);
+            setAiHomeworkDraftError('');
+            toast.success(t('ai.homeworkDraftAccepted'));
+            return true;
+        } catch (error) {
+            toast.error(parseApiError(error, t('ai.feedbackDraftActionFailed')).message);
+            return false;
+        }
+    };
+
+    const cancelAiHomeworkDraft = async () => {
+        if (!aiHomeworkDraft) return;
+        try {
+            await rejectAiGeneration(aiHomeworkDraft.generationId);
+            setAiHomeworkDraft(null);
+            setAiHomeworkDraftError('');
+            toast.success(t('ai.homeworkDraftRejected'));
+        } catch (error) {
+            toast.error(parseApiError(error, t('ai.feedbackDraftActionFailed')).message);
+        }
     };
 
     const confirmReviewAction = async () => {
@@ -308,7 +471,7 @@ const SessionHomeworkTab = ({
             trimmedComment
         );
         if (saved) {
-            closeReviewModal();
+            closeReviewModalWithAiReset();
         }
     };
 
@@ -963,7 +1126,7 @@ const SessionHomeworkTab = ({
 
             <BasicModal
                 isOpen={reviewModal.open}
-                onClose={closeReviewModal}
+                onClose={closeReviewModalWithAiReset}
                 title={
                     reviewModal.status === 'approved'
                         ? t('groupSessions.homeworkTab.reviewModal.approveTitle')
@@ -1011,10 +1174,59 @@ const SessionHomeworkTab = ({
                                 </p>
                             )}
                     </div>
+                    {aiFeedbackDraftEnabled ? (
+                    <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 dark:border-amber-500/30 dark:bg-amber-500/10">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={requestAiFeedbackDraft}
+                                disabled={aiDraftLoading || reviewingSubmissionId === String(reviewModal.submissionId)}
+                                className="dashboard-button-secondary"
+                            >
+                                <FiZap className="h-4 w-4" />
+                                {aiDraftLoading ? t('ai.generating') : t('ai.suggestFeedback')}
+                            </button>
+                            {aiDraft ? (
+                                <>
+                                    <button type="button" onClick={useAiDraft} className="dashboard-button-secondary">
+                                        {t('ai.useDraft')}
+                                    </button>
+                                    <button type="button" onClick={cancelAiDraft} className="dashboard-button-secondary text-red-600">
+                                        {t('ai.cancelDraft')}
+                                    </button>
+                                </>
+                            ) : null}
+                        </div>
+                        {aiDraft ? (
+                            <div className="mt-3 space-y-2">
+                                <div className="text-xs font-semibold uppercase tracking-[0.12em] text-amber-700 dark:text-amber-300">
+                                    {t('ai.feedbackDraft')}
+                                </div>
+                                <textarea
+                                    value={aiDraft.output?.feedback || ''}
+                                    onChange={(event) => setAiDraft((current) => ({
+                                        ...current,
+                                        output: {
+                                            ...(current?.output || {}),
+                                            feedback: event.target.value,
+                                        },
+                                    }))}
+                                    rows={4}
+                                    className="dashboard-field"
+                                    aria-label={t('ai.feedbackDraft')}
+                                />
+                                {aiDraft.output?.nextStep ? (
+                                    <p className="text-xs leading-5 text-edubot-muted dark:text-slate-300">{aiDraft.output.nextStep}</p>
+                                ) : null}
+                            </div>
+                        ) : null}
+                        {aiDraftError ? <p className="mt-2 text-xs text-red-600 dark:text-red-300">{aiDraftError}</p> : null}
+                    </div>
+                    ) : null}
                     <div className="flex flex-wrap justify-end gap-3">
                         <button
                             type="button"
-                            onClick={closeReviewModal}
+                            onClick={closeReviewModalWithAiReset}
                             className="dashboard-button-secondary"
                         >
                             {t('groupSessions.homeworkTab.actions.cancel')}
@@ -1082,6 +1294,13 @@ const SessionHomeworkTab = ({
                 mode={homeworkModal.mode}
                 loading={savingHomework || updatingHomework}
                 selectedSession={selectedSession}
+                aiDraftEnabled={homeworkModal.mode === 'create' && aiHomeworkDraftEnabled}
+                aiDraft={aiHomeworkDraft}
+                aiDraftLoading={aiHomeworkDraftLoading}
+                aiDraftError={aiHomeworkDraftError}
+                onRequestAiDraft={requestAiHomeworkDraft}
+                onUseAiDraft={useAiHomeworkDraft}
+                onCancelAiDraft={cancelAiHomeworkDraft}
             />
         </div>
     );
@@ -1118,6 +1337,7 @@ SessionHomeworkTab.propTypes = {
         code: PropTypes.string,
     }),
     selectedSession: PropTypes.shape({
+        courseId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
         title: PropTypes.string,
     }),
     selectedSessionId: PropTypes.string,

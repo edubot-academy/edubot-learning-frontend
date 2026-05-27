@@ -6,6 +6,29 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
 ---
 
+## [1.15.0] - 2026-05-28
+
+### Added
+
+- Added a superadmin AI LMS settings tab for enabling draft-generation features and feature limits by tenant or independent instructor scope.
+- Added AI-assisted course, lesson quiz, lesson kit, session quiz, homework, feedback, and worksheet drafting flows for instructor workflows with editable previews and explicit accept/reject tracking.
+- Added generated PDF/DOCX worksheet material creation from AI worksheet drafts in session resources.
+- Added online-live enrollment readiness checks for group enrollment and individual course creation.
+
+### Changed
+
+- Standardized AI generation preview flows around a drawer pattern for course, quiz, and worksheet drafting.
+- Improved API error parsing to surface request/correlation IDs from headers and stable error payloads.
+
+### Verification
+
+- `npm test`
+- `npm run lint`
+- `npm run audit:localization`
+- `npm run build`
+
+---
+
 ## [1.14.2] - 2026-05-25
 
 ### Fixed

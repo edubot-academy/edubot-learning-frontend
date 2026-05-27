@@ -2,7 +2,47 @@ import PropTypes from 'prop-types';
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import { FiCalendar, FiEdit3, FiFileText, FiPaperclip, FiX } from 'react-icons/fi';
+import { FiCalendar, FiChevronDown, FiEdit3, FiFileText, FiPaperclip, FiX, FiZap } from 'react-icons/fi';
+
+const formatHomeworkDraftDescription = (output, rubricLabel) => {
+  const description = output?.description || '';
+  const rubric = Array.isArray(output?.rubric)
+    ? output.rubric
+      .map((item) => {
+        const criterion = item?.criterion || item?.label || '';
+        const points = item?.points ?? item?.score ?? '';
+        return [criterion, points ? `(${points})` : ''].filter(Boolean).join(' ');
+      })
+      .filter(Boolean)
+    : [];
+
+  if (!rubric.length) return description;
+  return [description, `${rubricLabel}:\n${rubric.map((item) => `- ${item}`).join('\n')}`]
+    .filter(Boolean)
+    .join('\n\n');
+};
+
+const GENERIC_HOMEWORK_TOPICS = new Set([
+  'homework',
+  'assignment',
+  'task',
+  'practice',
+  'test',
+  '\u04af\u0439 \u0442\u0430\u043f\u0448\u044b\u0440\u043c\u0430',
+  '\u0442\u0430\u043f\u0448\u044b\u0440\u043c\u0430',
+  '\u043f\u0440\u0430\u043a\u0442\u0438\u043a\u0430',
+  '\u0434\u043e\u043c\u0430\u0448\u043d\u0435\u0435 \u0437\u0430\u0434\u0430\u043d\u0438\u0435',
+  '\u0437\u0430\u0434\u0430\u043d\u0438\u0435',
+]);
+
+const getHomeworkTopicIssueKey = (value) => {
+  const topic = value.trim().toLowerCase().replace(/\s+/g, ' ');
+  if (!topic) return 'required';
+  if (topic.length < 6) return 'tooShort';
+  if (/^[\d\W_]+$/.test(topic) || /(.)\1{4,}/.test(topic)) return 'meaningless';
+  if (GENERIC_HOMEWORK_TOPICS.has(topic)) return 'generic';
+  return '';
+};
 
 const HomeworkModal = ({
   isOpen,
@@ -12,6 +52,13 @@ const HomeworkModal = ({
   mode,
   loading,
   selectedSession,
+  aiDraftEnabled,
+  aiDraft,
+  aiDraftLoading,
+  aiDraftError,
+  onRequestAiDraft,
+  onUseAiDraft,
+  onCancelAiDraft,
 }) => {
   const { t } = useTranslation();
   const isEdit = mode === 'edit';
@@ -30,12 +77,39 @@ const HomeworkModal = ({
 
   const [formData, setFormData] = useState(defaultValues);
   const [errors, setErrors] = useState({});
+  const [isAiBriefOpen, setIsAiBriefOpen] = useState(false);
+  const [aiTopicTouched, setAiTopicTouched] = useState(false);
+  const [aiBrief, setAiBrief] = useState({
+    topic: defaultValues.title || selectedSession?.title || '',
+    difficulty: '',
+    maxScore: '',
+    includeRubric: true,
+  });
+  const aiTopicIssueKey = getHomeworkTopicIssueKey(aiBrief.topic);
+  const canGenerateAiDraft = !aiTopicIssueKey && !loading && !aiDraftLoading;
 
   // Reset form when homework changes
   useEffect(() => {
     setFormData(defaultValues);
     setErrors({});
   }, [defaultValues, mode]);
+
+  useEffect(() => {
+    setAiBrief({
+      topic: defaultValues.title || selectedSession?.title || '',
+      difficulty: '',
+      maxScore: '',
+      includeRubric: true,
+    });
+    setAiTopicTouched(false);
+    setIsAiBriefOpen(false);
+  }, [defaultValues.title, isOpen, selectedSession?.id, selectedSession?.title]);
+
+  useEffect(() => {
+    if (aiDraft) {
+      setIsAiBriefOpen(true);
+    }
+  }, [aiDraft]);
 
   if (!isOpen || typeof document === 'undefined') return null;
 
@@ -73,10 +147,51 @@ const HomeworkModal = ({
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    if (field === 'title' && !aiTopicTouched) {
+      setAiBrief((current) => ({ ...current, topic: value || selectedSession?.title || '' }));
+    }
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
+  };
+
+  const handleUseAiDraft = async () => {
+    if (!aiDraft?.output) return;
+    const accepted = await onUseAiDraft?.();
+    if (!accepted) return;
+    setFormData((current) => ({
+      ...current,
+      title: aiDraft.output.title || current.title,
+      description: formatHomeworkDraftDescription(aiDraft.output, t('ai.rubric')) || current.description,
+      isPublished: false,
+    }));
+    setIsAiBriefOpen(false);
+  };
+
+  const handleAiBriefChange = (field, value) => {
+    if (field === 'topic') {
+      setAiTopicTouched(true);
+    }
+    setAiBrief((current) => ({ ...current, [field]: value }));
+  };
+
+  const openAiBrief = () => {
+    setIsAiBriefOpen(true);
+    if (!aiBrief.topic.trim()) {
+      setAiBrief((current) => ({ ...current, topic: formData.title || selectedSession?.title || '' }));
+      setAiTopicTouched(Boolean(formData.title));
+    }
+  };
+
+  const handleRequestAiDraft = () => {
+    if (!canGenerateAiDraft) return;
+    onRequestAiDraft?.({
+      topic: aiBrief.topic.trim(),
+      difficulty: aiBrief.difficulty.trim(),
+      maxScore: aiBrief.maxScore,
+      includeRubric: aiBrief.includeRubric,
+    });
   };
 
   const formatDeadlineForInput = (deadline) => {
@@ -177,6 +292,142 @@ const HomeworkModal = ({
                 </div>
               </div>
             </section>
+
+            {/* AI homework draft */}
+            {aiDraftEnabled && !isEdit ? (
+	              <section className="rounded-[1.75rem] border border-amber-200 bg-amber-50/70 p-5 dark:border-amber-500/30 dark:bg-amber-500/10">
+	                <div className="flex flex-wrap items-center justify-between gap-3">
+	                  <div>
+	                    <div className="flex items-center gap-2 text-sm font-semibold text-edubot-ink dark:text-white">
+	                      <FiZap className="h-4 w-4 text-edubot-orange" />
+	                      {t('ai.homeworkDraft')}
+	                    </div>
+	                    <p className="mt-1 max-w-xl text-xs text-amber-800 dark:text-amber-200">
+	                      {t('ai.homeworkBrief.collapsedHelp')}
+	                    </p>
+	                  </div>
+	                  <button
+	                    type="button"
+	                    onClick={() => (isAiBriefOpen ? setIsAiBriefOpen(false) : openAiBrief())}
+	                    className="dashboard-button-secondary"
+	                    aria-expanded={isAiBriefOpen}
+	                  >
+	                    <FiZap className="h-4 w-4" />
+	                    {isAiBriefOpen ? t('ai.homeworkBrief.hideBrief') : t('ai.homeworkBrief.openBrief')}
+	                    <FiChevronDown className={`h-4 w-4 transition ${isAiBriefOpen ? 'rotate-180' : ''}`} />
+	                  </button>
+	                </div>
+	                {isAiBriefOpen ? (
+	                  <>
+		                <div className="mt-4 grid gap-3 md:grid-cols-2">
+		                  <label className="block text-sm">
+	                    <span className="mb-1 block font-semibold text-edubot-ink dark:text-white">
+	                      {t('ai.homeworkBrief.topic')} *
+	                    </span>
+	                    <input
+	                      type="text"
+	                      value={aiBrief.topic}
+	                      onChange={(event) => handleAiBriefChange('topic', event.target.value)}
+	                      placeholder={t('ai.homeworkBrief.topicPlaceholder')}
+	                      className="dashboard-field"
+	                      maxLength={160}
+		                      disabled={loading || aiDraftLoading}
+		                    />
+		                    {aiTopicIssueKey ? (
+		                      <p className="mt-1 text-xs text-red-600 dark:text-red-300">
+		                        {t(`ai.homeworkBrief.topicIssues.${aiTopicIssueKey}`)}
+		                      </p>
+		                    ) : null}
+		                  </label>
+	                  <label className="block text-sm">
+	                    <span className="mb-1 block font-semibold text-edubot-ink dark:text-white">
+	                      {t('ai.homeworkBrief.difficulty')}
+	                    </span>
+	                    <select
+	                      value={aiBrief.difficulty}
+	                      onChange={(event) => handleAiBriefChange('difficulty', event.target.value)}
+	                      className="dashboard-select"
+	                      disabled={loading || aiDraftLoading}
+	                    >
+	                      <option value="">{t('ai.homeworkBrief.difficultyAuto')}</option>
+	                      <option value="Beginner">{t('ai.homeworkBrief.difficultyBeginner')}</option>
+	                      <option value="Intermediate">{t('ai.homeworkBrief.difficultyIntermediate')}</option>
+	                      <option value="Advanced">{t('ai.homeworkBrief.difficultyAdvanced')}</option>
+	                    </select>
+	                  </label>
+	                  <label className="block text-sm">
+	                    <span className="mb-1 block font-semibold text-edubot-ink dark:text-white">
+	                      {t('ai.homeworkBrief.maxScore')}
+	                    </span>
+	                    <input
+	                      type="number"
+	                      min="0"
+	                      max="1000"
+	                      value={aiBrief.maxScore}
+	                      onChange={(event) => handleAiBriefChange('maxScore', event.target.value)}
+	                      placeholder={t('ai.homeworkBrief.maxScorePlaceholder')}
+	                      className="dashboard-field"
+	                      disabled={loading || aiDraftLoading}
+	                    />
+	                  </label>
+	                  <label className="flex items-center gap-3 rounded-2xl border border-amber-200/80 bg-white/70 px-4 py-3 text-sm font-semibold text-edubot-ink dark:border-amber-500/30 dark:bg-slate-950/40 dark:text-white">
+	                    <input
+	                      type="checkbox"
+	                      checked={aiBrief.includeRubric}
+	                      onChange={(event) => handleAiBriefChange('includeRubric', event.target.checked)}
+	                      className="h-4 w-4"
+	                      disabled={loading || aiDraftLoading}
+	                    />
+	                    {t('ai.homeworkBrief.includeRubric')}
+	                  </label>
+	                </div>
+		                <p className="mt-2 text-xs text-amber-800 dark:text-amber-200">
+		                  {t('ai.homeworkBrief.help')}
+		                </p>
+		                <div className="mt-4 flex flex-wrap justify-end gap-2">
+		                  <button
+		                    type="button"
+		                    onClick={handleRequestAiDraft}
+		                    disabled={!canGenerateAiDraft}
+		                    className="dashboard-button-secondary disabled:cursor-not-allowed disabled:opacity-60"
+		                  >
+		                    <FiZap className="h-4 w-4" />
+		                    {aiDraftLoading ? t('ai.generating') : t('ai.suggestHomework')}
+		                  </button>
+		                </div>
+		              </>
+	                ) : null}
+	                {aiDraft ? (
+                  <div className="mt-4 space-y-3 rounded-2xl border border-amber-200/80 bg-white/80 p-4 text-sm dark:border-amber-500/30 dark:bg-slate-950/70">
+                    <div>
+                      <div className="text-xs font-semibold uppercase tracking-[0.12em] text-amber-700 dark:text-amber-300">
+                        {t('groupSessions.homeworkModal.fields.title')}
+                      </div>
+                      <p className="mt-1 font-semibold text-edubot-ink dark:text-white">
+                        {aiDraft.output?.title || '-'}
+                      </p>
+                    </div>
+                    <div>
+                      <div className="text-xs font-semibold uppercase tracking-[0.12em] text-amber-700 dark:text-amber-300">
+                        {t('groupSessions.homeworkModal.fields.description')}
+                      </div>
+                      <p className="mt-1 whitespace-pre-wrap text-edubot-muted dark:text-slate-300">
+                        {formatHomeworkDraftDescription(aiDraft.output, t('ai.rubric')) || '-'}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      <button type="button" onClick={handleUseAiDraft} className="dashboard-button-secondary">
+                        {t('ai.useDraft')}
+                      </button>
+                      <button type="button" onClick={onCancelAiDraft} className="dashboard-button-secondary text-red-600">
+                        {t('ai.cancelDraft')}
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+                {aiDraftError ? <p className="mt-3 text-xs text-red-600 dark:text-red-300">{aiDraftError}</p> : null}
+              </section>
+            ) : null}
 
             {/* Schedule */}
             <section className="rounded-[1.75rem] border border-edubot-line/70 bg-edubot-surfaceAlt/35 p-5 dark:border-slate-700 dark:bg-slate-900/35">
@@ -300,11 +551,32 @@ HomeworkModal.propTypes = {
     title: PropTypes.string,
     sessionIndex: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   }),
+  aiDraftEnabled: PropTypes.bool,
+  aiDraft: PropTypes.shape({
+    generationId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    output: PropTypes.shape({
+      title: PropTypes.string,
+      description: PropTypes.string,
+      rubric: PropTypes.arrayOf(PropTypes.object),
+    }),
+  }),
+  aiDraftLoading: PropTypes.bool,
+  aiDraftError: PropTypes.string,
+  onRequestAiDraft: PropTypes.func,
+  onUseAiDraft: PropTypes.func,
+  onCancelAiDraft: PropTypes.func,
 };
 
 HomeworkModal.defaultProps = {
   homework: null,
   selectedSession: null,
+  aiDraftEnabled: false,
+  aiDraft: null,
+  aiDraftLoading: false,
+  aiDraftError: '',
+  onRequestAiDraft: undefined,
+  onUseAiDraft: undefined,
+  onCancelAiDraft: undefined,
 };
 
 export default HomeworkModal;

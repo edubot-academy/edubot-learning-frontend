@@ -40,6 +40,7 @@ export const ADMIN_DASHBOARD_TABS = Object.freeze({
     CERTIFICATES: 'certificates',
     SKILLS: 'skills',
     AI_PROMPTS: 'ai-prompts',
+    AI_LMS: 'ai-lms',
     NOTIFICATIONS: 'notifications',
     ANALYTICS: 'analytics',
 });

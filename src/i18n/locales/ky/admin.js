@@ -19,6 +19,7 @@ export const admin = {
             contacts: "Байланыштар",
             analytics: "Аналитика",
             aiPrompts: "AI промпттар",
+            aiLms: "AI LMS жөндөөлөрү",
             skills: "Скиллдер",
             notifications: "Билдирүүлөр",
             integration: "Интеграциялар",
@@ -294,6 +295,62 @@ export const admin = {
             note: "Эскертүү"
         },
         note: "Группа менен өтүүчү курстар үчүн деталдуу башкаруу группа, сессия жана катталуу табдары аркылуу жүргүзүлөт."
+    },
+    adminAiLms: {
+        eyebrow: "AI LMS",
+        title: "AI LMS жөндөөлөрү",
+        description: "Ижарачы же жеке инструктор үчүн AI LMS черновик куралдарын жана колдонуу лимиттерин күйгүзүңүз.",
+        metrics: {
+            scope: "Алкак",
+            enabledFeatures: "Күйгөн функциялар",
+            limits: "Лимиттер"
+        },
+        scope: {
+            title: "Релиз алкагы",
+            description: "AI LMS башкаруу элементтери көрүнүшү керек болгон ижарачыны же жеке инструкторду тандаңыз.",
+            tenant: "Ижарачы",
+            independentInstructor: "Жеке инструктор",
+            userId: "Инструктор user ID",
+            selectInstructor: "Инструктор тандаңыз",
+            loadingInstructors: "Инструкторлор жүктөлүүдө..."
+        },
+        settings: {
+            title: "Функция жөндөөлөрү",
+            description: "Бул алкак жана функция күйгөндө гана фронтенд AI башкаруу элементтерин көрсөтөт.",
+            enabled: "Бул алкак үчүн AI LMS күйгүзүү"
+        },
+        limits: {
+            title: "Функция лимиттери",
+            description: "Продакшенде функцияны күйгүзүүдөн мурун этият лимиттерди коюңуз.",
+            enabled: "Күйүк",
+            daily: "Күндүк",
+            monthly: "Айлык"
+        },
+        features: {
+            feedback_draft: "Пикир черновиги",
+            lesson_quiz_draft: "Тест черновиги",
+            homework_draft: "Үй тапшырма черновиги",
+            lesson_kit: "Сабак топтому",
+            worksheet_draft: "Иш барагы черновиги",
+            course_draft: "Курс черновиги",
+            message_draft: "Студентке билдирүү черновиги"
+        },
+        actions: {
+            reload: "Кайра жүктөө",
+            loading: "Жүктөлүүдө...",
+            saving: "Сакталууда...",
+            saved: "Сакталды",
+            saveSettings: "Жөндөөлөрдү сактоо",
+            saveLimit: "Лимитти сактоо"
+        },
+        toasts: {
+            loadError: "AI LMS жөндөөлөрүн жүктөө мүмкүн болгон жок.",
+            settingsSaved: "AI LMS жөндөөлөрү сакталды.",
+            settingsSaveError: "AI LMS жөндөөлөрүн сактоо мүмкүн болгон жок.",
+            limitSaved: "AI LMS функция лимити сакталды.",
+            limitSaveError: "AI LMS функция лимитин сактоо мүмкүн болгон жок.",
+            instructorsLoadError: "Инструкторлорду жүктөө мүмкүн болгон жок."
+        }
     },
     adminAiPrompts: {
         eyebrow: "AI промпттар",
