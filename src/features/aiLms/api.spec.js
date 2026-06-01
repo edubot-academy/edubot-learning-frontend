@@ -27,7 +27,7 @@ describe('AI LMS API', () => {
     it('routes Sprint 7 draft helpers to backend endpoints', async () => {
         await generateAiLessonQuizDraft(11, { questionCount: 3 });
         await generateAiSessionQuizDraft(22, { questionCount: 4 });
-        await generateAiHomeworkDraft(33, { topic: 'Homework' });
+        await generateAiHomeworkDraft(33, { topic: 'Homework', instructions: 'Create 5 tasks.' });
         await generateAiLessonKit(44, { focus: 'Lesson' });
         await generateAiWorksheetDraft(55, { topic: 'Worksheet' });
         await generateAiCourseDraft({ topic: 'Course' });
@@ -35,7 +35,10 @@ describe('AI LMS API', () => {
 
         expect(api.post).toHaveBeenNthCalledWith(1, '/ai-lms/lessons/11/quiz-draft', { questionCount: 3 });
         expect(api.post).toHaveBeenNthCalledWith(2, '/ai-lms/sessions/22/quiz-draft', { questionCount: 4 });
-        expect(api.post).toHaveBeenNthCalledWith(3, '/ai-lms/sessions/33/homework-draft', { topic: 'Homework' });
+        expect(api.post).toHaveBeenNthCalledWith(3, '/ai-lms/sessions/33/homework-draft', {
+            topic: 'Homework',
+            instructions: 'Create 5 tasks.',
+        });
         expect(api.post).toHaveBeenNthCalledWith(4, '/ai-lms/lessons/44/lesson-kit', { focus: 'Lesson' });
         expect(api.post).toHaveBeenNthCalledWith(5, '/ai-lms/sessions/55/worksheet-draft', { topic: 'Worksheet' });
         expect(api.post).toHaveBeenNthCalledWith(6, '/ai-lms/courses/course-draft', { topic: 'Course' });

@@ -408,6 +408,7 @@ const SessionHomeworkTab = ({
             const draft = await generateAiHomeworkDraft(selectedSessionId, {
                 language: i18n.language || 'ky',
                 topic: brief.topic || selectedSession?.title || '',
+                ...(brief.instructions?.trim() ? { instructions: brief.instructions.trim() } : {}),
                 ...(brief.difficulty ? { difficulty: brief.difficulty } : {}),
                 ...(brief.maxScore !== undefined && brief.maxScore !== null && brief.maxScore !== ''
                     ? { maxScore: Number(brief.maxScore) }

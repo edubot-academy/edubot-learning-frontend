@@ -2,12 +2,13 @@ import PropTypes from 'prop-types';
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import { FiCalendar, FiChevronDown, FiEdit3, FiFileText, FiPaperclip, FiX, FiZap } from 'react-icons/fi';
+import { FiCalendar, FiEdit3, FiFileText, FiPaperclip, FiX, FiZap } from 'react-icons/fi';
 
 const formatHomeworkDraftDescription = (output, rubricLabel) => {
-  const description = output?.description || '';
-  const rubric = Array.isArray(output?.rubric)
-    ? output.rubric
+  const normalized = normalizeHomeworkDraftOutput(output);
+  const description = normalized?.description || '';
+  const rubric = Array.isArray(normalized?.rubric)
+    ? normalized.rubric
       .map((item) => {
         const criterion = item?.criterion || item?.label || '';
         const points = item?.points ?? item?.score ?? '';
@@ -20,6 +21,26 @@ const formatHomeworkDraftDescription = (output, rubricLabel) => {
   return [description, `${rubricLabel}:\n${rubric.map((item) => `- ${item}`).join('\n')}`]
     .filter(Boolean)
     .join('\n\n');
+};
+
+const normalizeHomeworkDraftOutput = (output) => {
+  if (!output) return output;
+  let nested = null;
+  if (typeof output.description === 'string' && output.description.trim().startsWith('{')) {
+    try {
+      nested = JSON.parse(output.description);
+    } catch {
+      nested = null;
+    }
+  }
+  const merged = nested && (nested.description || nested.title)
+    ? { ...output, ...nested }
+    : output;
+  return {
+    ...merged,
+    description: String(merged.description || '').replace(/\\n/g, '\n').replace(/\\"/g, '"').trim(),
+    maxScore: Number(merged.maxScore) > 0 ? Number(merged.maxScore) : null,
+  };
 };
 
 const GENERIC_HOMEWORK_TOPICS = new Set([
@@ -77,37 +98,44 @@ const HomeworkModal = ({
 
   const [formData, setFormData] = useState(defaultValues);
   const [errors, setErrors] = useState({});
-  const [isAiBriefOpen, setIsAiBriefOpen] = useState(false);
+  const [createMode, setCreateMode] = useState('manual');
   const [aiTopicTouched, setAiTopicTouched] = useState(false);
   const [aiBrief, setAiBrief] = useState({
     topic: defaultValues.title || selectedSession?.title || '',
+    instructions: '',
     difficulty: '',
     maxScore: '',
     includeRubric: true,
   });
   const aiTopicIssueKey = getHomeworkTopicIssueKey(aiBrief.topic);
   const canGenerateAiDraft = !aiTopicIssueKey && !loading && !aiDraftLoading;
+  const normalizedAiDraftOutput = useMemo(
+    () => normalizeHomeworkDraftOutput(aiDraft?.output),
+    [aiDraft?.output]
+  );
 
   // Reset form when homework changes
   useEffect(() => {
     setFormData(defaultValues);
     setErrors({});
+    setCreateMode('manual');
   }, [defaultValues, mode]);
 
   useEffect(() => {
     setAiBrief({
       topic: defaultValues.title || selectedSession?.title || '',
+      instructions: '',
       difficulty: '',
       maxScore: '',
       includeRubric: true,
     });
     setAiTopicTouched(false);
-    setIsAiBriefOpen(false);
+    setCreateMode('manual');
   }, [defaultValues.title, isOpen, selectedSession?.id, selectedSession?.title]);
 
   useEffect(() => {
     if (aiDraft) {
-      setIsAiBriefOpen(true);
+      setCreateMode('ai');
     }
   }, [aiDraft]);
 
@@ -162,11 +190,11 @@ const HomeworkModal = ({
     if (!accepted) return;
     setFormData((current) => ({
       ...current,
-      title: aiDraft.output.title || current.title,
-      description: formatHomeworkDraftDescription(aiDraft.output, t('ai.rubric')) || current.description,
+      title: normalizedAiDraftOutput?.title || current.title,
+      description: formatHomeworkDraftDescription(normalizedAiDraftOutput, t('ai.rubric')) || current.description,
       isPublished: false,
     }));
-    setIsAiBriefOpen(false);
+    setCreateMode('manual');
   };
 
   const handleAiBriefChange = (field, value) => {
@@ -177,7 +205,6 @@ const HomeworkModal = ({
   };
 
   const openAiBrief = () => {
-    setIsAiBriefOpen(true);
     if (!aiBrief.topic.trim()) {
       setAiBrief((current) => ({ ...current, topic: formData.title || selectedSession?.title || '' }));
       setAiTopicTouched(Boolean(formData.title));
@@ -188,6 +215,7 @@ const HomeworkModal = ({
     if (!canGenerateAiDraft) return;
     onRequestAiDraft?.({
       topic: aiBrief.topic.trim(),
+      instructions: aiBrief.instructions.trim(),
       difficulty: aiBrief.difficulty.trim(),
       maxScore: aiBrief.maxScore,
       includeRubric: aiBrief.includeRubric,
@@ -249,7 +277,29 @@ const HomeworkModal = ({
         {/* Form */}
         <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
           <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto p-6">
+            {aiDraftEnabled && !isEdit ? (
+              <div className="inline-grid w-full max-w-md grid-cols-2 gap-1 rounded-lg border border-edubot-line/80 bg-edubot-surfaceAlt/60 p-1 dark:border-slate-700 dark:bg-slate-900/60">
+                <button
+                  type="button"
+                  onClick={() => setCreateMode('manual')}
+                  className={`min-h-10 rounded-md px-3 text-sm font-semibold transition ${createMode === 'manual' ? 'bg-white text-edubot-ink shadow-sm dark:bg-slate-800 dark:text-white' : 'text-edubot-muted hover:text-edubot-ink dark:text-slate-400 dark:hover:text-white'}`}
+                >
+                  {t('ai.manualMode')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCreateMode('ai');
+                    openAiBrief();
+                  }}
+                  className={`min-h-10 rounded-md px-3 text-sm font-semibold transition ${createMode === 'ai' ? 'bg-white text-edubot-ink shadow-sm dark:bg-slate-800 dark:text-white' : 'text-edubot-muted hover:text-edubot-ink dark:text-slate-400 dark:hover:text-white'}`}
+                >
+                  {t('ai.aiDraftMode')}
+                </button>
+              </div>
+            ) : null}
             {/* Basic Information */}
+            {createMode === 'manual' ? (
             <section className="rounded-[1.75rem] border border-edubot-line/70 bg-edubot-surfaceAlt/35 p-5 dark:border-slate-700 dark:bg-slate-900/35">
               <div className="flex items-center gap-2 text-sm font-semibold text-edubot-ink dark:text-white">
                 <FiFileText className="h-4 w-4 text-edubot-orange" />
@@ -292,9 +342,10 @@ const HomeworkModal = ({
                 </div>
               </div>
             </section>
+            ) : null}
 
             {/* AI homework draft */}
-            {aiDraftEnabled && !isEdit ? (
+            {aiDraftEnabled && !isEdit && createMode === 'ai' ? (
 	              <section className="rounded-[1.75rem] border border-amber-200 bg-amber-50/70 p-5 dark:border-amber-500/30 dark:bg-amber-500/10">
 	                <div className="flex flex-wrap items-center justify-between gap-3">
 	                  <div>
@@ -306,18 +357,7 @@ const HomeworkModal = ({
 	                      {t('ai.homeworkBrief.collapsedHelp')}
 	                    </p>
 	                  </div>
-	                  <button
-	                    type="button"
-	                    onClick={() => (isAiBriefOpen ? setIsAiBriefOpen(false) : openAiBrief())}
-	                    className="dashboard-button-secondary"
-	                    aria-expanded={isAiBriefOpen}
-	                  >
-	                    <FiZap className="h-4 w-4" />
-	                    {isAiBriefOpen ? t('ai.homeworkBrief.hideBrief') : t('ai.homeworkBrief.openBrief')}
-	                    <FiChevronDown className={`h-4 w-4 transition ${isAiBriefOpen ? 'rotate-180' : ''}`} />
-	                  </button>
 	                </div>
-	                {isAiBriefOpen ? (
 	                  <>
 		                <div className="mt-4 grid gap-3 md:grid-cols-2">
 		                  <label className="block text-sm">
@@ -339,6 +379,19 @@ const HomeworkModal = ({
 		                      </p>
 		                    ) : null}
 		                  </label>
+	                  <label className="block text-sm md:col-span-2">
+	                    <span className="mb-1 block font-semibold text-edubot-ink dark:text-white">
+	                      {t('ai.homeworkBrief.instructions')}
+	                    </span>
+	                    <textarea
+	                      value={aiBrief.instructions}
+	                      onChange={(event) => handleAiBriefChange('instructions', event.target.value)}
+	                      placeholder={t('ai.homeworkBrief.instructionsPlaceholder')}
+	                      rows={3}
+	                      className="dashboard-field resize-none"
+	                      disabled={loading || aiDraftLoading}
+	                    />
+	                  </label>
 	                  <label className="block text-sm">
 	                    <span className="mb-1 block font-semibold text-edubot-ink dark:text-white">
 	                      {t('ai.homeworkBrief.difficulty')}
@@ -396,32 +449,30 @@ const HomeworkModal = ({
 		                  </button>
 		                </div>
 		              </>
-	                ) : null}
 	                {aiDraft ? (
-                  <div className="mt-4 space-y-3 rounded-2xl border border-amber-200/80 bg-white/80 p-4 text-sm dark:border-amber-500/30 dark:bg-slate-950/70">
-                    <div>
-                      <div className="text-xs font-semibold uppercase tracking-[0.12em] text-amber-700 dark:text-amber-300">
-                        {t('groupSessions.homeworkModal.fields.title')}
+                  <div className="mt-4 overflow-hidden rounded-2xl border border-amber-200/80 bg-white/80 text-sm dark:border-amber-500/30 dark:bg-slate-950/70">
+                    <div className="flex flex-wrap items-start justify-between gap-3 border-b border-amber-100 px-4 py-3 dark:border-amber-500/20">
+                      <div className="min-w-0">
+                        <div className="text-xs font-semibold uppercase tracking-[0.12em] text-amber-700 dark:text-amber-300">
+                          {t('ai.homeworkDraftReady')}
+                        </div>
+                        <p className="mt-1 break-words font-semibold text-edubot-ink dark:text-white">
+                          {normalizedAiDraftOutput?.title || '-'}
+                        </p>
                       </div>
-                      <p className="mt-1 font-semibold text-edubot-ink dark:text-white">
-                        {aiDraft.output?.title || '-'}
-                      </p>
-                    </div>
-                    <div>
-                      <div className="text-xs font-semibold uppercase tracking-[0.12em] text-amber-700 dark:text-amber-300">
-                        {t('groupSessions.homeworkModal.fields.description')}
+                      <div className="flex flex-wrap gap-2">
+                        <button type="button" onClick={handleUseAiDraft} className="dashboard-button-secondary min-w-0 whitespace-normal text-sm leading-tight">
+                          {t('ai.useInManualForm')}
+                        </button>
+                        <button type="button" onClick={onCancelAiDraft} className="dashboard-button-secondary min-w-0 whitespace-normal text-sm leading-tight text-red-600">
+                          {t('ai.cancelDraft')}
+                        </button>
                       </div>
-                      <p className="mt-1 whitespace-pre-wrap text-edubot-muted dark:text-slate-300">
-                        {formatHomeworkDraftDescription(aiDraft.output, t('ai.rubric')) || '-'}
-                      </p>
                     </div>
-                    <div className="flex flex-wrap gap-2 pt-1">
-                      <button type="button" onClick={handleUseAiDraft} className="dashboard-button-secondary">
-                        {t('ai.useDraft')}
-                      </button>
-                      <button type="button" onClick={onCancelAiDraft} className="dashboard-button-secondary text-red-600">
-                        {t('ai.cancelDraft')}
-                      </button>
+                    <div className="max-h-80 overflow-auto p-4">
+                      <p className="whitespace-pre-wrap text-sm leading-6 text-edubot-muted dark:text-slate-300">
+                        {formatHomeworkDraftDescription(normalizedAiDraftOutput, t('ai.rubric')) || '-'}
+                      </p>
                     </div>
                   </div>
                 ) : null}
@@ -430,6 +481,7 @@ const HomeworkModal = ({
             ) : null}
 
             {/* Schedule */}
+            {createMode === 'manual' ? (
             <section className="rounded-[1.75rem] border border-edubot-line/70 bg-edubot-surfaceAlt/35 p-5 dark:border-slate-700 dark:bg-slate-900/35">
               <div className="flex items-center gap-2 text-sm font-semibold text-edubot-ink dark:text-white">
                 <FiCalendar className="h-4 w-4 text-edubot-orange" />
@@ -452,8 +504,10 @@ const HomeworkModal = ({
                 </p>
               </div>
             </section>
+            ) : null}
 
             {/* Publishing Options */}
+            {createMode === 'manual' ? (
             <section className="rounded-[1.75rem] border border-edubot-line/70 bg-edubot-surfaceAlt/35 p-5 dark:border-slate-700 dark:bg-slate-900/35">
               <div className="flex items-center gap-2 text-sm font-semibold text-edubot-ink dark:text-white">
                 <FiPaperclip className="h-4 w-4 text-edubot-orange" />
@@ -481,9 +535,10 @@ const HomeworkModal = ({
                 </p>
               </div>
             </section>
+            ) : null}
 
             {/* Session Context */}
-            {selectedSession && (
+            {selectedSession && createMode === 'manual' && (
               <section className="rounded-[1.75rem] border border-edubot-line/70 bg-slate-900 px-5 py-5 text-white dark:border-slate-700 dark:bg-slate-800">
                 <div className="text-sm font-semibold text-white">
                   {t('groupSessions.homeworkModal.sections.context')}
@@ -517,6 +572,16 @@ const HomeworkModal = ({
               >
                 {t('groupSessions.homeworkModal.actions.cancel')}
               </button>
+              {createMode === 'ai' ? (
+                <button
+                  type="button"
+                  className="dashboard-button-secondary"
+                  onClick={() => setCreateMode('manual')}
+                >
+                  {t('ai.manualMode')}
+                </button>
+              ) : null}
+              {createMode === 'manual' ? (
               <button
                 type="submit"
                 disabled={loading}
@@ -524,6 +589,7 @@ const HomeworkModal = ({
               >
                 {loading ? t('groupSessions.homeworkModal.actions.saving') : submitButtonText}
               </button>
+              ) : null}
             </div>
           </div>
         </form>

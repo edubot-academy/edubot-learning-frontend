@@ -6,6 +6,22 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
 ---
 
+## [1.15.1] - 2026-06-01
+
+### Fixed
+
+- Prevented video lessons from being toggled back to incomplete when the 95% watched auto-complete handler and the video ended handler fire in quick succession.
+- Kept course completion state available synchronously during video playback so automatic completion is one-shot per lesson.
+- Improved AI homework drafts by adding an instructions field and correctly copying nested draft output into the manual homework form.
+
+### Verification
+
+- `npm run lint`
+- `npm run test`
+- `npm run build`
+
+---
+
 ## [1.15.0] - 2026-05-28
 
 ### Added

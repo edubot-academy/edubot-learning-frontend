@@ -405,7 +405,7 @@ export const useCourseVideoProgress = ({
     enrolled,
     activeLesson,
     activeLessonRef,
-    completedLessons,
+    completedLessonsRef,
     hasPlayedRef,
     markingCompleteRef,
     sections,
@@ -455,7 +455,7 @@ export const useCourseVideoProgress = ({
                 duration &&
                 duration > 0 &&
                 time / duration >= 0.95 &&
-                !completedLessons.includes(activeLessonRef.current.id) &&
+                !completedLessonsRef.current.includes(activeLessonRef.current.id) &&
                 !markingCompleteRef.current
             ) {
                 try {
@@ -486,7 +486,7 @@ export const useCourseVideoProgress = ({
         [
             activeLesson,
             activeLessonRef,
-            completedLessons,
+            completedLessonsRef,
             courseId,
             debouncedTimeUpdate,
             enrolled,
@@ -516,7 +516,13 @@ export const useCourseVideoProgress = ({
 
     const handleEnded = useCallback(async () => {
         if (!hasPlayedRef.current || isRuntimeActivityLesson(activeLesson)) return;
-        if (user && enrolled && activeLesson && !markingCompleteRef.current) {
+        if (
+            user &&
+            enrolled &&
+            activeLesson &&
+            !completedLessonsRef.current.includes(activeLesson.id) &&
+            !markingCompleteRef.current
+        ) {
             try {
                 markingCompleteRef.current = true;
                 const resp = await markLessonComplete(
@@ -547,6 +553,7 @@ export const useCourseVideoProgress = ({
         }
     }, [
         activeLesson,
+        completedLessonsRef,
         courseId,
         enrolled,
         hasPlayedRef,
@@ -777,6 +784,7 @@ export const useCourseDetailsController = ({ courseId, searchParams, user }) => 
     const [autoPlayActiveLesson, setAutoPlayActiveLesson] = useState(false);
     const activeLessonRef = useRef(null);
     const [completedLessons, setCompletedLessons] = useState([]);
+    const completedLessonsRef = useRef([]);
     const [resumeVideoTime, setResumeVideoTime] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -796,6 +804,10 @@ export const useCourseDetailsController = ({ courseId, searchParams, user }) => 
     useEffect(() => {
         activeLessonRef.current = activeLesson;
     }, [activeLesson]);
+
+    useEffect(() => {
+        completedLessonsRef.current = completedLessons;
+    }, [completedLessons]);
 
     const applyEnrollmentState = useCallback((isEnrolled) => {
         setEnrolled(isEnrolled);
@@ -834,13 +846,19 @@ export const useCourseDetailsController = ({ courseId, searchParams, user }) => 
     );
 
     const addCompletedLesson = useCallback((lessonId) => {
-        setCompletedLessons((prev) => [...new Set([...prev, lessonId])]);
+        setCompletedLessons((prev) => {
+            const next = [...new Set([...prev, lessonId])];
+            completedLessonsRef.current = next;
+            return next;
+        });
     }, []);
 
     const removeCompletedLesson = useCallback((lessonId) => {
-        setCompletedLessons((prev) =>
-            prev.filter((completedLessonId) => completedLessonId !== lessonId)
-        );
+        setCompletedLessons((prev) => {
+            const next = prev.filter((completedLessonId) => completedLessonId !== lessonId);
+            completedLessonsRef.current = next;
+            return next;
+        });
     }, []);
 
     const {
@@ -1017,7 +1035,7 @@ export const useCourseDetailsController = ({ courseId, searchParams, user }) => 
             enrolled,
             activeLesson,
             activeLessonRef,
-            completedLessons,
+            completedLessonsRef,
             hasPlayedRef,
             markingCompleteRef,
             sections,
