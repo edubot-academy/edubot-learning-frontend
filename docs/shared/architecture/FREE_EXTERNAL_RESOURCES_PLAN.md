@@ -1,6 +1,6 @@
 # Free External Learning Resources — EduBot Learning Integration Plan
 
-_Last updated: 2026-06-09_
+_Last updated: 2026-06-09. Phase 1 frontend implementation complete. See §22 for task status and §28 for implementation notes._
 
 ## 1. Purpose
 
@@ -1224,26 +1224,28 @@ Do not overbuild progress, notes, AI, certificates, or full dashboard widgets ye
 
 ### Phase 1 — Frontend MVP
 
-- [ ] Create `src/features/externalResources/data/externalResources.js`.
-- [ ] Add 20–30 curated resources with complete metadata.
-- [ ] Create `ExternalResourceCard.jsx`.
-- [ ] Create `ExternalResourcesGrid.jsx`.
-- [ ] Create `ExternalResourcesHomeSection.jsx`.
-- [ ] Create `ExternalResourceAuthPrompt.jsx`.
-- [ ] Add section to `src/pages/Home.jsx` after `TopCourses`.
-- [ ] Create `ExternalResourcesPage.jsx`.
-- [ ] Create `ExternalResourceDetails.jsx`.
-- [ ] Add `/resources` and `/resources/:slug` routes to `src/app/routes.jsx`.
-- [ ] Add Kyrgyz, Russian, and English translations.
-- [ ] Add disclaimer component.
-- [ ] Add logged-out CTA behavior for save/start actions.
-- [ ] Add login/register redirect params: `redirect` and `intent`.
-- [ ] Validate redirect params to prevent open redirects.
-- [ ] Add responsive mobile UI.
-- [ ] Validate dark mode styling.
-- [ ] Implement homepage section based on the UI/UX design plan.
-- [ ] Implement resource cards as guided opportunities, not paid course cards.
-- [ ] Keep official provider link secondary to the EduBot guide page.
+**Status: Complete.** See §28 for full implementation notes.
+
+- [x] Create `src/features/externalResources/data/externalResources.js`.
+- [x] Add curated resources with complete metadata — 10 resources launched (CS50 anchor + 9 more). See §25.4 for rationale on starting with 8–10 rather than 30.
+- [x] Create `ExternalResourceCard.jsx`.
+- [x] `ExternalResourcesGrid.jsx` — grid is inline in `ExternalResourcesPage.jsx`; separate file not needed.
+- [x] Create `ExternalResourcesHomeSection.jsx`.
+- [x] Create `ExternalResourceAuthPrompt.jsx`.
+- [x] Add section to `src/pages/Home.jsx` after `TopCourses`.
+- [x] Create `ExternalResourcesPage.jsx`.
+- [x] Create `ExternalResourceDetails.jsx`.
+- [x] Add `/resources` and `/resources/:slug` routes to `src/app/routes.jsx`.
+- [x] Translations — marketing pages use hardcoded Kyrgyz strings following the existing pattern (no `useTranslation`). All text is in Kyrgyz.
+- [x] Add disclaimer component (`ExternalResourceDisclaimer.jsx`).
+- [x] Add logged-out CTA behavior — `ExternalResourceAuthPrompt` inline banner with register CTA.
+- [ ] `?redirect=` and `?intent=` URL params — auth prompt passes `state` via `react-router` navigate, not query params. Implement explicit URL params in Phase 3 when save/start actions have backend support.
+- [ ] Validate redirect params — `ExternalResourceDetails` validates the official URL before opening. The `?redirect=` login param validation belongs alongside Phase 3 when the param is introduced.
+- [x] Responsive mobile UI — all components built with Tailwind responsive classes.
+- [x] Dark mode styling — `dark:` classes throughout.
+- [x] Homepage section matches the UI/UX design plan from §21.2.
+- [x] Resource cards framed as guided opportunities, primary CTA is EduBot detail page.
+- [x] Official provider link is secondary (icon button, not the primary CTA).
 
 ### Phase 2 — Course Page Integration
 
@@ -1265,16 +1267,214 @@ Do not overbuild progress, notes, AI, certificates, or full dashboard widgets ye
 - [ ] After login/signup, return users to the same resource page.
 - [ ] Resume intended action after login/signup when supported.
 
-### Phase 4 — Backend and Admin
+### Phase 4 — Backend: Catalog and User Progress
 
-- [ ] Create backend `external-resources` module.
-- [ ] Add admin CRUD.
-- [ ] Add course-resource relation.
-- [ ] Add user progress model.
-- [ ] Add analytics events.
-- [ ] Add admin dashboard for resource performance.
+**Build trigger:** Only start this phase after Phase 1 static MVP has run for 2–3 weeks and confirms real user demand (students saving resources, requesting progress tracking, or joining study groups). Do not build speculatively.
 
-### Phase 5 — AI Learning Companion
+#### 4.1 — Project setup
+
+- [ ] Create `src/external-resources/` directory in the backend repo.
+- [ ] Create the following files inside it:
+  ```
+  external-resource.entity.ts
+  user-external-resource-progress.entity.ts
+  external-resources.module.ts
+  external-resources.service.ts
+  external-resources.controller.ts
+  dto/create-external-resource.dto.ts
+  dto/update-external-resource.dto.ts
+  dto/upsert-progress.dto.ts
+  ```
+- [ ] Register `ExternalResource` and `UserExternalResourceProgress` entities in `app.module.ts` TypeORM entity list.
+- [ ] Import `ExternalResourcesModule` in `app.module.ts`.
+
+#### 4.2 — Database migrations
+
+- [ ] Create `src/database/migrations/1771000000040-createExternalResources.ts`:
+  ```sql
+  CREATE TABLE "external_resources" (
+      "id"               SERIAL PRIMARY KEY,
+      "slug"             varchar(255) NOT NULL UNIQUE,
+      "title"            varchar(500) NOT NULL,
+      "provider"         varchar(255) NOT NULL,
+      "providerKey"      varchar(100) NOT NULL,
+      "url"              varchar(2048) NOT NULL,
+      "category"         varchar(100) NOT NULL,
+      "level"            varchar(50),
+      "language"         varchar(50),
+      "priceLabel"       varchar(100),
+      "certificateLabel" varchar(100),
+      "durationLabel"    varchar(100),
+      "content"          jsonb NOT NULL DEFAULT '{}',
+      "isFeatured"       boolean NOT NULL DEFAULT false,
+      "isPublished"      boolean NOT NULL DEFAULT false,
+      "sortOrder"        integer NOT NULL DEFAULT 0,
+      "createdAt"        TIMESTAMPTZ NOT NULL DEFAULT now(),
+      "updatedAt"        TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+  CREATE INDEX "IDX_external_resources_category" ON "external_resources" ("category");
+  ```
+- [ ] Create `src/database/migrations/1771000000041-createUserExternalResourceProgress.ts`:
+  ```sql
+  CREATE TABLE "user_external_resource_progress" (
+      "id"                SERIAL PRIMARY KEY,
+      "userId"            integer NOT NULL,
+      "resourceId"        integer NOT NULL
+          REFERENCES "external_resources"("id") ON DELETE CASCADE,
+      "status"            varchar(20) NOT NULL DEFAULT 'saved',
+      "progressPercent"   integer NOT NULL DEFAULT 0,
+      "notes"             text,
+      "checklistProgress" jsonb,
+      "certificateUrl"    varchar(2048),
+      "startedAt"         TIMESTAMPTZ,
+      "completedAt"       TIMESTAMPTZ,
+      "createdAt"         TIMESTAMPTZ NOT NULL DEFAULT now(),
+      "updatedAt"         TIMESTAMPTZ NOT NULL DEFAULT now(),
+      CONSTRAINT "UQ_uerp_user_resource" UNIQUE ("userId", "resourceId")
+  );
+  CREATE INDEX "IDX_uerp_user" ON "user_external_resource_progress" ("userId");
+  ```
+- [ ] Run migrations on staging and verify tables exist.
+- [ ] Add down migrations (DROP TABLE) for both.
+
+#### 4.3 — Seed initial data
+
+- [ ] Create `src/scripts/seed-external-resources.ts` that reads from the frontend static data file (or a shared JSON file) and inserts rows into `external_resources`.
+- [ ] Mark all seeded resources as `isPublished: true` and set `sortOrder` incrementally.
+- [ ] Run seed script on staging. Verify `GET /external-resources` returns data.
+- [ ] Document how to re-run the seed without duplicates (use `ON CONFLICT (slug) DO UPDATE`).
+
+#### 4.4 — Public catalog API (no auth)
+
+- [ ] `GET /external-resources` — list published resources.
+  - Support `?category=` filter.
+  - Support `?featured=true` filter for homepage section.
+  - Support `?limit=` and `?offset=` for pagination (default limit 20).
+  - Return only `isPublished: true` records.
+  - Order by `sortOrder ASC, createdAt DESC`.
+  - Do not return the full `content` JSONB in list responses — return summary fields only (`slug`, `title`, `provider`, `providerKey`, `category`, `level`, `language`, `priceLabel`, `certificateLabel`, `durationLabel`, `isFeatured`).
+- [ ] `GET /external-resources/:slug` — single resource detail.
+  - Return full `content` JSONB.
+  - Return 404 if not found or not published.
+- [ ] Both endpoints: omit `@UseGuards(JwtAuthGuard)` so they work without authentication.
+- [ ] Write unit tests for list filtering and detail 404 behavior.
+
+#### 4.5 — User progress API (JWT required)
+
+- [ ] `GET /external-resources/my` — return all resources the authenticated user has saved or started, joined with resource summary fields.
+  - Use `@UseGuards(JwtAuthGuard)` and read `req.user.id`.
+  - Order by `updatedAt DESC`.
+- [ ] `POST /external-resources/:slug/progress` — save or start a resource.
+  - Accepts `{ status: 'saved' | 'started' }`.
+  - Uses `INSERT ... ON CONFLICT DO UPDATE` (upsert) so repeated calls are idempotent.
+  - Sets `startedAt` when status transitions to `started` for the first time.
+  - Returns the updated progress record.
+- [ ] `PATCH /external-resources/:slug/progress` — update progress details.
+  - Accepts `{ status?, notes?, checklistProgress?, progressPercent? }`.
+  - Sets `completedAt` when status transitions to `completed`.
+  - Returns the updated progress record.
+- [ ] Write unit tests for upsert idempotency and status transition timestamps.
+
+#### 4.6 — Admin catalog API (instructor / admin role)
+
+- [ ] `POST /external-resources` — create a new resource.
+  - Restrict to `instructor` or `admin` role using existing `@Roles()` decorator.
+  - Validate `slug` is URL-safe (lowercase, hyphens only).
+  - Validate `url` is a valid HTTPS URL.
+  - Default `isPublished: false` so new resources start as drafts.
+- [ ] `PATCH /external-resources/:id` — update an existing resource.
+  - Allow partial updates including toggling `isPublished` and `isFeatured`.
+- [ ] `DELETE /external-resources/:id` — soft-delete or hard-delete.
+  - Hard delete is acceptable at MVP since `user_external_resource_progress` cascades.
+- [ ] Write integration tests for role guard (non-admin gets 403).
+
+#### 4.7 — Sitemap update
+
+- [ ] Inject `ExternalResourcesService` into `SitemapModule`.
+- [ ] In `SitemapController`, query all published resources and add `/resources/:slug` entries with `priority 0.8` and `changefreq monthly`.
+- [ ] Verify sitemap output at `/sitemap.xml` on staging includes resource URLs.
+
+#### 4.8 — Frontend data source migration
+
+- [ ] Replace the static `import { externalResources }` in the frontend with API calls to `GET /external-resources` and `GET /external-resources/:slug`.
+- [ ] Add a loading state and error state to `ExternalResourcesPage` and `ExternalResourceDetails`.
+- [ ] Connect `POST /external-resources/:slug/progress` to the save/start CTA buttons (previously auth-gated with no backend action).
+- [ ] Connect `GET /external-resources/my` to the student dashboard widget.
+- [ ] Verify field names match exactly between frontend components and API responses (no rename needed if static data used the same schema).
+
+#### 4.9 — Acceptance criteria for Phase 4
+
+- `GET /external-resources` returns only published resources; unpublished resources are not visible.
+- `GET /external-resources/:slug` returns 404 for unknown or unpublished slugs.
+- Unauthenticated users can call both public endpoints without a token.
+- Authenticated users can save, start, and update progress on a resource.
+- Calling save twice on the same resource does not create duplicate rows.
+- Status transition to `started` sets `startedAt`; transition to `completed` sets `completedAt`.
+- Admin can create, update, and delete resources; non-admin gets 403.
+- Sitemap includes all published resource slugs.
+- Frontend fetches live data from the API; static file is no longer used.
+
+---
+
+### Phase 5 — Backend: Course-Resource Linking and Analytics
+
+#### 5.1 — CourseExternalResource join table
+
+- [ ] Create migration `1771000000042-createCourseExternalResources.ts`:
+  ```sql
+  CREATE TABLE "course_external_resources" (
+      "id"         SERIAL PRIMARY KEY,
+      "courseId"   integer NOT NULL REFERENCES "courses"("id") ON DELETE CASCADE,
+      "resourceId" integer NOT NULL REFERENCES "external_resources"("id") ON DELETE CASCADE,
+      "placement"  varchar(20) NOT NULL DEFAULT 'course',
+      "sortOrder"  integer NOT NULL DEFAULT 0,
+      "note"       text,
+      "createdAt"  TIMESTAMPTZ NOT NULL DEFAULT now(),
+      CONSTRAINT "UQ_course_resource" UNIQUE ("courseId", "resourceId")
+  );
+  CREATE INDEX "IDX_cer_course" ON "course_external_resources" ("courseId");
+  ```
+- [ ] Add `GET /courses/:id/external-resources` endpoint that returns linked resources for a course detail page.
+- [ ] Add admin endpoints to link/unlink resources to courses.
+- [ ] Remove `relatedCourseSlugs` from the JSONB `content` field and migrate existing data to the join table.
+
+#### 5.2 — Analytics events
+
+- [ ] Add `ExternalResourceEvent` entity or extend existing analytics service:
+  ```
+  event_type: viewed | saved | started | official_link_clicked | completed | certificate_uploaded
+  userId (nullable — public users can view)
+  resourceId
+  slug
+  referrer (course page, homepage, search, direct)
+  createdAt
+  ```
+- [ ] Fire `external_resource_viewed` on `GET /external-resources/:slug` (no auth needed, log anonymously).
+- [ ] Fire `external_resource_saved` and `external_resource_started` on progress POST.
+- [ ] Fire `external_resource_official_link_clicked` via a redirect proxy endpoint: `GET /external-resources/:slug/go` — logs the click and then redirects to the official URL. This replaces the direct external link in the frontend.
+- [ ] Add analytics queries to the existing analytics dashboard:
+  - Which resources are viewed most?
+  - Which resources convert to save/start?
+  - Which resources lead to EduBot course clicks?
+
+#### 5.3 — AI Learning Companion
+
+- [ ] Add resource-context to the existing AI module: pass `resource.content.studyPlan` and `resource.content.whyRecommended` as system context for AI chat sessions related to a resource.
+- [ ] Add `POST /external-resources/:slug/ai-study-plan` endpoint that generates a personalised weekly study plan using the AI module, tailored to the student's existing EduBot course progress.
+- [ ] Add Kyrgyz-language concept explainer: given a term from the resource glossary, return a plain-Kyrgyz explanation.
+- [ ] Do not copy provider course content into the AI prompt — use only the EduBot-authored guide metadata.
+
+---
+
+### Phase 6 — Admin UI and Certificate Upload
+
+- [ ] Build admin panel pages for creating and editing external resources (reuse existing dashboard UI patterns).
+- [ ] Add `isPublished` / `isFeatured` toggle controls.
+- [ ] Add resource-to-course linking UI inside the course edit page.
+- [ ] Add certificate upload: `POST /external-resources/:slug/certificate` uploads a file to S3 via the existing `MediaService`, saves the URL to `UserExternalResourceProgress.certificateUrl`.
+- [ ] Add certificate display on the student profile/dashboard.
+
+### Phase 7 — AI Learning Companion
 
 - [ ] Add resource-specific AI helper prompts.
 - [ ] Generate personal study plan.
@@ -1316,7 +1516,359 @@ The first implementation PR after this plan should include only:
 
 Do not add backend or full progress tracking in the first implementation PR.
 
-## 25. Long-term Vision
+## 25. Strategic Recommendations
+
+### 25.1 Don't launch 30 resources — launch CS50 perfectly
+
+Pick one resource and build the best Kyrgyz-language study guide that exists anywhere for it. CS50 is the right choice: massive global brand recognition, genuinely free, and Kyrgyz students have heard of it but don't know where to start.
+
+A complete CS50 guide should include:
+
+- Week-by-week study plan in Kyrgyz
+- Glossary: algorithm, recursion, pointer — explained in plain Kyrgyz
+- "Кыйын жерлери" — an honest section about what is hard and why
+- A Telegram or WhatsApp study group link
+
+Then post one Instagram reel: "Harvard CS50ту кыргызча кантип өтүү керек." In the local tech community, that gets shared. One resource done properly beats 30 pages of copy-pasted descriptions.
+
+Validate demand with one resource before writing content for twenty-nine.
+
+### 25.2 The business model is the ladder, not the feature
+
+The three existing products already form a perfect acquisition funnel:
+
+```
+Free external resources     → discovery, trust, zero friction
+Paid EduBot courses         → structured Kyrgyz-language curriculum
+Group sessions + instructor → live mentorship and accountability
+```
+
+Free resources bring in the student who would never pay first. The paid course sells to them once they are stuck ("I want CS50 explained in Kyrgyz with practice tasks"). The group session sells to the student who needs a human ("I want a mentor checking my progress weekly").
+
+The free resources feature only creates business value if the handoff between those three tiers is explicit and frictionless. Build the bridges:
+
+- CS50 detail page → "Кыргызча менторлук менен окугуңуз келесизби?" → Group session
+- CS50 detail page → "Практикалык тапшырмалар керекпи?" → Frontend course
+
+### 25.3 Fix the Phase 1 CTA problem
+
+The primary CTA "EduBot ичинде окуу планын баштоо" promises backend save/start tracking that does not exist until Phase 4. A user who creates an EduBot account expecting to track progress will land back on the resource page and find nothing saved. That is a trust-destroying first impression.
+
+Replace the broken CTA in MVP with something that delivers value on day one:
+
+**MVP primary CTA:** "CS50 окуу тобуна кошулуу — жумасына 1 жолугушуу"
+
+A weekly live session or Telegram group where someone who finished CS50 answers questions in Kyrgyz. Charge 500–1000 KGS/month for that. It costs almost nothing to run. Students feel community and accountability. That is the product until the backend tracking exists.
+
+Do not gate nothing. If auth-required actions have no backend yet, either defer the CTA to Phase 3 or replace it with a study group that can be delivered today.
+
+### 25.4 Content creation effort is a bottleneck
+
+30 resources × each requiring `shortDescription`, `whatYouWillLearn`, `whoIsItFor`, `studyPlan`, `whyEduBotRecommends`, and difficulty notes — all written in quality Kyrgyz — is a significant content production job. It is not a developer task and is not captured as a staffing requirement in this plan.
+
+If this is not staffed explicitly before implementation starts, the detail pages will ship with placeholder copy, which defeats the entire value proposition.
+
+Start with 8–10 deeply written resources rather than 30 shallow ones. The detail page is the product.
+
+### 25.5 SEO requires server-side rendering from day one
+
+The plan cites SEO and social traffic as a primary benefit. This only works if `/resources` and `/resources/:slug` are rendered server-side or statically. A client-rendered SPA returns near-empty HTML to Google.
+
+"CS50 кыргызча" has near-zero search competition today. That advantage disappears the moment another site indexes it first.
+
+This is a build decision that must be made before the first page ships. Options: SSR via a Next.js migration, Vite SSG plugin, or pre-rendering via `react-snap`. The current frontend stack uses Vite + React SPA — evaluate SSG at Vite level before Phase 1 starts.
+
+### 25.6 Shareable social proof from day one
+
+In Kyrgyzstan, Instagram and TikTok are the primary discovery channels. The plan has no mention of shareability.
+
+Every student who completes a week of CS50 should be able to share a card: "1-апта CS50 аяктадым — EduBot менен." That card is free acquisition. Design it into the progress tracking feature from the start, not as an afterthought in Phase 3.
+
+### 25.7 Redirect-back security note belongs in the implementation task list
+
+The `?redirect=` + `?intent=` auth flow described in section 13.5 is the right pattern. The security note ("only allow internal relative redirects") is mentioned in the planning doc but is not in the Phase 1 implementation checklist. An open redirect vulnerability in an auth flow is a real security risk.
+
+Add this to the Phase 1 task list explicitly:
+
+- [ ] Validate redirect param: only accept relative paths starting with `/resources/`
+- [ ] Do not allow protocol-relative or external URLs as redirect targets
+
+### 25.8 Phase ordering: course page integration after student features
+
+Phase 2 (Course Page Integration) is scheduled before Phase 3 (Logged-in Student Features). This is the wrong order. Promoting a resource detail page inside paid course pages before the detail page has real value (notes, plan, tracking) will dilute the upsell and make it feel like a link directory.
+
+Recommended order: Phase 3 → Phase 2. Build the student experience first, then surface it inside paid course pages once it is worth promoting.
+
+### 25.9 Language is the permanent moat
+
+No international platform will ever write a CS50 study guide in Kyrgyz. EduBot can own every Kyrgyz-language tech education search query. This is not a nice-to-have — it is the durable competitive advantage that no well-funded competitor can buy.
+
+Every resource guide page is a landing page with zero competition. The content investment compounds over time as SEO builds. Treat content quality as a core product investment, not a marketing task.
+
+---
+
+## 26. Backend Architecture
+
+_Last reviewed: 2026-06-09. Based on actual backend repo inspection._
+
+### 26.1 Build trigger
+
+Do not build the backend module until the static frontend MVP has validated demand. The trigger is confirmed user behavior: students saving resources, joining study groups, or explicitly asking for progress tracking. Target: 2–3 weeks of traffic data from Phase 1 before writing a single backend line.
+
+### 26.2 Stack context
+
+The backend uses NestJS + TypeORM + PostgreSQL + Redis + S3. Multi-tenant via `TenantContextMiddleware` and `CompanyIsolationGuard`. JSONB columns for flexible structured data (`study_plans.blocks`, `group_sessions.materials`). Sequential migration timestamps (`1771000000039` is the current latest). Standard module pattern: entity → service → controller → module → dto.
+
+### 26.3 Two tables only at MVP
+
+```
+external_resources                    catalog, platform-level, not tenant-scoped
+user_external_resource_progress       per-user state: save / start / notes / checklist
+```
+
+Do not add a `CourseExternalResource` join table at MVP. Use a `relatedCourseSlugs` array inside the resource's JSONB `content` field instead. Add the join table in Phase 4 when admins manage it through a UI.
+
+### 26.4 Entity: ExternalResource
+
+```typescript
+// src/external-resources/external-resource.entity.ts
+
+export type ExternalResourceContent = {
+    shortDescription:  Record<string, string>;        // { ky: '...', ru: '...', en: '...' }
+    whatYouWillLearn:  Record<string, string[]>;
+    whoIsItFor:        Record<string, string[]>;
+    whyRecommended:    Record<string, string>;
+    studyPlan: Array<{
+        week:        number;
+        title:       Record<string, string>;
+        description: Record<string, string>;
+    }>;
+    difficultyNotes:    Record<string, string[]>;
+    relatedCourseSlugs: string[];
+};
+
+@Entity('external_resources')
+@Index('IDX_external_resources_slug', ['slug'], { unique: true })
+@Index('IDX_external_resources_category', ['category'])
+export class ExternalResource {
+    @PrimaryGeneratedColumn()
+    id!: number;
+
+    @Column({ unique: true })
+    slug!: string;                     // 'harvard-cs50'
+
+    @Column()
+    title!: string;
+
+    @Column()
+    provider!: string;                 // 'Harvard / edX'
+
+    @Column()
+    providerKey!: string;              // 'harvard' — for badge grouping
+
+    @Column()
+    url!: string;                      // official external link
+
+    @Column()
+    category!: string;                 // 'programming' | 'frontend' | 'ai' | ...
+
+    @Column({ nullable: true })
+    level?: string;
+
+    @Column({ nullable: true })
+    language?: string;
+
+    @Column({ nullable: true })
+    priceLabel?: string;               // 'Free to audit'
+
+    @Column({ nullable: true })
+    certificateLabel?: string;         // 'Paid optional'
+
+    @Column({ nullable: true })
+    durationLabel?: string;            // '11 weeks'
+
+    @Column({ type: 'jsonb' })
+    content!: ExternalResourceContent;
+
+    @Column({ default: false })
+    isFeatured!: boolean;
+
+    @Column({ default: false })
+    isPublished!: boolean;
+
+    @Column({ type: 'int', default: 0 })
+    sortOrder!: number;
+
+    @CreateDateColumn()
+    createdAt!: Date;
+
+    @UpdateDateColumn()
+    updatedAt!: Date;
+}
+```
+
+Rationale for JSONB `content`: matches the existing codebase pattern (`study_plans.blocks`, `group_sessions.materials`). Avoids a complex i18n table at MVP. Can be migrated to a proper localization table later when the catalog exceeds ~50 resources.
+
+### 26.5 Entity: UserExternalResourceProgress
+
+```typescript
+// src/external-resources/user-external-resource-progress.entity.ts
+
+export type ResourceProgressStatus =
+    'saved' | 'started' | 'in_progress' | 'paused' | 'completed';
+
+@Entity('user_external_resource_progress')
+@Index('IDX_uerp_user', ['userId'])
+@Unique('UQ_uerp_user_resource', ['userId', 'resourceId'])
+export class UserExternalResourceProgress {
+    @PrimaryGeneratedColumn()
+    id!: number;
+
+    @Column()
+    userId!: number;
+
+    @Column()
+    resourceId!: number;
+
+    @ManyToOne(() => ExternalResource, { onDelete: 'CASCADE' })
+    @JoinColumn({ name: 'resourceId' })
+    resource!: ExternalResource;
+
+    @Column({ default: 'saved' })
+    status!: ResourceProgressStatus;
+
+    @Column({ type: 'int', default: 0 })
+    progressPercent!: number;
+
+    @Column({ type: 'text', nullable: true })
+    notes?: string | null;
+
+    @Column({ type: 'jsonb', nullable: true })
+    checklistProgress?: Array<{ weekIndex: number; done: boolean }> | null;
+
+    @Column({ type: 'varchar', nullable: true })
+    certificateUrl?: string | null;
+
+    @Column({ type: 'timestamptz', nullable: true })
+    startedAt?: Date | null;
+
+    @Column({ type: 'timestamptz', nullable: true })
+    completedAt?: Date | null;
+
+    @CreateDateColumn()
+    createdAt!: Date;
+
+    @UpdateDateColumn()
+    updatedAt!: Date;
+}
+```
+
+### 26.6 API routes
+
+```
+# Public — no auth required
+GET  /external-resources                  list published resources (?category= &featured=)
+GET  /external-resources/:slug            resource detail
+
+# User — JWT required
+GET  /external-resources/my              user's saved and started resources
+POST /external-resources/:slug/progress  save or start a resource
+PATCH /external-resources/:slug/progress update status, notes, checklist
+
+# Admin — instructor or admin role
+POST   /external-resources               create resource
+PATCH  /external-resources/:id           update resource
+DELETE /external-resources/:id           delete resource
+```
+
+Public endpoints omit `@UseGuards(JwtAuthGuard)` following the existing pattern in the codebase.
+
+### 26.7 Migrations
+
+Next two migration files after `1771000000039`:
+
+```typescript
+// src/database/migrations/1771000000040-createExternalResources.ts
+await queryRunner.query(`
+    CREATE TABLE "external_resources" (
+        "id"               SERIAL PRIMARY KEY,
+        "slug"             varchar(255) NOT NULL UNIQUE,
+        "title"            varchar(500) NOT NULL,
+        "provider"         varchar(255) NOT NULL,
+        "providerKey"      varchar(100) NOT NULL,
+        "url"              varchar(2048) NOT NULL,
+        "category"         varchar(100) NOT NULL,
+        "level"            varchar(50),
+        "language"         varchar(50),
+        "priceLabel"       varchar(100),
+        "certificateLabel" varchar(100),
+        "durationLabel"    varchar(100),
+        "content"          jsonb NOT NULL DEFAULT '{}',
+        "isFeatured"       boolean NOT NULL DEFAULT false,
+        "isPublished"      boolean NOT NULL DEFAULT false,
+        "sortOrder"        integer NOT NULL DEFAULT 0,
+        "createdAt"        TIMESTAMPTZ NOT NULL DEFAULT now(),
+        "updatedAt"        TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+`);
+await queryRunner.query(
+    `CREATE INDEX "IDX_external_resources_category" ON "external_resources" ("category")`
+);
+
+// src/database/migrations/1771000000041-createUserExternalResourceProgress.ts
+await queryRunner.query(`
+    CREATE TABLE "user_external_resource_progress" (
+        "id"                SERIAL PRIMARY KEY,
+        "userId"            integer NOT NULL,
+        "resourceId"        integer NOT NULL
+            REFERENCES "external_resources"("id") ON DELETE CASCADE,
+        "status"            varchar(20) NOT NULL DEFAULT 'saved',
+        "progressPercent"   integer NOT NULL DEFAULT 0,
+        "notes"             text,
+        "checklistProgress" jsonb,
+        "certificateUrl"    varchar(2048),
+        "startedAt"         TIMESTAMPTZ,
+        "completedAt"       TIMESTAMPTZ,
+        "createdAt"         TIMESTAMPTZ NOT NULL DEFAULT now(),
+        "updatedAt"         TIMESTAMPTZ NOT NULL DEFAULT now(),
+        CONSTRAINT "UQ_uerp_user_resource" UNIQUE ("userId", "resourceId")
+    )
+`);
+await queryRunner.query(
+    `CREATE INDEX "IDX_uerp_user" ON "user_external_resource_progress" ("userId")`
+);
+```
+
+### 26.8 Sitemap integration
+
+The existing `SitemapController` only indexes courses. Inject `ExternalResourcesService` and add resource URLs. This is the single highest-ROI backend task — it turns static pages into indexed SEO content.
+
+```typescript
+// In sitemap.controller.ts, after the courses loop:
+for (const resource of publishedResources) {
+    xml += `<url>
+        <loc>${baseUrl}/resources/${resource.slug}</loc>
+        <lastmod>${resource.updatedAt.toISOString()}</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.8</priority>
+    </url>`;
+}
+```
+
+### 26.9 Frontend static data must match the future DB schema
+
+The static `externalResources.js` data file should use the same field names as the entities above (`slug`, `provider`, `providerKey`, `category`, `content`, etc.). When migrating from static to backend, the frontend components do not change — only the data source switches from a local import to `GET /external-resources`. Mismatched field names now mean a breaking refactor later.
+
+### 26.10 What not to build in Phase 2 backend
+
+- No admin UI panel — seed the DB directly or via a script with the 8–10 launch resources.
+- No `CourseExternalResource` join table — `relatedCourseSlugs` in JSONB is sufficient until Phase 4.
+- No certificate file upload — requires S3 handling and is a distraction from validating core demand.
+- No analytics table — log resource events to stdout or the existing analytics module. Add a dedicated `external_resource_events` table in Phase 4 when traffic volume justifies it.
+
+---
+
+## 27. Long-term Vision
 
 EduBot Learning should become a trusted learning guide for Kyrgyz-speaking students.
 
@@ -1329,3 +1881,74 @@ That makes EduBot stronger as a brand:
 - better for SEO and social traffic;
 - easier to market with Instagram posts;
 - more aligned with the mission of preparing people for future careers.
+
+---
+
+## 28. Phase 1 Implementation Notes
+
+_Completed: 2026-06-09._
+
+### 28.1 Files created
+
+```
+src/features/externalResources/
+  data/externalResources.js                  — static catalog, 10 resources
+  components/ExternalResourceCard.jsx        — card with provider dot, tags, dual CTAs
+  components/ExternalResourceFilters.jsx     — category pill tabs
+  components/ExternalResourcesHomeSection.jsx — home page wrapper using SectionContainer
+  components/ExternalResourceAuthPrompt.jsx  — inline "register to save progress" banner
+  components/ExternalResourceDisclaimer.jsx  — third-party content notice
+  pages/ExternalResourcesPage.jsx            — /resources listing with filter
+  pages/ExternalResourceDetails.jsx          — /resources/:slug two-column detail page
+```
+
+Files updated:
+
+```
+src/app/routes.jsx     — two lazy-loaded routes added: /resources and /resources/:slug
+src/pages/Home.jsx     — ExternalResourcesHomeSection inserted after TopCourses
+```
+
+### 28.2 Data schema alignment
+
+The static data file uses the same field names as the planned backend entities (`slug`, `provider`, `providerKey`, `category`, `content.shortDescription.ky`, `content.whatYouWillLearn.ky`, `content.studyPlan[].week`, etc.). When Phase 4 migrates the data source from the static file to `GET /external-resources`, the components do not need to change — only the data-fetching call site.
+
+The 10 launch resources are also the seed data for the backend migration in Phase 4.
+
+### 28.3 Design decisions and deviations from plan
+
+**Hardcoded Kyrgyz strings, no `useTranslation`.**
+All public marketing pages (`TopCourses`, `SectionContainer`, `HeroStart`, etc.) use hardcoded Kyrgyz. This feature follows that pattern. The `useTranslation` i18n system is only used inside instructor/student feature modules.
+
+**No separate `ExternalResourcesGrid.jsx`.**
+The grid (3-column responsive) is a single `<div className="grid ...">` inside `ExternalResourcesPage.jsx`. A separate file would add indirection with no benefit at this scale.
+
+**No `utils/externalResourceFilters.js`.**
+The `CATEGORIES` constant and `getResourcesByCategory` helper live directly in `data/externalResources.js`. Moving them to a utils file would split the data from its accessors for no gain.
+
+**`ExternalResourceFilters` is stateless.**
+Filters receive `active` and `onChange` from the page. No internal state. This makes it trivially reusable when the page gains URL-based filter params in Phase 3.
+
+**Auth prompt uses `react-router` `state`, not `?redirect=` query param.**
+The `?redirect=` + `?intent=` URL param pattern from §13.5 is the correct final design but requires the login/register pages to read and act on those params. That plumbing belongs alongside Phase 3 when save/start actions actually do something. Using `navigate(..., { state: { from } })` is the same pattern already in `UnauthModal` and avoids introducing a redirect param handler before it can be validated.
+
+**`ExternalResourceDetails` validates external URL before opening.**
+The `handleOfficialLink` function checks whether the URL is internal or external before opening. Internal URLs navigate via `react-router`; external URLs open with `noopener noreferrer`. This closes the open-redirect risk for the official link CTA noted in §25.7.
+
+### 28.4 Known gaps before Phase 2
+
+| Gap | Blocking? | Phase |
+|---|---|---|
+| `?redirect=`/`?intent=` login params not wired | No — auth prompt works via router state | Phase 3 |
+| Loading/error states on detail page (sync lookup) | No — static data never fails | Phase 4 (when API added) |
+| Category list hardcoded in data file | No | Phase 4 (fetch from API) |
+| Homepage shows first 3 resources, not `isFeatured` | No — first 3 happen to be the best | Phase 4 |
+| No `/courses` page integration | No | Phase 2 |
+| No progress tracking UI | No — auth prompt teases it | Phase 3 |
+
+### 28.5 What to do next
+
+1. **Content**: Write deeper Kyrgyz-language guide content for CS50 (§25.1). The detail page is built; only the copy needs depth.
+2. **Phase 2**: Add the "Кошумча акысыз ресурстар" block inside `/courses` — 3–4 hours of work using the existing card component.
+3. **Phase 3 / study group CTA**: Replace the auth prompt with a concrete study group CTA per §25.3 — deliver value before the backend exists.
+4. **Phase 4**: Only after 2–3 weeks of traffic data confirms demand (§26.1).

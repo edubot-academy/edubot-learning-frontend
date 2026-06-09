@@ -1,9 +1,13 @@
 import { useCallback, useMemo, useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { fetchCatalogCourses } from '@services/api';
 import CardCourse from '@features/courses/components/CardCourse';
 import EmptyState from '@components/ui/dashboard/EmptyState';
 import { FiAlertTriangle, FiBookOpen, FiRefreshCw, FiSliders } from 'react-icons/fi';
 import { useTranslation } from 'react-i18next';
+import SectionContainer from '@features/marketing/components/SectionContainer';
+import ExternalResourceCard from '@features/externalResources/components/ExternalResourceCard';
+import { EXTERNAL_RESOURCES } from '@features/externalResources/data/externalResources';
 
 const getCourseType = (course) =>
     String(course?.courseType || course?.type || 'video').toLowerCase();
@@ -12,6 +16,8 @@ const getCoursePrice = (course) => {
     const price = Number(course?.price);
     return Number.isFinite(price) ? price : 0;
 };
+
+const COURSES_FREE_PREVIEW = EXTERNAL_RESOURCES.slice(0, 3);
 
 const CoursesPage = () => {
     const { t } = useTranslation();
@@ -209,6 +215,21 @@ const CoursesPage = () => {
                     />
                 )}
             </div>
+
+            <SectionContainer
+                title="Кошумча акысыз ресурстар"
+                subtitle="Кыргызстандык студенттер үчүн тандалган дүйнөлүк акысыз курстар."
+                rightContent={
+                    <Link
+                        to="/resources"
+                        className="text-sm font-medium text-[#E14219] hover:underline"
+                    >
+                        Бардыгын көрүү →
+                    </Link>
+                }
+                items={COURSES_FREE_PREVIEW}
+                CardComponent={ExternalResourceCard}
+            />
         </div>
     );
 };

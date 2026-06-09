@@ -41,6 +41,8 @@ const LeaderboardPage = lazy(() => import('../pages/Leaderboard'));
 const InternalLeaderboardPage = lazy(() => import('../pages/InternalLeaderboard'));
 const CertificateDownloadPage = lazy(() => import('../pages/CertificateDownload'));
 const CertificateVerificationPage = lazy(() => import('../pages/CertificateVerification'));
+const ExternalResourcesPage = lazy(() => import('../features/externalResources/pages/ExternalResourcesPage'));
+const ExternalResourceDetails = lazy(() => import('../features/externalResources/pages/ExternalResourceDetails'));
 
 export const DashboardTabRedirect = ({ dashboardPath, tab }) => {
     const { search } = useLocation();
@@ -147,6 +149,8 @@ const AppRoutes = () => {
                     <Route path="/leaderboard" element={<LeaderboardPage />} />
                     <Route path="/share/achievement/:token" element={<Navigate to="/leaderboard" replace />} />
                     <Route path="/certificates/:publicId/verify" element={<CertificateVerificationPage />} />
+                    <Route path="/resources" element={<ExternalResourcesPage />} />
+                    <Route path="/resources/:slug" element={<ExternalResourceDetails />} />
 
                     <Route element={<PrivateRoute allowedRoles={['student', 'admin', 'instructor']} />}>
                         <Route path="/certificates/:publicId/download" element={<CertificateDownloadPage />} />

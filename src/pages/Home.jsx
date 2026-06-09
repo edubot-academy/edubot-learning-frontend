@@ -10,6 +10,7 @@ import FAQ from '@features/marketing/components/FAQ';
 import TopCourses from '@features/courses/components/TopCourses';
 import TopLearnersHome from '@features/leaderboard/components/TopLearnersHome';
 import { useTranslation } from 'react-i18next';
+import ExternalResourcesHomeSection from '@features/externalResources/components/ExternalResourcesHomeSection';
 
 const HomePage = () => {
     const { t } = useTranslation();
@@ -40,6 +41,7 @@ const HomePage = () => {
             <StickyButton />
             <Benefits />
             <TopCourses coursesData={coursesData} loading={coursesLoading} error={coursesError} />
+            <ExternalResourcesHomeSection />
             <TopLearnersHome />
             <Instructor />
             <Apply />
