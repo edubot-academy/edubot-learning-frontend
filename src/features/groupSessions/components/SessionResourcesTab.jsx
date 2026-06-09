@@ -10,11 +10,19 @@ import { parseApiError } from '../../../shared/api/error';
 import { acceptAiGeneration, generateAiWorksheetDraft, getAiLmsCapabilities, rejectAiGeneration } from '../../aiLms/api';
 import AiGenerationDrawer from '../../aiLms/components/AiGenerationDrawer';
 import { createGeneratedSessionMaterial } from '../api';
+import { toInputDateTime } from '../utils/sessionWorkspace.helpers';
 
 const VideoPlayer = lazy(() => import('@shared/VideoPlayer'));
 
 const VIDEO_EXTENSIONS = ['.mp4', '.m3u8', '.webm', '.mov', '.m4v', '.ogg'];
 const NO_SECTION_KEY = '__no_section__';
+const MATERIAL_DRAFT_DEFAULT = {
+    title: '',
+    url: '',
+    storageKey: '',
+    isPublished: false,
+    availableAt: '',
+};
 
 const isVideoMaterial = (item) => {
     const candidate = String(item?.storageKey || item?.url || '').toLowerCase();
@@ -22,6 +30,14 @@ const isVideoMaterial = (item) => {
 };
 
 const isUploadedMaterial = (item) => Boolean(item?.storageKey);
+
+
+const toIsoOrUndefined = (value) => {
+    if (!value) return undefined;
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
+};
+
 
 const isValidHttpUrl = (value) => {
     if (!value) return false;
@@ -75,7 +91,7 @@ const SessionResourcesTab = ({
     const isOnlineLive = selectedDeliveryType === COURSE_TYPE.ONLINE_LIVE;
     const fileInputRef = useRef(null);
     const previewContainerRef = useRef(null);
-    const [materialDraft, setMaterialDraft] = useState({ title: '', url: '', storageKey: '' });
+    const [materialDraft, setMaterialDraft] = useState(MATERIAL_DRAFT_DEFAULT);
     const [materialComposerMode, setMaterialComposerMode] = useState('idle');
     const [editingMaterialIndex, setEditingMaterialIndex] = useState(-1);
     const [previewVideo, setPreviewVideo] = useState(null);
@@ -109,7 +125,7 @@ const SessionResourcesTab = ({
     );
 
     useEffect(() => {
-        setMaterialDraft({ title: '', url: '', storageKey: '' });
+        setMaterialDraft(MATERIAL_DRAFT_DEFAULT);
         setMaterialComposerMode('idle');
         setEditingMaterialIndex(-1);
         setPreviewVideo(null);
@@ -192,6 +208,13 @@ const SessionResourcesTab = ({
         });
     }, [groupedCourseAssets]);
 
+    const formattedAvailableAts = useMemo(
+        () => selectedSessionMaterials.map((item) =>
+            item.availableAt ? new Date(item.availableAt).toLocaleString() : ''
+        ),
+        [selectedSessionMaterials]
+    );
+
     const attachedCourseAssetCount = useMemo(
         () =>
             availableCourseAssets.reduce((count, asset) => {
@@ -227,6 +250,8 @@ const SessionResourcesTab = ({
             title: item?.title || '',
             url: isUploadedMaterial(item) ? '' : item?.url || '',
             storageKey: item?.storageKey || '',
+            isPublished: Boolean(item?.isPublished),
+            availableAt: toInputDateTime(item?.availableAt),
         });
         setMaterialComposerMode('idle');
         setEditingMaterialIndex(index);
@@ -234,7 +259,7 @@ const SessionResourcesTab = ({
     };
 
     const resetMaterialForm = () => {
-        setMaterialDraft({ title: '', url: '', storageKey: '' });
+        setMaterialDraft(MATERIAL_DRAFT_DEFAULT);
         setMaterialComposerMode('idle');
         setEditingMaterialIndex(-1);
         if (fileInputRef.current) fileInputRef.current.value = '';
@@ -242,7 +267,7 @@ const SessionResourcesTab = ({
 
     const beginLinkAdd = () => {
         setInlineNotice(null);
-        setMaterialDraft({ title: '', url: '', storageKey: '' });
+        setMaterialDraft(MATERIAL_DRAFT_DEFAULT);
         setEditingMaterialIndex(-1);
         setMaterialComposerMode('link');
     };
@@ -265,6 +290,8 @@ const SessionResourcesTab = ({
             title,
             url,
             storageKey: materialDraft.storageKey || undefined,
+            isPublished: Boolean(materialDraft.isPublished),
+            availableAt: toIsoOrUndefined(materialDraft.availableAt),
         });
 
         const saved = await onSaveMaterials(nextMaterials, { suppressSuccessToast: true });
@@ -287,6 +314,9 @@ const SessionResourcesTab = ({
             title,
             url: isUploadedMaterial(currentItem) ? currentItem.url : materialDraft.url.trim(),
             storageKey: currentItem.storageKey || undefined,
+            lessonId: currentItem?.lessonId != null ? currentItem.lessonId : undefined,
+            isPublished: Boolean(materialDraft.isPublished),
+            availableAt: toIsoOrUndefined(materialDraft.availableAt),
         };
 
         if (!nextMaterials[index].url) return;
@@ -401,7 +431,10 @@ const SessionResourcesTab = ({
                 content: aiWorksheetText,
                 format,
             });
-            const saved = await onSaveMaterials([...selectedSessionMaterials, generated], {
+            const saved = await onSaveMaterials([...selectedSessionMaterials, {
+                ...generated,
+                isPublished: false,
+            }], {
                 successMessage: t('groupSessions.resources.notices.fileAdded', { title: generated.title }),
             });
             if (saved) {
@@ -616,7 +649,7 @@ const SessionResourcesTab = ({
                                         {t('groupSessions.resources.composer.description')}
                                     </div>
                                 </div>
-                                <div className="grid gap-3 md:grid-cols-[minmax(0,0.9fr),minmax(0,1.1fr),auto]">
+                                <div className="grid gap-3 md:grid-cols-[minmax(0,0.8fr),minmax(0,1fr),minmax(180px,0.7fr),auto]">
                                     <input
                                         value={materialDraft.title}
                                         onChange={(e) =>
@@ -634,7 +667,27 @@ const SessionResourcesTab = ({
                                         placeholder={'https://...'}
                                         className="dashboard-field"
                                     />
+                                    <input
+                                        type="datetime-local"
+                                        value={materialDraft.availableAt}
+                                        onChange={(e) =>
+                                            setMaterialDraft((prev) => ({ ...prev, availableAt: e.target.value }))
+                                        }
+                                        aria-label={t('groupSessions.resources.fields.availableAt')}
+                                        className="dashboard-field"
+                                    />
                                     <div className="flex gap-2">
+                                        <label className="inline-flex items-center gap-2 rounded-full border border-edubot-line bg-white px-3 py-2 text-xs font-semibold text-edubot-muted dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                                            <input
+                                                type="checkbox"
+                                                checked={materialDraft.isPublished}
+                                                onChange={(e) =>
+                                                    setMaterialDraft((prev) => ({ ...prev, isPublished: e.target.checked }))
+                                                }
+                                                className="h-4 w-4 rounded border-edubot-line text-edubot-orange focus:ring-edubot-orange"
+                                            />
+                                            {t('groupSessions.resources.fields.publishNow')}
+                                        </label>
                                         <button
                                             type="button"
                                             onClick={submitNewLink}
@@ -706,6 +759,28 @@ const SessionResourcesTab = ({
                                                     />
                                                 )}
                                             </div>
+                                            <div className="grid gap-2 sm:grid-cols-2">
+                                                <label className="inline-flex items-center gap-2 rounded-full border border-edubot-line bg-white px-3 py-2 text-xs font-semibold text-edubot-muted dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={materialDraft.isPublished}
+                                                        onChange={(e) =>
+                                                            setMaterialDraft((prev) => ({ ...prev, isPublished: e.target.checked }))
+                                                        }
+                                                        className="h-4 w-4 rounded border-edubot-line text-edubot-orange focus:ring-edubot-orange"
+                                                    />
+                                                    {t('groupSessions.resources.fields.publishNow')}
+                                                </label>
+                                                <input
+                                                    type="datetime-local"
+                                                    value={materialDraft.availableAt}
+                                                    onChange={(e) =>
+                                                        setMaterialDraft((prev) => ({ ...prev, availableAt: e.target.value }))
+                                                    }
+                                                    aria-label={t('groupSessions.resources.fields.availableAt')}
+                                                    className="dashboard-field"
+                                                />
+                                            </div>
                                             <div className="flex flex-wrap items-center gap-2">
                                                 <button
                                                     type="button"
@@ -743,11 +818,23 @@ const SessionResourcesTab = ({
                                                             {t('groupSessions.resources.labels.video')}
                                                         </span>
                                                     )}
+                                                    <span className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
+                                                        item.isPublished === false
+                                                            ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200'
+                                                            : 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200'
+                                                    }`}>
+                                                        {item.isPublished === false
+                                                            ? t('groupSessions.resources.labels.draft')
+                                                            : t('groupSessions.resources.labels.published')}
+                                                    </span>
                                                 </div>
                                                 <div className="mt-1 text-xs text-edubot-muted dark:text-slate-400">
                                                     {item.storageKey
                                                         ? t('groupSessions.resources.labels.uploadedFile')
                                                         : t('groupSessions.resources.labels.externalLink')}
+                                                    {formattedAvailableAts[index] ? ` · ${t('groupSessions.resources.labels.availableAt', {
+                                                        date: formattedAvailableAts[index],
+                                                    })}` : ''}
                                                 </div>
                                             </div>
                                             <div className="ml-3 flex flex-wrap items-center gap-2">

@@ -49,6 +49,15 @@ const normalizeMaterials = (materials) => {
                 item?.storageKey !== undefined && item?.storageKey !== null && String(item.storageKey).trim()
                     ? String(item.storageKey).trim()
                     : undefined,
+            lessonId:
+                item?.lessonId !== undefined && item?.lessonId !== null
+                    ? ensurePositiveInt(item.lessonId, `materials[${index}].lessonId`)
+                    : undefined,
+            isPublished:
+                item?.isPublished !== undefined && item?.isPublished !== null
+                    ? Boolean(item.isPublished)
+                    : undefined,
+            availableAt: ensureIsoDateTime(item?.availableAt, `materials[${index}].availableAt`),
         });
     });
 };

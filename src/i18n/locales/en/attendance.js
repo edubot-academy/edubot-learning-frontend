@@ -858,12 +858,17 @@ export const attendance = {
                 description: "Add an external link to the session with a title."
             },
             fields: {
-                materialTitle: "Material title"
+                materialTitle: "Material title",
+                publishNow: "Publish now",
+                availableAt: "Release date"
             },
             labels: {
                 video: "Video",
                 uploadedFile: "Uploaded file",
-                externalLink: "External link"
+                externalLink: "External link",
+                draft: "Draft",
+                published: "Published",
+                availableAt: "Releases {{date}}"
             },
             meeting: {
                 title: "Live lesson",

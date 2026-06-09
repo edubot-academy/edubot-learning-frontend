@@ -156,6 +156,7 @@ export const useSessionWorkspaceResources = ({
                                 title: lesson.title || t('groupSessions.workspace.resources.fallbacks.lessonVideo'),
                                 url: lesson.videoUrl,
                                 storageKey: lesson.videoKey,
+                                isPublished: false,
                             });
                         }
                         return items;
@@ -224,6 +225,7 @@ export const useSessionWorkspaceResources = ({
                     title: uploaded.title || file.name,
                     url: uploaded.url || '',
                     storageKey: uploaded.storageKey || undefined,
+                    isPublished: false,
                 },
             ];
 
@@ -255,6 +257,8 @@ export const useSessionWorkspaceResources = ({
                 title: asset.title,
                 url: asset.url,
                 storageKey: asset.storageKey,
+                lessonId: asset.lessonId,
+                isPublished: false,
             },
         ]);
     };

@@ -6,6 +6,25 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
 ---
 
+## [1.15.2] - 2026-06-03
+
+### Fixed
+
+- Kept newly added session materials in draft state by default until an instructor explicitly publishes them.
+- Preserved session material publish-state, release-date, and lesson metadata when saving group session resources.
+
+### Changed
+
+- Added admin session resource controls for publish state and optional release date.
+
+### Verification
+
+- `npm run lint -- src/features/groupSessions/hooks/useSessionWorkspaceEditor.js src/features/groupSessions/api.js src/features/groupSessions/hooks/useSessionWorkspaceResources.js src/features/groupSessions/components/SessionResourcesTab.jsx src/i18n/locales/en/attendance.js src/i18n/locales/ru/attendance.js src/i18n/locales/ky/attendance.js`
+- `npm run build`
+- `git diff --check`
+
+---
+
 ## [1.15.1] - 2026-06-01
 
 ### Fixed

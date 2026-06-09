@@ -858,12 +858,17 @@ export const attendance = {
                 description: "Сессияга тышкы шилтемени аталышы менен кошуңуз."
             },
             fields: {
-                materialTitle: "Материал аталышы"
+                materialTitle: "Материал аталышы",
+                publishNow: "Азыр жарыялоо",
+                availableAt: "Жарыялоо күнү"
             },
             labels: {
                 video: "Видео",
                 uploadedFile: "Жүктөлгөн файл",
-                externalLink: "Тышкы шилтеме"
+                externalLink: "Тышкы шилтеме",
+                draft: "Долбоор",
+                published: "Жарыяланган",
+                availableAt: "{{date}} жеткиликтүү болот"
             },
             meeting: {
                 title: "Түз эфир сабак",

@@ -109,6 +109,7 @@ export const useSessionWorkspaceEditor = ({
                         {
                             title: quickSession.materialTitle.trim(),
                             url: quickSession.materialUrl.trim(),
+                            isPublished: false,
                         },
                     ]
                     : undefined;
