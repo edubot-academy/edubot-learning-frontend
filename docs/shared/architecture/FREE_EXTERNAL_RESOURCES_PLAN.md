@@ -788,7 +788,439 @@ Suggested disclaimer:
 Бул ресурс EduBot тарабынан түзүлгөн эмес жана EduBot расмий өнөктөш экенин билдирбейт. Биз бул шилтемени студенттерге пайдалуу акысыз билим мүмкүнчүлүгү катары сунуштайбыз. Курстун шарттары, сертификаты жана мазмуну расмий провайдердин сайтында аныкталат.
 ```
 
-## 21. Implementation Tasks
+## 21. UI/UX Design Plan
+
+The design should make this feel like **EduBot Learning Guide**, not a simple list of external links.
+
+Core user feeling:
+
+```text
+EduBot found the best resources for me, explained them, organized them, and helps me study.
+```
+
+### 21.1 Design principles
+
+- Keep EduBot as the main learning environment.
+- Show the official provider link, but do not make it the only or first value.
+- Use “EduBot guide” framing on cards and detail pages.
+- Use provider text badges instead of official logos unless logo usage is clearly allowed.
+- Make free resources visually related to EduBot courses but clearly marked as external.
+- Keep public pages useful without login.
+- Ask for login only when the user wants to save, start, track, or personalize.
+
+### 21.2 Homepage section design
+
+Placement:
+
+```jsx
+<TopCourses />
+<ExternalResourcesHomeSection />
+<TopLearnersHome />
+```
+
+Layout:
+
+- Two-column layout on desktop.
+- Single-column stacked layout on mobile.
+- Left side contains copy and CTAs.
+- Right side contains a premium visual card stack.
+
+Left copy:
+
+```text
+Акысыз билим мүмкүнчүлүктөрү
+
+Дүйнөлүк курстарды EduBot менен туура багытта окуңуз
+
+Harvard, Google, Microsoft, freeCodeCamp жана башка платформалардагы пайдалуу акысыз ресурстарды бир жерден табыңыз.
+```
+
+Buttons:
+
+```text
+Акысыз ресурстарды көрүү
+Окуу жолун тандаңыз
+```
+
+Right visual card stack examples:
+
+```text
+Harvard CS50
+Python
+AI
+Frontend
+English
+Remote Work
+```
+
+Each mini-card can show:
+
+```text
+Free to audit
+English
+EduBot guide
+```
+
+Visual style:
+
+- light mode: white/soft gray background;
+- dark mode: dark navy or dark gray card surface;
+- accents: EduBot orange, green, and blue;
+- rounded-2xl or rounded-3xl cards;
+- subtle gradients and shadows;
+- clear “EduBot сунуштайт” badge.
+
+### 21.3 Resources listing page design
+
+Route:
+
+```text
+/resources
+```
+
+Page title:
+
+```text
+Акысыз билим мүмкүнчүлүктөрү
+```
+
+Subtitle:
+
+```text
+EduBot сиз үчүн дүйнөдөгү сапаттуу акысыз курстарды жана материалдарды тандап, аларды кантип окууну түшүндүрүп берет.
+```
+
+Hero block:
+
+```text
+Эмнени үйрөнгүңүз келет?
+```
+
+Search placeholder:
+
+```text
+Python, AI, Frontend, English...
+```
+
+Category chips:
+
+```text
+Баары
+Программалоо
+Frontend
+AI
+Data
+Cloud
+English
+Business
+Teachers
+Remote Work
+```
+
+Listing page should support:
+
+- search;
+- category chips;
+- provider filter later;
+- level filter later;
+- language filter later;
+- featured collection rows later.
+
+### 21.4 External resource card design
+
+Resource cards should feel like **guided opportunities**, not paid course cards.
+
+Card structure:
+
+```text
+[Provider badge] Harvard / edX
+CS50: Introduction to Computer Science
+
+Computer science foundation, algorithms, problem solving.
+
+Level: Beginner
+Language: English
+Price: Free to audit
+Certificate: Paid optional
+
+EduBot guide included
+
+[Окуу планын көрүү]
+[Расмий сайт]
+```
+
+Primary button:
+
+```text
+Окуу планын көрүү
+```
+
+Secondary button:
+
+```text
+Расмий сайт
+```
+
+Do not make the external link the only primary action.
+
+Example card wireframe:
+
+```text
+┌──────────────────────────────┐
+│ Harvard / edX        Free    │
+│                              │
+│ CS50: Computer Science       │
+│ Программалоонун күчтүү       │
+│ фундаменталдык курсу.        │
+│                              │
+│ Beginner • English • 11 wks  │
+│ Certificate: paid optional   │
+│                              │
+│ ✅ EduBot guide included     │
+│                              │
+│ [Окуу планын көрүү]          │
+└──────────────────────────────┘
+```
+
+### 21.5 Resource detail page design
+
+Route:
+
+```text
+/resources/:slug
+```
+
+This is the most important page because it keeps the user inside EduBot before they open the official provider.
+
+Use a two-column hero on desktop.
+
+Left hero:
+
+```text
+Harvard / edX
+CS50: Introduction to Computer Science
+
+Программалоону жана computer science негиздерин башынан үйрөнүү үчүн эң белгилүү курстардын бири.
+```
+
+Badges:
+
+```text
+Beginner
+English
+Free to audit
+Paid certificate optional
+11 weeks
+Hard but valuable
+```
+
+Hero buttons:
+
+```text
+EduBot ичинде окуу планын баштоо
+Расмий курсту ачуу
+```
+
+Right hero card:
+
+```text
+EduBot сизге жардам берет:
+
+✅ Окуу планын түзүү
+✅ Прогрессти сактоо
+✅ Notes жазуу
+✅ Кыргызча түшүндүрмө алуу
+✅ Сертификатты кошуу
+```
+
+### 21.6 Detail page content sections
+
+Each detail page should answer:
+
+```text
+What is this?
+Who is it for?
+Is it hard?
+How should I study it?
+What should I do after it?
+How can EduBot help me?
+Where is the official course link?
+```
+
+Recommended sections:
+
+1. **Бул курс эмне жөнүндө?**
+
+```text
+Бул курс computer science негиздерин, алгоритмдерди, маалымат структураларын жана problem solving ой жүгүртүүсүн үйрөтөт.
+```
+
+2. **Кимдер үчүн ылайыктуу?**
+
+Use small cards:
+
+```text
+Жаңы баштагандар
+Программалоону фундаменттен үйрөнгүсү келгендер
+Frontend/Backend багытына даярдангандар
+```
+
+3. **Баштаардан мурун билиңиз**
+
+```text
+Бул курс күчтүү, бирок жеңил эмес.
+Англис тили керек болушу мүмкүн.
+Жумасына 6–10 саат бөлсөңүз жакшы.
+Эгер кыйын болсо, EduBot ичинде кыргызча түшүндүрмө жана план менен окуңуз.
+```
+
+4. **EduBot окуу планы**
+
+Timeline/checklist example:
+
+```text
+1-жума: Курстун структурасы менен таанышуу
+2-жума: Problem solving жана Scratch/logic
+3-жума: C basics же негизги программалоо түшүнүктөрү
+4-жума: Algorithms
+5-жума: Data structures
+```
+
+For MVP, checklist actions can be disabled, visual-only, or login-gated.
+
+5. **Кыйын жерлери**
+
+```text
+Көп студенттерге кыйын болушу мүмкүн:
+
+- Англисче терминдер
+- Абстракттуу computer science түшүнүктөрү
+- Тапшырмалардын татаалдыгы
+- Туруктуу окуу тартиби
+```
+
+Then show:
+
+```text
+EduBot бул жерде план, түшүндүрмө жана кошумча практика менен жардам берет.
+```
+
+6. **Окшош EduBot курстары**
+
+Soft upsell:
+
+```text
+Эгер кыргызча түшүндүрмө жана практикалык тапшырмалар менен окугуңуз келсе:
+```
+
+Show related internal course cards or compact links.
+
+### 21.7 Auth prompt design
+
+Do not block the whole page.
+
+Public users can read the resource guide page and open official links.
+
+When they click an EduBot-owned action such as:
+
+```text
+EduBot ичинде окуу планын баштоо
+Менин окуу планыма кошуу
+Прогрессти сактоо
+```
+
+Show modal:
+
+```text
+Окуу планыңызды сактоо үчүн аккаунт түзүңүз
+
+EduBot сиздин прогрессиңизди, notes жана сертификаттарыңызды сактап берет.
+Расмий курс провайдердин сайтында ачылат.
+
+[Аккаунт түзүү]
+[Кирүү]
+[Азырынча расмий курсту ачуу]
+```
+
+This should feel helpful, not forced.
+
+### 21.8 My Learning Plan dashboard widget
+
+Later, logged-in students should see external resources beside EduBot courses.
+
+Widget example:
+
+```text
+Менин окуу планым
+
+EduBot курстары:
+- Frontend курсу — 35%
+
+Акысыз ресурстар:
+- Harvard CS50 — Started
+- MDN JavaScript — Saved
+- Microsoft AI Fundamentals — Completed
+```
+
+This is one of the strongest retention points because users return to EduBot to manage learning.
+
+### 21.9 EduBot course detail integration design
+
+Inside EduBot course detail pages, show:
+
+```text
+Кошумча акысыз ресурстар
+```
+
+Example for Frontend course:
+
+```text
+Бул курска жардам бере турган акысыз ресурстар:
+
+MDN HTML Guide
+freeCodeCamp Responsive Web Design
+JavaScript.info
+Harvard CS50
+```
+
+Each card button should say:
+
+```text
+EduBot Guide ачуу
+```
+
+Do not send users directly to external links from the course detail section.
+
+### 21.10 Visual language
+
+Use EduBot design language:
+
+- background: white/light gray in light mode;
+- background: dark navy/gray in dark mode;
+- primary accent: EduBot orange;
+- support accents: green and blue;
+- card radius: `rounded-2xl` or `rounded-3xl`;
+- typography: clear section hierarchy, short copy, readable line height;
+- icons: `FiBookOpen`, `FiExternalLink`, `FiGlobe`, `FiCheckCircle`, `FiBookmark`, `FiClock`;
+- badges: small pill labels;
+- avoid too many colors;
+- avoid provider logos unless safe/legal;
+- use provider text badges instead.
+
+### 21.11 MVP design scope
+
+For the first implementation, design only these four surfaces:
+
+```text
+1. Homepage “Акысыз билим мүмкүнчүлүктөрү” section
+2. /resources listing page
+3. /resources/:slug detail guide page
+4. Small “Кошумча акысыз ресурстар” block inside /courses
+```
+
+Do not overbuild progress, notes, AI, certificates, or full dashboard widgets yet. Design the UI so those features can be added later.
+
+## 22. Implementation Tasks
 
 ### Phase 1 — Frontend MVP
 
@@ -809,6 +1241,9 @@ Suggested disclaimer:
 - [ ] Validate redirect params to prevent open redirects.
 - [ ] Add responsive mobile UI.
 - [ ] Validate dark mode styling.
+- [ ] Implement homepage section based on the UI/UX design plan.
+- [ ] Implement resource cards as guided opportunities, not paid course cards.
+- [ ] Keep official provider link secondary to the EduBot guide page.
 
 ### Phase 2 — Course Page Integration
 
@@ -817,6 +1252,7 @@ Suggested disclaimer:
 - [ ] Show related resources by category.
 - [ ] Add “extra resources” section on course detail pages.
 - [ ] Add resource recommendations based on course category/slug.
+- [ ] Use “EduBot Guide ачуу” as the primary resource CTA inside course pages.
 
 ### Phase 3 — Logged-in Student Features
 
@@ -847,12 +1283,13 @@ Suggested disclaimer:
 - [ ] Recommend related EduBot lessons.
 - [ ] Avoid copying full provider course content.
 
-## 22. Acceptance Criteria for MVP
+## 23. Acceptance Criteria for MVP
 
 - Public users can discover free resources from the homepage.
 - Public users can open `/resources` and browse curated resources.
 - Public users can open a resource detail page inside EduBot.
 - Public users can open the official external course link without EduBot login.
+- Resource cards use “Окуу планын көрүү” / EduBot guide as the main action.
 - Save/start/learning-plan actions ask for EduBot login/signup.
 - After login/signup, users return to the same resource page.
 - Redirect URLs are validated as internal-only paths.
@@ -861,8 +1298,9 @@ Suggested disclaimer:
 - UI works on mobile and desktop.
 - UI supports dark mode.
 - Kyrgyz text is polished and user-friendly.
+- The experience answers: what this resource is, who it is for, how hard it is, how to study it, and how EduBot helps.
 
-## 23. Recommended First Implementation PR Scope
+## 24. Recommended First Implementation PR Scope
 
 The first implementation PR after this plan should include only:
 
@@ -874,10 +1312,11 @@ The first implementation PR after this plan should include only:
 6. Basic integration into `/courses` as a small promotional block.
 7. Login/signup prompt for save/start actions.
 8. Redirect-back query params.
+9. UI design from section 21.
 
 Do not add backend or full progress tracking in the first implementation PR.
 
-## 24. Long-term Vision
+## 25. Long-term Vision
 
 EduBot Learning should become a trusted learning guide for Kyrgyz-speaking students.
 
