@@ -217,14 +217,14 @@ const CoursesPage = () => {
             </div>
 
             <SectionContainer
-                title="Кошумча акысыз ресурстар"
-                subtitle="Кыргызстандык студенттер үчүн тандалган дүйнөлүк акысыз курстар."
+                title={t('public.externalResources.coursesSectionTitle')}
+                subtitle={t('public.externalResources.coursesSectionSubtitle')}
                 rightContent={
                     <Link
                         to="/resources"
                         className="text-sm font-medium text-[#E14219] hover:underline"
                     >
-                        Бардыгын көрүү →
+                        {t('public.externalResources.viewAll')} →
                     </Link>
                 }
                 items={COURSES_FREE_PREVIEW}

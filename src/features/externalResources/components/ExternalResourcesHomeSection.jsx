@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import SectionContainer from '@features/marketing/components/SectionContainer';
 import Button from '@shared/ui/Button';
 import ExternalResourceCard from './ExternalResourceCard';
@@ -7,15 +8,16 @@ import { EXTERNAL_RESOURCES } from '../data/externalResources';
 const HOME_PREVIEW_COUNT = 3;
 
 const ExternalResourcesHomeSection = () => {
+    const { t } = useTranslation();
     const preview = EXTERNAL_RESOURCES.slice(0, HOME_PREVIEW_COUNT);
 
     return (
         <SectionContainer
-            title="Акысыз дүйнөлүк курстар"
-            subtitle="Гарвард, Google жана башка дүйнөлүк университеттерден тандалган курстар — Edubot жетекчилиги менен."
+            title={t('public.externalResources.homeSectionTitle')}
+            subtitle={t('public.externalResources.homeSectionSubtitle')}
             rightContent={
                 <Link to="/resources">
-                    <Button variant="secondary">Бардыгын көрүү</Button>
+                    <Button variant="secondary">{t('public.externalResources.viewAll')}</Button>
                 </Link>
             }
             items={preview}

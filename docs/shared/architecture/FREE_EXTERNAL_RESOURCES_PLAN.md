@@ -1,6 +1,6 @@
 # Free External Learning Resources — EduBot Learning Integration Plan
 
-_Last updated: 2026-06-09. Phase 1 frontend implementation complete. See §22 for task status and §28 for implementation notes._
+_Last updated: 2026-06-10. Phase 1 and Phase 2 frontend implementation complete. See §22 for task status and §28–§29 for implementation notes._
 
 ## 1. Purpose
 
@@ -1249,12 +1249,16 @@ Do not overbuild progress, notes, AI, certificates, or full dashboard widgets ye
 
 ### Phase 2 — Course Page Integration
 
-- [ ] Add `FeaturedExternalResources` block under `/courses` grid.
-- [ ] Add CTA to `/resources`.
-- [ ] Show related resources by category.
-- [ ] Add “extra resources” section on course detail pages.
-- [ ] Add resource recommendations based on course category/slug.
-- [ ] Use “EduBot Guide ачуу” as the primary resource CTA inside course pages.
+**Status: Complete.** See §29 for implementation notes.
+
+- [x] Add `FeaturedExternalResources` block under `/courses` grid — `ExternalResourcesHomeSection` added to `Courses.jsx` using existing `SectionContainer`.
+- [x] Add CTA to `/resources` — “Бардык ресурстарды көрүү →” link on both `/courses` and `/course/:id`.
+- [x] Show related resources by category — `getResourcesRelatedToCourse()` matches course to resource category via keyword regex.
+- [x] Add “extra resources” section on course detail pages — `SectionContainer` + `ExternalResourceCard` added to `CourseDetails.jsx` after `EnrolledCourseSupport`.
+- [x] Add resource recommendations based on course category/slug — `getResourcesRelatedToCourse()` exported from data file, falls back to `isFeatured` resources.
+- [x] Use “EduBot Guide ачуу” as the primary resource CTA inside course pages — injected via `ctaLabel` on each mapped resource item.
+- [x] Full i18n for all components — `useTranslation` + `t()` throughout; all 38 UI string keys added to `ky`, `en`, `ru` locale files.
+- [x] Multilingual content in all 10 resources — `en` and `ru` content keys added to all content fields (`shortDescription`, `whatYouWillLearn`, `whoIsItFor`, `whyRecommended`, each `studyPlan` week title+description, `difficultyNotes`). Language picked via `i18n.language` with `.ky` fallback.
 
 ### Phase 3 — Logged-in Student Features
 
@@ -1917,8 +1921,11 @@ The 10 launch resources are also the seed data for the backend migration in Phas
 
 ### 28.3 Design decisions and deviations from plan
 
-**Hardcoded Kyrgyz strings, no `useTranslation`.**
-All public marketing pages (`TopCourses`, `SectionContainer`, `HeroStart`, etc.) use hardcoded Kyrgyz. This feature follows that pattern. The `useTranslation` i18n system is only used inside instructor/student feature modules.
+**i18n added in Phase 2 (not hardcoded Kyrgyz as originally planned).**
+Phase 1 shipped hardcoded Kyrgyz following the existing marketing-page pattern. Phase 2 switched all external-resources components to `useTranslation` because the feature surfaces inside paid course detail pages used by students across all three supported locales (ky, en, ru). 38 UI string keys were added to `src/i18n/locales/{ky,en,ru}/public.js` under the `externalResources` namespace. Content fields in `externalResources.js` now carry `ky`, `en`, and `ru` versions; components read them via a `cl(obj)` helper: `obj[lang] ?? obj.ky`.
+
+**Provider logo fallback uses letter-avatar, not Clearbit.**
+Clearbit's free logo CDN shut down. Two-tier fallback: curated CDN/Wikipedia URLs in `PROVIDER_LOGOS` → letter avatar with brand color from `PROVIDER_COLORS`. `PROVIDER_DOMAINS` removed.
 
 **No separate `ExternalResourcesGrid.jsx`.**
 The grid (3-column responsive) is a single `<div className="grid ...">` inside `ExternalResourcesPage.jsx`. A separate file would add indirection with no benefit at this scale.
@@ -1937,18 +1944,75 @@ The `handleOfficialLink` function checks whether the URL is internal or external
 
 ### 28.4 Known gaps before Phase 2
 
-| Gap | Blocking? | Phase |
+| Gap | Blocking? | Resolved? |
 |---|---|---|
-| `?redirect=`/`?intent=` login params not wired | No — auth prompt works via router state | Phase 3 |
-| Loading/error states on detail page (sync lookup) | No — static data never fails | Phase 4 (when API added) |
-| Category list hardcoded in data file | No | Phase 4 (fetch from API) |
-| Homepage shows first 3 resources, not `isFeatured` | No — first 3 happen to be the best | Phase 4 |
-| No `/courses` page integration | No | Phase 2 |
-| No progress tracking UI | No — auth prompt teases it | Phase 3 |
+| `?redirect=`/`?intent=` login params not wired | No — auth prompt works via router state | No — Phase 3 |
+| Loading/error states on detail page (sync lookup) | No — static data never fails | No — Phase 4 |
+| Category list hardcoded in data file | No | No — Phase 4 |
+| Homepage shows first 3 resources, not `isFeatured` | No | No — Phase 4 |
+| No `/courses` page integration | No | **Yes — Phase 2** |
+| No progress tracking UI | No — auth prompt teases it | No — Phase 3 |
 
 ### 28.5 What to do next
 
-1. **Content**: Write deeper Kyrgyz-language guide content for CS50 (§25.1). The detail page is built; only the copy needs depth.
-2. **Phase 2**: Add the "Кошумча акысыз ресурстар" block inside `/courses` — 3–4 hours of work using the existing card component.
-3. **Phase 3 / study group CTA**: Replace the auth prompt with a concrete study group CTA per §25.3 — deliver value before the backend exists.
-4. **Phase 4**: Only after 2–3 weeks of traffic data confirms demand (§26.1).
+1. **Phase 3 / study group CTA**: Replace the auth prompt with a concrete study group CTA per §25.3 — deliver value before the backend exists.
+2. **Phase 4**: Only after 2–3 weeks of traffic data confirms demand (§26.1).
+
+---
+
+## 29. Phase 2 Implementation Notes
+
+_Completed: 2026-06-10._
+
+### 29.1 Files updated
+
+```
+src/pages/Courses.jsx            — ExternalResourcesHomeSection block + "view all" CTA added
+src/pages/CourseDetails.jsx      — SectionContainer + ExternalResourceCard + getResourcesRelatedToCourse
+src/features/externalResources/data/externalResources.js
+                                 — getResourcesRelatedToCourse() exported; PROVIDER_DOMAINS removed;
+                                   en+ru content added to all 10 resources
+src/features/externalResources/components/ExternalResourceCard.jsx
+                                 — useTranslation added; ctaLabel prop; isFree detection fixed;
+                                   Clearbit removed; PROVIDER_LOGOS two-tier fallback
+src/features/externalResources/components/ExternalResourceFilters.jsx
+                                 — useTranslation; category labels from i18n
+src/features/externalResources/components/ExternalResourcesHomeSection.jsx
+                                 — useTranslation throughout
+src/features/externalResources/components/ExternalResourceAuthPrompt.jsx
+                                 — useTranslation throughout
+src/features/externalResources/components/ExternalResourceDisclaimer.jsx
+                                 — useTranslation; providerName interpolation
+src/features/externalResources/pages/ExternalResourcesPage.jsx
+                                 — useTranslation; count interpolation in subtitle
+src/features/externalResources/pages/ExternalResourceDetails.jsx
+                                 — full redesign: cover hero, badge pills, timeline study plan,
+                                   sidebar stats, cl() content-language helper, ProviderLogo component
+src/i18n/locales/ky/public.js    — 38 externalResources keys added
+src/i18n/locales/en/public.js    — 38 externalResources keys added
+src/i18n/locales/ru/public.js    — 38 externalResources keys added
+```
+
+### 29.2 Course-to-resource matching
+
+`getResourcesRelatedToCourse(course, limit = 3)` builds a haystack from `course.category.name`, `course.categoryName`, and `course.title`, then uses regex to map to one of four resource categories (`web`, `ai`, `data`, `programming`). Falls back to `isFeatured` resources if no category match or fewer than `limit` matched. The function is stateless and has no external dependencies.
+
+### 29.3 Content language helper pattern
+
+All components that render multilingual content use:
+
+```js
+const lang = i18n.language?.split('-')[0] ?? 'ky';
+const cl = (obj) => obj?.[lang] ?? obj?.ky ?? null;
+```
+
+`split('-')[0]` normalises locale codes like `en-US` → `en`. The `.ky` fallback ensures nothing breaks if a future resource omits a translation.
+
+### 29.4 Known gaps before Phase 3
+
+| Gap | Blocking? | Phase |
+|---|---|---|
+| `?redirect=`/`?intent=` login params not wired | No | Phase 3 |
+| Progress tracking UI | No | Phase 3 |
+| `isFeatured` flag only set on CS50 (id 1) | No — fallback works | Phase 4 |
+| No loading/error state on detail page | No — static data | Phase 4 |

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { LEVELS, PROVIDER_COLORS, PROVIDER_DOMAINS, PROVIDER_LOGOS } from '../data/externalResources';
+import { useTranslation } from 'react-i18next';
+import { PROVIDER_COLORS, PROVIDER_LOGOS } from '../data/externalResources';
 
 const CATEGORY_ICONS = {
     programming: '💻',
@@ -12,12 +13,10 @@ const CATEGORY_ICONS = {
 
 const ProviderLogo = ({ providerKey, provider }) => {
     const [primaryFailed, setPrimaryFailed] = useState(false);
-    const [clearbitFailed, setClearbitFailed] = useState(false);
 
     const color = PROVIDER_COLORS[providerKey] ?? '#888';
     const initial = provider?.charAt(0)?.toUpperCase() ?? '?';
     const primaryUrl = PROVIDER_LOGOS[providerKey];
-    const domain = PROVIDER_DOMAINS[providerKey];
 
     const wrapperCls = 'w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-md overflow-hidden flex-shrink-0 border border-white/60';
 
@@ -34,19 +33,6 @@ const ProviderLogo = ({ providerKey, provider }) => {
         );
     }
 
-    if (!clearbitFailed && domain) {
-        return (
-            <div className={wrapperCls}>
-                <img
-                    src={`https://logo.clearbit.com/${domain}`}
-                    alt={provider}
-                    className="w-8 h-8 object-contain"
-                    onError={() => setClearbitFailed(true)}
-                />
-            </div>
-        );
-    }
-
     return (
         <div
             className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-base shadow-md flex-shrink-0"
@@ -58,6 +44,7 @@ const ProviderLogo = ({ providerKey, provider }) => {
 };
 
 const CardHeader = ({ coverImageUrl, providerKey, provider, isFeatured, category }) => {
+    const { t } = useTranslation();
     const [imageFailed, setImageFailed] = useState(false);
     const color = PROVIDER_COLORS[providerKey] ?? '#888';
     const categoryIcon = CATEGORY_ICONS[category] ?? CATEGORY_ICONS.default;
@@ -93,7 +80,7 @@ const CardHeader = ({ coverImageUrl, providerKey, provider, isFeatured, category
             {/* Featured badge — top left */}
             {isFeatured && (
                 <span className="absolute top-3 left-3 text-xs font-semibold px-2.5 py-1 rounded-full bg-white/20 text-white backdrop-blur-sm border border-white/30">
-                    ⭐ Сунушталат
+                    ⭐ {t('public.externalResources.featured')}
                 </span>
             )}
 
@@ -116,11 +103,15 @@ const ExternalResourceCard = ({
     certificateLabel,
     durationLabel,
     isFeatured,
+    isFree: isFreeOverride,
+    ctaLabel,
     coverImageUrl,
     content,
     url,
 }) => {
-    const isFree = priceLabel?.toLowerCase().includes('акысыз');
+    const { t, i18n } = useTranslation();
+    const lang = i18n.language?.split('-')[0] ?? 'ky';
+    const isFree = isFreeOverride ?? /акысыз/i.test(priceLabel ?? '');
 
     return (
         <div className="flex flex-col rounded-2xl overflow-hidden border border-gray-100 dark:border-white/10 bg-white dark:bg-[#1a1a1a] hover:-translate-y-1 hover:shadow-xl transition-all duration-300 group">
@@ -143,7 +134,7 @@ const ExternalResourceCard = ({
                 </h3>
 
                 <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed line-clamp-2 flex-1">
-                    {content?.shortDescription?.ky ?? ''}
+                    {content?.shortDescription?.[lang] ?? content?.shortDescription?.ky ?? ''}
                 </p>
 
                 <div className="flex flex-wrap gap-1.5 pt-1">
@@ -163,7 +154,7 @@ const ExternalResourceCard = ({
                     )}
                     {level && (
                         <span className="text-xs px-2 py-0.5 rounded-full border font-medium bg-gray-50 dark:bg-white/5 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700">
-                            {LEVELS[level] ?? level}
+                            {t(`public.externalResources.levels.${level}`, { defaultValue: level })}
                         </span>
                     )}
                 </div>
@@ -181,7 +172,7 @@ const ExternalResourceCard = ({
                     to={`/resources/${slug}`}
                     className="flex-1 inline-flex items-center justify-center gap-1 rounded-lg font-medium text-sm px-4 py-2.5 bg-gradient-to-b from-[#FF8C6E] to-[#E14219] text-white hover:from-[#C2410C] hover:to-[#C2410C] transition-all duration-300 active:scale-95"
                 >
-                    Жетекчилик менен окуу
+                    {ctaLabel ?? t('public.externalResources.learnWithGuidance')}
                 </Link>
                 <a
                     href={url}
@@ -189,7 +180,7 @@ const ExternalResourceCard = ({
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
                     className="inline-flex items-center justify-center rounded-lg border border-gray-300 dark:border-white/20 text-gray-600 dark:text-gray-300 hover:border-[#E14219] hover:text-[#E14219] dark:hover:border-[#FF8C6E] dark:hover:text-[#FF8C6E] px-3 py-2.5 transition-all duration-300"
-                    title="Расмий сайтка өтүү"
+                    title={t('public.externalResources.officialSite')}
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
                         <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
