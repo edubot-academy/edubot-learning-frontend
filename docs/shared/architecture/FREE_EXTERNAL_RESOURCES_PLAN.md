@@ -103,16 +103,19 @@ The official provider remains the source of the course content.
 5. Resource cards with provider, level, language, certificate info, and official link.
 6. Course page integration as an additional “free resources” section or tab.
 7. Clear external-provider disclaimer.
+8. Login/signup gating only for EduBot-owned actions such as saving, starting, notes, progress, and learning plan.
+9. Redirect-back behavior after login/signup.
 
 ### MVP should not include yet
 
 1. Backend admin CRUD.
-2. User progress tracking.
+2. Full user progress tracking, unless backend support already exists.
 3. Certificate uploads.
 4. Resource-to-lesson mapping in backend.
 5. AI assistant integration.
 6. Embedding provider videos or copying provider materials.
 7. Payment/cart integration for external resources.
+8. Attempting to manage Harvard/edX/Google/Microsoft/freeCodeCamp accounts inside EduBot.
 
 ## 6. Recommended Frontend Structure
 
@@ -127,6 +130,7 @@ src/features/externalResources/
   components/ExternalResourceFilters.jsx
   components/ExternalResourcesGrid.jsx
   components/ExternalResourceDisclaimer.jsx
+  components/ExternalResourceAuthPrompt.jsx
   pages/ExternalResourcesPage.jsx
   pages/ExternalResourceDetails.jsx
 ```
@@ -374,7 +378,7 @@ Every external resource should have an EduBot-owned guide page.
 Primary:
 
 ```text
-Окуу планын көрүү
+EduBot ичинде окуу планын баштоо
 ```
 
 Secondary:
@@ -389,7 +393,199 @@ Optional if user is logged in later:
 Менин окуу планыма кошуу
 ```
 
-## 13. How to Keep Users in EduBot
+## 13. Signup, Login, and Access Strategy
+
+External free resources should be public for discovery, but EduBot-owned learning actions should require an EduBot account.
+
+The principle is:
+
+```text
+Free resource discovery = public
+EduBot learning companion = account required
+Official provider account = handled outside EduBot
+```
+
+### 13.1 Public access — no EduBot login required
+
+Anyone should be able to open:
+
+```text
+/resources
+/resources/:slug
+```
+
+Without login, users can see:
+
+- course/resource title;
+- provider;
+- short description in Kyrgyz/Russian/English;
+- level;
+- language;
+- estimated duration;
+- certificate info;
+- “why EduBot recommends this”;
+- study guidance preview;
+- official provider link.
+
+This supports SEO, Instagram traffic, trust building, and platform marketing.
+
+Do not force signup before the user understands the value.
+
+### 13.2 EduBot login required — for learning companion actions
+
+Require EduBot login for actions that store user-specific data or create long-term retention:
+
+| Feature | Login needed? |
+|---|---:|
+| Browse resources | No |
+| View resource detail page | No |
+| Open official provider link | No |
+| Save resource | Yes |
+| Start resource | Yes |
+| Add to My Learning Plan | Yes |
+| Track progress | Yes |
+| Notes | Yes |
+| AI helper | Yes |
+| Reminders | Yes |
+| Certificate/screenshot upload | Yes |
+| My Learning Plan dashboard | Yes |
+
+### 13.3 Recommended logged-out button behavior
+
+On an external resource detail page, logged-out users should see:
+
+Primary CTA:
+
+```text
+EduBot ичинде окуу планын баштоо
+```
+
+Secondary CTA:
+
+```text
+Расмий курсту ачуу
+```
+
+When they click the primary CTA, show a login/signup prompt.
+
+Modal title:
+
+```text
+Окуу планыңызды сактоо үчүн аккаунт түзүңүз
+```
+
+Modal body:
+
+```text
+EduBot сиздин прогрессиңизди, notes жана сертификаттарыңызды сактап берет. Расмий курс провайдердин сайтында ачылат.
+```
+
+Modal buttons:
+
+```text
+Аккаунт түзүү
+Кирүү
+Азырынча расмий курсту ачуу
+```
+
+### 13.4 Recommended logged-in button behavior
+
+For logged-in users, show:
+
+```text
+Окууну баштоо
+Менин окуу планыма кошуу
+Расмий курсту ачуу
+```
+
+After the user starts the resource, change CTAs to:
+
+```text
+Окууну улантуу
+Прогрессти жаңыртуу
+Notes ачуу
+Расмий курсту ачуу
+```
+
+### 13.5 Redirect-back flow after login/signup
+
+When a logged-out user clicks “save”, “start”, or “add to learning plan”, redirect them to auth with a return URL.
+
+Example:
+
+```text
+/login?redirect=/resources/harvard-cs50&intent=save-resource
+/register?redirect=/resources/harvard-cs50&intent=start-resource
+```
+
+After successful login/signup:
+
+```text
+/resources/harvard-cs50
+```
+
+Then complete or resume the intended action:
+
+```text
+CS50 окуу планыңызга кошулду ✅
+```
+
+Implementation options:
+
+1. Store `redirect` and `intent` in query params.
+2. After auth success, read and validate the redirect path.
+3. Navigate back to the resource page.
+4. If backend support exists, run the intended action.
+5. If backend support does not exist yet, show the detail page and a clear CTA.
+
+Security note:
+
+- Only allow internal relative redirects like `/resources/harvard-cs50`.
+- Do not allow arbitrary external redirect URLs.
+
+### 13.6 External provider login
+
+Harvard/edX, Google, Microsoft, freeCodeCamp, AWS, and other providers may require their own account.
+
+EduBot should not try to manage external provider authentication unless there is an official partnership, API, or SSO integration.
+
+Show this explanation near the official link:
+
+```text
+Бул курс расмий провайдердин сайтында ачылат. Курсту көрүү үчүн Harvard/edX, Google, Microsoft же башка провайдердин аккаунту керек болушу мүмкүн. EduBot сизге окуу планын, прогрессти жана кошумча жардамды сактап берет.
+```
+
+### 13.7 Best user journey
+
+Do not use this flow:
+
+```text
+Resource card → official provider website
+```
+
+Use this flow:
+
+```text
+Resource card
+→ EduBot resource guide page
+→ user reads value
+→ user saves/starts in EduBot
+→ EduBot asks for login only when useful
+→ user opens official provider when ready
+→ user returns to EduBot for progress, notes, AI help, reminders, and related EduBot courses
+```
+
+### 13.8 Product rationale
+
+This approach balances user trust and platform growth:
+
+- Users can see value without signup friction.
+- EduBot still captures serious learners when they want saving/tracking.
+- EduBot becomes the learning system, not just a traffic source to external platforms.
+- The official course remains on the provider website, reducing legal and technical risk.
+- EduBot account becomes valuable because it stores progress, notes, reminders, and certificates.
+
+## 14. How to Keep Users in EduBot
 
 Do not use this flow:
 
@@ -416,7 +612,7 @@ Retention features for later:
 - Student dashboard widget
 - “Continue external resource” reminders
 
-## 14. Related EduBot Course Integration
+## 15. Related EduBot Course Integration
 
 External resources should support EduBot courses, not replace them.
 
@@ -462,7 +658,7 @@ After React module:
 - Exercising Leadership
 - HubSpot Academy resources
 
-## 15. Ethical Upsell Patterns
+## 16. Ethical Upsell Patterns
 
 Use helpful wording:
 
@@ -476,7 +672,7 @@ Use helpful wording:
 
 Avoid making external resources feel like bait. The external resource should be genuinely useful even if the user does not buy anything.
 
-## 16. Future Backend Model
+## 17. Future Backend Model
 
 When MVP validates demand, move data to backend.
 
@@ -540,7 +736,7 @@ createdAt
 updatedAt
 ```
 
-## 17. Admin/Instructors Later
+## 18. Admin/Instructors Later
 
 Admin and instructors should be able to:
 
@@ -551,7 +747,7 @@ Admin and instructors should be able to:
 - hide outdated resources;
 - review click/save/completion analytics.
 
-## 18. Analytics Events
+## 19. Analytics Events
 
 Track these events later:
 
@@ -563,6 +759,9 @@ external_resource_official_link_clicked
 external_resource_completed
 external_resource_certificate_uploaded
 external_resource_related_edubot_course_clicked
+external_resource_auth_prompt_shown
+external_resource_auth_started
+external_resource_auth_completed
 ```
 
 These analytics help answer:
@@ -571,8 +770,9 @@ These analytics help answer:
 - Which providers are most useful?
 - Which free resources convert users to EduBot courses?
 - Which topics should EduBot create courses for?
+- Where do users drop off: detail page, auth prompt, official link, or progress tracking?
 
-## 19. Legal and Safety Notes
+## 20. Legal and Safety Notes
 
 - Do not copy/upload provider videos, PDFs, assignments, quizzes, or full course materials unless the license clearly allows it.
 - Do not use provider logos in a way that implies partnership.
@@ -580,6 +780,7 @@ These analytics help answer:
 - Always link to the official provider page.
 - Use neutral wording: “recommended”, “curated”, “external resource”.
 - Keep a disclaimer on resource detail pages.
+- Keep external provider authentication outside EduBot unless there is an official API/SSO integration.
 
 Suggested disclaimer:
 
@@ -587,7 +788,7 @@ Suggested disclaimer:
 Бул ресурс EduBot тарабынан түзүлгөн эмес жана EduBot расмий өнөктөш экенин билдирбейт. Биз бул шилтемени студенттерге пайдалуу акысыз билим мүмкүнчүлүгү катары сунуштайбыз. Курстун шарттары, сертификаты жана мазмуну расмий провайдердин сайтында аныкталат.
 ```
 
-## 20. Implementation Tasks
+## 21. Implementation Tasks
 
 ### Phase 1 — Frontend MVP
 
@@ -596,12 +797,16 @@ Suggested disclaimer:
 - [ ] Create `ExternalResourceCard.jsx`.
 - [ ] Create `ExternalResourcesGrid.jsx`.
 - [ ] Create `ExternalResourcesHomeSection.jsx`.
+- [ ] Create `ExternalResourceAuthPrompt.jsx`.
 - [ ] Add section to `src/pages/Home.jsx` after `TopCourses`.
 - [ ] Create `ExternalResourcesPage.jsx`.
 - [ ] Create `ExternalResourceDetails.jsx`.
 - [ ] Add `/resources` and `/resources/:slug` routes to `src/app/routes.jsx`.
 - [ ] Add Kyrgyz, Russian, and English translations.
 - [ ] Add disclaimer component.
+- [ ] Add logged-out CTA behavior for save/start actions.
+- [ ] Add login/register redirect params: `redirect` and `intent`.
+- [ ] Validate redirect params to prevent open redirects.
 - [ ] Add responsive mobile UI.
 - [ ] Validate dark mode styling.
 
@@ -621,6 +826,8 @@ Suggested disclaimer:
 - [ ] Add progress checklist.
 - [ ] Add reminders/notifications.
 - [ ] Add certificate/screenshot upload.
+- [ ] After login/signup, return users to the same resource page.
+- [ ] Resume intended action after login/signup when supported.
 
 ### Phase 4 — Backend and Admin
 
@@ -640,19 +847,22 @@ Suggested disclaimer:
 - [ ] Recommend related EduBot lessons.
 - [ ] Avoid copying full provider course content.
 
-## 21. Acceptance Criteria for MVP
+## 22. Acceptance Criteria for MVP
 
 - Public users can discover free resources from the homepage.
 - Public users can open `/resources` and browse curated resources.
 - Public users can open a resource detail page inside EduBot.
-- Official external course links open clearly and safely.
+- Public users can open the official external course link without EduBot login.
+- Save/start/learning-plan actions ask for EduBot login/signup.
+- After login/signup, users return to the same resource page.
+- Redirect URLs are validated as internal-only paths.
 - Users understand that resources are external and curated by EduBot.
 - Existing internal course/cart/favorites flow remains unchanged.
 - UI works on mobile and desktop.
 - UI supports dark mode.
 - Kyrgyz text is polished and user-friendly.
 
-## 22. Recommended First PR Scope
+## 23. Recommended First Implementation PR Scope
 
 The first implementation PR after this plan should include only:
 
@@ -662,10 +872,12 @@ The first implementation PR after this plan should include only:
 4. `/resources/:slug` detail page.
 5. Translations.
 6. Basic integration into `/courses` as a small promotional block.
+7. Login/signup prompt for save/start actions.
+8. Redirect-back query params.
 
-Do not add backend or progress tracking in the first implementation PR.
+Do not add backend or full progress tracking in the first implementation PR.
 
-## 23. Long-term Vision
+## 24. Long-term Vision
 
 EduBot Learning should become a trusted learning guide for Kyrgyz-speaking students.
 
