@@ -2,7 +2,6 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import useResourceProgress from '../hooks/useResourceProgress';
-import { getResourceBySlug } from '../data/externalResources';
 
 const STATUS_STYLE = {
     saved: 'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-300',
@@ -16,12 +15,7 @@ const FreeResourcesWidget = ({ userId }) => {
 
     const entries = useMemo(() => {
         return getAllEntries()
-            .map((entry) => {
-                const resource = getResourceBySlug(entry.slug);
-                if (!resource) return null;
-                return { ...entry, title: resource.title, provider: resource.provider, coverImageUrl: resource.coverImageUrl };
-            })
-            .filter(Boolean)
+            .filter((e) => e.title)
             .sort((a, b) => {
                 const order = { started: 0, saved: 1, completed: 2 };
                 return (order[a.status] ?? 3) - (order[b.status] ?? 3);

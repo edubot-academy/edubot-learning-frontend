@@ -1,4 +1,4 @@
-import { useContext } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../context/AuthContext';
@@ -6,6 +6,7 @@ import Loader from '@shared/ui/Loader';
 import SectionContainer from '@features/marketing/components/SectionContainer';
 import ExternalResourceCard from '@features/externalResources/components/ExternalResourceCard';
 import { getResourcesRelatedToCourse } from '@features/externalResources/data/externalResources';
+import { fetchResourcesByCourse } from '@features/externalResources/api';
 import { useCourseDetailsController } from '@features/courses/course-details/useCourseDetailsRuntime';
 import {
     ActiveLessonRuntime,
@@ -73,11 +74,23 @@ const CourseDetailsPage = () => {
         videoRef,
     } = useCourseDetailsController({ courseId: id, searchParams, user });
 
+    const [linkedResources, setLinkedResources] = useState(null);
+
+    useEffect(() => {
+        if (!id) return;
+        setLinkedResources(null); // clear stale data from previous course immediately
+        fetchResourcesByCourse(id)
+            .then((data) => setLinkedResources(data))
+            .catch(() => setLinkedResources(null));
+    }, [id]);
+
     if (loading) return <Loader fullScreen />;
     if (error) return <CourseDetailsErrorState message={error} />;
     if (!course) return <CourseDetailsNotFoundState />;
 
-    const relatedResources = getResourcesRelatedToCourse(course).map((r) => ({
+    const staticResources = getResourcesRelatedToCourse(course);
+    // Use API result only when it has items; empty [] falls back to static data
+    const relatedResources = (linkedResources?.length ? linkedResources : staticResources).map((r) => ({
         ...r,
         ctaLabel: t('public.externalResources.courseDetailCta'),
     }));

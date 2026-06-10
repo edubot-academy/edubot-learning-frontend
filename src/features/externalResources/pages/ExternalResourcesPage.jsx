@@ -1,13 +1,46 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ExternalResourceCard from '../components/ExternalResourceCard';
 import ExternalResourceFilters from '../components/ExternalResourceFilters';
+import { fetchExternalResources } from '../api';
 import { EXTERNAL_RESOURCES, getResourcesByCategory } from '../data/externalResources';
+
+const useResources = (category) => {
+    const [items, setItems] = useState(null);
+    const [error, setError] = useState(false);
+
+    useEffect(() => {
+        let cancelled = false;
+        setError(false);
+
+        fetchExternalResources({ category })
+            .then((data) => {
+                if (!cancelled) setItems(data);
+            })
+            .catch(() => {
+                if (!cancelled) {
+                    // Fall back to static data when API is unavailable
+                    setItems(getResourcesByCategory(category));
+                    setError(true);
+                }
+            });
+
+        return () => { cancelled = true; };
+    }, [category]);
+
+    return { items, loading: items === null && !error, error };
+};
+
+const SkeletonCard = () => (
+    <div className="rounded-2xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 h-72 animate-pulse" />
+);
 
 const ExternalResourcesPage = () => {
     const { t } = useTranslation();
     const [activeCategory, setActiveCategory] = useState('all');
-    const items = getResourcesByCategory(activeCategory);
+    const { items, loading } = useResources(activeCategory);
+
+    const totalCount = items?.length ?? EXTERNAL_RESOURCES.length;
 
     return (
         <div className="min-h-screen bg-white dark:bg-[#222222] text-[#141619] dark:text-[#E8ECF3]">
@@ -17,7 +50,7 @@ const ExternalResourcesPage = () => {
                         {t('public.externalResources.pageTitle')}
                     </h1>
                     <p className="font-suisse text-[#3E424A] dark:text-[#a6adba] text-base max-w-2xl">
-                        {t('public.externalResources.pageSubtitle', { count: EXTERNAL_RESOURCES.length })}
+                        {t('public.externalResources.pageSubtitle', { count: totalCount })}
                     </p>
                 </div>
 
@@ -28,14 +61,18 @@ const ExternalResourcesPage = () => {
                     />
                 </div>
 
-                {items.length === 0 ? (
+                {loading ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
+                    </div>
+                ) : items?.length === 0 ? (
                     <p className="text-sm text-gray-500 dark:text-gray-400 py-12 text-center">
                         {t('public.externalResources.emptyCategory')}
                     </p>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         {items.map((resource) => (
-                            <ExternalResourceCard key={resource.id} {...resource} />
+                            <ExternalResourceCard key={resource.id ?? resource.slug} {...resource} />
                         ))}
                     </div>
                 )}

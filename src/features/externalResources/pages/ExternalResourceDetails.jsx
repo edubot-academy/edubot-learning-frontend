@@ -1,11 +1,13 @@
-import { useCallback, useContext, useState } from 'react';
+import { useCallback, useContext, useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { AuthContext } from '@app/providers';
+import { API_BASE_URL } from '../../../config';
 import ExternalResourceAuthPrompt from '../components/ExternalResourceAuthPrompt';
 import ExternalResourceDisclaimer from '../components/ExternalResourceDisclaimer';
 import { getResourceBySlug, PROVIDER_COLORS, PROVIDER_LOGOS } from '../data/externalResources';
+import { fetchExternalResourceBySlug, generateAiStudyPlan } from '../api';
 import useResourceProgress from '../hooks/useResourceProgress';
 
 const CATEGORY_ICONS = {
@@ -64,13 +66,57 @@ const SectionBlock = ({ title, children }) => (
     </div>
 );
 
+const SkeletonDetail = () => (
+    <div className="min-h-screen bg-[#f8f9fb] dark:bg-[#1a1a1a] animate-pulse">
+        <div className="h-52 sm:h-64 bg-gray-200 dark:bg-white/10" />
+        <div className="px-4 sm:px-6 lg:px-12 max-w-screen-lg mx-auto py-8 flex flex-col gap-6">
+            <div className="h-4 w-24 rounded bg-gray-200 dark:bg-white/10" />
+            <div className="h-8 w-3/4 rounded bg-gray-200 dark:bg-white/10" />
+            <div className="h-4 w-1/2 rounded bg-gray-200 dark:bg-white/10" />
+            <div className="h-40 rounded-2xl bg-gray-200 dark:bg-white/10" />
+        </div>
+    </div>
+);
+
 const ExternalResourceDetails = () => {
     const { slug } = useParams();
     const { user } = useContext(AuthContext);
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
     const [coverFailed, setCoverFailed] = useState(false);
+    const [resource, setResource] = useState(() => getResourceBySlug(slug));
+    const [loading, setLoading] = useState(false);
+    const [notFound, setNotFound] = useState(false);
+    const [aiPlan, setAiPlan] = useState(null);
+    const [aiLoading, setAiLoading] = useState(false);
+    const [aiError, setAiError] = useState(false);
+
+    useEffect(() => {
+        let cancelled = false;
+        // Only show skeleton if we have no static fallback for this slug
+        if (!getResourceBySlug(slug)) setLoading(true);
+        fetchExternalResourceBySlug(slug)
+            .then((data) => {
+                if (!cancelled) {
+                    // If the API returned empty content, fill in from static data
+                    const hasContent = data.content && Object.keys(data.content).length > 0;
+                    const staticData = getResourceBySlug(slug);
+                    setResource(hasContent ? data : { ...data, content: staticData?.content ?? data.content });
+                    setLoading(false);
+                }
+            })
+            .catch(() => {
+                if (!cancelled) {
+                    const fallback = getResourceBySlug(slug);
+                    if (!fallback) setNotFound(true);
+                    setLoading(false);
+                }
+            });
+        return () => { cancelled = true; };
+    }, [slug]);
+
     const {
+        progressLoading,
         getEntry,
         saveResource,
         startResource,
@@ -80,9 +126,9 @@ const ExternalResourceDetails = () => {
         removeResource,
     } = useResourceProgress(user?.id);
 
-    const resource = getResourceBySlug(slug);
+    if (loading) return <SkeletonDetail />;
 
-    if (!resource) {
+    if (notFound || !resource) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-white dark:bg-[#222222]">
                 <p className="text-gray-500 dark:text-gray-400">{t('public.externalResources.notFound')}</p>
@@ -107,7 +153,8 @@ const ExternalResourceDetails = () => {
     const cl = (obj) => obj?.[lang] ?? obj?.ky ?? null;
 
     const isFree = /акысыз/i.test(priceLabel ?? '') || /free/i.test(priceLabel ?? '');
-    const entry = user ? getEntry(resource.slug) : null;
+    // While the API fetch is in-flight, treat as loading to avoid button flash
+    const entry = (user && !progressLoading) ? getEntry(resource.slug) : null;
 
     const handleSave = useCallback(() => {
         saveResource(resource.slug, { title, provider });
@@ -128,8 +175,23 @@ const ExternalResourceDetails = () => {
         const isInternal = /^\/[^/]/.test(url) || url.startsWith(window.location.origin);
         if (isInternal) {
             navigate(url.replace(window.location.origin, ''));
-        } else {
-            window.open(url, '_blank', 'noopener,noreferrer');
+            return;
+        }
+        // Route through backend redirect proxy so the click is tracked as an event
+        window.open(`${API_BASE_URL}/external-resources/${resource.slug}/go`, '_blank', 'noopener,noreferrer');
+    };
+
+    const handleAiStudyPlan = async () => {
+        if (aiPlan) { setAiPlan(null); return; }
+        setAiLoading(true);
+        setAiError(false);
+        try {
+            const plan = await generateAiStudyPlan(resource.slug, lang);
+            setAiPlan(plan);
+        } catch {
+            setAiError(true);
+        } finally {
+            setAiLoading(false);
         }
     };
 
@@ -494,6 +556,47 @@ const ExternalResourceDetails = () => {
                             <p className="text-xs text-gray-400 dark:text-gray-500 text-center leading-relaxed">
                                 {t('public.externalResources.officialSiteNote')}
                             </p>
+
+                            {user && (
+                                <div className="pt-2 border-t border-gray-100 dark:border-white/10">
+                                    <button
+                                        onClick={handleAiStudyPlan}
+                                        disabled={aiLoading}
+                                        className="w-full inline-flex items-center justify-center gap-2 rounded-xl font-semibold text-sm px-4 py-3 border border-dashed border-[#E14219]/50 text-[#E14219] hover:bg-[#E14219]/5 dark:hover:bg-[#E14219]/10 transition-all duration-200 disabled:opacity-50"
+                                    >
+                                        {aiLoading ? (
+                                            <>
+                                                <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                                                </svg>
+                                                {t('public.externalResources.aiPlanLoading')}
+                                            </>
+                                        ) : aiPlan ? (
+                                            <>✕ {t('public.externalResources.aiPlanHide')}</>
+                                        ) : (
+                                            <>✨ {t('public.externalResources.aiPlanCta')}</>
+                                        )}
+                                    </button>
+
+                                    {aiError && (
+                                        <p className="mt-2 text-xs text-red-500 text-center">
+                                            {t('public.externalResources.aiPlanError')}
+                                        </p>
+                                    )}
+
+                                    {aiPlan && (
+                                        <div className="mt-3 rounded-xl bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 border border-orange-100 dark:border-orange-800/40 p-4">
+                                            <p className="text-xs font-semibold text-[#E14219] mb-2 flex items-center gap-1">
+                                                ✨ {t('public.externalResources.aiPlanTitle')}
+                                            </p>
+                                            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-line">
+                                                {aiPlan}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

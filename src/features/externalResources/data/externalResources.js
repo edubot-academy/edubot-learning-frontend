@@ -407,7 +407,7 @@ export const EXTERNAL_RESOURCES = [
         provider: 'Khan Academy',
         providerKey: 'khanacademy',
         url: 'https://www.khanacademy.org/computing/computer-programming',
-        coverImageUrl: 'https://i.ytimg.com/vi/y9cFKkqsI7A/maxresdefault.jpg',
+        coverImageUrl: null,
         category: 'programming',
         level: 'beginner',
         priceLabel: 'Толугу менен акысыз',

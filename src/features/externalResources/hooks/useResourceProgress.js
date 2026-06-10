@@ -1,51 +1,114 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { debounce } from '../../../lib/utils';
+import {
+    deleteExternalResourceProgress,
+    fetchMyExternalResourceProgress,
+    upsertExternalResourceProgress,
+} from '../api';
 
-const STORAGE_KEY_PREFIX = 'ext_res_v1_';
+// ─── Anonymous (localStorage) helpers ────────────────────────────────────────
 
-const getKey = (userId) => `${STORAGE_KEY_PREFIX}${userId ?? 'anon'}`;
+const ANON_KEY = 'ext_res_v1_anon';
 
-const readStore = (userId) => {
+const readLocalStore = () => {
     try {
-        const raw = localStorage.getItem(getKey(userId));
+        const raw = localStorage.getItem(ANON_KEY);
         return raw ? JSON.parse(raw) : {};
     } catch {
         return {};
     }
 };
 
-const writeStore = (userId, data) => {
+const writeLocalStore = (data) => {
     try {
-        localStorage.setItem(getKey(userId), JSON.stringify(data));
-    } catch {
-        // storage quota exceeded — silently ignore
-    }
+        localStorage.setItem(ANON_KEY, JSON.stringify(data));
+    } catch {}
 };
 
-const useResourceProgress = (userId) => {
-    const [store, setStore] = useState(() => readStore(userId));
+// ─── API response → internal shape ───────────────────────────────────────────
 
-    // Re-read when userId changes (login/logout)
+const normalizeApiEntry = (row) => ({
+    status: row.status,
+    notes: row.notes ?? '',
+    checkedWeeks: (row.checklistProgress ?? []).filter((c) => c.done).map((c) => c.weekIndex),
+    progressPercent: row.progressPercent ?? 0,
+    savedAt: row.createdAt,
+    startedAt: row.startedAt ?? null,
+    completedAt: row.completedAt ?? null,
+    title: row.resource?.title ?? '',
+    provider: row.resource?.provider ?? '',
+    coverImageUrl: row.resource?.coverImageUrl ?? null,
+    category: row.resource?.category ?? '',
+    level: row.resource?.level ?? '',
+    priceLabel: row.resource?.priceLabel ?? '',
+});
+
+const syncToApi = (slug, payload) => {
+    upsertExternalResourceProgress(slug, payload).catch(() => {});
+};
+
+// ─── Hook ─────────────────────────────────────────────────────────────────────
+
+const useResourceProgress = (userId) => {
+    const [store, setStore] = useState(() => (userId ? {} : readLocalStore()));
+    // true while the initial API fetch is in flight for logged-in users
+    const [progressLoading, setProgressLoading] = useState(!!userId);
+    const userIdRef = useRef(userId);
+    userIdRef.current = userId;
+
+    // Stable debounced notes syncer — created once per hook instance
+    const debouncedSyncNotes = useRef(
+        debounce((slug, notes) => syncToApi(slug, { notes }), 600),
+    ).current;
+
     useEffect(() => {
-        setStore(readStore(userId));
+        if (!userId) {
+            setStore(readLocalStore());
+            setProgressLoading(false);
+            return;
+        }
+
+        setProgressLoading(true);
+
+        // Merge any anonymous progress into the API before fetching server state
+        const anonData = readLocalStore();
+        const anonEntries = Object.entries(anonData);
+        if (anonEntries.length > 0) {
+            anonEntries.forEach(([slug, entry]) => {
+                syncToApi(slug, { status: entry.status, notes: entry.notes || undefined });
+            });
+            writeLocalStore({});
+        }
+
+        fetchMyExternalResourceProgress()
+            .then((data) => {
+                const map = {};
+                data.forEach((row) => {
+                    if (row.resource?.slug) map[row.resource.slug] = normalizeApiEntry(row);
+                });
+                // Merge optimistic anon entries that may not yet be in the API response
+                anonEntries.forEach(([slug, entry]) => {
+                    if (!map[slug]) map[slug] = entry;
+                });
+                setStore(map);
+            })
+            .catch(() => {})
+            .finally(() => setProgressLoading(false));
     }, [userId]);
 
-    const mutate = useCallback(
-        (updater) => {
-            setStore((prev) => {
-                const next = updater(prev);
-                writeStore(userId, next);
-                return next;
-            });
-        },
-        [userId]
-    );
+    const mutate = useCallback((updater) => {
+        setStore((prev) => {
+            const next = updater(prev);
+            if (!userIdRef.current) writeLocalStore(next);
+            return next;
+        });
+    }, []);
 
     const getEntry = useCallback((slug) => store[slug] ?? null, [store]);
 
     const getAllEntries = useCallback(
-        () =>
-            Object.entries(store).map(([slug, entry]) => ({ slug, ...entry })),
-        [store]
+        () => Object.entries(store).map(([slug, entry]) => ({ slug, ...entry })),
+        [store],
     );
 
     const saveResource = useCallback(
@@ -65,8 +128,9 @@ const useResourceProgress = (userId) => {
                     },
                 };
             });
+            if (userIdRef.current) syncToApi(slug, { status: 'saved' });
         },
-        [mutate]
+        [mutate],
     );
 
     const startResource = useCallback(
@@ -83,8 +147,9 @@ const useResourceProgress = (userId) => {
                     ...meta,
                 },
             }));
+            if (userIdRef.current) syncToApi(slug, { status: 'started' });
         },
-        [mutate]
+        [mutate],
     );
 
     const completeResource = useCallback(
@@ -97,12 +162,15 @@ const useResourceProgress = (userId) => {
                     completedAt: new Date().toISOString(),
                 },
             }));
+            if (userIdRef.current) syncToApi(slug, { status: 'completed' });
         },
-        [mutate]
+        [mutate],
     );
 
     const toggleWeek = useCallback(
         (slug, weekNum) => {
+            // Compute next checked weeks and capture it for the API call
+            let nextCheckedWeeks;
             mutate((prev) => {
                 const entry = prev[slug] ?? {
                     status: 'started',
@@ -113,13 +181,19 @@ const useResourceProgress = (userId) => {
                     completedAt: null,
                 };
                 const checked = entry.checkedWeeks ?? [];
-                const next = checked.includes(weekNum)
+                nextCheckedWeeks = checked.includes(weekNum)
                     ? checked.filter((w) => w !== weekNum)
                     : [...checked, weekNum];
-                return { ...prev, [slug]: { ...entry, checkedWeeks: next } };
+                return { ...prev, [slug]: { ...entry, checkedWeeks: nextCheckedWeeks } };
             });
+            // syncToApi called outside the updater — safe from double-invocation
+            if (userIdRef.current) {
+                syncToApi(slug, {
+                    checklistProgress: nextCheckedWeeks.map((w) => ({ weekIndex: w, done: true })),
+                });
+            }
         },
-        [mutate]
+        [mutate],
     );
 
     const updateNotes = useCallback(
@@ -137,8 +211,10 @@ const useResourceProgress = (userId) => {
                     notes,
                 },
             }));
+            // Debounced — fires once after the user stops typing (600ms)
+            if (userIdRef.current) debouncedSyncNotes(slug, notes);
         },
-        [mutate]
+        [mutate, debouncedSyncNotes],
     );
 
     const removeResource = useCallback(
@@ -148,11 +224,15 @@ const useResourceProgress = (userId) => {
                 delete next[slug];
                 return next;
             });
+            if (userIdRef.current) {
+                deleteExternalResourceProgress(slug).catch(() => {});
+            }
         },
-        [mutate]
+        [mutate],
     );
 
     return {
+        progressLoading,
         getEntry,
         getAllEntries,
         saveResource,

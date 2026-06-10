@@ -27,3 +27,4 @@ export * from '../features/liveIntegration/api';
 export * from '../features/analytics/api';
 export * from '../features/homework/api';
 export * from '../features/enrollments/api';
+export * from '../features/externalResources/api';

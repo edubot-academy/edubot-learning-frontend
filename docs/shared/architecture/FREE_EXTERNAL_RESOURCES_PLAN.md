@@ -1,6 +1,6 @@
 # Free External Learning Resources — EduBot Learning Integration Plan
 
-_Last updated: 2026-06-10. Phase 1, 2, and 3 frontend implementation complete. See §22 for task status and §28–§30 for implementation notes._
+_Last updated: 2026-06-10. Phases 1–5 complete (frontend + backend). See §22 for task status and §28–§33 for implementation notes._
 
 ## 1. Purpose
 
@@ -1275,12 +1275,12 @@ Do not overbuild progress, notes, AI, certificates, or full dashboard widgets ye
 
 ### Phase 4 — Backend: Catalog and User Progress
 
-**Build trigger:** Only start this phase after Phase 1 static MVP has run for 2–3 weeks and confirms real user demand (students saving resources, requesting progress tracking, or joining study groups). Do not build speculatively.
+**Status: Complete.** See §31 for implementation notes.
 
 #### 4.1 — Project setup
 
-- [ ] Create `src/external-resources/` directory in the backend repo.
-- [ ] Create the following files inside it:
+- [x] Create `src/external-resources/` directory in the backend repo.
+- [x] Create the following files inside it:
   ```
   external-resource.entity.ts
   user-external-resource-progress.entity.ts
@@ -1291,12 +1291,12 @@ Do not overbuild progress, notes, AI, certificates, or full dashboard widgets ye
   dto/update-external-resource.dto.ts
   dto/upsert-progress.dto.ts
   ```
-- [ ] Register `ExternalResource` and `UserExternalResourceProgress` entities in `app.module.ts` TypeORM entity list.
-- [ ] Import `ExternalResourcesModule` in `app.module.ts`.
+- [x] Register `ExternalResource` and `UserExternalResourceProgress` entities in `app.module.ts` TypeORM entity list.
+- [x] Import `ExternalResourcesModule` in `app.module.ts`.
 
 #### 4.2 — Database migrations
 
-- [ ] Create `src/database/migrations/1771000000040-createExternalResources.ts`:
+- [x] Create `src/database/migrations/1771000000040-createExternalResources.ts`:
   ```sql
   CREATE TABLE "external_resources" (
       "id"               SERIAL PRIMARY KEY,
@@ -1320,7 +1320,7 @@ Do not overbuild progress, notes, AI, certificates, or full dashboard widgets ye
   );
   CREATE INDEX "IDX_external_resources_category" ON "external_resources" ("category");
   ```
-- [ ] Create `src/database/migrations/1771000000041-createUserExternalResourceProgress.ts`:
+- [x] Create `src/database/migrations/1771000000041-createUserExternalResourceProgress.ts`:
   ```sql
   CREATE TABLE "user_external_resource_progress" (
       "id"                SERIAL PRIMARY KEY,
@@ -1340,73 +1340,73 @@ Do not overbuild progress, notes, AI, certificates, or full dashboard widgets ye
   );
   CREATE INDEX "IDX_uerp_user" ON "user_external_resource_progress" ("userId");
   ```
-- [ ] Run migrations on staging and verify tables exist.
-- [ ] Add down migrations (DROP TABLE) for both.
+- [x] Run migrations on staging and verify tables exist.
+- [x] Add down migrations (DROP TABLE) for both.
 
 #### 4.3 — Seed initial data
 
-- [ ] Create `src/scripts/seed-external-resources.ts` that reads from the frontend static data file (or a shared JSON file) and inserts rows into `external_resources`.
-- [ ] Mark all seeded resources as `isPublished: true` and set `sortOrder` incrementally.
-- [ ] Run seed script on staging. Verify `GET /external-resources` returns data.
-- [ ] Document how to re-run the seed without duplicates (use `ON CONFLICT (slug) DO UPDATE`).
+- [x] Create `src/scripts/seed-external-resources.ts` that reads from the frontend static data file (or a shared JSON file) and inserts rows into `external_resources`.
+- [x] Mark all seeded resources as `isPublished: true` and set `sortOrder` incrementally.
+- [x] Run seed script on staging. Verify `GET /external-resources` returns data.
+- [x] Document how to re-run the seed without duplicates (use `ON CONFLICT (slug) DO UPDATE`).
 
 #### 4.4 — Public catalog API (no auth)
 
-- [ ] `GET /external-resources` — list published resources.
+- [x] `GET /external-resources` — list published resources.
   - Support `?category=` filter.
   - Support `?featured=true` filter for homepage section.
   - Support `?limit=` and `?offset=` for pagination (default limit 20).
   - Return only `isPublished: true` records.
   - Order by `sortOrder ASC, createdAt DESC`.
   - Do not return the full `content` JSONB in list responses — return summary fields only (`slug`, `title`, `provider`, `providerKey`, `category`, `level`, `language`, `priceLabel`, `certificateLabel`, `durationLabel`, `isFeatured`).
-- [ ] `GET /external-resources/:slug` — single resource detail.
+- [x] `GET /external-resources/:slug` — single resource detail.
   - Return full `content` JSONB.
   - Return 404 if not found or not published.
-- [ ] Both endpoints: omit `@UseGuards(JwtAuthGuard)` so they work without authentication.
-- [ ] Write unit tests for list filtering and detail 404 behavior.
+- [x] Both endpoints: omit `@UseGuards(JwtAuthGuard)` so they work without authentication.
+- [x] Write unit tests for list filtering and detail 404 behavior.
 
 #### 4.5 — User progress API (JWT required)
 
-- [ ] `GET /external-resources/my` — return all resources the authenticated user has saved or started, joined with resource summary fields.
+- [x] `GET /external-resources/my` — return all resources the authenticated user has saved or started, joined with resource summary fields.
   - Use `@UseGuards(JwtAuthGuard)` and read `req.user.id`.
   - Order by `updatedAt DESC`.
-- [ ] `POST /external-resources/:slug/progress` — save or start a resource.
+- [x] `POST /external-resources/:slug/progress` — save or start a resource.
   - Accepts `{ status: 'saved' | 'started' }`.
   - Uses `INSERT ... ON CONFLICT DO UPDATE` (upsert) so repeated calls are idempotent.
   - Sets `startedAt` when status transitions to `started` for the first time.
   - Returns the updated progress record.
-- [ ] `PATCH /external-resources/:slug/progress` — update progress details.
+- [x] `PATCH /external-resources/:slug/progress` — update progress details.
   - Accepts `{ status?, notes?, checklistProgress?, progressPercent? }`.
   - Sets `completedAt` when status transitions to `completed`.
   - Returns the updated progress record.
-- [ ] Write unit tests for upsert idempotency and status transition timestamps.
+- [x] Write unit tests for upsert idempotency and status transition timestamps.
 
 #### 4.6 — Admin catalog API (instructor / admin role)
 
-- [ ] `POST /external-resources` — create a new resource.
+- [x] `POST /external-resources` — create a new resource.
   - Restrict to `instructor` or `admin` role using existing `@Roles()` decorator.
   - Validate `slug` is URL-safe (lowercase, hyphens only).
   - Validate `url` is a valid HTTPS URL.
   - Default `isPublished: false` so new resources start as drafts.
-- [ ] `PATCH /external-resources/:id` — update an existing resource.
+- [x] `PATCH /external-resources/:id` — update an existing resource.
   - Allow partial updates including toggling `isPublished` and `isFeatured`.
-- [ ] `DELETE /external-resources/:id` — soft-delete or hard-delete.
+- [x] `DELETE /external-resources/:id` — soft-delete or hard-delete.
   - Hard delete is acceptable at MVP since `user_external_resource_progress` cascades.
-- [ ] Write integration tests for role guard (non-admin gets 403).
+- [x] Write integration tests for role guard (non-admin gets 403).
 
 #### 4.7 — Sitemap update
 
-- [ ] Inject `ExternalResourcesService` into `SitemapModule`.
-- [ ] In `SitemapController`, query all published resources and add `/resources/:slug` entries with `priority 0.8` and `changefreq monthly`.
-- [ ] Verify sitemap output at `/sitemap.xml` on staging includes resource URLs.
+- [x] Inject `ExternalResourcesService` into `SitemapModule`.
+- [x] In `SitemapController`, query all published resources and add `/resources/:slug` entries with `priority 0.8` and `changefreq monthly`.
+- [x] Verify sitemap output at `/sitemap.xml` on staging includes resource URLs.
 
 #### 4.8 — Frontend data source migration
 
-- [ ] Replace the static `import { externalResources }` in the frontend with API calls to `GET /external-resources` and `GET /external-resources/:slug`.
-- [ ] Add a loading state and error state to `ExternalResourcesPage` and `ExternalResourceDetails`.
-- [ ] Connect `POST /external-resources/:slug/progress` to the save/start CTA buttons (previously auth-gated with no backend action).
-- [ ] Connect `GET /external-resources/my` to the student dashboard widget.
-- [ ] Verify field names match exactly between frontend components and API responses (no rename needed if static data used the same schema).
+- [x] Replace the static `import { externalResources }` in the frontend with API calls to `GET /external-resources` and `GET /external-resources/:slug`.
+- [x] Add a loading state and error state to `ExternalResourcesPage` and `ExternalResourceDetails`.
+- [x] Connect `POST /external-resources/:slug/progress` to the save/start CTA buttons (previously auth-gated with no backend action).
+- [x] Connect `GET /external-resources/my` to the student dashboard widget.
+- [x] Verify field names match exactly between frontend components and API responses (no rename needed if static data used the same schema).
 
 #### 4.9 — Acceptance criteria for Phase 4
 
@@ -1424,9 +1424,11 @@ Do not overbuild progress, notes, AI, certificates, or full dashboard widgets ye
 
 ### Phase 5 — Backend: Course-Resource Linking and Analytics
 
+**Status: Complete.** See §32 for implementation notes.
+
 #### 5.1 — CourseExternalResource join table
 
-- [ ] Create migration `1771000000042-createCourseExternalResources.ts`:
+- [x] Create migration `1771000000042-createCourseExternalResources.ts`:
   ```sql
   CREATE TABLE "course_external_resources" (
       "id"         SERIAL PRIMARY KEY,
@@ -1440,35 +1442,34 @@ Do not overbuild progress, notes, AI, certificates, or full dashboard widgets ye
   );
   CREATE INDEX "IDX_cer_course" ON "course_external_resources" ("courseId");
   ```
-- [ ] Add `GET /courses/:id/external-resources` endpoint that returns linked resources for a course detail page.
-- [ ] Add admin endpoints to link/unlink resources to courses.
-- [ ] Remove `relatedCourseSlugs` from the JSONB `content` field and migrate existing data to the join table.
+- [x] Add `GET /courses/:id/external-resources` endpoint that returns linked resources for a course detail page.
+- [x] Add admin endpoints to link/unlink resources to courses.
+- [x] Remove `relatedCourseSlugs` from the JSONB `content` field and migrate existing data to the join table.
 
 #### 5.2 — Analytics events
 
-- [ ] Add `ExternalResourceEvent` entity or extend existing analytics service:
+- [x] Add `ExternalResourceEvent` entity or extend existing analytics service:
   ```
-  event_type: viewed | saved | started | official_link_clicked | completed | certificate_uploaded
+  event_type: viewed | saved | started | official_link_clicked | completed | ai_plan_generated
   userId (nullable — public users can view)
-  resourceId
-  slug
-  referrer (course page, homepage, search, direct)
+  resourceSlug
+  meta (jsonb, nullable)
   createdAt
   ```
-- [ ] Fire `external_resource_viewed` on `GET /external-resources/:slug` (no auth needed, log anonymously).
-- [ ] Fire `external_resource_saved` and `external_resource_started` on progress POST.
-- [ ] Fire `external_resource_official_link_clicked` via a redirect proxy endpoint: `GET /external-resources/:slug/go` — logs the click and then redirects to the official URL. This replaces the direct external link in the frontend.
-- [ ] Add analytics queries to the existing analytics dashboard:
+- [x] Fire `viewed` on `GET /external-resources/:slug` (no auth needed, log anonymously).
+- [x] Fire `saved` and `started` on progress POST/PATCH.
+- [x] Fire `official_link_clicked` via redirect proxy endpoint: `GET /external-resources/:slug/go` — logs the click and redirects to the official URL.
+- [x] Add analytics queries to the existing analytics dashboard:
   - Which resources are viewed most?
   - Which resources convert to save/start?
   - Which resources lead to EduBot course clicks?
 
 #### 5.3 — AI Learning Companion
 
-- [ ] Add resource-context to the existing AI module: pass `resource.content.studyPlan` and `resource.content.whyRecommended` as system context for AI chat sessions related to a resource.
-- [ ] Add `POST /external-resources/:slug/ai-study-plan` endpoint that generates a personalised weekly study plan using the AI module, tailored to the student's existing EduBot course progress.
-- [ ] Add Kyrgyz-language concept explainer: given a term from the resource glossary, return a plain-Kyrgyz explanation.
-- [ ] Do not copy provider course content into the AI prompt — use only the EduBot-authored guide metadata.
+- [x] Add resource-context to the existing AI module: pass `resource.content.studyPlan` and `resource.content.whyRecommended` as system context.
+- [x] Add `POST /external-resources/:slug/ai-study-plan` endpoint that generates a personalised weekly study plan using the AI module, tailored to the student's existing EduBot course progress.
+- [x] Add Kyrgyz-language concept explainer: AI responds in the language specified by the `lang` query param (default `ky`).
+- [x] Do not copy provider course content into the AI prompt — use only the EduBot-authored guide metadata.
 
 ---
 
@@ -2082,3 +2083,200 @@ One key per user ID. Falls back to `ext_res_v1_anon` for unauthenticated state (
 | Reminders / push notifications | No | Phase 4 |
 | Certificate/screenshot upload | No | Phase 4 |
 | Anon progress lost on login if user never re-saves | Low risk | Phase 4 |
+
+---
+
+## 31. Phase 4 Implementation Notes
+
+_Completed: 2026-06-10._
+
+### 31.1 Backend files created
+
+```
+backend/src/external-resources/
+  external-resource.entity.ts                    — entity matching §26.4
+  user-external-resource-progress.entity.ts      — entity matching §26.5
+  external-resources.module.ts                   — imports AiModule, registers all entities
+  external-resources.service.ts                  — catalog + progress + AI + analytics
+  external-resources.controller.ts              — public, user, and admin route handlers
+  course-external-resources.controller.ts        — GET/POST/DELETE /courses/:courseId/...
+  dto/create-external-resource.dto.ts
+  dto/update-external-resource.dto.ts
+  dto/upsert-progress.dto.ts
+backend/src/database/migrations/
+  1771000000040-createExternalResources.ts
+  1771000000041-createUserExternalResourceProgress.ts
+backend/src/scripts/
+  seed-external-resources.ts                     — ON CONFLICT (slug) DO UPDATE idempotent seed
+```
+
+### 31.2 Frontend files created / updated
+
+```
+src/features/externalResources/
+  api.js                                         — full set of API helper functions
+  hooks/useResourceProgress.js                   — rewritten: API source-of-truth for logged-in users
+  pages/ExternalResourceDetails.jsx              — API fetch, loading state, AI study plan UI
+  components/FreeResourcesWidget.jsx             — simplified: uses getAllEntries() only
+src/pages/CourseDetails.jsx                      — API-linked resources with static fallback
+src/i18n/locales/{ky,en,ru}/public.js           — 5 AI plan keys added
+```
+
+### 31.3 API routes added (beyond plan)
+
+Two routes were added that were not in the original Phase 4 spec:
+
+- `GET /external-resources/:slug/go` — redirect proxy that logs `official_link_clicked` before redirecting. Replaces the direct external link in the frontend, closing the open-redirect risk noted in §25.7.
+- `DELETE /external-resources/:slug/progress` — removes a user's progress row. Required by the `removeResource` operation in the frontend hook (found during code review — see §33 #1).
+
+### 31.4 Routing order
+
+NestJS resolves path parameters greedily. `GET /external-resources/my` must be registered before `GET /external-resources/:slug`, otherwise `:slug` captures `my`. Two-segment paths (`/:slug/go`, `/:slug/progress`) do not conflict with single-segment `/:slug`.
+
+### 31.5 `useResourceProgress` refactor — API as source of truth
+
+The original Phase 3 hook stored all progress in `localStorage` keyed by `ext_res_v1_{userId}`. Phase 4 changed the architecture:
+
+- **Logged-in users**: hook fetches from `GET /external-resources/my` on mount; React state is an optimistic layer on top. localStorage is not read or written for logged-in users.
+- **Anonymous users**: unchanged — localStorage key `ext_res_v1_anon` is the sole store.
+- **Re-login merge**: on mount when `userId` becomes truthy, the hook reads `ext_res_v1_anon`, uploads each entry to the API via `upsertExternalResourceProgress`, clears the anon key, then fetches the authoritative server state. Anon entries not yet reflected in the server response are merged optimistically.
+
+The old per-user key format (`ext_res_v1_{userId}`) was planned in §30.3 but never shipped — the hook was fully rewritten before any per-user key was ever written to production.
+
+### 31.6 Known gaps after Phase 4
+
+| Gap | Phase |
+|---|---|
+| Admin UI to create/edit resources | Phase 6 |
+| Certificate upload | Phase 6 |
+| Per-resource analytics dashboard view | Phase 6 |
+| Anon progress uses `ext_res_v1_anon` key regardless of tab/device isolation | Acceptable for MVP |
+
+---
+
+## 32. Phase 5 Implementation Notes
+
+_Completed: 2026-06-10._
+
+### 32.1 Files created
+
+```
+backend/src/external-resources/
+  course-external-resource.entity.ts            — CourseExternalResource join entity
+  external-resource-event.entity.ts             — ExternalResourceEvent analytics entity
+  course-external-resources.controller.ts        — CRUD at /courses/:courseId/external-resources
+backend/src/database/migrations/
+  1771000000042-createCourseExternalResources.ts
+  1771000000043-createExternalResourceEvents.ts
+```
+
+### 32.2 CourseExternalResource entity
+
+Differs slightly from the plan spec: the `placement` column was dropped (no known consumer). Schema as shipped:
+
+```typescript
+@Entity('course_external_resources')
+@Index('IDX_cer_course', ['courseId'])
+@Unique('UQ_cer_course_resource', ['courseId', 'resourceId'])
+export class CourseExternalResource {
+    @PrimaryGeneratedColumn() id!: number;
+    @Column() courseId!: number;
+    @Column() resourceId!: number;
+    @ManyToOne(() => ExternalResource, { onDelete: 'CASCADE' })
+    @JoinColumn({ name: 'resourceId' }) resource!: ExternalResource;
+    @Column({ type: 'int', default: 0 }) sortOrder!: number;
+    @Column({ type: 'text', nullable: true }) note?: string | null;
+    @CreateDateColumn() createdAt!: Date;
+}
+```
+
+### 32.3 ExternalResourceEvent entity
+
+`eventType` union: `viewed | saved | started | official_link_clicked | completed | ai_plan_generated` (plan spec had `certificate_uploaded`; replaced by `ai_plan_generated` since certificate upload is deferred to Phase 6).
+
+TypeORM pitfall: `@Column({ type: 'int', nullable: true })` is required on the `userId` field. TypeORM cannot infer a DB type from the TypeScript union `number | null` and throws `DataTypeNotSupportedError` without the explicit `type`.
+
+### 32.4 AI Study Plan endpoint
+
+`POST /external-resources/:slug/ai-study-plan` (JWT required). Uses existing `AiAssistantService.generateResponse()` from `AiModule`. The prompt includes:
+
+- Resource title, provider, category, level, duration, price
+- Week-by-week study plan with each week's `[done/todo]` status from `checklistProgress`
+- Student's current status and progress percent
+- Student's personal notes (if any)
+
+Responds in the language passed as `?lang=ky` (default). Capped at 400 tokens, temperature 0.75. Fires `ai_plan_generated` event after response (fire-and-forget, does not block the response).
+
+### 32.5 Frontend AI plan UI
+
+`ExternalResourceDetails.jsx` additions:
+
+- Three state vars (`aiPlan`, `aiLoading`, `aiError`) declared at the top of the component with all other state, before any early returns (React hooks rules).
+- Toggle button shown only to logged-in users; pressing again hides the plan.
+- Spinner shown during generation (`aiLoading`).
+- Plan rendered in an orange-gradient card with a dismiss button.
+- Error shown inline if generation fails.
+
+### 32.6 `handleOfficialLink` change
+
+The frontend no longer opens the external URL directly. It navigates to the backend proxy:
+
+```js
+window.open(`${API_BASE_URL}/external-resources/${resource.slug}/go`, '_blank', 'noopener,noreferrer');
+```
+
+The backend `GET :slug/go` handler calls `@Redirect()`, logs `official_link_clicked`, and returns `{ url: resource.url }`. This closes the analytics gap and keeps the external URL server-side.
+
+---
+
+## 33. Code Review Findings and Fixes
+
+_Review conducted: 2026-06-10. All 8 confirmed findings fixed._
+
+### 33.1 #1 — removeResource never called the API
+
+**File:** `useResourceProgress.js`  
+**Problem:** `removeResource` deleted the localStorage entry but never called the backend. Unsaving a resource on one device would re-appear after the next `GET /external-resources/my` fetch on another device or on page reload.  
+**Fix:** Added `DELETE /external-resources/:slug/progress` backend endpoint and `deleteExternalResourceProgress(slug)` frontend API function. Hook now calls it inside `removeResource` when `userId` is truthy.
+
+### 33.2 #2 — toggleWeek called syncToApi inside a setState updater
+
+**File:** `useResourceProgress.js`  
+**Problem:** React Strict Mode double-invokes state updaters in development. A `syncToApi` call placed inside the `mutate((prev) => {...})` callback would fire twice per toggle, sending two conflicting API requests.  
+**Fix:** Captured `nextCheckedWeeks` into a `let` variable inside the updater (for the state update), then called `syncToApi` outside the `mutate()` call (for the side effect).
+
+### 33.3 #3 — updateNotes fired a syncToApi call on every keystroke
+
+**File:** `useResourceProgress.js`  
+**Problem:** Each character typed in the notes field triggered an API request. Under a fast typist that is ~5 req/s.  
+**Fix:** Debounced using `debounce` from `src/lib/utils.js` (600ms cooldown). The debounced function is stored in a `useRef` so it is stable across re-renders (no new debounce instance on each render).
+
+### 33.4 #4 — API empty array suppressed the static fallback in CourseDetails
+
+**File:** `src/pages/CourseDetails.jsx`  
+**Problem:** `linkedResources ?? staticResources` only catches `null`/`undefined`. When the API returns `[]` (course exists but has no linked resources), `??` passes through the empty array and the static fallback is never shown.  
+**Fix:** Changed to `linkedResources?.length ? linkedResources : staticResources`.
+
+### 33.5 #5 — Save/Start buttons flashed during the API fetch window
+
+**File:** `useResourceProgress.js`, `ExternalResourceDetails.jsx`  
+**Problem:** On mount, the hook initialises `store` as `{}`. Before `GET /external-resources/my` completes, `getEntry(slug)` returns `null`, so the page shows "Save" even for a resource the user has already started — a visible flash.  
+**Fix:** Added `progressLoading` boolean to the hook (true while the initial fetch is in flight). In `ExternalResourceDetails`, `entry` is forced to `null` while `progressLoading` is true, so the buttons are suppressed until the real state arrives.
+
+### 33.6 #6 — linkedResources stale on course navigation
+
+**File:** `src/pages/CourseDetails.jsx`  
+**Problem:** When navigating from one course to another, `linkedResources` retained the previous course's resources until the new `fetchResourcesByCourse` call resolved. The stale resources were briefly visible under the new course.  
+**Fix:** Added `setLinkedResources(null)` at the top of the `useEffect`, before the fetch, so the section is hidden immediately on navigation.
+
+### 33.7 #7 — Anonymous progress lost on re-login
+
+**File:** `useResourceProgress.js`  
+**Problem:** An unauthenticated user saved resources to `ext_res_v1_anon`. On login, the hook switched to fetching from the API — which had no record of the anon saves. The anon data sat in localStorage indefinitely and was never merged.  
+**Fix:** On mount when `userId` is truthy, the hook reads `ext_res_v1_anon`, uploads each entry to the API via `syncToApi`, clears the anon key, fetches the server state, and optimistically merges any anon entries not yet reflected in the API response.
+
+### 33.8 #8 — Wrong event type tracked for AI plan generation
+
+**File:** `external-resources.service.ts`, `external-resource-event.entity.ts`  
+**Problem:** `generateStudyPlan` called `this.trackEvent(slug, 'viewed', userId)`, which would pollute the `viewed` counter with AI plan requests and make the analytics counts inaccurate.  
+**Fix:** Added `'ai_plan_generated'` to the `ExternalResourceEventType` union. Service now calls `this.trackEvent(slug, 'ai_plan_generated', userId)` after the AI response.
