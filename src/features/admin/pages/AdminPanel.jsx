@@ -22,6 +22,7 @@ import AdminAiPromptsTab from '../components/AdminAiPromptsTab';
 import AdminAiLmsSettingsTab from '../components/AdminAiLmsSettingsTab';
 import AdminContactsTab from '../components/AdminContactsTab';
 import AdminPendingCoursesTab from '../components/AdminPendingCoursesTab';
+import AdminExternalResourcesTab from '../components/AdminExternalResourcesTab';
 import { CertificatesSection } from '@features/instructor-dashboard';
 
 // Import constants and helpers
@@ -575,6 +576,9 @@ const AdminPanel = () => {
 
             case 'analytics':
                 return canReadGlobalAnalytics ? <AdminAnalyticsPage /> : null;
+
+            case 'external-resources':
+                return <AdminExternalResourcesTab courses={courses} />;
 
             default:
                 // For other tabs, render the original inline components

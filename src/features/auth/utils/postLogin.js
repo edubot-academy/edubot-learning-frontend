@@ -16,7 +16,7 @@ export const getPostLoginPath = (user, location) => {
     return getDashboardPath(user);
 };
 
-export const executePendingAuthAction = async ({ addToCart, toggleFavourite, navigate }) => {
+export const executePendingAuthAction = async ({ addToCart, toggleFavourite, saveResource, navigate }) => {
     const pendingActionStr = localStorage.getItem('pendingAction');
     if (!pendingActionStr) return false;
 
@@ -62,6 +62,22 @@ export const executePendingAuthAction = async ({ addToCart, toggleFavourite, nav
                 navigate('/cart');
                 return true;
             }
+        }
+
+        if (pendingAction.type === 'save-resource' && pendingAction.slug) {
+            localStorage.removeItem('pendingAction');
+            if (saveResource) {
+                saveResource(pendingAction.slug, {
+                    title: pendingAction.resourceTitle || pendingAction.slug,
+                });
+            }
+            toast.success(
+                i18n.t('public.externalResources.saveToast', {
+                    title: pendingAction.resourceTitle || pendingAction.slug,
+                })
+            );
+            navigate(`/resources/${pendingAction.slug}`);
+            return true;
         }
 
         localStorage.removeItem('pendingAction');

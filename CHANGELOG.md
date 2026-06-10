@@ -2,7 +2,100 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
-## Unreleased
+## [1.16.2] - 2026-06-11
+
+### Added
+
+- AI companion in `ResourceDetailPanel` reorganised into a 3-tab layout: **Study Plan**, **Explain**, **Practice** — previously all three tools were stacked vertically in one scrollable block.
+- Save button for AI explanations (`💾 Save explanation`) — previously only study plan and practice tasks had save buttons; explanation results were auto-saved and could not be explicitly committed.
+- Per-tab save labels: `aiConceptSave`/`aiConceptSaved`, `aiTasksSave`/`aiTasksSaved` added to `ky`, `en`, `ru` public locale files (previously all three tabs shared the generic "Save plan" / "Plan saved" strings).
+- Inline confirmation for "Remove from my list": first click shows "Remove this course from your list? [Yes, remove] [Cancel]" — no accidental single-click removal. Confirmation state is also wired in `ExternalResourceDetails.jsx`.
+- `removeConfirm`, `removeConfirmYes`, `removeConfirmCancel` keys added to `ky`, `en`, `ru` student and public locale files.
+
+### Changed
+
+- "Remove from plan" button relocated from the bottom of `ResourceDetailPanel` to the **top-right of the title block** as a subtle trash icon — removes ambiguity with the AI-generated study plan below.
+- "Remove from plan" relabelled to **"Remove from my list"** (`removeFromPlan` key updated in all six locale files) — the old label was confused with "remove AI study plan content".
+- Explain tab pills now **load cached explanations from `aiCache.explanations[title]`** on click (same pattern as Study Plan tab) and highlight the active pill — previously clicking a pill cleared the current result and did not restore a previously saved explanation.
+- Practice Tasks pills are now **always visible** regardless of whether tasks are currently shown — previously pills were hidden behind a `!practiceTasks` guard, making it impossible to switch topics after generating tasks.
+
+### Fixed
+
+- `FreeResourcesTab.jsx` and `ExternalResourcesHomeSection.jsx` were reading featured resources from the static JS data file instead of the API, bypassing `isPublished` filtering and potentially showing draft resources.
+- `FreeResourcesWidget.jsx` was computing progress-bar percentage from `studyPlan.length` via the static file — replaced with `entry.progressPercent` from the API.
+- `ExternalResourceDetails.jsx` was initialising resource state from `getResourceBySlug()` (static file) before the API fetch completed — now starts as `null` with a loading state so no stale data is shown.
+- `FreeResourcesTab.jsx:646` runtime `ReferenceError: getResourceBySlug is not defined` — a second usage in the list-panel render was missed when the static import was removed; replaced with `entry.progressPercent`.
+- `FreeResourcesTab.jsx` and `ExternalResourceDetails.jsx` were not making API calls when navigated to from the course details page — `fetchExternalResourceBySlug` is now called inside a `useEffect` on slug change.
+- CS50: Introduction to Computer Science removed from `externalResources.js` static data; `relatedCourseSlugs` references in `cs50-ai-with-python` and `freecodecamp-python-scientific-computing` cleared.
+
+### Verification
+
+- `npm run lint`
+- `npm run build`
+- Dashboard → Free Resources tab: select a saved resource → AI companion tabs function independently; switching Explain pills loads cached explanations; switching Practice pills loads cached tasks; pills remain visible after generation.
+- "Remove from my list" trash icon in title block → inline confirmation appears → confirm removes entry; cancel dismisses.
+
+---
+
+## [1.16.1] - 2026-06-10
+
+### Added
+
+- Admin resource modal: "Paste JSON" fill mode alongside the existing AI Autofill (URL) strip — admin can paste AI-generated JSON (from a prompt template) to populate all form fields and multilingual content in one action.
+- Prompt template provided for generating correctly-shaped JSON from any external AI tool (ChatGPT, Claude, etc.).
+
+### Changed
+
+- Admin resource modal autofill strip refactored: `applyResourceData` helper shared between URL-based AI autofill and the new JSON paste fill path.
+
+### Fixed
+
+- `ResourceProgressProvider`: anonymous progress entries in `localStorage` were cleared before their API sync calls settled — `Promise.allSettled` now waits for all upserts before clearing the anon key.
+- `ResourceProgressProvider`: optimistic updates (e.g. `saveResource` from `postLogin`) were overwritten when the initial `GET /external-resources/my` response arrived — functional `setStore` updater now merges API state with any concurrent local changes.
+- `ResourceProgressProvider`: `toggleWeek` read `checkedWeeks` from a stale closure — computation moved inside the `mutate` updater so rapid toggles on different weeks each read the latest committed state.
+- `ResourceProgressProvider`: `updateNotes` fired an API call on every keystroke — calls now debounced at 600 ms.
+- `ResourceProgressProvider`: `removeResource` deleted the local entry but never called the backend — now calls `DELETE /external-resources/:slug/progress`.
+- `ExternalResourceDetails`: Save/Start/enrolled CTAs flickered during the initial progress fetch — `progressLoading` guard added with an animated skeleton placeholder.
+- `postLogin.js`: `save-resource` pending action bypassed `ResourceProgressContext` and called the API directly, losing the optimistic update — now invokes `saveResource` from context via a new `saveResource` param on `executePendingAuthAction`.
+- `api.js` (`upsertExternalResourceProgress`): `aiCache` payload field was silently dropped — added to destructure and POST body.
+- `CourseDetails.jsx`: `linkedResources ?? staticResources` passed through an empty array and suppressed the static fallback — changed to `linkedResources?.length ? linkedResources : staticResources`.
+- `CourseDetails.jsx`: stale linked resources briefly visible when navigating between courses — `setLinkedResources(null)` now fires before each new fetch.
+- Backend (`external-resources.service.ts`): study-plan generation tracked the wrong event type (`viewed`) — added `ai_plan_generated` event type and updated the service.
+
+### Verification
+
+- `npm run lint`
+- `npm run build`
+- Admin: open "Add resource" modal → "Paste JSON" tab → paste generated JSON → verify all fields populate correctly
+
+---
+
+## [1.16.0] - 2026-06-10
+
+### Added
+
+- External free-learning feature: homepage section, `/resources` listing, and `/resources/:slug` detail guide pages with dedicated components and responsive UI.
+- Static curated catalog and data file for initial launch (multilingual content: ky/en/ru) and translation keys for UI copy.
+- Auth prompt for EduBot-owned actions and localStorage-backed save/start/progress hooks for MVP behavior.
+- Dashboard widget showing saved/started external resources for logged-in users.
+- Backend support: `external_resources` and `user_external_resource_progress` migrations, public `GET /external-resources` and `GET /external-resources/:slug`, user progress APIs (`POST/PATCH /external-resources/:slug/progress`), seed script, and sitemap integration.
+- Admin tooling: admin endpoints and UI for creating/editing resources, `isPublished`/`isFeatured` toggles, and resource-to-course linking.
+- Analytics and tracking events for resource views, saves, starts, official-link clicks, and completions.
+- AI companion endpoint for generating personalized study plans and Kyrgyz-language explainers.
+- Redirect proxy endpoint (`/resources/:slug/go`) to log official-link clicks before redirecting.
+
+### Changed
+
+- Integrated external resources into course pages and home marketing sections; added i18n coverage and content-fallback helpers.
+- Primary MVP CTAs adjusted to avoid promising backend-only features before Phase 4; study-group CTA recommended until full tracking exists.
+
+### Verification
+
+- `npm run test`
+- `npm run lint`
+- `npm run audit:localization`
+- `npm run build`
+- Backend: run migrations and verify `GET /external-resources` and `GET /external-resources/:slug` return expected data
 
 ---
 

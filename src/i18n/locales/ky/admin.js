@@ -23,7 +23,8 @@ export const admin = {
             skills: "Скиллдер",
             notifications: "Билдирүүлөр",
             integration: "Интеграциялар",
-            attendance: "Катышуу"
+            attendance: "Катышуу",
+            externalResources: "Акысыз ресурстар"
         },
         status: {
             statsUpdating: "Статистика жаңыланууда",
@@ -649,6 +650,129 @@ export const admin = {
                 lessonComplete: "{{id}}-сабактын транскоддоосу аяктады",
                 lessonFailed: "{{id}}-сабактын транскоддоосу ката менен аяктады"
             }
+        }
+    },
+    adminExtResources: {
+        eyebrow: "Контент башкаруу",
+        title: "Акысыз тышкы ресурстар",
+        description: "Тышкы ресурстарды түзүңүз, жарыялаңыз жана курстарга байланыштырыңыз.",
+        metrics: {
+            total: "Жалпы ресурстар",
+            published: "Жарыяланган",
+            featured: "Сунушталган"
+        },
+        workflows: {
+            catalog: "Каталог",
+            linking: "Курска байланыштыруу"
+        },
+        status: {
+            published: "Жарыяланган",
+            draft: "Черновик",
+            featured: "Сунушталган",
+            paidOnly: "Акы төлөнөт"
+        },
+        create: {
+            title: "Жаңы ресурс кошуу",
+            description: "Тышкы акысыз ресурс үчүн негизги маалыматтарды толтуруңуз."
+        },
+        list: {
+            title: "Бардык ресурстар",
+            description: "Жарыяланган жана черновик ресурстар."
+        },
+        fields: {
+            slug: "Slug (URL)",
+            title: "Аталышы",
+            provider: "Провайдер",
+            providerKey: "Провайдер ачкычы",
+            url: "Расмий шилтеме (URL)",
+            category: "Категория",
+            level: "Деңгээл",
+            priceLabel: "Баасы",
+            durationLabel: "Убактысы",
+            certificateLabel: "Сертификат белгиси",
+            certificateCost: "Сертификаттын баасы",
+            canAuditFree: "Акысыз аудит (сертификатсыз)",
+            coverImageUrl: "Муктала сүрөтүнүн URL",
+            language: "Тил",
+            sortOrder: "Тартип",
+            isPublished: "Жарыялоо",
+            isFeatured: "Сунуш кылуу",
+            shortDescription: "Кыскача баяндама",
+            shortDescriptionPlaceholder: "Курска кыскача жалпы сереп...",
+            whatYouWillLearn: "Эмне үйрөнөсүз",
+            whoIsItFor: "Бул кимге арналган",
+            whyRecommended: "Эмнеге сунушталат",
+            whyRecommendedPlaceholder: "EduBot бул курсту эмне үчүн сунуштайт...",
+            difficultyNotes: "Кыйынчылык эскертүүлөрү",
+            listHint: "Ар бир элемент өзүнчө сапта"
+        },
+        tabs: {
+            basic: "Негизги маалымат",
+            description: "Баяндама",
+            curriculum: "Окуу программасы"
+        },
+        curriculum: {
+            week: "Апта",
+            weekTitle: "Аталышы",
+            weekDescription: "Баяндамасы",
+            addWeek: "Апта кошуу",
+            remove: "Өчүрүү",
+            empty: "Апталар азырынча жок. Окуу программасын баштоо үчүн \"Апта кошуу\" баскычын басыңыз.",
+            weeksCount: "{{n}} апта",
+            noWeeks: "Окуу программасы жок"
+        },
+        actions: {
+            addNew: "Ресурс кошуу",
+            create: "Түзүү",
+            save: "Сактоо",
+            edit: "Өзгөртүү",
+            cancel: "Жокко чыгаруу",
+            delete: "Өчүрүү",
+            publish: "Жарыялоо",
+            unpublish: "Жарыялоону алып салуу",
+            feature: "Сунуш кылуу",
+            unfeature: "Сунуштан алып салуу",
+            link: "Байланыштыруу",
+            unlink: "Байланышты үзүү"
+        },
+        linking: {
+            title: "Курска байланыштыруу",
+            description: "Ресурстарды тиешелүү курстарга байланыштырыңыз.",
+            selectCourse: "Курсту тандаңыз",
+            chooseCourse: "Курсту тандаңыз...",
+            resourcesLabel: "Ресурстар",
+            linked: "байланышкан"
+        },
+        empty: {
+            title: "Ресурстар жок",
+            subtitle: "Биринчи ресурсту кошуңуз."
+        },
+        autofill: {
+            title: "AI авто толтуруу — бардык талааларды автоматтык жараткыруу үчүн курстун URL дарегин коюңуз",
+            placeholder: "https://coursera.org/professional-certificates/google-it-support",
+            generate: "Жаратуу",
+            loading: "Даярдалууда...",
+            error: "AI мазмун жарата алмады. URL дарегин текшерип, кайталаңыз.",
+            modeUrl: "AI Авто толтуруу (URL)",
+            modePaste: "JSON чаптоо"
+        },
+        paste: {
+            title: "Бардык талааларды толтуруу үчүн AI жараткан JSONди чаптаңыз",
+            placeholder: "Калыпка негизделген JSON жерге чаптаңыз...",
+            fill: "Форманы толтуруу",
+            errorInvalidJson: "JSON жараксыз — калыптан алынган туура JSON объектин чаптаңыз."
+        },
+        confirmDelete: "\"{{title}}\" ресурсун өчүрөсүзбү?",
+        created: "Ресурс түзүлдү.",
+        saved: "Сакталды.",
+        deleted: "Ресурс өчүрүлдү.",
+        linked: "Байланыштырылды.",
+        unlinked: "Байланыш үзүлдү.",
+        errors: {
+            loadFailed: "Жүктөө мүмкүн болгон жок.",
+            saveFailed: "Сактоо мүмкүн болгон жок.",
+            deleteFailed: "Өчүрүү мүмкүн болгон жок.",
+            linkFailed: "Байланыштыруу мүмкүн болгон жок."
         }
     }
 };

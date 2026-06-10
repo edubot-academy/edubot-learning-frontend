@@ -12,6 +12,7 @@ import ProgressTab from './tabs/ProgressTab.jsx';
 import CertificatesTab from './tabs/CertificatesTab.jsx';
 import ProfileTab from './tabs/ProfileTab.jsx';
 import ChatTab from './ChatTab.jsx';
+import FreeResourcesTab from './tabs/FreeResourcesTab.jsx';
 import LeaderboardHub from '@features/leaderboard/components/LeaderboardHub.jsx';
 import {
     DashboardLayout,
@@ -33,6 +34,9 @@ const ACCESS_REQUIRED_TABS = [
 ];
 
 const LIST_LOADING_TABS = ['my-courses', 'schedule', 'resources', 'tasks', 'certificates'];
+
+// Tabs that fetch their own data and must not be blocked by the shell's loading gate
+const SELF_LOADING_TABS = ['free-resources'];
 
 const StudentDashboardShell = ({
     accessStateDetails,
@@ -123,6 +127,8 @@ const StudentDashboardShell = ({
                         savingNotifications={savingNotifications}
                     />
                 );
+            case 'free-resources':
+                return <FreeResourcesTab />;
             case 'chat':
                 return <ChatTab />;
             case 'overview':
@@ -150,6 +156,7 @@ const StudentDashboardShell = ({
         }
 
         if (!isTabDataLoaded || !isProfileReady) {
+            if (SELF_LOADING_TABS.includes(activeTab)) return renderTabContent();
             if (activeTab === 'overview') return <LoadingState type="card" count={3} />;
             if (LIST_LOADING_TABS.includes(activeTab)) return <LoadingState type="list" />;
             return <LoadingState type="table" />;

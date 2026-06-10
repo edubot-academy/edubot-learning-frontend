@@ -10,6 +10,7 @@ import {
     FiTag,
     FiTrendingUp,
     FiCheckSquare,
+    FiGlobe,
 } from 'react-icons/fi';
 import { ADMIN_DASHBOARD_TABS } from '@shared/constants/dashboardTabs';
 import { applyWorkspaceGroups } from '@shared/utils/workspaceGroups';
@@ -27,6 +28,7 @@ export const ADMIN_TABS = [
     ADMIN_DASHBOARD_TABS.AI_LMS,
     ADMIN_DASHBOARD_TABS.NOTIFICATIONS,
     ADMIN_DASHBOARD_TABS.ANALYTICS,
+    ADMIN_DASHBOARD_TABS.EXTERNAL_RESOURCES,
 ];
 
 export const USERS_QUERY_KEYS = Object.freeze({
@@ -58,6 +60,7 @@ export const ADMIN_WORKSPACE_GROUPS = Object.freeze({
             ADMIN_DASHBOARD_TABS.COURSES,
             ADMIN_DASHBOARD_TABS.PENDING,
             ADMIN_DASHBOARD_TABS.CERTIFICATES,
+            ADMIN_DASHBOARD_TABS.EXTERNAL_RESOURCES,
         ]),
     }),
     TECHNICAL_OPERATIONS: Object.freeze({
@@ -119,6 +122,14 @@ const RAW_NAV_ITEMS = [
         icon: FiAward,
         category: 'primary',
         priority: 4,
+    },
+    {
+        id: ADMIN_DASHBOARD_TABS.EXTERNAL_RESOURCES,
+        label: 'Free resources',
+        labelKey: 'adminPanel.tabs.externalResources',
+        icon: FiGlobe,
+        category: 'primary',
+        priority: 5,
     },
 
     // Secondary Navigation - People & Access

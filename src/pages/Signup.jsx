@@ -11,6 +11,7 @@ import { useCart } from '../context/CartContext';
 import { useFavourites } from '../context/FavouritesContext';
 import Loader from '@shared/ui/Loader';
 import { executePendingAuthAction, getPostLoginPath } from '@features/auth/utils/postLogin';
+import useResourceProgress from '@features/externalResources/hooks/useResourceProgress';
 import { useTranslation } from 'react-i18next';
 import { parseApiError } from '@shared/api/error';
 
@@ -68,6 +69,7 @@ const SignupPage = () => {
     const { login } = useContext(AuthContext);
     const { addToCart } = useCart();
     const { toggleFavourite } = useFavourites();
+    const { saveResource } = useResourceProgress();
 
     const passwordValidations = getPasswordChecks(formData.password);
     const signupSteps = t('public.auth.signup.steps', { returnObjects: true }).map(
@@ -126,6 +128,7 @@ const SignupPage = () => {
             const handledPendingAction = await executePendingAuthAction({
                 addToCart,
                 toggleFavourite,
+                saveResource,
                 navigate,
             });
 

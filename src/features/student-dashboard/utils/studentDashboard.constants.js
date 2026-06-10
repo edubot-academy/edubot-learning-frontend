@@ -10,6 +10,7 @@ import {
     FiMessageCircle,
     FiPlay,
     FiAward,
+    FiGlobe,
 } from 'react-icons/fi';
 import { STUDENT_DASHBOARD_TABS } from '@shared/constants/dashboardTabs';
 import { applyWorkspaceGroups } from '@shared/utils/workspaceGroups';
@@ -24,6 +25,7 @@ export const STUDENT_WORKSPACE_GROUPS = Object.freeze({
             STUDENT_DASHBOARD_TABS.MY_COURSES,
             STUDENT_DASHBOARD_TABS.SCHEDULE,
             STUDENT_DASHBOARD_TABS.RESOURCES,
+            STUDENT_DASHBOARD_TABS.FREE_RESOURCES,
         ]),
     }),
     PROGRESS: Object.freeze({
@@ -62,9 +64,10 @@ const RAW_NAV_ITEMS = [
     { id: STUDENT_DASHBOARD_TABS.MY_COURSES, labelKey: 'studentDashboard.shell.nav.myCourses', icon: FiBookOpen, category: 'primary', priority: 2 },
     { id: STUDENT_DASHBOARD_TABS.SCHEDULE, labelKey: 'studentDashboard.shell.nav.schedule', icon: FiCalendar, category: 'primary', priority: 3 },
     { id: STUDENT_DASHBOARD_TABS.RESOURCES, labelKey: 'studentDashboard.shell.nav.resources', icon: FiFolder, category: 'primary', priority: 4 },
-    { id: STUDENT_DASHBOARD_TABS.TASKS, labelKey: 'studentDashboard.shell.nav.tasks', icon: FiPlay, category: 'primary', priority: 5 },
-    { id: STUDENT_DASHBOARD_TABS.PROGRESS, labelKey: 'studentDashboard.shell.nav.progress', icon: FiBarChart2, category: 'primary', priority: 6 },
-    { id: STUDENT_DASHBOARD_TABS.CERTIFICATES, labelKey: 'studentDashboard.shell.nav.certificates', icon: FiAward, category: 'primary', priority: 7 },
+    { id: STUDENT_DASHBOARD_TABS.FREE_RESOURCES, labelKey: 'studentDashboard.shell.nav.freeResources', icon: FiGlobe, category: 'primary', priority: 5 },
+    { id: STUDENT_DASHBOARD_TABS.TASKS, labelKey: 'studentDashboard.shell.nav.tasks', icon: FiPlay, category: 'primary', priority: 6 },
+    { id: STUDENT_DASHBOARD_TABS.PROGRESS, labelKey: 'studentDashboard.shell.nav.progress', icon: FiBarChart2, category: 'primary', priority: 7 },
+    { id: STUDENT_DASHBOARD_TABS.CERTIFICATES, labelKey: 'studentDashboard.shell.nav.certificates', icon: FiAward, category: 'primary', priority: 8 },
 
     // Secondary Navigation - Learning Management
     { id: STUDENT_DASHBOARD_TABS.CHAT, labelKey: 'studentDashboard.shell.nav.chat', icon: FiMessageCircle, category: 'secondary', priority: 2 },

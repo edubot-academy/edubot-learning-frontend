@@ -1,9 +1,13 @@
 import { useCallback, useMemo, useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { fetchCatalogCourses } from '@services/api';
 import CardCourse from '@features/courses/components/CardCourse';
 import EmptyState from '@components/ui/dashboard/EmptyState';
 import { FiAlertTriangle, FiBookOpen, FiRefreshCw, FiSliders } from 'react-icons/fi';
 import { useTranslation } from 'react-i18next';
+import SectionContainer from '@features/marketing/components/SectionContainer';
+import ExternalResourceCard from '@features/externalResources/components/ExternalResourceCard';
+import { fetchExternalResources } from '@features/externalResources/api';
 
 const getCourseType = (course) =>
     String(course?.courseType || course?.type || 'video').toLowerCase();
@@ -20,6 +24,7 @@ const CoursesPage = () => {
     const [error, setError] = useState('');
     const [sortBy, setSortBy] = useState('recommended');
     const [visibleCount, setVisibleCount] = useState(9);
+    const [featuredResources, setFeaturedResources] = useState([]);
 
     const loadCourses = useCallback(async () => {
         setLoading(true);
@@ -38,6 +43,12 @@ const CoursesPage = () => {
     useEffect(() => {
         loadCourses();
     }, [loadCourses]);
+
+    useEffect(() => {
+        fetchExternalResources({ featured: true })
+            .then((data) => setFeaturedResources(Array.isArray(data) ? data.slice(0, 3) : []))
+            .catch(() => setFeaturedResources([]));
+    }, []);
 
     const publicVideoCourses = useMemo(() => {
         return courses
@@ -209,6 +220,21 @@ const CoursesPage = () => {
                     />
                 )}
             </div>
+
+            <SectionContainer
+                title={t('public.externalResources.coursesSectionTitle')}
+                subtitle={t('public.externalResources.coursesSectionSubtitle')}
+                rightContent={
+                    <Link
+                        to="/resources"
+                        className="text-sm font-medium text-[#E14219] hover:underline"
+                    >
+                        {t('public.externalResources.viewAll')} →
+                    </Link>
+                }
+                items={featuredResources}
+                CardComponent={ExternalResourceCard}
+            />
         </div>
     );
 };

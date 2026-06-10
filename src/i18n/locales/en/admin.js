@@ -23,7 +23,8 @@ export const admin = {
             skills: "Skills",
             notifications: "Notifications",
             integration: "Integrations",
-            attendance: "Attendance"
+            attendance: "Attendance",
+            externalResources: "Free resources"
         },
         status: {
             statsUpdating: "Statistics are updating",
@@ -649,6 +650,129 @@ export const admin = {
                 lessonComplete: "Lesson {{id}} transcode complete",
                 lessonFailed: "Lesson {{id}} transcode failed"
             }
+        }
+    },
+    adminExtResources: {
+        eyebrow: "Content management",
+        title: "Free external resources",
+        description: "Create, publish, and link external resources to courses.",
+        metrics: {
+            total: "Total resources",
+            published: "Published",
+            featured: "Featured"
+        },
+        workflows: {
+            catalog: "Catalog",
+            linking: "Link to course"
+        },
+        status: {
+            published: "Published",
+            draft: "Draft",
+            featured: "Featured",
+            paidOnly: "Paid only"
+        },
+        create: {
+            title: "Add a new resource",
+            description: "Fill in the key fields for a new free external resource."
+        },
+        list: {
+            title: "All resources",
+            description: "Published and draft resources."
+        },
+        fields: {
+            slug: "Slug (URL)",
+            title: "Title",
+            provider: "Provider",
+            providerKey: "Provider key",
+            url: "Official URL",
+            category: "Category",
+            level: "Level",
+            priceLabel: "Price",
+            durationLabel: "Duration",
+            certificateLabel: "Certificate label",
+            certificateCost: "Certificate cost",
+            canAuditFree: "Free to audit (no certificate)",
+            coverImageUrl: "Cover image URL",
+            language: "Language",
+            sortOrder: "Sort order",
+            isPublished: "Published",
+            isFeatured: "Featured",
+            shortDescription: "Short description",
+            shortDescriptionPlaceholder: "Brief overview of the course...",
+            whatYouWillLearn: "What you'll learn",
+            whoIsItFor: "Who is it for",
+            whyRecommended: "Why recommended",
+            whyRecommendedPlaceholder: "Why EduBot recommends this course...",
+            difficultyNotes: "Difficulty notes",
+            listHint: "One item per line"
+        },
+        tabs: {
+            basic: "Basic info",
+            description: "Description",
+            curriculum: "Curriculum"
+        },
+        curriculum: {
+            week: "Week",
+            weekTitle: "Title",
+            weekDescription: "Description",
+            addWeek: "Add week",
+            remove: "Remove",
+            empty: "No weeks added yet. Click \"Add week\" to start building the curriculum.",
+            weeksCount: "{{n}} weeks",
+            noWeeks: "No curriculum"
+        },
+        actions: {
+            addNew: "Add resource",
+            create: "Create",
+            save: "Save",
+            edit: "Edit",
+            cancel: "Cancel",
+            delete: "Delete",
+            publish: "Publish",
+            unpublish: "Unpublish",
+            feature: "Feature",
+            unfeature: "Unfeature",
+            link: "Link",
+            unlink: "Unlink"
+        },
+        linking: {
+            title: "Link to course",
+            description: "Associate resources with EduBot courses.",
+            selectCourse: "Select a course",
+            chooseCourse: "Choose a course...",
+            resourcesLabel: "Resources",
+            linked: "linked"
+        },
+        empty: {
+            title: "No resources",
+            subtitle: "Add the first resource."
+        },
+        autofill: {
+            title: "AI Autofill — paste a course URL to generate all fields",
+            placeholder: "https://coursera.org/professional-certificates/google-it-support",
+            generate: "Generate",
+            loading: "Generating...",
+            error: "AI could not generate content. Check the URL and try again.",
+            modeUrl: "AI Autofill (URL)",
+            modePaste: "Paste JSON"
+        },
+        paste: {
+            title: "Paste AI-generated JSON to fill all fields",
+            placeholder: "Paste the JSON generated from the prompt template here...",
+            fill: "Fill Form",
+            errorInvalidJson: "Invalid JSON — paste a valid JSON object generated from the template."
+        },
+        confirmDelete: "Delete \"{{title}}\"?",
+        created: "Resource created.",
+        saved: "Saved.",
+        deleted: "Resource deleted.",
+        linked: "Linked.",
+        unlinked: "Unlinked.",
+        errors: {
+            loadFailed: "Failed to load resources.",
+            saveFailed: "Failed to save.",
+            deleteFailed: "Failed to delete.",
+            linkFailed: "Failed to update link."
         }
     }
 };

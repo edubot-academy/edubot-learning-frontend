@@ -11,6 +11,7 @@ import LabelPassword from '@shared-ui/forms/LabelPassword';
 import ForgotPassword from '@features/auth/components/ForgotPassword';
 import { getAuthAcquisitionPath, isPublicVideoSignupEnabled } from '@shared/auth-config';
 import { executePendingAuthAction, getPostLoginPath } from '@features/auth/utils/postLogin';
+import useResourceProgress from '@features/externalResources/hooks/useResourceProgress';
 import { useTranslation } from 'react-i18next';
 
 const validateLoginForm = ({ email, password }, t) => {
@@ -35,6 +36,7 @@ const LoginPage = () => {
     const { login } = useContext(AuthContext);
     const { addToCart } = useCart();
     const { toggleFavourite } = useFavourites();
+    const { saveResource } = useResourceProgress();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [forgotPassword, setForgotPassword] = useState(false);
@@ -73,6 +75,7 @@ const LoginPage = () => {
             const handledPendingAction = await executePendingAuthAction({
                 addToCart,
                 toggleFavourite,
+                saveResource,
                 navigate,
             });
 

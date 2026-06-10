@@ -23,7 +23,8 @@ export const admin = {
             skills: "Навыки",
             notifications: "Уведомления",
             integration: "Интеграции",
-            attendance: "Посещаемость"
+            attendance: "Посещаемость",
+            externalResources: "Бесплатные ресурсы"
         },
         status: {
             statsUpdating: "Статистика обновляется",
@@ -649,6 +650,129 @@ export const admin = {
                 lessonComplete: "Транскодирование урока {{id}} завершено",
                 lessonFailed: "Транскодирование урока {{id}} завершилось ошибкой"
             }
+        }
+    },
+    adminExtResources: {
+        eyebrow: "Управление контентом",
+        title: "Бесплатные внешние ресурсы",
+        description: "Создавайте, публикуйте и связывайте внешние ресурсы с курсами.",
+        metrics: {
+            total: "Всего ресурсов",
+            published: "Опубликовано",
+            featured: "Рекомендуемые"
+        },
+        workflows: {
+            catalog: "Каталог",
+            linking: "Связать с курсом"
+        },
+        status: {
+            published: "Опубликован",
+            draft: "Черновик",
+            featured: "Рекомендуемый",
+            paidOnly: "Только платно"
+        },
+        create: {
+            title: "Добавить ресурс",
+            description: "Заполните основные поля для нового бесплатного ресурса."
+        },
+        list: {
+            title: "Все ресурсы",
+            description: "Опубликованные и черновые ресурсы."
+        },
+        fields: {
+            slug: "Slug (URL)",
+            title: "Название",
+            provider: "Провайдер",
+            providerKey: "Ключ провайдера",
+            url: "Официальная ссылка",
+            category: "Категория",
+            level: "Уровень",
+            priceLabel: "Цена",
+            durationLabel: "Длительность",
+            certificateLabel: "Метка сертификата",
+            certificateCost: "Стоимость сертификата",
+            canAuditFree: "Бесплатный аудит (без сертификата)",
+            coverImageUrl: "URL обложки",
+            language: "Язык",
+            sortOrder: "Порядок",
+            isPublished: "Опубликовать",
+            isFeatured: "Рекомендовать",
+            shortDescription: "Краткое описание",
+            shortDescriptionPlaceholder: "Краткий обзор курса...",
+            whatYouWillLearn: "Чему вы научитесь",
+            whoIsItFor: "Для кого этот курс",
+            whyRecommended: "Почему рекомендуем",
+            whyRecommendedPlaceholder: "Почему EduBot рекомендует этот курс...",
+            difficultyNotes: "Заметки о сложности",
+            listHint: "Каждый элемент на отдельной строке"
+        },
+        tabs: {
+            basic: "Основная информация",
+            description: "Описание",
+            curriculum: "Программа курса"
+        },
+        curriculum: {
+            week: "Неделя",
+            weekTitle: "Название",
+            weekDescription: "Описание",
+            addWeek: "Добавить неделю",
+            remove: "Удалить",
+            empty: "Недели ещё не добавлены. Нажмите «Добавить неделю», чтобы начать.",
+            weeksCount: "{{n}} нед.",
+            noWeeks: "Нет программы"
+        },
+        actions: {
+            addNew: "Добавить ресурс",
+            create: "Создать",
+            save: "Сохранить",
+            edit: "Редактировать",
+            cancel: "Отмена",
+            delete: "Удалить",
+            publish: "Опубликовать",
+            unpublish: "Снять с публикации",
+            feature: "Рекомендовать",
+            unfeature: "Убрать из рекомендуемых",
+            link: "Связать",
+            unlink: "Отвязать"
+        },
+        linking: {
+            title: "Связать с курсом",
+            description: "Привяжите ресурсы к курсам EduBot.",
+            selectCourse: "Выберите курс",
+            chooseCourse: "Выберите курс...",
+            resourcesLabel: "Ресурсы",
+            linked: "связано"
+        },
+        empty: {
+            title: "Ресурсов нет",
+            subtitle: "Добавьте первый ресурс."
+        },
+        autofill: {
+            title: "AI автозаполнение — вставьте URL курса, чтобы сгенерировать все поля",
+            placeholder: "https://coursera.org/professional-certificates/google-it-support",
+            generate: "Сгенерировать",
+            loading: "Генерируется...",
+            error: "AI не смог сгенерировать содержимое. Проверьте URL и попробуйте снова.",
+            modeUrl: "AI автозаполнение (URL)",
+            modePaste: "Вставить JSON"
+        },
+        paste: {
+            title: "Вставьте AI-сгенерированный JSON для заполнения всех полей",
+            placeholder: "Вставьте сюда JSON, сгенерированный по шаблону промпта...",
+            fill: "Заполнить форму",
+            errorInvalidJson: "Неверный JSON — вставьте корректный JSON-объект, сгенерированный по шаблону."
+        },
+        confirmDelete: "Удалить «{{title}}»?",
+        created: "Ресурс создан.",
+        saved: "Сохранено.",
+        deleted: "Ресурс удалён.",
+        linked: "Связано.",
+        unlinked: "Связь удалена.",
+        errors: {
+            loadFailed: "Не удалось загрузить ресурсы.",
+            saveFailed: "Не удалось сохранить.",
+            deleteFailed: "Не удалось удалить.",
+            linkFailed: "Не удалось обновить связь."
         }
     }
 };

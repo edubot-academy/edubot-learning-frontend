@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import NotificationsWidget from '@features/notifications/components/NotificationsWidget';
+import FreeResourcesWidget from '@features/externalResources/components/FreeResourcesWidget';
 import {
     DashboardInsetPanel,
     DashboardMetricCard,
@@ -546,6 +547,8 @@ const OverviewTab = ({
                     </DashboardInsetPanel>
                 </div>
             </div>
+
+            <FreeResourcesWidget userId={student.id} />
         </div>
     );
 };

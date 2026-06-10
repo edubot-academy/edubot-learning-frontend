@@ -57,6 +57,7 @@ export const student = {
                 myCourses: "My courses",
                 schedule: "Schedule",
                 resources: "Resources",
+                freeResources: "Free Learning",
                 tasks: "Tasks",
                 progress: "Progress",
                 certificates: "Certificates",
@@ -64,6 +65,42 @@ export const student = {
                 leaderboard: "Leaderboard",
                 profile: "Profile",
                 notifications: "Notifications"
+            }
+        },
+        freeResources: {
+            eyebrow: "Free external resources",
+            title: "My Free Learning",
+            description: "Manage all your saved free resources, track weekly progress, take notes, and use AI tools — all without leaving the dashboard.",
+            empty: {
+                title: "No free resources saved yet",
+                description: "Browse the curated catalog and add resources to your learning plan.",
+                cta: "Browse free resources"
+            },
+            metrics: {
+                saved: "Saved",
+                inProgress: "In progress",
+                completed: "Completed"
+            },
+            filters: {
+                all: "All",
+                started: "In progress",
+                saved: "Saved",
+                completed: "Completed"
+            },
+            detail: {
+                weekProgress: "{{done}} / {{total}} weeks",
+                noStudyPlan: "No study plan available.",
+                weekDone: "Week {{n}} — done",
+                weekTodo: "Week {{n}}",
+                notesLabel: "My notes",
+                notesPlaceholder: "Write notes about this resource...",
+                aiSection: "AI Learning Companion",
+                officialSite: "Official course",
+                edubotGuide: "EduBot guide",
+                removeFromPlan: "Remove from my list",
+                removeConfirm: "Remove this course from your list?",
+                removeConfirmYes: "Yes, remove",
+                removeConfirmCancel: "Cancel"
             }
         },
         overview: {

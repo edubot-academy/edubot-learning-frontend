@@ -1,7 +1,12 @@
-import { useContext } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useContext, useEffect, useState } from 'react';
+import { useParams, useSearchParams, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../context/AuthContext';
 import Loader from '@shared/ui/Loader';
+import SectionContainer from '@features/marketing/components/SectionContainer';
+import ExternalResourceCard from '@features/externalResources/components/ExternalResourceCard';
+import { getResourcesRelatedToCourse } from '@features/externalResources/data/externalResources';
+import { fetchResourcesByCourse } from '@features/externalResources/api';
 import { useCourseDetailsController } from '@features/courses/course-details/useCourseDetailsRuntime';
 import {
     ActiveLessonRuntime,
@@ -24,6 +29,7 @@ const CourseDetailsPage = () => {
     const { id } = useParams();
     const [searchParams] = useSearchParams();
     const { user } = useContext(AuthContext);
+    const { t } = useTranslation();
     const {
         activeChallenge,
         activeLesson,
@@ -68,9 +74,29 @@ const CourseDetailsPage = () => {
         videoRef,
     } = useCourseDetailsController({ courseId: id, searchParams, user });
 
+    const [linkedResources, setLinkedResources] = useState(null);
+
+    useEffect(() => {
+        if (!id) return;
+        setLinkedResources(null); // clear stale data from previous course immediately
+        fetchResourcesByCourse(id)
+            .then((data) => setLinkedResources(data))
+            .catch(() => setLinkedResources(null));
+    }, [id]);
+
     if (loading) return <Loader fullScreen />;
     if (error) return <CourseDetailsErrorState message={error} />;
     if (!course) return <CourseDetailsNotFoundState />;
+
+    // Guard against stale course: the controller may still hold the previous course
+    // for one render cycle after id changes. Showing related resources from the wrong
+    // course is worse than showing nothing briefly.
+    const staticResources = String(course.id) === String(id) ? getResourcesRelatedToCourse(course) : [];
+    // Use API result only when it has items; empty [] falls back to static data
+    const relatedResources = (linkedResources?.length ? linkedResources : staticResources).map((r) => ({
+        ...r,
+        ctaLabel: t('public.externalResources.courseDetailCta'),
+    }));
 
     const activeLessonRuntime = (
         <ActiveLessonRuntime
@@ -174,6 +200,23 @@ const CourseDetailsPage = () => {
                     reviewNode={reviewNode}
                     courseId={id}
                 />
+
+                {relatedResources.length > 0 && (
+                    <SectionContainer
+                        title={t('public.externalResources.coursesSectionTitle')}
+                        subtitle={t('public.externalResources.courseDetailSectionSubtitle')}
+                        rightContent={
+                            <Link
+                                to="/resources"
+                                className="text-sm font-medium text-[#E14219] hover:underline"
+                            >
+                                {t('public.externalResources.viewAll')} →
+                            </Link>
+                        }
+                        items={relatedResources}
+                        CardComponent={ExternalResourceCard}
+                    />
+                )}
             </div>
         </div>
     );
