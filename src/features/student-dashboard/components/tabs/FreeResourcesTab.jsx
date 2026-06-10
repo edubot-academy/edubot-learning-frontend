@@ -7,8 +7,8 @@ import { API_BASE_URL } from '../../../../config';
 import { DashboardWorkspaceHero } from '../../../../components/ui/dashboard';
 import StudentPanelEmpty from '../shared/StudentPanelEmpty.jsx';
 import useResourceProgress from '@features/externalResources/hooks/useResourceProgress';
-import { getResourceBySlug } from '@features/externalResources/data/externalResources';
 import {
+    fetchExternalResourceBySlug,
     generateAiStudyPlan,
     explainConcept,
     generatePracticeTasks,
@@ -91,10 +91,18 @@ const ResourceDetailPanel = ({
     updateNotes, removeResource, setCertificateUrl, saveAiContent,
 }) => {
     const slug = entry?.slug;
-    const staticResource = slug ? getResourceBySlug(slug) : null;
-    const studyPlan = staticResource?.content?.studyPlan ?? [];
+    const [apiResource, setApiResource] = useState(null);
+    useEffect(() => {
+        if (!slug) return;
+        setApiResource(null);
+        fetchExternalResourceBySlug(slug)
+            .then((data) => setApiResource(data))
+            .catch(() => {});
+    }, [slug]);
+    const studyPlan = apiResource?.content?.studyPlan ?? [];
 
     // '' is used as the map key for "All topics" (null cannot be an object key)
+    const [aiTab, setAiTab] = useState('plan');
     const [planTopic, setPlanTopic] = useState(null);
     const [practiceTopic, setPracticeTopic] = useState(null);
     const planKey = planTopic ?? '';
@@ -109,22 +117,27 @@ const ResourceDetailPanel = ({
     const [aiError, setAiError] = useState(false);
     const [conceptInput, setConceptInput] = useState('');
     const [conceptResult, setConceptResult] = useState(null);
+    const [conceptSaved, setConceptSaved] = useState(false);
     const [conceptLoading, setConceptLoading] = useState(false);
     const [conceptError, setConceptError] = useState(false);
     const [practiceTasks, setPracticeTasks] = useState(() => cachedTasks);
     const [practiceLoading, setPracticeLoading] = useState(false);
     const [practiceError, setPracticeError] = useState(false);
     const [certUploading, setCertUploading] = useState(false);
+    const [confirmingRemove, setConfirmingRemove] = useState(false);
 
     // Reset when switching to a different resource
     useEffect(() => {
+        setAiTab('plan');
         setPlanTopic(null);
         setPracticeTopic(null);
         setAiError(false);
         setConceptInput('');
         setConceptResult(null);
+        setConceptSaved(false);
         setConceptError(false);
         setPracticeError(false);
+        setConfirmingRemove(false);
     }, [slug]);
 
     const handleStart = useCallback(() => {
@@ -160,18 +173,23 @@ const ResourceDetailPanel = ({
     const handleConceptExplain = async () => {
         const concept = conceptInput.trim();
         if (!concept) return;
-        // Show cached explanation instantly if available
         const cached = entry?.aiCache?.explanations?.[concept];
-        if (cached) { setConceptResult(cached); return; }
-        setConceptLoading(true); setConceptError(false); setConceptResult(null);
+        if (cached) { setConceptResult(cached); setConceptSaved(true); return; }
+        setConceptLoading(true); setConceptError(false); setConceptResult(null); setConceptSaved(false);
         try {
             const result = await explainConcept(slug, concept, lang);
             if (!result?.trim()) throw new Error('empty');
             setConceptResult(result);
-            saveAiContent(slug, 'explanations', concept, result);
         }
         catch { setConceptError(true); }
         finally { setConceptLoading(false); }
+    };
+
+    const handleSaveConceptExplain = () => {
+        if (!conceptResult) return;
+        saveAiContent(slug, 'explanations', conceptInput.trim(), conceptResult);
+        setConceptSaved(true);
+        toast.success(t('public.externalResources.aiPlanSaved'));
     };
 
     const [practiceTasksSaved, setPracticeTasksSaved] = useState(() => !!cachedTasks);
@@ -222,26 +240,60 @@ const ResourceDetailPanel = ({
     return (
         <div className="flex flex-col gap-5 h-full overflow-y-auto pr-1">
             {/* Title block */}
-            <div>
-                <p className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide font-medium mb-1">{entry.provider}</p>
-                <h2 className="text-lg font-bold text-[#141619] dark:text-[#E8ECF3] leading-snug">{entry.title}</h2>
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                    {entry.level && (
-                        <span className="text-xs px-2.5 py-1 rounded-full bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-300">
-                            {t(`public.externalResources.levels.${entry.level}`, { defaultValue: entry.level })}
-                        </span>
-                    )}
-                    {entry.priceLabel && (
-                        <span className="text-xs px-2.5 py-1 rounded-full bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400">
-                            {entry.priceLabel}
-                        </span>
-                    )}
-                    {weeksTotal > 0 && (
-                        <span className="text-xs px-2.5 py-1 rounded-full bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-300">
-                            {t('studentDashboard.freeResources.detail.weekProgress', { done: weeksDone, total: weeksTotal })}
-                        </span>
-                    )}
+            <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                    <p className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide font-medium mb-1">{entry.provider}</p>
+                    <h2 className="text-lg font-bold text-[#141619] dark:text-[#E8ECF3] leading-snug">{entry.title}</h2>
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                        {entry.level && (
+                            <span className="text-xs px-2.5 py-1 rounded-full bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-300">
+                                {t(`public.externalResources.levels.${entry.level}`, { defaultValue: entry.level })}
+                            </span>
+                        )}
+                        {entry.priceLabel && (
+                            <span className="text-xs px-2.5 py-1 rounded-full bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400">
+                                {entry.priceLabel}
+                            </span>
+                        )}
+                        {weeksTotal > 0 && (
+                            <span className="text-xs px-2.5 py-1 rounded-full bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-300">
+                                {t('studentDashboard.freeResources.detail.weekProgress', { done: weeksDone, total: weeksTotal })}
+                            </span>
+                        )}
+                    </div>
                 </div>
+                {/* Remove from list */}
+                {confirmingRemove ? (
+                    <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                        <span className="text-xs text-gray-500 dark:text-gray-400 text-right">
+                            {t('studentDashboard.freeResources.detail.removeConfirm')}
+                        </span>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => removeResource(slug)}
+                                className="text-xs font-semibold text-red-500 hover:text-red-600 dark:text-red-400 transition-colors"
+                            >
+                                {t('studentDashboard.freeResources.detail.removeConfirmYes')}
+                            </button>
+                            <button
+                                onClick={() => setConfirmingRemove(false)}
+                                className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                            >
+                                {t('studentDashboard.freeResources.detail.removeConfirmCancel')}
+                            </button>
+                        </div>
+                    </div>
+                ) : (
+                    <button
+                        onClick={() => setConfirmingRemove(true)}
+                        title={t('studentDashboard.freeResources.detail.removeFromPlan')}
+                        className="flex-shrink-0 p-1.5 rounded-lg text-gray-300 dark:text-gray-600 hover:text-red-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                    </button>
+                )}
             </div>
 
             {/* Progress bar — only render when there are weeks to show */}
@@ -343,123 +395,166 @@ const ResourceDetailPanel = ({
                     ✨ {t('studentDashboard.freeResources.detail.aiSection')}
                 </p>
 
-                {/* Study plan */}
-                <TopicPills
-                    weeks={studyPlan}
-                    lang={lang}
-                    selected={planTopic}
-                    onSelect={(topic) => {
-                        const key = topic ?? '';
-                        const cached = entry?.aiCache?.plans?.[key] ?? null;
-                        setPlanTopic(topic);
-                        setAiPlan(cached);
-                        setAiPlanSaved(!!cached);
-                        setAiError(false);
-                    }}
-                    allLabel={t('public.externalResources.topicAll')}
-                />
-                <button
-                    onClick={handleAiStudyPlan}
-                    disabled={aiLoading}
-                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl text-sm font-semibold px-4 py-2.5 border border-dashed border-[#E14219]/50 text-[#E14219] hover:bg-[#E14219]/5 dark:hover:bg-[#E14219]/10 transition-all disabled:opacity-50"
-                >
-                    {aiLoading ? <><Spinner />{t('public.externalResources.aiPlanLoading')}</> : aiPlan ? <>✕ {t('public.externalResources.aiPlanHide')}</> : <>✨ {t('public.externalResources.aiPlanCta')}</>}
-                </button>
-                {aiError && <p className="text-xs text-red-500 text-center">{t('public.externalResources.aiPlanError')}</p>}
-                {aiPlan && (
-                    <>
-                        <AiCard color="orange" title={`✨ ${t('public.externalResources.aiPlanTitle')}`}>{aiPlan}</AiCard>
+                {/* Tab bar */}
+                <div className="flex rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden text-xs font-semibold">
+                    {[
+                        { key: 'plan', icon: '✨', label: t('public.externalResources.aiPlanTitle') },
+                        { key: 'explain', icon: '🔍', label: t('public.externalResources.aiConceptCta') },
+                        { key: 'tasks', icon: '📝', label: t('public.externalResources.aiTasksTitle') },
+                    ].map((tab) => (
                         <button
-                            onClick={handleSaveAiPlan}
-                            disabled={aiPlanSaved}
-                            className={`self-end text-xs font-semibold px-3 py-1.5 rounded-lg transition-all ${aiPlanSaved ? 'text-green-600 dark:text-green-400 cursor-default' : 'text-[#E14219] border border-[#E14219]/40 hover:bg-[#E14219]/5'}`}
+                            key={tab.key}
+                            type="button"
+                            onClick={() => setAiTab(tab.key)}
+                            className={`flex-1 py-2 px-1 transition-colors ${
+                                aiTab === tab.key
+                                    ? 'bg-[#E14219] text-white'
+                                    : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'
+                            }`}
                         >
-                            {aiPlanSaved ? `✓ ${t('public.externalResources.aiPlanSaved')}` : `💾 ${t('public.externalResources.aiPlanSave')}`}
+                            {tab.icon} {tab.label}
                         </button>
-                    </>
-                )}
-
-                {/* Concept explainer */}
-                <div className="flex flex-col gap-2">
-                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">
-                        🔍 {t('public.externalResources.aiConceptCta')}
-                    </p>
-                    {studyPlan.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5">
-                            {studyPlan.map((w) => {
-                                const title = w.title?.[lang] ?? w.title?.ky ?? w.title?.en ?? `Week ${w.week}`;
-                                return (
-                                    <button
-                                        key={w.week}
-                                        onClick={() => { setConceptInput(title); setConceptResult(null); setConceptError(false); }}
-                                        className="px-2.5 py-1 rounded-full text-xs font-medium border border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer"
-                                    >
-                                        {title}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    )}
-                    <div className="flex gap-2">
-                        <input
-                            type="text"
-                            value={conceptInput}
-                            onChange={(e) => { setConceptInput(e.target.value); setConceptResult(null); setConceptError(false); }}
-                            onKeyDown={(e) => e.key === 'Enter' && handleConceptExplain()}
-                            placeholder={t('public.externalResources.aiConceptPlaceholder')}
-                            className="flex-1 min-w-0 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#1a1a1a] text-sm text-gray-700 dark:text-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#E14219]/30 placeholder-gray-400"
-                        />
-                        <button
-                            onClick={handleConceptExplain}
-                            disabled={conceptLoading || !conceptInput.trim()}
-                            className="flex-shrink-0 rounded-xl px-3 py-2 text-xs font-semibold bg-gradient-to-b from-[#FF8C6E] to-[#E14219] text-white disabled:opacity-40 hover:from-[#C2410C] hover:to-[#C2410C] transition-all"
-                        >
-                            {conceptLoading ? <Spinner size="w-3.5 h-3.5" /> : t('public.externalResources.aiConceptGenerate')}
-                        </button>
-                    </div>
-                    {conceptError && <p className="text-xs text-red-500">{t('public.externalResources.aiConceptError')}</p>}
-                    {conceptResult && (
-                        <AiCard color="blue" title={`🔍 ${t('public.externalResources.aiConceptTitle')}: ${conceptInput}`}>
-                            {conceptResult}
-                        </AiCard>
-                    )}
+                    ))}
                 </div>
 
-                {/* Practice tasks */}
-                {!practiceTasks && (
-                    <TopicPills
-                        weeks={studyPlan}
-                        lang={lang}
-                        selected={practiceTopic}
-                        onSelect={(topic) => {
-                            const key = topic ?? '';
-                            const cached = entry?.aiCache?.tasks?.[key] ?? null;
-                            setPracticeTopic(topic);
-                            setPracticeTasks(cached);
-                            setPracticeTasksSaved(!!cached);
-                        }}
-                        allLabel={t('public.externalResources.topicAll')}
-                    />
-                )}
-                <button
-                    onClick={handlePracticeTasks}
-                    disabled={practiceLoading}
-                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl text-sm font-semibold px-4 py-2.5 border border-dashed border-green-500/50 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/10 transition-all disabled:opacity-50"
-                >
-                    {practiceLoading ? <><Spinner />{t('public.externalResources.aiTasksLoading')}</> : practiceTasks ? <>✕ {t('public.externalResources.aiTasksHide')}</> : <>📝 {t('public.externalResources.aiTasksCta')}</>}
-                </button>
-                {practiceError && <p className="text-xs text-red-500 text-center">{t('public.externalResources.aiTasksError')}</p>}
-                {practiceTasks && (
-                    <>
-                        <AiCard color="green" title={`📝 ${t('public.externalResources.aiTasksTitle')}`}>{practiceTasks}</AiCard>
+                {/* Study plan tab */}
+                {aiTab === 'plan' && (
+                    <div className="flex flex-col gap-3">
+                        <TopicPills
+                            weeks={studyPlan}
+                            lang={lang}
+                            selected={planTopic}
+                            onSelect={(topic) => {
+                                const key = topic ?? '';
+                                const cached = entry?.aiCache?.plans?.[key] ?? null;
+                                setPlanTopic(topic);
+                                setAiPlan(cached);
+                                setAiPlanSaved(!!cached);
+                                setAiError(false);
+                            }}
+                            allLabel={t('public.externalResources.topicAll')}
+                        />
                         <button
-                            onClick={handleSavePracticeTasks}
-                            disabled={practiceTasksSaved}
-                            className={`self-end text-xs font-semibold px-3 py-1.5 rounded-lg transition-all ${practiceTasksSaved ? 'text-green-600 dark:text-green-400 cursor-default' : 'text-green-700 border border-green-500/40 hover:bg-green-50/50'}`}
+                            onClick={handleAiStudyPlan}
+                            disabled={aiLoading}
+                            className="w-full inline-flex items-center justify-center gap-2 rounded-xl text-sm font-semibold px-4 py-2.5 border border-dashed border-[#E14219]/50 text-[#E14219] hover:bg-[#E14219]/5 dark:hover:bg-[#E14219]/10 transition-all disabled:opacity-50"
                         >
-                            {practiceTasksSaved ? `✓ ${t('public.externalResources.aiPlanSaved')}` : `💾 ${t('public.externalResources.aiPlanSave')}`}
+                            {aiLoading ? <><Spinner />{t('public.externalResources.aiPlanLoading')}</> : aiPlan ? <>✕ {t('public.externalResources.aiPlanHide')}</> : <>✨ {t('public.externalResources.aiPlanCta')}</>}
                         </button>
-                    </>
+                        {aiError && <p className="text-xs text-red-500 text-center">{t('public.externalResources.aiPlanError')}</p>}
+                        {aiPlan && (
+                            <>
+                                <AiCard color="orange" title={`✨ ${t('public.externalResources.aiPlanTitle')}`}>{aiPlan}</AiCard>
+                                <button
+                                    onClick={handleSaveAiPlan}
+                                    disabled={aiPlanSaved}
+                                    className={`self-end text-xs font-semibold px-3 py-1.5 rounded-lg transition-all ${aiPlanSaved ? 'text-green-600 dark:text-green-400 cursor-default' : 'text-[#E14219] border border-[#E14219]/40 hover:bg-[#E14219]/5'}`}
+                                >
+                                    {aiPlanSaved ? `✓ ${t('public.externalResources.aiPlanSaved')}` : `💾 ${t('public.externalResources.aiPlanSave')}`}
+                                </button>
+                            </>
+                        )}
+                    </div>
+                )}
+
+                {/* Explain tab */}
+                {aiTab === 'explain' && (
+                    <div className="flex flex-col gap-2">
+                        {studyPlan.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5">
+                                {studyPlan.map((w) => {
+                                    const title = w.title?.[lang] ?? w.title?.ky ?? w.title?.en ?? `Week ${w.week}`;
+                                    const isActive = conceptInput === title;
+                                    return (
+                                        <button
+                                            key={w.week}
+                                            onClick={() => {
+                                                const cached = entry?.aiCache?.explanations?.[title] ?? null;
+                                                setConceptInput(title);
+                                                setConceptResult(cached);
+                                                setConceptSaved(!!cached);
+                                                setConceptError(false);
+                                            }}
+                                            className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors cursor-pointer ${isActive ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400'}`}
+                                        >
+                                            {title}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )}
+                        <div className="flex gap-2">
+                            <input
+                                type="text"
+                                value={conceptInput}
+                                onChange={(e) => { setConceptInput(e.target.value); setConceptResult(null); setConceptSaved(false); setConceptError(false); }}
+                                onKeyDown={(e) => e.key === 'Enter' && handleConceptExplain()}
+                                placeholder={t('public.externalResources.aiConceptPlaceholder')}
+                                className="flex-1 min-w-0 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#1a1a1a] text-sm text-gray-700 dark:text-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#E14219]/30 placeholder-gray-400"
+                            />
+                            <button
+                                onClick={handleConceptExplain}
+                                disabled={conceptLoading || !conceptInput.trim()}
+                                className="flex-shrink-0 rounded-xl px-3 py-2 text-xs font-semibold bg-gradient-to-b from-[#FF8C6E] to-[#E14219] text-white disabled:opacity-40 hover:from-[#C2410C] hover:to-[#C2410C] transition-all"
+                            >
+                                {conceptLoading ? <Spinner size="w-3.5 h-3.5" /> : t('public.externalResources.aiConceptGenerate')}
+                            </button>
+                        </div>
+                        {conceptError && <p className="text-xs text-red-500">{t('public.externalResources.aiConceptError')}</p>}
+                        {conceptResult && (
+                            <>
+                                <AiCard color="blue" title={`🔍 ${t('public.externalResources.aiConceptTitle')}: ${conceptInput}`}>
+                                    {conceptResult}
+                                </AiCard>
+                                <button
+                                    onClick={handleSaveConceptExplain}
+                                    disabled={conceptSaved}
+                                    className={`self-end text-xs font-semibold px-3 py-1.5 rounded-lg transition-all ${conceptSaved ? 'text-green-600 dark:text-green-400 cursor-default' : 'text-blue-600 border border-blue-400/40 hover:bg-blue-50/50 dark:hover:bg-blue-900/10'}`}
+                                >
+                                    {conceptSaved ? `✓ ${t('public.externalResources.aiConceptSaved')}` : `💾 ${t('public.externalResources.aiConceptSave')}`}
+                                </button>
+                            </>
+                        )}
+                    </div>
+                )}
+
+                {/* Practice tasks tab */}
+                {aiTab === 'tasks' && (
+                    <div className="flex flex-col gap-3">
+                        <TopicPills
+                            weeks={studyPlan}
+                            lang={lang}
+                            selected={practiceTopic}
+                            onSelect={(topic) => {
+                                const key = topic ?? '';
+                                const cached = entry?.aiCache?.tasks?.[key] ?? null;
+                                setPracticeTopic(topic);
+                                setPracticeTasks(cached);
+                                setPracticeTasksSaved(!!cached);
+                            }}
+                            allLabel={t('public.externalResources.topicAll')}
+                        />
+                        <button
+                            onClick={handlePracticeTasks}
+                            disabled={practiceLoading}
+                            className="w-full inline-flex items-center justify-center gap-2 rounded-xl text-sm font-semibold px-4 py-2.5 border border-dashed border-green-500/50 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/10 transition-all disabled:opacity-50"
+                        >
+                            {practiceLoading ? <><Spinner />{t('public.externalResources.aiTasksLoading')}</> : practiceTasks ? <>✕ {t('public.externalResources.aiTasksHide')}</> : <>📝 {t('public.externalResources.aiTasksCta')}</>}
+                        </button>
+                        {practiceError && <p className="text-xs text-red-500 text-center">{t('public.externalResources.aiTasksError')}</p>}
+                        {practiceTasks && (
+                            <>
+                                <AiCard color="green" title={`📝 ${t('public.externalResources.aiTasksTitle')}`}>{practiceTasks}</AiCard>
+                                <button
+                                    onClick={handleSavePracticeTasks}
+                                    disabled={practiceTasksSaved}
+                                    className={`self-end text-xs font-semibold px-3 py-1.5 rounded-lg transition-all ${practiceTasksSaved ? 'text-green-600 dark:text-green-400 cursor-default' : 'text-green-700 border border-green-500/40 hover:bg-green-50/50'}`}
+                                >
+                                    {practiceTasksSaved ? `✓ ${t('public.externalResources.aiTasksSaved')}` : `💾 ${t('public.externalResources.aiTasksSave')}`}
+                                </button>
+                            </>
+                        )}
+                    </div>
                 )}
             </div>
 
@@ -499,13 +594,6 @@ const ResourceDetailPanel = ({
                 </>
             )}
 
-            {/* Remove from plan */}
-            <button
-                onClick={() => removeResource(slug)}
-                className="self-start text-xs text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors mt-1"
-            >
-                {t('studentDashboard.freeResources.detail.removeFromPlan')}
-            </button>
         </div>
     );
 };
@@ -636,10 +724,7 @@ const FreeResourcesTab = () => {
                 <div className="border-b lg:border-b-0 lg:border-r border-gray-100 dark:border-white/10 overflow-y-auto">
                     {filtered.length ? (
                         filtered.map((entry) => {
-                            const staticRes = getResourceBySlug(entry.slug);
-                            const weeksTotal = staticRes?.content?.studyPlan?.length ?? 0;
-                            const weeksDone = entry.checkedWeeks?.length ?? 0;
-                            const pct = weeksTotal > 0 ? Math.round((weeksDone / weeksTotal) * 100) : null;
+                            const pct = entry.progressPercent > 0 ? entry.progressPercent : null;
                             const isSelected = entry.slug === selectedSlug;
 
                             return (

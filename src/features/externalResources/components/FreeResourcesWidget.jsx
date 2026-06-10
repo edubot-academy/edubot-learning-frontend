@@ -2,7 +2,6 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import useResourceProgress from '../hooks/useResourceProgress';
-import { getResourceBySlug } from '../data/externalResources';
 
 const STATUS_STYLE = {
     saved: 'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-300',
@@ -68,10 +67,7 @@ const FreeResourcesWidget = ({ userId }) => {
 
             <div className="divide-y divide-edubot-line/60 dark:divide-slate-700/40">
                 {entries.map((entry) => {
-                    const staticRes = getResourceBySlug(entry.slug);
-                    const weeksTotal = staticRes?.content?.studyPlan?.length ?? 0;
-                    const weeksDone = entry.checkedWeeks?.length ?? 0;
-                    const pct = weeksTotal > 0 ? Math.round((weeksDone / weeksTotal) * 100) : null;
+                    const pct = entry.progressPercent > 0 ? entry.progressPercent : null;
                     return (
                         <Link
                             key={entry.slug}
@@ -92,7 +88,7 @@ const FreeResourcesWidget = ({ userId }) => {
                                             />
                                         </div>
                                         <span className="text-xs text-edubot-muted dark:text-slate-400 w-9 text-right flex-shrink-0">
-                                            {weeksDone}/{weeksTotal}
+                                            {pct}%
                                         </span>
                                     </div>
                                 )}

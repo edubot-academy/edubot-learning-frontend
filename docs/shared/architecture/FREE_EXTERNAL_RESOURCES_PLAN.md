@@ -1,6 +1,6 @@
 # Free External Learning Resources — EduBot Learning Integration Plan
 
-_Last updated: 2026-06-10. Phases 1–7 complete (frontend + backend) — shipped as v1.16.0. Post-launch: 11 bug fixes and admin paste-fill feature shipped as v1.16.1. See §22 for task status and §28–§36 for implementation notes._
+_Last updated: 2026-06-11. Phases 1–7 complete (frontend + backend) — shipped as v1.16.0. Post-launch: 11 bug fixes and admin paste-fill feature shipped as v1.16.1. AI companion UX overhaul and static-data migration fixes shipped as v1.16.2. See §22 for task status and §28–§37 for implementation notes._
 
 ## 1. Purpose
 
@@ -2491,3 +2491,81 @@ Three additional fixes were applied when reviewing the post-login and API layers
 **Prompt template** provided to the admin so they can generate valid JSON from any AI tool. The template instructs the AI to output all three languages and 4–6 study plan weeks.
 
 **i18n:** 6 new keys added under `adminExtResources.autofill` (`modeUrl`, `modePaste`) and a new `adminExtResources.paste` namespace (`title`, `placeholder`, `fill`, `errorInvalidJson`) across `ky`, `en`, `ru` admin locale files.
+
+---
+
+## 37. Post-v1.16.1: AI Companion UX Overhaul and Static-data Migration (v1.16.2)
+
+_Completed: 2026-06-11._
+
+### 37.1 Static-data migration fixes
+
+Several frontend components were still reading from `src/features/externalResources/data/externalResources.js` instead of the live API after the Phase 4 migration, bypassing `isPublished` filtering.
+
+**Components fixed:**
+
+| Component | Problem | Fix |
+|---|---|---|
+| `Courses.jsx` | `getFeaturedResources()` from static file | `useEffect` → `fetchExternalResources({ featured: true })` |
+| `ExternalResourcesHomeSection.jsx` | `getFeaturedResources()` from static file | Same API call pattern; `if (!preview.length) return null` added |
+| `FreeResourcesTab.jsx` | `getResourceBySlug(slug)` for study plan and progress bar | `fetchExternalResourceBySlug(slug)` in `useEffect`; progress bar uses `entry.progressPercent` |
+| `FreeResourcesWidget.jsx` | `getResourceBySlug` for week-count progress bar | `entry.progressPercent` directly from context |
+| `ExternalResourceDetails.jsx` | `getResourceBySlug()` as initial state before API response | `useState(null)` + `loading: true`; fully API-driven on slug change |
+
+**Runtime error fixed:** `FreeResourcesTab.jsx:646 Uncaught ReferenceError: getResourceBySlug is not defined` — a second usage in the list-panel render was not caught when the static import was removed; replaced with `entry.progressPercent`.
+
+**Static data file:** `cs50-introduction-to-computer-science` entry removed. `relatedCourseSlugs` references in `cs50-ai-with-python` and `freecodecamp-python-scientific-computing` cleared to `[]`.
+
+### 37.2 AI companion tab layout
+
+The AI companion section in `ResourceDetailPanel` (`FreeResourcesTab.jsx`) was previously three stacked vertical blocks. Replaced with a 3-tab layout:
+
+| Tab | Key | Accent colour | Cache key namespace |
+|---|---|---|---|
+| ✨ Study Plan | `'plan'` | orange | `aiCache.plans` |
+| 🔍 Explain | `'explain'` | blue | `aiCache.explanations` |
+| 📝 Practice | `'tasks'` | green | `aiCache.tasks` |
+
+Active tab highlighted in EduBot orange. Each tab renders only its own content.
+
+### 37.3 AI explanation save button
+
+Before this change, the explanation result was auto-saved on generation. This was removed in favour of an explicit `💾 Save explanation` button, matching the behaviour of the study plan and practice tasks tabs.
+
+New handler `handleSaveConceptExplain` calls `saveAiContent(slug, 'explanations', conceptInput.trim(), conceptResult)`. `conceptSaved` state tracks the committed state and disables the button after save.
+
+### 37.4 Per-tab save labels
+
+Previously all three save buttons used the generic `aiPlanSave` / `aiPlanSaved` keys. Six new i18n keys added across `ky`, `en`, `ru` public locale files:
+
+| Key | EN | RU | KY |
+|---|---|---|---|
+| `aiConceptSave` | Save explanation | Сохранить объяснение | Түшүндүрмөнү сактоо |
+| `aiConceptSaved` | Explanation saved | Объяснение сохранено | Түшүндүрмө сакталды |
+| `aiTasksSave` | Save tasks | Сохранить задания | Тапшырмаларды сактоо |
+| `aiTasksSaved` | Tasks saved | Задания сохранены | Тапшырмалар сакталды |
+
+### 37.5 Remove-from-list UX
+
+**Before:** A small text link "Пландан өчүрүү" (Remove from plan) at the bottom of the detail panel. Single click deleted the entry immediately with no confirmation.
+
+**After:**
+
+- **Label changed** to "Remove from my list" (`removeFromPlan` updated in all six locale files — `ky`/`en`/`ru` student + public). Avoids confusion with the AI-generated study plan.
+- **Relocated** to the top-right of the title block as a subtle trash icon (`w-4 h-4`). Turns red on hover.
+- **Two-step confirmation**: first click reveals an inline prompt ("Remove this course from your list? [Yes, remove] [Cancel]"). The `confirmingRemove` boolean state is reset when navigating to a different resource.
+- Same pattern applied to `ExternalResourceDetails.jsx`.
+
+New i18n keys: `removeConfirm`, `removeConfirmYes`, `removeConfirmCancel` in both `student.js` and `public.js` locale files for all three languages.
+
+### 37.6 AI tab cache consistency fixes
+
+**Explain pills:**
+- Previously `onClick` called `setConceptResult(null)`, clearing the result even if the concept had been previously explained and saved.
+- Now loads `entry?.aiCache?.explanations?.[title] ?? null` on click, identical to the plan-tab pill pattern.
+- `conceptSaved` state set to `!!cached` on pill click.
+- Active pill highlighted in blue (`border-blue-400 bg-blue-50`).
+
+**Practice tasks pills:**
+- Previously wrapped in `{!practiceTasks && (...)}` — pills disappeared after generation, making it impossible to switch topics.
+- Wrapper removed; pills always visible. Selecting a new topic loads from cache or clears tasks so the user can regenerate for that topic.

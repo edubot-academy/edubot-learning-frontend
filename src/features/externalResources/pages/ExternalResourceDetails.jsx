@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import { AuthContext } from '@app/providers';
 import { API_BASE_URL } from '../../../config';
 import ExternalResourceAuthPrompt from '../components/ExternalResourceAuthPrompt';
-import { getResourceBySlug, PROVIDER_COLORS, PROVIDER_LOGOS, resolveLabel } from '../data/externalResources';
+import { PROVIDER_COLORS, PROVIDER_LOGOS, resolveLabel } from '../data/externalResources';
 import { fetchExternalResourceBySlug, uploadResourceCertificate } from '../api';
 import useResourceProgress from '../hooks/useResourceProgress';
 
@@ -94,33 +94,26 @@ const ExternalResourceDetails = () => {
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
     const [coverFailed, setCoverFailed] = useState(false);
-    const [resource, setResource] = useState(() => getResourceBySlug(slug));
-    const [loading, setLoading] = useState(false);
+    const [resource, setResource] = useState(null);
+    const [loading, setLoading] = useState(true);
     const [notFound, setNotFound] = useState(false);
     const [certUploading, setCertUploading] = useState(false);
+    const [confirmingRemove, setConfirmingRemove] = useState(false);
 
     useEffect(() => {
         let cancelled = false;
-        if (!getResourceBySlug(slug)) setLoading(true);
+        setLoading(true);
+        setNotFound(false);
         fetchExternalResourceBySlug(slug)
             .then((data) => {
                 if (!cancelled) {
-                    const hasContent = data.content && Object.keys(data.content).length > 0;
-                    const staticData = getResourceBySlug(slug);
-                    setResource({
-                        ...data,
-                        priceLabel: staticData?.priceLabel ?? data.priceLabel,
-                        durationLabel: staticData?.durationLabel ?? data.durationLabel,
-                        certificateLabel: staticData?.certificateLabel ?? data.certificateLabel,
-                        content: hasContent ? data.content : (staticData?.content ?? data.content),
-                    });
+                    setResource(data);
                     setLoading(false);
                 }
             })
             .catch(() => {
                 if (!cancelled) {
-                    const fallback = getResourceBySlug(slug);
-                    if (!fallback) setNotFound(true);
+                    setNotFound(true);
                     setLoading(false);
                 }
             });
@@ -560,12 +553,32 @@ const ExternalResourceDetails = () => {
                                             ✓ {t('public.externalResources.markComplete')}
                                         </button>
                                     )}
-                                    <button
-                                        onClick={() => removeResource(resource.slug)}
-                                        className="text-sm text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-                                    >
-                                        {t('public.externalResources.removeFromPlan')}
-                                    </button>
+                                    {confirmingRemove ? (
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                                                {t('public.externalResources.removeConfirm')}
+                                            </span>
+                                            <button
+                                                onClick={() => removeResource(resource.slug)}
+                                                className="text-xs font-semibold text-red-500 hover:text-red-600 dark:text-red-400 transition-colors"
+                                            >
+                                                {t('public.externalResources.removeConfirmYes')}
+                                            </button>
+                                            <button
+                                                onClick={() => setConfirmingRemove(false)}
+                                                className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                                            >
+                                                {t('public.externalResources.removeConfirmCancel')}
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <button
+                                            onClick={() => setConfirmingRemove(true)}
+                                            className="text-sm text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                                        >
+                                            {t('public.externalResources.removeFromPlan')}
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         )}

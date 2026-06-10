@@ -67,105 +67,6 @@ export const PROVIDER_LOGOS = {
 
 export const EXTERNAL_RESOURCES = [
     {
-        slug: 'cs50-introduction-to-computer-science',
-        title: 'CS50: Introduction to Computer Science',
-        provider: 'Harvard University',
-        providerKey: 'harvard',
-        url: 'https://cs50.harvard.edu/x/',
-        coverImageUrl: 'https://i.ytimg.com/vi/8mAITcNt710/maxresdefault.jpg',
-        category: 'programming',
-        level: 'beginner',
-        priceLabel: { ky: 'Акысыз', ru: 'Бесплатно', en: 'Free' },
-        certificateLabel: { ky: 'Сертификат бар', ru: 'Сертификат есть', en: 'Certificate available' },
-        durationLabel: { ky: '12 апта', ru: '12 недель', en: '12 weeks' },
-        isFeatured: true,
-        content: {
-            shortDescription: {
-                ky: 'Гарвард университетинин программалоого киришүү курсу. CS50 — дүйнөнүн эң таанымал акысыз CS курсу. Толугу менен акысыз.',
-                en: "Harvard University's introduction to computer science. CS50 is the world's most recognized free CS course. Completely free to audit.",
-                ru: 'Вводный курс по информатике Гарвардского университета. CS50 — самый известный бесплатный курс по CS в мире. Полностью бесплатен для аудита.',
-            },
-            whatYouWillLearn: {
-                ky: [
-                    'C жана Python программалоо тилдерин',
-                    'Алгоритмдерди жана маалымат структураларын',
-                    'Веб иштеп чыгуунун негиздерин',
-                    'SQL жана маалымат базаларын',
-                    'Программалоодо чечим кабыл алуу',
-                ],
-                en: [
-                    'C and Python programming languages',
-                    'Algorithms and data structures',
-                    'Web development fundamentals',
-                    'SQL and databases',
-                    'Problem-solving in programming',
-                ],
-                ru: [
-                    'Языки программирования C и Python',
-                    'Алгоритмы и структуры данных',
-                    'Основы веб-разработки',
-                    'SQL и базы данных',
-                    'Решение задач в программировании',
-                ],
-            },
-            whoIsItFor: {
-                ky: [
-                    'Программалоону жаңыдан баштагандар',
-                    'IT чөйрөсүнө кирүүнү каалагандар',
-                    'Системалуу CS билим алгысы келгендер',
-                    'Техникалык эмес тармактардан IT-га өтүүчүлөр',
-                ],
-                en: [
-                    'Complete beginners to programming',
-                    'Those looking to enter the IT field',
-                    'Those seeking a solid CS foundation',
-                    'Career changers from non-technical backgrounds',
-                ],
-                ru: [
-                    'Полные новички в программировании',
-                    'Желающие войти в IT-сферу',
-                    'Те, кто хочет получить системное CS-образование',
-                    'Специалисты из нетехнических областей',
-                ],
-            },
-            whyRecommended: {
-                ky: 'CS50 — кыргыз студенттери үчүн идеалдуу башлангыч чекити. Курстун педагогикалык сапаты дүйнөдөгү эң жогорку деңгээлде. Дэвид Малан аркылуу берилүүчү лекциялар мотивациялуу жана так. Сертификаты эмгек базарында жогору бааланат.',
-                en: 'CS50 is the ideal starting point for any beginner. The course quality is among the highest in the world. Lectures by David Malan are motivating and clear. The certificate is highly valued in the job market.',
-                ru: 'CS50 — идеальная отправная точка для любого новичка. Качество курса — одно из лучших в мире. Лекции Дэвида Малана мотивируют и дают чёткое понимание. Сертификат высоко ценится на рынке труда.',
-            },
-            studyPlan: [
-                { week: 1, title: { ky: 'C тилине киришүү', en: 'Intro to C', ru: 'Введение в C' }, description: { ky: 'Scratch, C тилинин негиздери, айнымалдар, шарттар', en: 'Scratch, C basics, variables, conditions', ru: 'Scratch, основы C, переменные, условия' } },
-                { week: 2, title: { ky: 'Массивдер', en: 'Arrays', ru: 'Массивы' }, description: { ky: 'Функциялар, массивдер, командалык аргументтер', en: 'Functions, arrays, command-line arguments', ru: 'Функции, массивы, аргументы командной строки' } },
-                { week: 3, title: { ky: 'Алгоритмдер', en: 'Algorithms', ru: 'Алгоритмы' }, description: { ky: 'Издөө жана иреттөө алгоритмдери, Big-O', en: 'Search and sort algorithms, Big-O', ru: 'Алгоритмы поиска и сортировки, Big-O' } },
-                { week: 4, title: { ky: 'Эс тутум', en: 'Memory', ru: 'Память' }, description: { ky: 'Эс тутум, указатели, heap жана stack', en: 'Memory, pointers, heap and stack', ru: 'Память, указатели, heap и stack' } },
-                { week: 5, title: { ky: 'Маалымат структуралары', en: 'Data Structures', ru: 'Структуры данных' }, description: { ky: 'Байланган тизмелер, дарактар, хэш таблицалары', en: 'Linked lists, trees, hash tables', ru: 'Связные списки, деревья, хеш-таблицы' } },
-                { week: 6, title: { ky: 'Python', en: 'Python', ru: 'Python' }, description: { ky: 'Python тилине өтүү, кыскача жазуу', en: 'Transitioning to Python, concise syntax', ru: 'Переход на Python, лаконичный синтаксис' } },
-                { week: 7, title: { ky: 'SQL', en: 'SQL', ru: 'SQL' }, description: { ky: 'SQL, маалымат базалары, SQLite', en: 'SQL, databases, SQLite', ru: 'SQL, базы данных, SQLite' } },
-                { week: 8, title: { ky: 'HTML / CSS / JavaScript', en: 'HTML / CSS / JavaScript', ru: 'HTML / CSS / JavaScript' }, description: { ky: 'Интернеттин негиздери, DOM, React кириш', en: 'Web fundamentals, DOM, intro to React', ru: 'Основы веба, DOM, введение в React' } },
-                { week: 9, title: { ky: 'Flask', en: 'Flask', ru: 'Flask' }, description: { ky: 'Python Flask менен серверлик веб-иштеп чыгуу', en: 'Server-side web development with Python Flask', ru: 'Серверная веб-разработка с Python Flask' } },
-                { week: 10, title: { ky: 'Emoji', en: 'Final Project', ru: 'Финальный проект' }, description: { ky: 'Cybersecurity, AI жана финалдык долбоор', en: 'Cybersecurity, AI and final project', ru: 'Кибербезопасность, AI и финальный проект' } },
-            ],
-            difficultyNotes: {
-                ky: [
-                    'Лекциялар англис тилинде — субтитрлер бар',
-                    'Жума сайын 5–10 саат иш убактысы талап кылынат',
-                    'Problem set тапшырмалары жеңил эмес, бирок чечүүгө болот',
-                ],
-                en: [
-                    'Lectures are in English — subtitles available',
-                    '5–10 hours of work per week required',
-                    'Problem sets are challenging but achievable',
-                ],
-                ru: [
-                    'Лекции на английском — субтитры доступны',
-                    'Требуется 5–10 часов работы в неделю',
-                    'Задачи сложные, но решаемые',
-                ],
-            },
-            relatedCourseSlugs: [],
-        },
-    },
-    {
         slug: 'google-it-support-professional',
         title: 'Google IT Support Professional Certificate',
         provider: 'Google (Coursera)',
@@ -775,7 +676,7 @@ export const EXTERNAL_RESOURCES = [
                     'Математическая база будет полезна',
                 ],
             },
-            relatedCourseSlugs: ['cs50-introduction-to-computer-science'],
+            relatedCourseSlugs: [],
         },
     },
     {
@@ -856,7 +757,7 @@ export const EXTERNAL_RESOURCES = [
                     'Базовые знания программирования будут полезны',
                 ],
             },
-            relatedCourseSlugs: ['cs50-introduction-to-computer-science'],
+            relatedCourseSlugs: [],
         },
     },
     {

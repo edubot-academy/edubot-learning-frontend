@@ -1,15 +1,24 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import SectionContainer from '@features/marketing/components/SectionContainer';
 import Button from '@shared/ui/Button';
 import ExternalResourceCard from './ExternalResourceCard';
-import { getFeaturedResources } from '../data/externalResources';
+import { fetchExternalResources } from '../api';
 
 const HOME_PREVIEW_COUNT = 3;
 
 const ExternalResourcesHomeSection = () => {
     const { t } = useTranslation();
-    const preview = getFeaturedResources().slice(0, HOME_PREVIEW_COUNT);
+    const [preview, setPreview] = useState([]);
+
+    useEffect(() => {
+        fetchExternalResources({ featured: true })
+            .then((data) => setPreview(Array.isArray(data) ? data.slice(0, HOME_PREVIEW_COUNT) : []))
+            .catch(() => setPreview([]));
+    }, []);
+
+    if (!preview.length) return null;
 
     return (
         <SectionContainer

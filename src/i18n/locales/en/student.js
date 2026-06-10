@@ -97,7 +97,10 @@ export const student = {
                 aiSection: "AI Learning Companion",
                 officialSite: "Official course",
                 edubotGuide: "EduBot guide",
-                removeFromPlan: "Remove from plan"
+                removeFromPlan: "Remove from my list",
+                removeConfirm: "Remove this course from your list?",
+                removeConfirmYes: "Yes, remove",
+                removeConfirmCancel: "Cancel"
             }
         },
         overview: {

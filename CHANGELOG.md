@@ -2,6 +2,41 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.16.2] - 2026-06-11
+
+### Added
+
+- AI companion in `ResourceDetailPanel` reorganised into a 3-tab layout: **Study Plan**, **Explain**, **Practice** — previously all three tools were stacked vertically in one scrollable block.
+- Save button for AI explanations (`💾 Save explanation`) — previously only study plan and practice tasks had save buttons; explanation results were auto-saved and could not be explicitly committed.
+- Per-tab save labels: `aiConceptSave`/`aiConceptSaved`, `aiTasksSave`/`aiTasksSaved` added to `ky`, `en`, `ru` public locale files (previously all three tabs shared the generic "Save plan" / "Plan saved" strings).
+- Inline confirmation for "Remove from my list": first click shows "Remove this course from your list? [Yes, remove] [Cancel]" — no accidental single-click removal. Confirmation state is also wired in `ExternalResourceDetails.jsx`.
+- `removeConfirm`, `removeConfirmYes`, `removeConfirmCancel` keys added to `ky`, `en`, `ru` student and public locale files.
+
+### Changed
+
+- "Remove from plan" button relocated from the bottom of `ResourceDetailPanel` to the **top-right of the title block** as a subtle trash icon — removes ambiguity with the AI-generated study plan below.
+- "Remove from plan" relabelled to **"Remove from my list"** (`removeFromPlan` key updated in all six locale files) — the old label was confused with "remove AI study plan content".
+- Explain tab pills now **load cached explanations from `aiCache.explanations[title]`** on click (same pattern as Study Plan tab) and highlight the active pill — previously clicking a pill cleared the current result and did not restore a previously saved explanation.
+- Practice Tasks pills are now **always visible** regardless of whether tasks are currently shown — previously pills were hidden behind a `!practiceTasks` guard, making it impossible to switch topics after generating tasks.
+
+### Fixed
+
+- `FreeResourcesTab.jsx` and `ExternalResourcesHomeSection.jsx` were reading featured resources from the static JS data file instead of the API, bypassing `isPublished` filtering and potentially showing draft resources.
+- `FreeResourcesWidget.jsx` was computing progress-bar percentage from `studyPlan.length` via the static file — replaced with `entry.progressPercent` from the API.
+- `ExternalResourceDetails.jsx` was initialising resource state from `getResourceBySlug()` (static file) before the API fetch completed — now starts as `null` with a loading state so no stale data is shown.
+- `FreeResourcesTab.jsx:646` runtime `ReferenceError: getResourceBySlug is not defined` — a second usage in the list-panel render was missed when the static import was removed; replaced with `entry.progressPercent`.
+- `FreeResourcesTab.jsx` and `ExternalResourceDetails.jsx` were not making API calls when navigated to from the course details page — `fetchExternalResourceBySlug` is now called inside a `useEffect` on slug change.
+- CS50: Introduction to Computer Science removed from `externalResources.js` static data; `relatedCourseSlugs` references in `cs50-ai-with-python` and `freecodecamp-python-scientific-computing` cleared.
+
+### Verification
+
+- `npm run lint`
+- `npm run build`
+- Dashboard → Free Resources tab: select a saved resource → AI companion tabs function independently; switching Explain pills loads cached explanations; switching Practice pills loads cached tasks; pills remain visible after generation.
+- "Remove from my list" trash icon in title block → inline confirmation appears → confirm removes entry; cancel dismisses.
+
+---
+
 ## [1.16.1] - 2026-06-10
 
 ### Added

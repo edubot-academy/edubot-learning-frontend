@@ -7,7 +7,7 @@ import { FiAlertTriangle, FiBookOpen, FiRefreshCw, FiSliders } from 'react-icons
 import { useTranslation } from 'react-i18next';
 import SectionContainer from '@features/marketing/components/SectionContainer';
 import ExternalResourceCard from '@features/externalResources/components/ExternalResourceCard';
-import { getFeaturedResources } from '@features/externalResources/data/externalResources';
+import { fetchExternalResources } from '@features/externalResources/api';
 
 const getCourseType = (course) =>
     String(course?.courseType || course?.type || 'video').toLowerCase();
@@ -17,8 +17,6 @@ const getCoursePrice = (course) => {
     return Number.isFinite(price) ? price : 0;
 };
 
-const COURSES_FREE_PREVIEW = getFeaturedResources().slice(0, 3);
-
 const CoursesPage = () => {
     const { t } = useTranslation();
     const [courses, setCourses] = useState([]);
@@ -26,6 +24,7 @@ const CoursesPage = () => {
     const [error, setError] = useState('');
     const [sortBy, setSortBy] = useState('recommended');
     const [visibleCount, setVisibleCount] = useState(9);
+    const [featuredResources, setFeaturedResources] = useState([]);
 
     const loadCourses = useCallback(async () => {
         setLoading(true);
@@ -44,6 +43,12 @@ const CoursesPage = () => {
     useEffect(() => {
         loadCourses();
     }, [loadCourses]);
+
+    useEffect(() => {
+        fetchExternalResources({ featured: true })
+            .then((data) => setFeaturedResources(Array.isArray(data) ? data.slice(0, 3) : []))
+            .catch(() => setFeaturedResources([]));
+    }, []);
 
     const publicVideoCourses = useMemo(() => {
         return courses
@@ -227,7 +232,7 @@ const CoursesPage = () => {
                         {t('public.externalResources.viewAll')} →
                     </Link>
                 }
-                items={COURSES_FREE_PREVIEW}
+                items={featuredResources}
                 CardComponent={ExternalResourceCard}
             />
         </div>
