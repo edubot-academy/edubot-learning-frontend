@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { PROVIDER_COLORS, PROVIDER_LOGOS } from '../data/externalResources';
+import { PROVIDER_COLORS, PROVIDER_LOGOS, resolveLabel } from '../data/externalResources';
 
 const CATEGORY_ICONS = {
     programming: '💻',
@@ -60,16 +60,25 @@ const CardHeader = ({ coverImageUrl, providerKey, provider, isFeatured, category
                         className="absolute inset-0 w-full h-full object-cover"
                         onError={() => setImageFailed(true)}
                     />
-                    {/* dark scrim so text/logo read cleanly over any image */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-black/10" />
                 </>
             ) : (
-                <div
-                    className="absolute inset-0"
-                    style={{
-                        background: `linear-gradient(135deg, ${color}ee 0%, ${color}88 100%)`,
-                    }}
-                />
+                <>
+                    <div className="absolute inset-0" style={{ backgroundColor: color }} />
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/25 to-black/30" />
+                    <div
+                        className="absolute inset-0 opacity-10"
+                        style={{
+                            backgroundImage: `repeating-linear-gradient(-45deg, transparent, transparent 10px, rgba(255,255,255,0.7) 10px, rgba(255,255,255,0.7) 11px)`,
+                        }}
+                    />
+                    <span
+                        className="absolute select-none pointer-events-none"
+                        style={{ fontSize: '5rem', lineHeight: 1, bottom: '-0.5rem', right: '0.75rem', opacity: 0.15, filter: 'grayscale(1)' }}
+                    >
+                        {categoryIcon}
+                    </span>
+                </>
             )}
 
             {/* Category icon — top right */}
@@ -111,7 +120,13 @@ const ExternalResourceCard = ({
 }) => {
     const { t, i18n } = useTranslation();
     const lang = i18n.language?.split('-')[0] ?? 'ky';
-    const isFree = isFreeOverride ?? /акысыз/i.test(priceLabel ?? '');
+    const priceLabelText = resolveLabel(priceLabel, lang);
+    const durationLabelText = resolveLabel(durationLabel, lang);
+    const certificateLabelText = resolveLabel(certificateLabel, lang);
+    const isFree = isFreeOverride ?? (
+        /акысыз/i.test(typeof priceLabel === 'object' ? priceLabel.ky : priceLabel ?? '') ||
+        /free|бесплатно/i.test(typeof priceLabel === 'object' ? priceLabel.en ?? priceLabel.ru : priceLabel ?? '')
+    );
 
     return (
         <div className="flex flex-col rounded-2xl overflow-hidden border border-gray-100 dark:border-white/10 bg-white dark:bg-[#1a1a1a] hover:-translate-y-1 hover:shadow-xl transition-all duration-300 group">
@@ -140,16 +155,16 @@ const ExternalResourceCard = ({
                 <div className="flex flex-wrap gap-1.5 pt-1">
                     {isFree ? (
                         <span className="text-xs px-2 py-0.5 rounded-full border font-medium bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800">
-                            {priceLabel}
+                            {priceLabelText}
                         </span>
-                    ) : priceLabel ? (
+                    ) : priceLabelText ? (
                         <span className="text-xs px-2 py-0.5 rounded-full border font-medium bg-gray-50 dark:bg-white/5 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700">
-                            {priceLabel}
+                            {priceLabelText}
                         </span>
                     ) : null}
-                    {durationLabel && (
+                    {durationLabelText && (
                         <span className="text-xs px-2 py-0.5 rounded-full border font-medium bg-gray-50 dark:bg-white/5 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700">
-                            ⏱ {durationLabel}
+                            ⏱ {durationLabelText}
                         </span>
                     )}
                     {level && (
@@ -159,10 +174,10 @@ const ExternalResourceCard = ({
                     )}
                 </div>
 
-                {certificateLabel && (
+                {certificateLabelText && (
                     <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
                         <span>🏅</span>
-                        <span>{certificateLabel}</span>
+                        <span>{certificateLabelText}</span>
                     </div>
                 )}
             </div>

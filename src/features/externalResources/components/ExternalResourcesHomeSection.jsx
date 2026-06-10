@@ -3,13 +3,13 @@ import { useTranslation } from 'react-i18next';
 import SectionContainer from '@features/marketing/components/SectionContainer';
 import Button from '@shared/ui/Button';
 import ExternalResourceCard from './ExternalResourceCard';
-import { EXTERNAL_RESOURCES } from '../data/externalResources';
+import { getFeaturedResources } from '../data/externalResources';
 
 const HOME_PREVIEW_COUNT = 3;
 
 const ExternalResourcesHomeSection = () => {
     const { t } = useTranslation();
-    const preview = EXTERNAL_RESOURCES.slice(0, HOME_PREVIEW_COUNT);
+    const preview = getFeaturedResources().slice(0, HOME_PREVIEW_COUNT);
 
     return (
         <SectionContainer

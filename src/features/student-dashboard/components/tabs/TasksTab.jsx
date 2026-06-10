@@ -213,8 +213,19 @@ const validateSubmissionFile = (file, task = {}, t) => {
 
 const getNormalizedStatus = (task = {}) => {
     if (task.kind === 'activity') {
-        if (task.activityStatus === 'done' && !task.mySubmission && !task.myAttempt) return 'unavailable';
-        return String(task.status || '').toLowerCase() || 'pending';
+        const activityStatus = String(task.activityStatus || '').toLowerCase();
+        const submissionStatus = String(
+            task.mySubmission?.status || task.myAttempt?.status || task.submissionStatus || task.status || ''
+        ).toLowerCase();
+
+        if (submissionStatus === 'needs_revision') return 'needs_revision';
+        if (submissionStatus === 'rejected') return 'rejected';
+        if (submissionStatus === 'completed' || submissionStatus === 'approved' || task.myAttempt?.passed) {
+            return 'completed';
+        }
+        if (submissionStatus === 'submitted' || task.mySubmission || task.myAttempt) return 'submitted';
+        if (activityStatus === 'active') return 'pending';
+        return 'unavailable';
     }
 
     const submissionStatus = String(
@@ -336,7 +347,7 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
             tasks.map((task) => {
                 const key = getTaskKey(task);
                 const status = getNormalizedStatus(task);
-                const meta = STATUS_META[status];
+                const meta = STATUS_META[status] || STATUS_META.unavailable;
                 const course = getTaskCourse(task, t);
                 const title = getTaskTitle(task, t);
                 const description = getTaskDescription(task, t);

@@ -1,3 +1,40 @@
+// Lookup table for Kyrgyz-only label strings returned by older API responses.
+// Keyed by the lowercase Kyrgyz value so API-returned plain strings are translated
+// transparently without requiring a backend migration.
+const LABEL_TRANSLATIONS = {
+    // price
+    'акысыз':                           { ky: 'Акысыз',                           ru: 'Бесплатно',                         en: 'Free' },
+    'толугу менен акысыз':              { ky: 'Толугу менен акысыз',              ru: 'Полностью бесплатно',               en: 'Completely Free' },
+    'акысыз / coursera financial aid':  { ky: 'Акысыз / Coursera Financial Aid',  ru: 'Бесплатно / Coursera Financial Aid', en: 'Free / Coursera Financial Aid' },
+    // certificate
+    'сертификат бар':                   { ky: 'Сертификат бар',                   ru: 'Сертификат есть',                   en: 'Certificate available' },
+    'кесипкөй сертификат':              { ky: 'Кесипкөй сертификат',              ru: 'Профессиональный сертификат',        en: 'Professional certificate' },
+    'ачкычтамга бар':                   { ky: 'Ачкычтамга бар',                   ru: 'Есть значки',                       en: 'Badges available' },
+    'портфолио долбоорлору':            { ky: 'Портфолио долбоорлору',            ru: 'Проекты для портфолио',              en: 'Portfolio projects' },
+    // duration
+    '12 апта':                          { ky: '12 апта',   ru: '12 недель',   en: '12 weeks' },
+    '7 апта':                           { ky: '7 апта',    ru: '7 недель',    en: '7 weeks' },
+    '6 ай':                             { ky: '6 ай',      ru: '6 месяцев',   en: '6 months' },
+    '7 ай':                             { ky: '7 ай',      ru: '7 месяцев',   en: '7 months' },
+    '300 саат':                         { ky: '300 саат',  ru: '300 часов',   en: '300 hours' },
+    '~100 саат':                        { ky: '~100 саат', ru: '~100 часов',  en: '~100 hours' },
+    'өз темпиңизде':                    { ky: 'Өз темпиңизде',     ru: 'В своём темпе', en: 'Self-paced' },
+    'жакынча 6 саат, өз алдынча':       { ky: 'Жакынча 6 саат, өз алдынча', ru: '~6 часов', en: '~6 hours' },
+};
+
+/**
+ * Resolves a label field to the requested language.
+ * Accepts either a localized object { ky, ru, en } or a plain Kyrgyz string
+ * (the legacy format returned by older API responses).
+ */
+export const resolveLabel = (val, lang = 'ky') => {
+    if (!val) return null;
+    if (typeof val === 'object') return val[lang] ?? val.ky ?? null;
+    const entry = LABEL_TRANSLATIONS[val.toLowerCase()];
+    if (entry) return entry[lang] ?? entry.ky ?? val;
+    return val;
+};
+
 export const CATEGORIES = [
     { key: 'all' },
     { key: 'programming' },
@@ -29,9 +66,7 @@ export const PROVIDER_LOGOS = {
 };
 
 export const EXTERNAL_RESOURCES = [
-    // ─── id 1 ───────────────────────────────────────────────────────────────
     {
-        id: 1,
         slug: 'cs50-introduction-to-computer-science',
         title: 'CS50: Introduction to Computer Science',
         provider: 'Harvard University',
@@ -40,9 +75,9 @@ export const EXTERNAL_RESOURCES = [
         coverImageUrl: 'https://i.ytimg.com/vi/8mAITcNt710/maxresdefault.jpg',
         category: 'programming',
         level: 'beginner',
-        priceLabel: 'Акысыз',
-        certificateLabel: 'Сертификат бар',
-        durationLabel: '12 апта',
+        priceLabel: { ky: 'Акысыз', ru: 'Бесплатно', en: 'Free' },
+        certificateLabel: { ky: 'Сертификат бар', ru: 'Сертификат есть', en: 'Certificate available' },
+        durationLabel: { ky: '12 апта', ru: '12 недель', en: '12 weeks' },
         isFeatured: true,
         content: {
             shortDescription: {
@@ -131,7 +166,6 @@ export const EXTERNAL_RESOURCES = [
         },
     },
     {
-        id: 2,
         slug: 'google-it-support-professional',
         title: 'Google IT Support Professional Certificate',
         provider: 'Google (Coursera)',
@@ -140,9 +174,9 @@ export const EXTERNAL_RESOURCES = [
         coverImageUrl: 'https://d3njjcbhbojbot.cloudfront.net/api/utilities/v1/imageproxy/https://s3.amazonaws.com/coursera_assets/meta_images/generated/SPECIALIZATION/SPECIALIZATION~google-it-support/886x500.jpeg',
         category: 'programming',
         level: 'beginner',
-        priceLabel: 'Акысыз / Coursera Financial Aid',
-        certificateLabel: 'Кесипкөй сертификат',
-        durationLabel: '6 ай',
+        priceLabel: { ky: 'Акысыз / Coursera Financial Aid', ru: 'Бесплатно / Coursera Financial Aid', en: 'Free / Coursera Financial Aid' },
+        certificateLabel: { ky: 'Кесипкөй сертификат', ru: 'Профессиональный сертификат', en: 'Professional certificate' },
+        durationLabel: { ky: '6 ай', ru: '6 месяцев', en: '6 months' },
         isFeatured: false,
         content: {
             shortDescription: {
@@ -220,7 +254,6 @@ export const EXTERNAL_RESOURCES = [
         },
     },
     {
-        id: 3,
         slug: 'freecodecamp-responsive-web-design',
         title: 'Responsive Web Design Certification',
         provider: 'freeCodeCamp',
@@ -229,9 +262,9 @@ export const EXTERNAL_RESOURCES = [
         coverImageUrl: 'https://i.ytimg.com/vi/srvUrASNj0s/maxresdefault.jpg',
         category: 'web',
         level: 'beginner',
-        priceLabel: 'Толугу менен акысыз',
-        certificateLabel: 'Сертификат бар',
-        durationLabel: '300 саат',
+        priceLabel: { ky: 'Толугу менен акысыз', ru: 'Полностью бесплатно', en: 'Completely Free' },
+        certificateLabel: { ky: 'Сертификат бар', ru: 'Сертификат есть', en: 'Certificate available' },
+        durationLabel: { ky: '300 саат', ru: '300 часов', en: '300 hours' },
         isFeatured: false,
         content: {
             shortDescription: {
@@ -309,7 +342,6 @@ export const EXTERNAL_RESOURCES = [
         },
     },
     {
-        id: 4,
         slug: 'freecodecamp-javascript-algorithms',
         title: 'JavaScript Algorithms and Data Structures',
         provider: 'freeCodeCamp',
@@ -318,9 +350,9 @@ export const EXTERNAL_RESOURCES = [
         coverImageUrl: 'https://i.ytimg.com/vi/t2CEgPsws3U/maxresdefault.jpg',
         category: 'programming',
         level: 'intermediate',
-        priceLabel: 'Толугу менен акысыз',
-        certificateLabel: 'Сертификат бар',
-        durationLabel: '300 саат',
+        priceLabel: { ky: 'Толугу менен акысыз', ru: 'Полностью бесплатно', en: 'Completely Free' },
+        certificateLabel: { ky: 'Сертификат бар', ru: 'Сертификат есть', en: 'Certificate available' },
+        durationLabel: { ky: '300 саат', ru: '300 часов', en: '300 hours' },
         isFeatured: false,
         content: {
             shortDescription: {
@@ -401,7 +433,6 @@ export const EXTERNAL_RESOURCES = [
         },
     },
     {
-        id: 5,
         slug: 'khan-academy-computer-programming',
         title: 'Intro to JS: Drawing & Animation',
         provider: 'Khan Academy',
@@ -410,9 +441,9 @@ export const EXTERNAL_RESOURCES = [
         coverImageUrl: null,
         category: 'programming',
         level: 'beginner',
-        priceLabel: 'Толугу менен акысыз',
-        certificateLabel: 'Ачкычтамга бар',
-        durationLabel: 'Өз темпиңизде',
+        priceLabel: { ky: 'Толугу менен акысыз', ru: 'Полностью бесплатно', en: 'Completely Free' },
+        certificateLabel: { ky: 'Ачкычтамга бар', ru: 'Есть значки', en: 'Badges available' },
+        durationLabel: { ky: 'Өз темпиңизде', ru: 'В своём темпе', en: 'Self-paced' },
         isFeatured: false,
         content: {
             shortDescription: {
@@ -486,7 +517,6 @@ export const EXTERNAL_RESOURCES = [
         },
     },
     {
-        id: 6,
         slug: 'odin-project-foundations',
         title: 'The Odin Project: Foundations',
         provider: 'The Odin Project',
@@ -495,9 +525,9 @@ export const EXTERNAL_RESOURCES = [
         coverImageUrl: 'https://i.ytimg.com/vi/BMT3iGZW6zk/maxresdefault.jpg',
         category: 'web',
         level: 'beginner',
-        priceLabel: 'Толугу менен акысыз',
-        certificateLabel: 'Портфолио долбоорлору',
-        durationLabel: '~100 саат',
+        priceLabel: { ky: 'Толугу менен акысыз', ru: 'Полностью бесплатно', en: 'Completely Free' },
+        certificateLabel: { ky: 'Портфолио долбоорлору', ru: 'Проекты для портфолио', en: 'Portfolio projects' },
+        durationLabel: { ky: '~100 саат', ru: '~100 часов', en: '~100 hours' },
         isFeatured: false,
         content: {
             shortDescription: {
@@ -572,7 +602,6 @@ export const EXTERNAL_RESOURCES = [
         },
     },
     {
-        id: 7,
         slug: 'google-data-analytics-professional',
         title: 'Google Data Analytics Professional Certificate',
         provider: 'Google (Coursera)',
@@ -581,9 +610,9 @@ export const EXTERNAL_RESOURCES = [
         coverImageUrl: 'https://d3njjcbhbojbot.cloudfront.net/api/utilities/v1/imageproxy/https://s3.amazonaws.com/coursera_assets/meta_images/generated/SPECIALIZATION/SPECIALIZATION~google-data-analytics/886x500.jpeg',
         category: 'data',
         level: 'beginner',
-        priceLabel: 'Акысыз / Coursera Financial Aid',
-        certificateLabel: 'Кесипкөй сертификат',
-        durationLabel: '6 ай',
+        priceLabel: { ky: 'Акысыз / Coursera Financial Aid', ru: 'Бесплатно / Coursera Financial Aid', en: 'Free / Coursera Financial Aid' },
+        certificateLabel: { ky: 'Кесипкөй сертификат', ru: 'Профессиональный сертификат', en: 'Professional certificate' },
+        durationLabel: { ky: '6 ай', ru: '6 месяцев', en: '6 months' },
         isFeatured: false,
         content: {
             shortDescription: {
@@ -661,7 +690,6 @@ export const EXTERNAL_RESOURCES = [
         },
     },
     {
-        id: 8,
         slug: 'cs50-ai-with-python',
         title: "CS50's Introduction to AI with Python",
         provider: 'Harvard University',
@@ -670,9 +698,9 @@ export const EXTERNAL_RESOURCES = [
         coverImageUrl: 'https://i.ytimg.com/vi/5NgNicANyqM/maxresdefault.jpg',
         category: 'ai',
         level: 'intermediate',
-        priceLabel: 'Акысыз',
-        certificateLabel: 'Сертификат бар',
-        durationLabel: '7 апта',
+        priceLabel: { ky: 'Акысыз', ru: 'Бесплатно', en: 'Free' },
+        certificateLabel: { ky: 'Сертификат бар', ru: 'Сертификат есть', en: 'Certificate available' },
+        durationLabel: { ky: '7 апта', ru: '7 недель', en: '7 weeks' },
         isFeatured: false,
         content: {
             shortDescription: {
@@ -751,7 +779,6 @@ export const EXTERNAL_RESOURCES = [
         },
     },
     {
-        id: 9,
         slug: 'freecodecamp-python-scientific-computing',
         title: 'Scientific Computing with Python',
         provider: 'freeCodeCamp',
@@ -760,9 +787,9 @@ export const EXTERNAL_RESOURCES = [
         coverImageUrl: 'https://i.ytimg.com/vi/rfscVS0vtbw/maxresdefault.jpg',
         category: 'programming',
         level: 'intermediate',
-        priceLabel: 'Толугу менен акысыз',
-        certificateLabel: 'Сертификат бар',
-        durationLabel: '300 саат',
+        priceLabel: { ky: 'Толугу менен акысыз', ru: 'Полностью бесплатно', en: 'Completely Free' },
+        certificateLabel: { ky: 'Сертификат бар', ru: 'Сертификат есть', en: 'Certificate available' },
+        durationLabel: { ky: '300 саат', ru: '300 часов', en: '300 hours' },
         isFeatured: false,
         content: {
             shortDescription: {
@@ -833,7 +860,6 @@ export const EXTERNAL_RESOURCES = [
         },
     },
     {
-        id: 10,
         slug: 'meta-frontend-developer-professional',
         title: 'Meta Front-End Developer Professional Certificate',
         provider: 'Meta (Coursera)',
@@ -842,9 +868,9 @@ export const EXTERNAL_RESOURCES = [
         coverImageUrl: 'https://d3njjcbhbojbot.cloudfront.net/api/utilities/v1/imageproxy/https://s3.amazonaws.com/coursera_assets/meta_images/generated/SPECIALIZATION/SPECIALIZATION~meta-front-end-developer/886x500.jpeg',
         category: 'web',
         level: 'intermediate',
-        priceLabel: 'Акысыз / Coursera Financial Aid',
-        certificateLabel: 'Кесипкөй сертификат',
-        durationLabel: '7 ай',
+        priceLabel: { ky: 'Акысыз / Coursera Financial Aid', ru: 'Бесплатно / Coursera Financial Aid', en: 'Free / Coursera Financial Aid' },
+        certificateLabel: { ky: 'Кесипкөй сертификат', ru: 'Профессиональный сертификат', en: 'Professional certificate' },
+        durationLabel: { ky: '7 ай', ru: '7 месяцев', en: '7 months' },
         isFeatured: false,
         content: {
             shortDescription: {
@@ -943,7 +969,7 @@ export const getResourcesRelatedToCourse = (course, limit = 3) => {
     let category = null;
     if (/frontend|html|css|react|vue|angular|веб|web/.test(haystack)) {
         category = 'web';
-    } else if (/\bai\b|ml\b|machine.?learn|artificial|жасалма/.test(haystack)) {
+    } else if (/\bai\b|\bml\b|machine.?learn|artificial|жасалма/.test(haystack)) {
         category = 'ai';
     } else if (/\bdata\b|analytics|sql|маалымат/.test(haystack)) {
         category = 'data';

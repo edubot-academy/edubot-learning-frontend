@@ -3,6 +3,7 @@ export const STUDENT_DASHBOARD_TABS = Object.freeze({
     MY_COURSES: 'my-courses',
     SCHEDULE: 'schedule',
     RESOURCES: 'resources',
+    FREE_RESOURCES: 'free-resources',
     TASKS: 'tasks',
     PROGRESS: 'progress',
     CERTIFICATES: 'certificates',
@@ -43,6 +44,7 @@ export const ADMIN_DASHBOARD_TABS = Object.freeze({
     AI_LMS: 'ai-lms',
     NOTIFICATIONS: 'notifications',
     ANALYTICS: 'analytics',
+    EXTERNAL_RESOURCES: 'external-resources',
 });
 
 export const DASHBOARD_TABS_BY_ROLE = Object.freeze({

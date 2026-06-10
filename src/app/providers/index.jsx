@@ -1,8 +1,15 @@
 import PropTypes from 'prop-types';
 import { AuthProvider, AuthContext } from '../../context/AuthContext';
+import { ResourceProgressProvider } from '../../context/ResourceProgressProvider';
 
 const AppProviders = ({ children }) => {
-    return <AuthProvider>{children}</AuthProvider>;
+    return (
+        <AuthProvider>
+            <ResourceProgressProvider>
+                {children}
+            </ResourceProgressProvider>
+        </AuthProvider>
+    );
 };
 
 AppProviders.propTypes = {

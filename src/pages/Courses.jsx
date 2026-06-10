@@ -7,7 +7,7 @@ import { FiAlertTriangle, FiBookOpen, FiRefreshCw, FiSliders } from 'react-icons
 import { useTranslation } from 'react-i18next';
 import SectionContainer from '@features/marketing/components/SectionContainer';
 import ExternalResourceCard from '@features/externalResources/components/ExternalResourceCard';
-import { EXTERNAL_RESOURCES } from '@features/externalResources/data/externalResources';
+import { getFeaturedResources } from '@features/externalResources/data/externalResources';
 
 const getCourseType = (course) =>
     String(course?.courseType || course?.type || 'video').toLowerCase();
@@ -17,7 +17,7 @@ const getCoursePrice = (course) => {
     return Number.isFinite(price) ? price : 0;
 };
 
-const COURSES_FREE_PREVIEW = EXTERNAL_RESOURCES.slice(0, 3);
+const COURSES_FREE_PREVIEW = getFeaturedResources().slice(0, 3);
 
 const CoursesPage = () => {
     const { t } = useTranslation();

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import ExternalResourceCard from '../components/ExternalResourceCard';
 import ExternalResourceFilters from '../components/ExternalResourceFilters';
 import { fetchExternalResources } from '../api';
-import { EXTERNAL_RESOURCES, getResourcesByCategory } from '../data/externalResources';
+import { getResourcesByCategory } from '../data/externalResources';
 
 const useResources = (category) => {
     const [items, setItems] = useState(null);
@@ -12,6 +12,7 @@ const useResources = (category) => {
     useEffect(() => {
         let cancelled = false;
         setError(false);
+        setItems(null);
 
         fetchExternalResources({ category })
             .then((data) => {
@@ -40,7 +41,7 @@ const ExternalResourcesPage = () => {
     const [activeCategory, setActiveCategory] = useState('all');
     const { items, loading } = useResources(activeCategory);
 
-    const totalCount = items?.length ?? EXTERNAL_RESOURCES.length;
+    const totalCount = items?.length ?? getResourcesByCategory('all').length;
 
     return (
         <div className="min-h-screen bg-white dark:bg-[#222222] text-[#141619] dark:text-[#E8ECF3]">

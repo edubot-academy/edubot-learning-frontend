@@ -2,7 +2,65 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
-## Unreleased
+## [1.16.1] - 2026-06-10
+
+### Added
+
+- Admin resource modal: "Paste JSON" fill mode alongside the existing AI Autofill (URL) strip — admin can paste AI-generated JSON (from a prompt template) to populate all form fields and multilingual content in one action.
+- Prompt template provided for generating correctly-shaped JSON from any external AI tool (ChatGPT, Claude, etc.).
+
+### Changed
+
+- Admin resource modal autofill strip refactored: `applyResourceData` helper shared between URL-based AI autofill and the new JSON paste fill path.
+
+### Fixed
+
+- `ResourceProgressProvider`: anonymous progress entries in `localStorage` were cleared before their API sync calls settled — `Promise.allSettled` now waits for all upserts before clearing the anon key.
+- `ResourceProgressProvider`: optimistic updates (e.g. `saveResource` from `postLogin`) were overwritten when the initial `GET /external-resources/my` response arrived — functional `setStore` updater now merges API state with any concurrent local changes.
+- `ResourceProgressProvider`: `toggleWeek` read `checkedWeeks` from a stale closure — computation moved inside the `mutate` updater so rapid toggles on different weeks each read the latest committed state.
+- `ResourceProgressProvider`: `updateNotes` fired an API call on every keystroke — calls now debounced at 600 ms.
+- `ResourceProgressProvider`: `removeResource` deleted the local entry but never called the backend — now calls `DELETE /external-resources/:slug/progress`.
+- `ExternalResourceDetails`: Save/Start/enrolled CTAs flickered during the initial progress fetch — `progressLoading` guard added with an animated skeleton placeholder.
+- `postLogin.js`: `save-resource` pending action bypassed `ResourceProgressContext` and called the API directly, losing the optimistic update — now invokes `saveResource` from context via a new `saveResource` param on `executePendingAuthAction`.
+- `api.js` (`upsertExternalResourceProgress`): `aiCache` payload field was silently dropped — added to destructure and POST body.
+- `CourseDetails.jsx`: `linkedResources ?? staticResources` passed through an empty array and suppressed the static fallback — changed to `linkedResources?.length ? linkedResources : staticResources`.
+- `CourseDetails.jsx`: stale linked resources briefly visible when navigating between courses — `setLinkedResources(null)` now fires before each new fetch.
+- Backend (`external-resources.service.ts`): study-plan generation tracked the wrong event type (`viewed`) — added `ai_plan_generated` event type and updated the service.
+
+### Verification
+
+- `npm run lint`
+- `npm run build`
+- Admin: open "Add resource" modal → "Paste JSON" tab → paste generated JSON → verify all fields populate correctly
+
+---
+
+## [1.16.0] - 2026-06-10
+
+### Added
+
+- External free-learning feature: homepage section, `/resources` listing, and `/resources/:slug` detail guide pages with dedicated components and responsive UI.
+- Static curated catalog and data file for initial launch (multilingual content: ky/en/ru) and translation keys for UI copy.
+- Auth prompt for EduBot-owned actions and localStorage-backed save/start/progress hooks for MVP behavior.
+- Dashboard widget showing saved/started external resources for logged-in users.
+- Backend support: `external_resources` and `user_external_resource_progress` migrations, public `GET /external-resources` and `GET /external-resources/:slug`, user progress APIs (`POST/PATCH /external-resources/:slug/progress`), seed script, and sitemap integration.
+- Admin tooling: admin endpoints and UI for creating/editing resources, `isPublished`/`isFeatured` toggles, and resource-to-course linking.
+- Analytics and tracking events for resource views, saves, starts, official-link clicks, and completions.
+- AI companion endpoint for generating personalized study plans and Kyrgyz-language explainers.
+- Redirect proxy endpoint (`/resources/:slug/go`) to log official-link clicks before redirecting.
+
+### Changed
+
+- Integrated external resources into course pages and home marketing sections; added i18n coverage and content-fallback helpers.
+- Primary MVP CTAs adjusted to avoid promising backend-only features before Phase 4; study-group CTA recommended until full tracking exists.
+
+### Verification
+
+- `npm run test`
+- `npm run lint`
+- `npm run audit:localization`
+- `npm run build`
+- Backend: run migrations and verify `GET /external-resources` and `GET /external-resources/:slug` return expected data
 
 ---
 

@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import useResourceProgress from '../hooks/useResourceProgress';
+import { getResourceBySlug } from '../data/externalResources';
 
 const STATUS_STYLE = {
     saved: 'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-300',
@@ -11,11 +12,11 @@ const STATUS_STYLE = {
 
 const FreeResourcesWidget = ({ userId }) => {
     const { t } = useTranslation();
-    const { getAllEntries } = useResourceProgress(userId);
+    const { getAllEntries } = useResourceProgress();
 
     const entries = useMemo(() => {
         return getAllEntries()
-            .filter((e) => e.title)
+            .filter((e) => e.slug)
             .sort((a, b) => {
                 const order = { started: 0, saved: 1, completed: 2 };
                 return (order[a.status] ?? 3) - (order[b.status] ?? 3);
@@ -57,7 +58,7 @@ const FreeResourcesWidget = ({ userId }) => {
                         </div>
                     </div>
                     <Link
-                        to="/resources"
+                        to="/dashboard?tab=free-resources"
                         className="text-xs font-semibold text-[#E14219] dark:text-[#FF8C6E] hover:underline flex-shrink-0"
                     >
                         {t('public.externalResources.myPlanBrowse')} →
@@ -66,23 +67,47 @@ const FreeResourcesWidget = ({ userId }) => {
             </div>
 
             <div className="divide-y divide-edubot-line/60 dark:divide-slate-700/40">
-                {entries.map((entry) => (
-                    <Link
-                        key={entry.slug}
-                        to={`/resources/${entry.slug}`}
-                        className="flex items-center gap-3 px-6 py-3.5 hover:bg-edubot-surfaceAlt dark:hover:bg-slate-800/50 transition-colors group"
-                    >
-                        <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-edubot-ink dark:text-white truncate group-hover:text-[#E14219] dark:group-hover:text-[#FF8C6E] transition-colors">
-                                {entry.title}
-                            </p>
-                            <p className="text-xs text-edubot-muted dark:text-slate-400 truncate">{entry.provider}</p>
-                        </div>
-                        <span className={`flex-shrink-0 text-xs font-medium px-2.5 py-1 rounded-full ${STATUS_STYLE[entry.status] ?? STATUS_STYLE.saved}`}>
-                            {statusLabel(entry.status)}
-                        </span>
-                    </Link>
-                ))}
+                {entries.map((entry) => {
+                    const staticRes = getResourceBySlug(entry.slug);
+                    const weeksTotal = staticRes?.content?.studyPlan?.length ?? 0;
+                    const weeksDone = entry.checkedWeeks?.length ?? 0;
+                    const pct = weeksTotal > 0 ? Math.round((weeksDone / weeksTotal) * 100) : null;
+                    return (
+                        <Link
+                            key={entry.slug}
+                            to="/dashboard?tab=free-resources"
+                            className="flex items-start gap-3 px-6 py-3.5 hover:bg-edubot-surfaceAlt dark:hover:bg-slate-800/50 transition-colors group"
+                        >
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-edubot-ink dark:text-white truncate group-hover:text-[#E14219] dark:group-hover:text-[#FF8C6E] transition-colors">
+                                    {entry.title || entry.slug}
+                                </p>
+                                <p className="text-xs text-edubot-muted dark:text-slate-400 truncate">{entry.provider}</p>
+                                {pct !== null && (
+                                    <div className="flex items-center gap-2 mt-1.5">
+                                        <div className="flex-1 h-1.5 rounded-full bg-gray-100 dark:bg-white/10 overflow-hidden">
+                                            <div
+                                                className="h-1.5 rounded-full bg-gradient-to-r from-[#FF8C6E] to-[#E14219] transition-all"
+                                                style={{ width: `${pct}%` }}
+                                            />
+                                        </div>
+                                        <span className="text-xs text-edubot-muted dark:text-slate-400 w-9 text-right flex-shrink-0">
+                                            {weeksDone}/{weeksTotal}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="flex-shrink-0 flex items-center gap-1.5 pt-0.5">
+                                {entry.certificateUrl && (
+                                    <span title="Certificate uploaded" className="text-base leading-none">🏆</span>
+                                )}
+                                <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${STATUS_STYLE[entry.status] ?? STATUS_STYLE.saved}`}>
+                                    {statusLabel(entry.status)}
+                                </span>
+                            </div>
+                        </Link>
+                    );
+                })}
             </div>
         </div>
     );

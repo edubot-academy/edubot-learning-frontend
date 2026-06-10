@@ -57,6 +57,7 @@ export const student = {
                 myCourses: "Мои курсы",
                 schedule: "Расписание",
                 resources: "Ресурсы",
+                freeResources: "Бесплатное обучение",
                 tasks: "Задания",
                 progress: "Прогресс",
                 certificates: "Сертификаты",
@@ -64,6 +65,39 @@ export const student = {
                 leaderboard: "Рейтинг",
                 profile: "Профиль",
                 notifications: "Уведомления"
+            }
+        },
+        freeResources: {
+            eyebrow: "Бесплатные внешние ресурсы",
+            title: "Моё бесплатное обучение",
+            description: "Управляйте сохранёнными ресурсами, отмечайте прогресс по неделям, ведите заметки и используйте AI — не выходя из панели.",
+            empty: {
+                title: "Нет сохранённых ресурсов",
+                description: "Просмотрите куратированный каталог и добавьте ресурсы в план обучения.",
+                cta: "Просмотреть бесплатные ресурсы"
+            },
+            metrics: {
+                saved: "Сохранено",
+                inProgress: "В учёбе",
+                completed: "Завершено"
+            },
+            filters: {
+                all: "Все",
+                started: "В процессе",
+                saved: "Сохранено",
+                completed: "Завершено"
+            },
+            detail: {
+                weekProgress: "{{done}} / {{total}} нед.",
+                noStudyPlan: "План обучения недоступен.",
+                weekDone: "Неделя {{n}} — выполнено",
+                weekTodo: "Неделя {{n}}",
+                notesLabel: "Мои заметки",
+                notesPlaceholder: "Заметки об этом ресурсе...",
+                aiSection: "AI Помощник",
+                officialSite: "Официальный курс",
+                edubotGuide: "Гид EduBot",
+                removeFromPlan: "Удалить из плана"
             }
         },
         overview: {

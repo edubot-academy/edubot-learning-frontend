@@ -57,6 +57,7 @@ export const student = {
                 myCourses: "Курстарым",
                 schedule: "Жүгүртмө",
                 resources: "Ресурстар",
+                freeResources: "Акысыз окуу",
                 tasks: "Тапшырмалар",
                 progress: "Прогресс",
                 certificates: "Сертификаттар",
@@ -64,6 +65,39 @@ export const student = {
                 leaderboard: "Рейтинг",
                 profile: "Профиль",
                 notifications: "Билдирүүлөр"
+            }
+        },
+        freeResources: {
+            eyebrow: "Акысыз тышкы ресурстар",
+            title: "Менин акысыз окуум",
+            description: "Сакталган акысыз ресурстарды башкарыңыз, жуманын прогрессин белгилеңиз, жазбалар жазыңыз жана AI куралдарын колдонуңуз.",
+            empty: {
+                title: "Азырынча сакталган ресурс жок",
+                description: "Тандалган каталогду карап чыгыңыз жана ресурстарды окуу планыңызга кошуңуз.",
+                cta: "Акысыз ресурстарды карап чыгуу"
+            },
+            metrics: {
+                saved: "Сакталган",
+                inProgress: "Жүрүүдө",
+                completed: "Аяктады"
+            },
+            filters: {
+                all: "Баары",
+                started: "Окулуп жатат",
+                saved: "Сакталган",
+                completed: "Аяктады"
+            },
+            detail: {
+                weekProgress: "{{done}} / {{total}} жума",
+                noStudyPlan: "Окуу планы жок.",
+                weekDone: "{{n}}-жума — бүттү",
+                weekTodo: "{{n}}-жума",
+                notesLabel: "Менин жазбаларым",
+                notesPlaceholder: "Бул ресурс жөнүндө жазбалар...",
+                aiSection: "AI Окуу Жардамчысы",
+                officialSite: "Расмий курс",
+                edubotGuide: "EduBot гид",
+                removeFromPlan: "Пландан өчүрүү"
             }
         },
         overview: {

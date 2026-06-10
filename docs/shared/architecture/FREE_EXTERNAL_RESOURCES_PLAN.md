@@ -1,6 +1,6 @@
 # Free External Learning Resources — EduBot Learning Integration Plan
 
-_Last updated: 2026-06-10. Phases 1–5 complete (frontend + backend). See §22 for task status and §28–§33 for implementation notes._
+_Last updated: 2026-06-10. Phases 1–7 complete (frontend + backend) — shipped as v1.16.0. Post-launch: 11 bug fixes and admin paste-fill feature shipped as v1.16.1. See §22 for task status and §28–§36 for implementation notes._
 
 ## 1. Purpose
 
@@ -1475,20 +1475,25 @@ Do not overbuild progress, notes, AI, certificates, or full dashboard widgets ye
 
 ### Phase 6 — Admin UI and Certificate Upload
 
-- [ ] Build admin panel pages for creating and editing external resources (reuse existing dashboard UI patterns).
-- [ ] Add `isPublished` / `isFeatured` toggle controls.
-- [ ] Add resource-to-course linking UI inside the course edit page.
-- [ ] Add certificate upload: `POST /external-resources/:slug/certificate` uploads a file to S3 via the existing `MediaService`, saves the URL to `UserExternalResourceProgress.certificateUrl`.
-- [ ] Add certificate display on the student profile/dashboard.
+**Status: Complete.** See §33 for implementation notes.
+
+- [x] Build admin panel pages for creating and editing external resources (reuse existing dashboard UI patterns).
+- [x] Add `isPublished` / `isFeatured` toggle controls.
+- [x] Add resource-to-course linking UI inside the course edit page.
+- [x] Add certificate upload: `POST /external-resources/:slug/certificate` uploads a file to S3 via the existing `MediaService`, saves the URL to `UserExternalResourceProgress.certificateUrl`.
+- [x] Add certificate display on the student profile/dashboard.
+- [x] Add "Paste JSON" fill mode to the resource modal — admin can paste AI-generated JSON to populate all form fields at once. See §36.
 
 ### Phase 7 — AI Learning Companion
 
-- [ ] Add resource-specific AI helper prompts.
-- [ ] Generate personal study plan.
-- [ ] Explain difficult concepts in Kyrgyz.
-- [ ] Generate practice tasks.
-- [ ] Recommend related EduBot lessons.
-- [ ] Avoid copying full provider course content.
+**Status: Complete.** See §35 for implementation notes.
+
+- [x] Add resource-specific AI helper prompts.
+- [x] Generate personal study plan. _(shipped in Phase 5; extended in Phase 7)_
+- [x] Explain difficult concepts in Kyrgyz.
+- [x] Generate practice tasks.
+- [x] Recommend related EduBot lessons.
+- [x] Avoid copying full provider course content.
 
 ## 23. Acceptance Criteria for MVP
 
@@ -2229,6 +2234,71 @@ The backend `GET :slug/go` handler calls `@Redirect()`, logs `official_link_clic
 
 ---
 
+## 34. Phase 6 Implementation Notes
+
+_Completed: 2026-06-10._
+
+### 34.1 Backend files updated
+
+```
+backend/src/external-resources/
+  external-resources.service.ts   — findAllAdmin(), uploadCertificate() added
+  external-resources.controller.ts — GET /admin-all and POST /:slug/certificate added
+```
+
+### 34.2 Frontend files created
+
+```
+src/features/admin/components/AdminExternalResourcesTab.jsx
+                               — self-contained tab; two workflows: catalog (CRUD + toggles)
+                                 and course linking; fetches from /admin-all on mount
+```
+
+### 34.3 Frontend files updated
+
+```
+src/features/externalResources/api.js
+                               — uploadResourceCertificate, fetchAllExternalResourcesAdmin,
+                                 createExternalResourceAdmin, updateExternalResourceAdmin,
+                                 deleteExternalResourceAdmin, linkResourceToCourse,
+                                 unlinkResourceFromCourse added
+src/features/externalResources/hooks/useResourceProgress.js
+                               — certificateUrl added to normalizeApiEntry;
+                                 setCertificateUrl mutation added
+src/features/externalResources/pages/ExternalResourceDetails.jsx
+                               — certificate upload section after Notes; visible when
+                                 status === 'completed'; uses file input + progress state
+src/features/externalResources/components/FreeResourcesWidget.jsx
+                               — 🏆 trophy icon shown for entries with certificateUrl
+src/features/admin/pages/AdminPanel.jsx
+                               — AdminExternalResourcesTab imported and rendered for
+                                 'external-resources' tab case
+src/features/admin/utils/adminPanel.constants.js
+                               — EXTERNAL_RESOURCES tab added to ADMIN_TABS, CONTENT_OPERATIONS
+                                 workspace group, and RAW_NAV_ITEMS (FiGlobe icon)
+src/shared/constants/dashboardTabs.js
+                               — EXTERNAL_RESOURCES: 'external-resources' added
+src/i18n/locales/{ky,en,ru}/admin.js
+                               — adminPanel.tabs.externalResources + full adminExtResources
+                                 namespace added (metrics, workflows, fields, actions, errors)
+src/i18n/locales/{ky,en,ru}/public.js
+                               — 9 certificate keys added (certSectionTitle, certUploadCta,
+                                 certUploadHint, certUploading, certUploaded, certView,
+                                 certReplace, certUploadError)
+```
+
+### 34.4 Key design decisions
+
+**Admin tab is self-contained.** Unlike other tabs that use domain hooks wired in AdminPanel.jsx, `AdminExternalResourcesTab` fetches and manages its own state. This avoids adding 6+ additional state vars and callbacks to an already complex AdminPanel.jsx.
+
+**Certificate upload uses S3 directly.** The backend `POST /:slug/certificate` endpoint uses `FileInterceptor` + `memoryStorage()` + `PutObjectCommand`, the same pattern as course cover uploads. The URL is stored in `UserExternalResourceProgress.certificateUrl`.
+
+**`GET /admin-all`** is placed before `GET /:slug` in the controller (NestJS resolves path params greedily) and returns all resources including unpublished ones. Protected by `@Roles('admin', 'instructor')`.
+
+**Course linking UI** is in the "Link to course" workflow within `AdminExternalResourcesTab`, not inside `AdminCoursesTab`. This keeps the two domains separated and avoids increasing the complexity of the already large `AdminCoursesTab`.
+
+---
+
 ## 33. Code Review Findings and Fixes
 
 _Review conducted: 2026-06-10. All 8 confirmed findings fixed._
@@ -2280,3 +2350,144 @@ _Review conducted: 2026-06-10. All 8 confirmed findings fixed._
 **File:** `external-resources.service.ts`, `external-resource-event.entity.ts`  
 **Problem:** `generateStudyPlan` called `this.trackEvent(slug, 'viewed', userId)`, which would pollute the `viewed` counter with AI plan requests and make the analytics counts inaccurate.  
 **Fix:** Added `'ai_plan_generated'` to the `ExternalResourceEventType` union. Service now calls `this.trackEvent(slug, 'ai_plan_generated', userId)` after the AI response.
+
+---
+
+## 35. Phase 7 Implementation Notes
+
+_Completed: 2026-06-10._
+
+### 35.1 New backend methods
+
+Two new methods added to `ExternalResourcesService`:
+
+**`explainConcept(userId, slug, concept, lang)`**
+- Accepts any concept string the student enters.
+- Prompt context: resource title, provider, category, level — no provider course materials.
+- Temperature 0.7, max 300 tokens (short, focused explanation + one analogy).
+- Fires `ai_concept_explained` event with `meta: { concept }` for analytics.
+
+**`generatePracticeTasks(userId, slug, lang)`**
+- Includes student's completed weeks from `checklistProgress` + up to 5 `whatYouWillLearn` topics.
+- Instructs AI to generate only tasks doable without provider's paid content (documentation, paper exercises).
+- Temperature 0.8, max 450 tokens — 4 numbered tasks, 15–30 min each.
+- Fires `ai_practice_tasks_generated` event.
+
+### 35.2 New backend endpoints
+
+```
+POST /external-resources/:slug/ai-explain-concept   JWT required
+  body: { concept: string, lang?: string }
+  returns: { explanation: string }
+
+POST /external-resources/:slug/ai-practice-tasks    JWT required
+  body: { lang?: string }
+  returns: { tasks: string }
+```
+
+Both endpoints are placed **before** `POST :slug/ai-study-plan` in the controller to avoid any future slug collision.
+
+`BadRequestException` thrown if `concept` is missing or blank.
+
+### 35.3 New event types
+
+`ExternalResourceEventType` extended with:
+- `ai_concept_explained`
+- `ai_practice_tasks_generated`
+
+### 35.4 Frontend additions
+
+**API (`api.js`):**
+- `explainConcept(slug, concept, lang)` → `POST /:slug/ai-explain-concept`
+- `generatePracticeTasks(slug, lang)` → `POST /:slug/ai-practice-tasks`
+
+**`ExternalResourceDetails.jsx` sidebar — AI companion panel:**
+
+The sidebar AI section now has three tools:
+1. **AI Study Plan** (from Phase 5) — unchanged.
+2. **Concept Explainer** — inline text input + "Explain" button. Pressing Enter also triggers the call. The explanation renders in a blue card below the input. Each new concept clears the previous result.
+3. **Practice Tasks** — toggle button. Tasks render in a green card with `whitespace-pre-line` for numbered list formatting. Pressing again hides the tasks.
+
+**`ExternalResourceDetails.jsx` left column — Related EduBot Lessons:**
+
+Added `SectionBlock` after difficulty notes showing:
+- Copy pointing to EduBot courses for mentored Kyrgyz-language learning.
+- If `content.relatedCourseSlugs` is non-empty, renders a list of links to those external resource guide pages (`/resources/:slug`). Slug is formatted into a readable title via `.replace(/-/g, ' ')`.
+- CTA button linking to `/courses` — ethical upsell framing from §16.
+
+### 35.5 i18n additions
+
+14 new keys added under `externalResources` in `ky`, `en`, `ru`:
+
+| Key | Purpose |
+|---|---|
+| `aiConceptCta` | Section label |
+| `aiConceptPlaceholder` | Input placeholder |
+| `aiConceptGenerate` | Button label |
+| `aiConceptLoading` | Spinner label |
+| `aiConceptTitle` | Result card header |
+| `aiConceptError` | Error message |
+| `aiConceptEmpty` | Hint when no result yet |
+| `aiTasksCta` | Toggle button label |
+| `aiTasksLoading` | Spinner label |
+| `aiTasksTitle` | Result card header |
+| `aiTasksHide` | Toggle-off button label |
+| `aiTasksError` | Error message |
+| `relatedLessonsTitle` | Section header |
+| `relatedLessonsBody` | Upsell copy |
+| `relatedLessonsBtn` | CTA button |
+
+### 35.6 Provider content policy
+
+All three AI prompts include an explicit instruction to the model:
+- Study plan: uses only EduBot-authored guide metadata (title, study plan weeks, student progress notes).
+- Concept explainer: "Never copy materials directly from the provider's course."
+- Practice tasks: "tasks must be doable without access to the provider's paid content."
+
+This satisfies the "Avoid copying full provider course content" constraint from §5 MVP scope.
+
+---
+
+## 36. Post-launch: Bug Fixes and Admin Paste-fill Feature (v1.16.1)
+
+_Completed: 2026-06-10. Code review conducted after Phase 7 ship; 11 findings fixed and one admin UX improvement added._
+
+### 36.1 Code review findings (§33)
+
+Eight correctness bugs were identified by static review of the Phase 1–7 diff and fixed before the branch was merged. See §33.1–33.8 for per-finding detail. Summary:
+
+| # | File | Root cause |
+|---|------|------------|
+| 1 | `useResourceProgress.js` | `removeResource` never called the backend DELETE |
+| 2 | `useResourceProgress.js` | `toggleWeek` called `syncToApi` inside a `setState` updater |
+| 3 | `useResourceProgress.js` | `updateNotes` fired an API call on every keystroke (no debounce) |
+| 4 | `CourseDetails.jsx` | `?? []` suppressed the static resource fallback |
+| 5 | `useResourceProgress.js` / `ExternalResourceDetails.jsx` | CTAs showed wrong state during initial fetch |
+| 6 | `CourseDetails.jsx` | Stale linked resources on course navigation |
+| 7 | `useResourceProgress.js` | Anonymous progress lost on re-login (no anon→API merge) |
+| 8 | `external-resources.service.ts` | AI plan generation tracked wrong event type (`viewed`) |
+
+Three additional fixes were applied when reviewing the post-login and API layers:
+
+- `postLogin.js`: `save-resource` action bypassed `ResourceProgressContext` — now calls `saveResource` from context (passed as a new param to `executePendingAuthAction`).
+- `ResourceProgressProvider`: `Promise.allSettled` guards localStorage clear so anon entries are not lost if a page reload occurs between login and sync completion.
+- `api.js` (`upsertExternalResourceProgress`): `aiCache` payload field silently dropped — added to destructure and POST body.
+
+### 36.2 Admin "Paste JSON" fill feature
+
+**Problem:** Creating a resource via the AI Autofill (URL) strip requires a live backend AI call (`POST /external-resources/ai-autofill`). Admins often already have AI-generated content from external tools (ChatGPT, Claude) and just need a way to push it into the form without a second round-trip.
+
+**Solution:** A mode toggle added to the autofill strip in `AdminExternalResourcesTab.jsx`:
+
+- **✨ AI Autofill (URL)** — existing behavior, unchanged.
+- **📋 Paste JSON** — shows a `<textarea>` where the admin pastes a JSON object. Clicking "Fill Form" parses the JSON and populates both `form` and `content` state identically to what the URL autofill path does.
+
+**`applyResourceData(data)` helper** extracted to share state-population logic between both paths. Both call the same function; the only difference is whether `data` comes from an API response or from `JSON.parse(pasteText)`.
+
+**JSON shape** matches the `aiAutofillResource` API response exactly:
+- Top-level fields: `slug`, `title`, `provider`, `providerKey`, `url`, `coverImageUrl`, `category`, `level`, `language`, `priceLabel`, `certificateLabel`, `certificateCost`, `canAuditFree`, `durationLabel`.
+- `content` object: `shortDescription`, `whatYouWillLearn`, `whoIsItFor`, `whyRecommended`, `difficultyNotes` (each with `ky`/`en`/`ru` keys), `studyPlan` (array of `{ week, title, description }` with `ky`/`en`/`ru`), `relatedCourseSlugs`.
+
+**Prompt template** provided to the admin so they can generate valid JSON from any AI tool. The template instructs the AI to output all three languages and 4–6 study plan weeks.
+
+**i18n:** 6 new keys added under `adminExtResources.autofill` (`modeUrl`, `modePaste`) and a new `adminExtResources.paste` namespace (`title`, `placeholder`, `fill`, `errorInvalidJson`) across `ky`, `en`, `ru` admin locale files.
