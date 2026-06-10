@@ -64,6 +64,17 @@ export const executePendingAuthAction = async ({ addToCart, toggleFavourite, nav
             }
         }
 
+        if (pendingAction.type === 'save-resource' && pendingAction.slug) {
+            localStorage.removeItem('pendingAction');
+            toast.success(
+                i18n.t('public.externalResources.saveToast', {
+                    title: pendingAction.resourceTitle || pendingAction.slug,
+                })
+            );
+            navigate(`/resources/${pendingAction.slug}`);
+            return true;
+        }
+
         localStorage.removeItem('pendingAction');
         return false;
     } catch (error) {

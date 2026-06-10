@@ -2,11 +2,26 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { getAuthAcquisitionPath } from '@shared/auth-config';
 
-const ExternalResourceAuthPrompt = ({ resourceSlug }) => {
+const ExternalResourceAuthPrompt = ({ resourceSlug, resourceTitle }) => {
     const { t } = useTranslation();
     const navigate = useNavigate();
 
-    const handleRegister = () => {
+    const handleSave = () => {
+        if (resourceSlug) {
+            try {
+                localStorage.setItem(
+                    'pendingAction',
+                    JSON.stringify({
+                        type: 'save-resource',
+                        slug: resourceSlug,
+                        resourceTitle: resourceTitle ?? resourceSlug,
+                        timestamp: Date.now(),
+                    })
+                );
+            } catch {
+                // storage not available
+            }
+        }
         navigate(getAuthAcquisitionPath(), {
             state: { from: `/resources/${resourceSlug}` },
         });
@@ -23,10 +38,10 @@ const ExternalResourceAuthPrompt = ({ resourceSlug }) => {
                 </p>
             </div>
             <button
-                onClick={handleRegister}
+                onClick={handleSave}
                 className="flex-shrink-0 inline-flex items-center justify-center rounded-lg font-medium text-sm px-5 py-2.5 bg-gradient-to-b from-[#FF8C6E] to-[#E14219] text-white hover:from-[#C2410C] hover:to-[#C2410C] transition-all duration-300 active:scale-95"
             >
-                {t('public.externalResources.register')}
+                {t('public.externalResources.save')}
             </button>
         </div>
     );

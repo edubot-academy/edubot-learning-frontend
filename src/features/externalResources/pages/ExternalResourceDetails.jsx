@@ -1,10 +1,12 @@
-import { useContext, useState } from 'react';
+import { useCallback, useContext, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import toast from 'react-hot-toast';
 import { AuthContext } from '@app/providers';
 import ExternalResourceAuthPrompt from '../components/ExternalResourceAuthPrompt';
 import ExternalResourceDisclaimer from '../components/ExternalResourceDisclaimer';
 import { getResourceBySlug, PROVIDER_COLORS, PROVIDER_LOGOS } from '../data/externalResources';
+import useResourceProgress from '../hooks/useResourceProgress';
 
 const CATEGORY_ICONS = {
     programming: '💻',
@@ -68,6 +70,15 @@ const ExternalResourceDetails = () => {
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
     const [coverFailed, setCoverFailed] = useState(false);
+    const {
+        getEntry,
+        saveResource,
+        startResource,
+        completeResource,
+        toggleWeek,
+        updateNotes,
+        removeResource,
+    } = useResourceProgress(user?.id);
 
     const resource = getResourceBySlug(slug);
 
@@ -96,6 +107,22 @@ const ExternalResourceDetails = () => {
     const cl = (obj) => obj?.[lang] ?? obj?.ky ?? null;
 
     const isFree = /акысыз/i.test(priceLabel ?? '') || /free/i.test(priceLabel ?? '');
+    const entry = user ? getEntry(resource.slug) : null;
+
+    const handleSave = useCallback(() => {
+        saveResource(resource.slug, { title, provider });
+        toast.success(t('public.externalResources.saveToast', { title }));
+    }, [saveResource, resource.slug, title, provider, t]);
+
+    const handleStart = useCallback(() => {
+        startResource(resource.slug, { title, provider });
+        toast.success(t('public.externalResources.startToast', { title }));
+    }, [startResource, resource.slug, title, provider, t]);
+
+    const handleComplete = useCallback(() => {
+        completeResource(resource.slug);
+        toast.success(t('public.externalResources.completeToast', { title }));
+    }, [completeResource, resource.slug, title, t]);
 
     const handleOfficialLink = () => {
         const isInternal = /^\/[^/]/.test(url) || url.startsWith(window.location.origin);
@@ -196,7 +223,64 @@ const ExternalResourceDetails = () => {
                             </p>
                         )}
 
-                        {!user && <ExternalResourceAuthPrompt resourceSlug={slug} />}
+                        {!user && (
+                            <ExternalResourceAuthPrompt resourceSlug={resource.slug} resourceTitle={title} />
+                        )}
+
+                        {user && (
+                            <div className="flex flex-wrap items-center gap-2">
+                                {!entry && (
+                                    <>
+                                        <button
+                                            onClick={handleSave}
+                                            className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-semibold border border-gray-300 dark:border-white/20 text-gray-700 dark:text-gray-300 hover:border-[#E14219] hover:text-[#E14219] dark:hover:border-[#FF8C6E] dark:hover:text-[#FF8C6E] transition-all"
+                                        >
+                                            🔖 {t('public.externalResources.save')}
+                                        </button>
+                                        <button
+                                            onClick={handleStart}
+                                            className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-semibold bg-gradient-to-b from-[#FF8C6E] to-[#E14219] text-white hover:from-[#C2410C] hover:to-[#C2410C] transition-all"
+                                        >
+                                            🚀 {t('public.externalResources.start')}
+                                        </button>
+                                    </>
+                                )}
+                                {entry?.status === 'saved' && (
+                                    <>
+                                        <span className="inline-flex items-center gap-1 text-xs font-medium px-3 py-1 rounded-full bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-300">
+                                            🔖 {t('public.externalResources.statusSaved')}
+                                        </span>
+                                        <button
+                                            onClick={handleStart}
+                                            className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-semibold bg-gradient-to-b from-[#FF8C6E] to-[#E14219] text-white hover:from-[#C2410C] hover:to-[#C2410C] transition-all"
+                                        >
+                                            🚀 {t('public.externalResources.start')}
+                                        </button>
+                                        <button onClick={() => removeResource(resource.slug)} className="text-xs text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors ml-1">
+                                            {t('public.externalResources.removeFromPlan')}
+                                        </button>
+                                    </>
+                                )}
+                                {entry?.status === 'started' && (
+                                    <>
+                                        <span className="inline-flex items-center gap-1 text-xs font-medium px-3 py-1 rounded-full bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-300 border border-orange-200 dark:border-orange-800/40">
+                                            📖 {t('public.externalResources.statusStarted')}
+                                        </span>
+                                        <button
+                                            onClick={handleComplete}
+                                            className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-semibold border border-green-300 dark:border-green-700 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all"
+                                        >
+                                            ✓ {t('public.externalResources.markComplete')}
+                                        </button>
+                                    </>
+                                )}
+                                {entry?.status === 'completed' && (
+                                    <span className="inline-flex items-center gap-1 text-xs font-medium px-3 py-1 rounded-full bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800">
+                                        🎉 {t('public.externalResources.statusCompleted')}
+                                    </span>
+                                )}
+                            </div>
+                        )}
 
                         <ExternalResourceDisclaimer providerName={provider} />
 
@@ -248,25 +332,42 @@ const ExternalResourceDetails = () => {
                         {content?.studyPlan?.length > 0 && (
                             <SectionBlock title={t('public.externalResources.studyPlan')}>
                                 <ol className="relative flex flex-col gap-0">
-                                    {content.studyPlan.map((week, idx) => (
-                                        <li key={week.week} className="flex gap-4 relative">
-                                            {/* Timeline connector */}
-                                            {idx < content.studyPlan.length - 1 && (
-                                                <span className="absolute left-[13px] top-7 bottom-0 w-0.5 bg-gray-200 dark:bg-white/10" />
-                                            )}
-                                            <span className="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-to-b from-[#FF8C6E] to-[#E14219] text-white text-xs font-bold flex items-center justify-center z-10 mt-3">
-                                                {week.week}
-                                            </span>
-                                            <div className="pb-5 flex-1">
-                                                <p className="font-semibold text-sm text-[#141619] dark:text-[#E8ECF3] mt-3">
-                                                    {cl(week.title)}
-                                                </p>
-                                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 leading-relaxed">
-                                                    {cl(week.description)}
-                                                </p>
-                                            </div>
-                                        </li>
-                                    ))}
+                                    {content.studyPlan.map((week, idx) => {
+                                        const done = entry?.checkedWeeks?.includes(week.week) ?? false;
+                                        return (
+                                            <li key={week.week} className="flex gap-4 relative">
+                                                {idx < content.studyPlan.length - 1 && (
+                                                    <span className="absolute left-[13px] top-7 bottom-0 w-0.5 bg-gray-200 dark:bg-white/10" />
+                                                )}
+                                                {user ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => toggleWeek(resource.slug, week.week)}
+                                                        className={`flex-shrink-0 w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center z-10 mt-3 transition-all ${
+                                                            done
+                                                                ? 'bg-green-500 text-white'
+                                                                : 'bg-gradient-to-b from-[#FF8C6E] to-[#E14219] text-white'
+                                                        }`}
+                                                        title={done ? '✓' : week.week.toString()}
+                                                    >
+                                                        {done ? '✓' : week.week}
+                                                    </button>
+                                                ) : (
+                                                    <span className="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-to-b from-[#FF8C6E] to-[#E14219] text-white text-xs font-bold flex items-center justify-center z-10 mt-3">
+                                                        {week.week}
+                                                    </span>
+                                                )}
+                                                <div className={`pb-5 flex-1 ${done ? 'opacity-60' : ''}`}>
+                                                    <p className={`font-semibold text-sm text-[#141619] dark:text-[#E8ECF3] mt-3 ${done ? 'line-through' : ''}`}>
+                                                        {cl(week.title)}
+                                                    </p>
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 leading-relaxed">
+                                                        {cl(week.description)}
+                                                    </p>
+                                                </div>
+                                            </li>
+                                        );
+                                    })}
                                 </ol>
                             </SectionBlock>
                         )}
@@ -282,6 +383,19 @@ const ExternalResourceDetails = () => {
                                         </li>
                                     ))}
                                 </ul>
+                            </SectionBlock>
+                        )}
+
+                        {/* Notes (logged-in only) */}
+                        {user && (
+                            <SectionBlock title={t('public.externalResources.notesLabel')}>
+                                <textarea
+                                    rows={4}
+                                    placeholder={t('public.externalResources.notesPlaceholder')}
+                                    value={entry?.notes ?? ''}
+                                    onChange={(e) => updateNotes(resource.slug, e.target.value)}
+                                    className="w-full rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#222222] text-sm text-gray-700 dark:text-gray-300 px-4 py-3 leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-[#E14219]/30 dark:focus:ring-[#FF8C6E]/30 placeholder-gray-400 dark:placeholder-gray-600 transition-all"
+                                />
                             </SectionBlock>
                         )}
                     </div>
@@ -331,9 +445,44 @@ const ExternalResourceDetails = () => {
 
                             <hr className="border-gray-100 dark:border-white/10" />
 
+                            {/* Progress action in sidebar */}
+                            {user && !entry && (
+                                <button
+                                    onClick={handleStart}
+                                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl font-semibold text-sm px-4 py-3 bg-gradient-to-b from-[#FF8C6E] to-[#E14219] text-white hover:from-[#C2410C] hover:to-[#C2410C] transition-all duration-300 active:scale-95 shadow-sm"
+                                >
+                                    🚀 {t('public.externalResources.start')}
+                                </button>
+                            )}
+                            {user && entry?.status === 'saved' && (
+                                <button
+                                    onClick={handleStart}
+                                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl font-semibold text-sm px-4 py-3 bg-gradient-to-b from-[#FF8C6E] to-[#E14219] text-white hover:from-[#C2410C] hover:to-[#C2410C] transition-all duration-300 active:scale-95 shadow-sm"
+                                >
+                                    🚀 {t('public.externalResources.start')}
+                                </button>
+                            )}
+                            {user && entry?.status === 'started' && (
+                                <button
+                                    onClick={handleComplete}
+                                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl font-semibold text-sm px-4 py-3 border-2 border-green-500 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-300"
+                                >
+                                    ✓ {t('public.externalResources.markComplete')}
+                                </button>
+                            )}
+                            {user && entry?.status === 'completed' && (
+                                <div className="w-full rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 px-4 py-3 text-sm text-green-700 dark:text-green-400 font-semibold text-center">
+                                    🎉 {t('public.externalResources.statusCompleted')}
+                                </div>
+                            )}
+
                             <button
                                 onClick={handleOfficialLink}
-                                className="w-full inline-flex items-center justify-center gap-2 rounded-xl font-semibold text-sm px-4 py-3 bg-gradient-to-b from-[#FF8C6E] to-[#E14219] text-white hover:from-[#C2410C] hover:to-[#C2410C] transition-all duration-300 active:scale-95 shadow-sm"
+                                className={`w-full inline-flex items-center justify-center gap-2 rounded-xl font-semibold text-sm px-4 py-3 transition-all duration-300 active:scale-95 shadow-sm ${
+                                    user && !entry
+                                        ? 'border border-gray-300 dark:border-white/20 text-gray-700 dark:text-gray-300 hover:border-[#E14219] hover:text-[#E14219]'
+                                        : 'bg-gradient-to-b from-[#FF8C6E] to-[#E14219] text-white hover:from-[#C2410C] hover:to-[#C2410C]'
+                                }`}
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
                                     <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />

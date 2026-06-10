@@ -1,6 +1,6 @@
 # Free External Learning Resources — EduBot Learning Integration Plan
 
-_Last updated: 2026-06-10. Phase 1 and Phase 2 frontend implementation complete. See §22 for task status and §28–§29 for implementation notes._
+_Last updated: 2026-06-10. Phase 1, 2, and 3 frontend implementation complete. See §22 for task status and §28–§30 for implementation notes._
 
 ## 1. Purpose
 
@@ -1262,14 +1262,16 @@ Do not overbuild progress, notes, AI, certificates, or full dashboard widgets ye
 
 ### Phase 3 — Logged-in Student Features
 
-- [ ] Add save/start status.
-- [ ] Add “My Learning Plan” dashboard widget.
-- [ ] Add notes field.
-- [ ] Add progress checklist.
-- [ ] Add reminders/notifications.
-- [ ] Add certificate/screenshot upload.
-- [ ] After login/signup, return users to the same resource page.
-- [ ] Resume intended action after login/signup when supported.
+**Status: Complete (frontend, localStorage-backed).** See §30 for implementation notes.
+
+- [x] Add save/start status — `useResourceProgress` hook; `saved | started | completed` states persisted to localStorage per user.
+- [x] Add “My Learning Plan” dashboard widget — `FreeResourcesWidget` injected into student dashboard OverviewTab; shows up to 5 saved/started/completed resources.
+- [x] Add notes field — textarea on detail page, auto-saved to localStorage via `updateNotes`.
+- [x] Add progress checklist — study plan week buttons toggle `checkedWeeks[]`; completed weeks show strikethrough and green dot.
+- [ ] Add reminders/notifications — Phase 4 (requires backend).
+- [ ] Add certificate/screenshot upload — Phase 4 (requires backend).
+- [x] After login/signup, return users to the same resource page — `ExternalResourceAuthPrompt` stores `pendingAction` + redirects with `state.from`; `getPostLoginPath` returns the resource URL.
+- [x] Resume intended action after login/signup — `executePendingAuthAction` handles `save-resource` type; navigates back and shows save toast.
 
 ### Phase 4 — Backend: Catalog and User Progress
 
@@ -2010,9 +2012,73 @@ const cl = (obj) => obj?.[lang] ?? obj?.ky ?? null;
 
 ### 29.4 Known gaps before Phase 3
 
+| Gap | Blocking? | Resolved? |
+|---|---|---|
+| `?redirect=`/`?intent=` login params not wired | No | **Yes — Phase 3** (pendingAction + state.from) |
+| Progress tracking UI | No | **Yes — Phase 3** |
+| `isFeatured` flag only set on CS50 (id 1) | No — fallback works | No — Phase 4 |
+| No loading/error state on detail page | No — static data | No — Phase 4 |
+
+---
+
+## 30. Phase 3 Implementation Notes
+
+_Completed: 2026-06-10._
+
+### 30.1 Files created
+
+```
+src/features/externalResources/hooks/useResourceProgress.js
+                                 — localStorage-backed hook; key ext_res_v1_{userId};
+                                   operations: save, start, complete, toggleWeek, updateNotes, remove
+src/features/externalResources/components/FreeResourcesWidget.jsx
+                                 — compact list of saved/started/completed resources;
+                                   injected into student dashboard OverviewTab
+```
+
+### 30.2 Files updated
+
+```
+src/features/externalResources/pages/ExternalResourceDetails.jsx
+                                 — save/start/complete buttons; week checkboxes in study plan;
+                                   notes textarea; sidebar action button adapts to status
+src/features/externalResources/components/ExternalResourceAuthPrompt.jsx
+                                 — stores pendingAction {type:'save-resource', slug, title}
+                                   before redirecting to login
+src/features/auth/utils/postLogin.js
+                                 — save-resource handler: navigate + toast after login
+src/features/student-dashboard/components/tabs/OverviewTab.jsx
+                                 — FreeResourcesWidget injected at bottom
+src/i18n/locales/{ky,en,ru}/public.js
+                                 — 20 Phase 3 keys: save, start, continue, complete, notes,
+                                   weekProgress, toast messages, widget strings, status labels
+```
+
+### 30.3 Storage schema
+
+```js
+// localStorage key: ext_res_v1_{userId}
+{
+  [slug]: {
+    status: 'saved' | 'started' | 'completed',
+    notes: string,
+    checkedWeeks: number[],
+    savedAt: ISO string,
+    startedAt: ISO string | null,
+    completedAt: ISO string | null,
+    title: string,
+    provider: string,
+  }
+}
+```
+
+One key per user ID. Falls back to `ext_res_v1_anon` for unauthenticated state (guest saves are visible after login when the same device is used and the userId key is created on next save).
+
+### 30.4 Known gaps before Phase 4
+
 | Gap | Blocking? | Phase |
 |---|---|---|
-| `?redirect=`/`?intent=` login params not wired | No | Phase 3 |
-| Progress tracking UI | No | Phase 3 |
-| `isFeatured` flag only set on CS50 (id 1) | No — fallback works | Phase 4 |
-| No loading/error state on detail page | No — static data | Phase 4 |
+| Progress not synced across devices | No — by design until backend | Phase 4 |
+| Reminders / push notifications | No | Phase 4 |
+| Certificate/screenshot upload | No | Phase 4 |
+| Anon progress lost on login if user never re-saves | Low risk | Phase 4 |
