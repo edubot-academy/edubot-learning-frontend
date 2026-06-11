@@ -8,6 +8,7 @@ import { courses } from './en/courses.js';
 import { attendance } from './en/attendance.js';
 import { certificates } from './en/certificates.js';
 import { integrations } from './en/integrations.js';
+import { career } from './en/career.js';
 
 export const en = {
     ...shared,
@@ -20,4 +21,5 @@ export const en = {
     ...attendance,
     ...certificates,
     ...integrations,
+    ...career,
 };

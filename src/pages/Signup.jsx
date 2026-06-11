@@ -1,4 +1,4 @@
-import { useState, useContext } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { registerUser } from '@services/api';
 import PhoneInput from '@shared/ui/forms/PhoneInput';
@@ -14,6 +14,7 @@ import { executePendingAuthAction, getPostLoginPath } from '@features/auth/utils
 import useResourceProgress from '@features/externalResources/hooks/useResourceProgress';
 import { useTranslation } from 'react-i18next';
 import { parseApiError } from '@shared/api/error';
+import { isCareerIntent } from '@features/career/utils/careerIntent';
 
 const getPasswordChecks = (password) => ({
     length: password.length >= 8,
@@ -50,6 +51,18 @@ const validateSignupForm = (formData, t) => {
 
 const SignupPage = () => {
     const { t } = useTranslation();
+    const navigate  = useNavigate();
+    const location  = useLocation();
+    const { user, login } = useContext(AuthContext);
+
+    // Already-authenticated user visiting /register?intent=... → skip signup, go process intent
+    useEffect(() => {
+        if (user && isCareerIntent(location.search)) {
+            const params = new URLSearchParams(location.search);
+            navigate(`/career?${params.toString()}`, { replace: true });
+        }
+    }, [user, location.search, navigate]);
+
     const [formData, setFormData] = useState({
         lastName: '',
         firstName: '',
@@ -64,9 +77,6 @@ const SignupPage = () => {
     const [fieldErrors, setFieldErrors] = useState({});
     const [showPasswordRules, setShowPasswordRules] = useState(false);
 
-    const navigate = useNavigate();
-    const location = useLocation();
-    const { login } = useContext(AuthContext);
     const { addToCart } = useCart();
     const { toggleFavourite } = useFavourites();
     const { saveResource } = useResourceProgress();

@@ -173,6 +173,7 @@ export const shared = {
         attendance: "Посещаемость",
         notifications: "Уведомления",
         chat: "Чат",
+        career: "Карьера",
         primaryNavigation: "Основная навигация",
         mobilePrimaryNavigation: "Основная мобильная навигация",
         accountMenu: "Меню аккаунта",

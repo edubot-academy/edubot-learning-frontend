@@ -1,10 +1,21 @@
 import toast from 'react-hot-toast';
 import i18n from '../../../i18n';
 import { getDashboardPath } from '@shared/utils/navigation';
+import { isCareerIntent } from '@features/career/utils/careerIntent';
 
 const MAX_PENDING_ACTION_AGE = 24 * 60 * 60 * 1000;
 
 export const getPostLoginPath = (user, location) => {
+    // Career intent — route to /career so useCareerIntent can claim the draft and redirect
+    if (isCareerIntent(location.search)) {
+        const src = new URLSearchParams(location.search);
+        const params = new URLSearchParams();
+        for (const key of ['intent', 'draftId', 'jobId']) {
+            if (src.has(key)) params.set(key, src.get(key));
+        }
+        return `/career?${params.toString()}`;
+    }
+
     const from = location.state?.from;
     const fromPath = typeof from === 'string' ? from : from?.pathname;
     const fromSearch = typeof from === 'string' ? '' : from?.search || '';

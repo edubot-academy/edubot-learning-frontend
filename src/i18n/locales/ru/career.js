@@ -1,0 +1,184 @@
+export const career = {
+    career: {
+        nav: {
+            title: 'Карьера',
+        },
+        public: {
+            hero: {
+                title: 'Найдите работу в зарубежных компаниях',
+                subtitle:
+                    'Введите свои навыки. EduBot создаст резюме на английском, покажет remote-вакансии в США и Европе и поможет подготовиться к отклику.',
+                cta: 'Начать — 2 минуты',
+            },
+            steps: {
+                form: 'Заполните данные',
+                preview: 'Посмотрите резюме',
+                jobs: 'Найдите вакансии и откликайтесь',
+                formDescription: 'Имя, целевая должность и навыки',
+                previewDescription: 'AI создаст резюме на английском',
+                jobsDescription: 'Remote-вакансии США/Европы с зарплатой в USD',
+            },
+            pasteToFill: {
+                label: 'Уже есть резюме? Вставьте его сюда, и мы автоматически заполним форму.',
+                button: 'Вставить резюме',
+            },
+            limit: {
+                reached: 'Доступен один бесплатный предварительный просмотр резюме.',
+                signupToSave: 'Создайте аккаунт, чтобы создавать больше резюме',
+            },
+        },
+        dashboard: {
+            title: 'Карьерный центр',
+            welcome: {
+                title: 'Добро пожаловать в EduBot Career!',
+                subtitle:
+                    'Здесь вы можете создать резюме на английском, найти remote-вакансии в США и Европе, написать сопроводительное письмо и отслеживать свои отклики.',
+            },
+            cards: {
+                resumeReadiness: 'Готовность резюме',
+                savedResumes: 'Сохранённые резюме',
+                bestMatch: 'Лучшая вакансия',
+                applications: 'Поданные отклики',
+                aiCredits: 'AI-кредиты',
+                nextStep: 'Следующий шаг',
+            },
+            nextSteps: {
+                noResume: 'Создайте резюме — займёт 2 минуты',
+                noMatches: 'Найдите подходящие remote-вакансии',
+                noApplications: 'Готовы откликаться? Вас ждёт лучшая вакансия',
+                hasApplications: '{{count}} отклика в процессе',
+            },
+            emptyState: {
+                resumes: 'Резюме пока нет',
+                resumesSubtitle: 'Создайте резюме, чтобы начать поиск работы.',
+                jobs: 'Вакансий пока нет',
+                jobsSubtitle: 'После создания резюме мы подберём подходящие вакансии.',
+                applications: 'Откликов пока нет',
+                applicationsSubtitle: 'Когда найдёте интересную вакансию, здесь будет ваш трекер.',
+            },
+        },
+        resume: {
+            builder: {
+                title: 'Создать резюме',
+                nameLabel: 'Имя и фамилия',
+                roleLabel: 'Целевая должность',
+                skillsLabel: 'Навыки',
+                namePlaceholder: 'Введите полное имя',
+                rolePlaceholder: 'Напр. Frontend Developer',
+                skillsPlaceholder: 'Напр. React, JavaScript, CSS',
+                generateButton: 'Создать резюме',
+                generating: 'Создаётся...',
+                retry: 'Попробовать снова',
+            },
+            preview: {
+                title: 'Ваше резюме готово',
+                score: 'Готовность: {{score}}/100',
+                save: 'Сохранить',
+                download: 'Скачать PDF',
+                improve: 'Улучшить',
+                lockedSave: 'Создайте аккаунт, чтобы сохранить',
+                lockedDownload: 'Создайте аккаунт, чтобы скачать',
+            },
+            score: {
+                strongPoints: 'Сильные стороны',
+                missing: 'Недостающая информация',
+                atsImprovements: 'Улучшения для ATS',
+                recommendations: 'Рекомендации по готовности к работе',
+            },
+            templates: {
+                title: 'Выберите формат',
+                subtitle: 'Все форматы совместимы с ATS и оформлены на английском',
+                classic: 'Классический',
+                classicDescription: 'Одна колонка. Самый безопасный для всех платформ.',
+                classicBestFor: 'Для всех уровней',
+                modern: 'Современный',
+                modernDescription: 'Две колонки. Для компаний, ценящих дизайн.',
+                modernBestFor: 'Опыт от 1 года',
+                projectsFirst: 'Проекты на первом месте',
+                projectsFirstDescription: 'Навыки и проекты в начале резюме.',
+                projectsFirstBestFor: 'Новички, выпускники курсов',
+                minimal: 'Минимализм',
+                minimalDescription: 'Контент на первом месте. Без украшений.',
+                minimalBestFor: 'Опыт от 3 лет',
+                tech: 'Технический',
+                techDescription: 'GitHub и проекты на виду. Для разработчиков.',
+                techBestFor: 'Есть проекты на GitHub',
+            },
+        },
+        jobs: {
+            title: 'Remote-вакансии',
+            subtitle: 'Из США и Европы',
+            salary: '${{min}}–${{max}} / мес.',
+            remote: 'Remote',
+            hiresInternationally: 'Нанимают международных специалистов',
+            matchScore: 'Совпадение {{score}}%',
+            matchedSkills: 'Совпадающие навыки',
+            missingSkills: 'Недостающие навыки',
+            actions: {
+                view: 'Подробнее',
+                tailor: 'Адаптировать резюме',
+                coverLetter: 'Написать сопроводительное письмо',
+                apply: 'Откликнуться',
+                save: 'Сохранить',
+                interviewPrep: 'Подготовиться к интервью',
+                signupToApply: 'Создайте аккаунт, чтобы откликнуться',
+                signupToDownload: 'Создайте аккаунт, чтобы скачать',
+                signupForCoverLetter: 'Создайте аккаунт для сопроводительного письма',
+            },
+            coverLetter: {
+                optional: 'Написать сопроводительное письмо (необязательно)',
+            },
+            interviewPrep: {
+                prompt: 'Хотите подготовиться к этой вакансии?',
+                description:
+                    'EduBot составит 7-дневный план подготовки к интервью на основе вакансии и вашего резюме.',
+                signupCta: 'Создайте аккаунт для плана подготовки',
+                generateCta: 'Составить план подготовки',
+            },
+        },
+        signup: {
+            prompt: {
+                title: 'Ваше резюме готово!',
+                subtitle:
+                    'Создайте аккаунт, чтобы сохранить резюме, скачать PDF и откликаться на вакансии. 30 секунд — и ваше резюме вас ждёт.',
+                features: {
+                    save: 'Сохранить резюме',
+                    download: 'Скачать PDF',
+                    tailor: 'Адаптировать под вакансию',
+                    coverLetter: 'Создать сопроводительное письмо',
+                    track: 'Отслеживать отклики',
+                },
+                cta: 'Создать аккаунт',
+            },
+        },
+        usage: {
+            title: 'Использование AI',
+            plan: {
+                visitor: 'Гость',
+                free: 'Бесплатный',
+                careerPlus: 'Career Plus',
+            },
+            limitReached: {
+                title: 'Вы использовали бесплатный лимит AI-резюме на этот месяц.',
+                subtitle: 'Перейдите на Career Plus, чтобы:',
+                features: {
+                    moreResumes: 'Создавать больше резюме',
+                    coverLetters: 'Генерировать сопроводительные письма',
+                    tailored: 'Адаптировать резюме под вакансии',
+                    tracking: 'Отслеживать отклики',
+                },
+                upgradeCta: 'Перейти на Career Plus',
+            },
+            credits: {
+                remaining: 'Использовано {{used}}/{{total}}',
+                unlimited: 'Без ограничений',
+            },
+        },
+        errors: {
+            generationFailed: 'Не удалось создать резюме. Попробуйте ещё раз.',
+            matchFailed: 'Не удалось загрузить вакансии. Попробуйте ещё раз.',
+            draftExpired: 'Черновик резюме устарел. Пожалуйста, заполните форму заново.',
+            saveFailed: 'Не удалось сохранить. Попробуйте ещё раз.',
+        },
+    },
+};

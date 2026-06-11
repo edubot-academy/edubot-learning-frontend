@@ -8,6 +8,7 @@ import { courses } from './ru/courses.js';
 import { attendance } from './ru/attendance.js';
 import { certificates } from './ru/certificates.js';
 import { integrations } from './ru/integrations.js';
+import { career } from './ru/career.js';
 
 export const ru = {
     ...shared,
@@ -20,4 +21,5 @@ export const ru = {
     ...attendance,
     ...certificates,
     ...integrations,
+    ...career,
 };

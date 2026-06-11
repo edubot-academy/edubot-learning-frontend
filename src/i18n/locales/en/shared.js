@@ -173,6 +173,7 @@ export const shared = {
         attendance: "Attendance",
         notifications: "Notifications",
         chat: "Chat",
+        career: "Career",
         primaryNavigation: "Primary navigation",
         mobilePrimaryNavigation: "Mobile primary navigation",
         accountMenu: "Account menu",

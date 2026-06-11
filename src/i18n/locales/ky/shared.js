@@ -173,6 +173,7 @@ export const shared = {
         attendance: "Катышуу",
         notifications: "Билдирүүлөр",
         chat: "Чат",
+        career: "Карьера",
         primaryNavigation: "Негизги навигация",
         mobilePrimaryNavigation: "Мобилдик негизги навигация",
         accountMenu: "Аккаунт менюсу",

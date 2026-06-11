@@ -43,6 +43,8 @@ const CertificateDownloadPage = lazy(() => import('../pages/CertificateDownload'
 const CertificateVerificationPage = lazy(() => import('../pages/CertificateVerification'));
 const ExternalResourcesPage = lazy(() => import('../features/externalResources/pages/ExternalResourcesPage'));
 const ExternalResourceDetails = lazy(() => import('../features/externalResources/pages/ExternalResourceDetails'));
+const PublicResumeBuilderPage = lazy(() => import('../features/career/pages/PublicResumeBuilderPage'));
+const CareerDashboardPage = lazy(() => import('../features/career/pages/CareerDashboardPage'));
 
 export const DashboardTabRedirect = ({ dashboardPath, tab }) => {
     const { search } = useLocation();
@@ -151,6 +153,11 @@ const AppRoutes = () => {
                     <Route path="/certificates/:publicId/verify" element={<CertificateVerificationPage />} />
                     <Route path="/resources" element={<ExternalResourcesPage />} />
                     <Route path="/resources/:slug" element={<ExternalResourceDetails />} />
+                    <Route path="/resume-builder" element={<PublicResumeBuilderPage />} />
+                    <Route element={<PrivateRoute />}>
+                        <Route path="/career" element={<CareerDashboardPage />} />
+                        <Route path="/career/*" element={<CareerDashboardPage />} />
+                    </Route>
 
                     <Route element={<PrivateRoute allowedRoles={['student', 'admin', 'instructor']} />}>
                         <Route path="/certificates/:publicId/download" element={<CertificateDownloadPage />} />

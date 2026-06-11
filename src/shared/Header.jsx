@@ -65,6 +65,11 @@ const NavLinks = ({ isMobile, user }) => {
                 {t('nav.contact')}
             </Link>
 
+            {user && (
+                <Link to="/career" className={`${active('/career')} ${linkClass} lg:text-sm xl:text-base 2xl:text-lg`}>
+                    {t('nav.career')}
+                </Link>
+            )}
             {user && user.role === 'instructor' && (
                 <Link to="/instructor" className={`${active('/instructor')} ${linkClass}`}>
                     {t('nav.dashboard')}
