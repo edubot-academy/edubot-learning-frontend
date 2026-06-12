@@ -78,7 +78,8 @@ export const useResumeDraft = () => {
         try {
             const sessionId = getOrCreateSessionId();
             const created = await createResumeDraft({ sessionId, input: formData, templateId });
-            if (created?.id) localStorage.setItem(DRAFT_KEY, created.id);
+            if (!created?.id) throw new Error('Draft creation failed');
+            localStorage.setItem(DRAFT_KEY, created.id);
 
             setStatus(DRAFT_STATUS.GENERATING);
             const generated = await generateResumeDraft(created.id);

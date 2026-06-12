@@ -45,7 +45,7 @@ export const career = {
             nextSteps: {
                 noResume: 'Создайте резюме — займёт 2 минуты',
                 noMatches: 'Найдите подходящие remote-вакансии',
-                noApplications: 'Готовы откликаться? Вас ждёт лучшая вакансия',
+                noApplications: 'Готовы откликаться? Лучшая вакансия предлагает {{salary}}',
                 hasApplications: '{{count}} отклика в процессе',
             },
             emptyState: {
@@ -78,6 +78,7 @@ export const career = {
                 improve: 'Улучшить',
                 lockedSave: 'Создайте аккаунт, чтобы сохранить',
                 lockedDownload: 'Создайте аккаунт, чтобы скачать',
+                pdfComingSoon: 'Скачивание PDF будет доступно в ближайшее время.',
             },
             score: {
                 strongPoints: 'Сильные стороны',
@@ -151,13 +152,43 @@ export const career = {
                 cta: 'Создать аккаунт',
             },
         },
+        intent: {
+            success: {
+                badge: 'Резюме сохранено',
+                title: 'Ваше резюме сохранено в новом аккаунте.',
+                subtitle: 'Продолжайте с того места, где остановились: откройте сохранённое резюме или переходите к подходящим remote-вакансиям.',
+                primaryCta: 'Продолжить',
+                secondaryCta: 'Смотреть вакансии',
+                points: {
+                    saved: 'Резюме привязано к аккаунту',
+                    jobs: 'Дальше вас ждут подходящие вакансии',
+                    tools: 'Открыты сопроводительные письма и interview prep',
+                },
+            },
+            recovery: {
+                title: 'Срок действия прошлого черновика истёк.',
+                restored: 'Мы восстановили ниже последние данные формы из local storage. Обновите нужные поля и создайте резюме заново.',
+                empty: 'Старый черновик восстановить не удалось, но вы можете снова заполнить форму и создать новое резюме.',
+            },
+        },
         usage: {
             title: 'Использование AI',
+            metrics: {
+                resumeGenerations: 'Генерации резюме',
+                jobMatchRequests: 'Подбор вакансий',
+                coverLetters: 'Сопроводительные письма',
+                interviewPlans: 'Планы подготовки к интервью',
+            },
             plan: {
                 visitor: 'Гость',
                 free: 'Бесплатный',
                 careerPlus: 'Career Plus',
             },
+            badge: {
+                exhausted: 'Лимит исчерпан',
+                remaining: 'Осталось {{remaining}} из {{limit}}',
+            },
+            lockedHint: 'Это AI-действие недоступно до конца текущего периода. Перейдите на Career Plus, чтобы продолжить.',
             limitReached: {
                 title: 'Вы использовали бесплатный лимит AI-резюме на этот месяц.',
                 subtitle: 'Перейдите на Career Plus, чтобы:',
@@ -168,6 +199,7 @@ export const career = {
                     tracking: 'Отслеживать отклики',
                 },
                 upgradeCta: 'Перейти на Career Plus',
+                contactCta: 'Связаться насчёт Career Plus',
             },
             credits: {
                 remaining: 'Использовано {{used}}/{{total}}',

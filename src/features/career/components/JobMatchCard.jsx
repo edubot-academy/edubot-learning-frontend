@@ -1,7 +1,8 @@
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '@app/providers';
+import { CAREER_ROUTES } from '../constants/careerRoutes';
 import { CAREER_INTENT, buildSignupUrl } from '../utils/careerLimits';
 
 // ─── Icons ─────────────────────────────────────────────────────────────────────
@@ -80,8 +81,8 @@ export const JobMatchCardSkeleton = () => (
         <div className="h-3 w-full bg-gray-100 dark:bg-white/5 rounded mb-1" />
         <div className="h-3 w-4/5 bg-gray-100 dark:bg-white/5 rounded mb-4" />
         <div className="flex flex-wrap gap-1.5 mb-4">
-            {[4, 5, 3, 6].map((w, i) => (
-                <div key={i} className={`h-5 w-${w * 4} bg-gray-100 dark:bg-white/5 rounded-full`} />
+            {[64, 80, 48, 96].map((w, i) => (
+                <div key={i} style={{ width: w }} className="h-5 bg-gray-100 dark:bg-white/5 rounded-full" />
             ))}
         </div>
         <div className="flex gap-2">
@@ -98,9 +99,20 @@ export const JobMatchCardSkeleton = () => (
  * @param {import('../hooks/useJobMatches').JobMatch} props.match
  * @param {string} [props.draftId] — for locked action URLs
  */
-const JobMatchCard = ({ match, draftId }) => {
+const JobMatchCard = ({
+    match,
+    draftId,
+    resumeId,
+    isSaved = false,
+    applicationStatus = null,
+    onToggleSave,
+    onApply,
+    saveBusy = false,
+    applyBusy = false,
+}) => {
     const { t } = useTranslation();
     const { user } = useContext(AuthContext);
+    const [showMore, setShowMore] = useState(false);
 
     const {
         id: jobId,
@@ -128,6 +140,12 @@ const JobMatchCard = ({ match, draftId }) => {
     const coverUrl   = buildSignupUrl({ intent: CAREER_INTENT.COVER_LETTER,  draftId, jobId });
     const tailorUrl  = buildSignupUrl({ intent: CAREER_INTENT.TAILOR,        draftId, jobId });
     const interviewUrl = buildSignupUrl({ intent: CAREER_INTENT.INTERVIEW_PLAN, draftId, jobId });
+    const coverLetterRoute = `${CAREER_ROUTES.COVER_LETTERS}?jobId=${jobId}${resumeId ? `&resumeId=${resumeId}` : ''}`;
+    const interviewRoute = `${CAREER_ROUTES.INTERVIEW_PREP}?jobId=${jobId}${resumeId ? `&resumeId=${resumeId}` : ''}`;
+    const tailorRoute = resumeId
+        ? `${CAREER_ROUTES.RESUME_DETAIL.replace(':resumeId', resumeId)}?tailorJobId=${jobId}`
+        : CAREER_ROUTES.RESUMES;
+    const hasTrackedApplication = Boolean(applicationStatus);
 
     return (
         <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-[#1a1a1a] overflow-hidden flex flex-col transition-shadow hover:shadow-md dark:hover:shadow-black/20">
@@ -264,29 +282,76 @@ const JobMatchCard = ({ match, draftId }) => {
                 {/* ── CTAs ── */}
                 <div className="mt-auto pt-2">
                     {user ? (
-                        /* Authenticated — real actions (wired in Phase 5) */
-                        <div className="flex flex-wrap gap-2">
-                            <button
-                                disabled
-                                title="Apply — coming in Phase 5"
-                                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-[#FF8C6E] to-[#E14219] px-4 py-2.5 text-sm font-semibold text-white opacity-70 cursor-not-allowed"
-                            >
-                                <IconBriefcase className="w-4 h-4" />
-                                {t('career.jobs.actions.apply')}
-                            </button>
-                            {asksCoverLetter && (
+                        <div className="flex flex-col gap-2">
+                            {/* Primary row: Apply + Save */}
+                            <div className="flex gap-2">
+                                {hasTrackedApplication ? (
+                                    <Link
+                                        to={CAREER_ROUTES.APPLICATIONS}
+                                        className="inline-flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
+                                    >
+                                        <IconCheck className="w-4 h-4" />
+                                        {applicationStatus}
+                                    </Link>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        disabled={applyBusy || !resumeId || !onApply}
+                                        onClick={() => onApply?.(jobId)}
+                                        className="cursor-pointer flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-[#FF8C6E] to-[#E14219] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60 disabled:cursor-not-allowed"
+                                    >
+                                        <IconBriefcase className="w-4 h-4" />
+                                        {applyBusy ? 'Applying...' : t('career.jobs.actions.apply')}
+                                    </button>
+                                )}
                                 <button
-                                    disabled
-                                    title="Cover letter — coming in Phase 8"
-                                    className="inline-flex items-center gap-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 px-4 py-2.5 text-sm font-medium text-[#3E424A] dark:text-[#a6adba] opacity-60 cursor-not-allowed"
+                                    type="button"
+                                    disabled={saveBusy || !onToggleSave}
+                                    onClick={() => onToggleSave?.(jobId, isSaved)}
+                                    className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 px-4 py-2.5 text-sm font-medium text-[#3E424A] dark:text-[#a6adba] disabled:opacity-60 disabled:cursor-not-allowed"
                                 >
-                                    <IconSparkle className="w-4 h-4" />
-                                    {t('career.jobs.actions.coverLetter')}
+                                    {saveBusy ? 'Saving...' : isSaved ? 'Saved' : t('career.jobs.actions.save')}
                                 </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowMore((v) => !v)}
+                                    className="cursor-pointer inline-flex items-center justify-center rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 w-10 text-[#3E424A] dark:text-[#a6adba] hover:bg-gray-50 dark:hover:bg-white/8 transition-colors"
+                                    aria-label="More actions"
+                                >
+                                    <span className="text-base leading-none tracking-widest">···</span>
+                                </button>
+                            </div>
+
+                            {/* Secondary row: Tailor, Cover Letter, Interview Prep */}
+                            {showMore && (
+                                <div className="flex flex-wrap gap-1.5 pt-1">
+                                    <Link
+                                        to={tailorRoute}
+                                        className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-1.5 text-xs font-medium text-[#3E424A] dark:text-[#a6adba] hover:bg-gray-50 dark:hover:bg-white/8 transition-colors"
+                                    >
+                                        <IconSparkle className="w-3.5 h-3.5" />
+                                        {t('career.jobs.actions.tailor')}
+                                    </Link>
+                                    <Link
+                                        to={coverLetterRoute}
+                                        className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-1.5 text-xs font-medium text-[#3E424A] dark:text-[#a6adba] hover:bg-gray-50 dark:hover:bg-white/8 transition-colors"
+                                    >
+                                        <IconSparkle className="w-3.5 h-3.5" />
+                                        {asksCoverLetter
+                                            ? t('career.jobs.actions.coverLetter')
+                                            : t('career.jobs.coverLetter.optional')}
+                                    </Link>
+                                    <Link
+                                        to={interviewRoute}
+                                        className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-1.5 text-xs font-medium text-[#3E424A] dark:text-[#a6adba] hover:bg-gray-50 dark:hover:bg-white/8 transition-colors"
+                                    >
+                                        <IconSparkle className="w-3.5 h-3.5" />
+                                        {t('career.jobs.actions.interviewPrep')}
+                                    </Link>
+                                </div>
                             )}
                         </div>
                     ) : (
-                        /* Public — locked actions */
                         <div className="flex flex-wrap gap-2">
                             <Link
                                 to={applyUrl}

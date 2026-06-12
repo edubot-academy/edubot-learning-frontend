@@ -1,7 +1,8 @@
-import { useState, useEffect, useContext, useCallback, useMemo } from 'react';
+import { useState, useEffect, useContext, useCallback, useMemo, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '@app/providers';
 import { claimResumeDraft } from '../api/resumeApi';
+import { CAREER_ROUTES } from '../constants/careerRoutes';
 import { parseCareerIntent, getCareerRedirectPath } from '../utils/careerIntent';
 
 export const INTENT_STATUS = {
@@ -29,28 +30,52 @@ export const useCareerIntent = ({ autoProcess = true } = {}) => {
             ?? (location.state?.intent
                 ? { intent: location.state.intent, draftId: location.state.draftId, jobId: location.state.jobId }
                 : null),
-        // eslint-disable-next-line react-hooks/exhaustive-deps
         [location.search, location.state?.intent, location.state?.draftId, location.state?.jobId],
     );
 
     const [status,      setStatus]      = useState(INTENT_STATUS.IDLE);
     const [claimedDraftId, setClaimedId] = useState(null);
+    const [claimedResumeId, setClaimedResumeId] = useState(null);
     const [error,       setError]       = useState(null);
+    const [result,      setResult]      = useState(null);
+
+    // Ref avoids including claimedResumeId in useCallback deps (prevents double-fire)
+    const claimedResumeIdRef = useRef(null);
 
     const process = useCallback(async () => {
         if (!parsed || !user) return;
 
-        const { draftId, jobId } = parsed;
+        const { draftId } = parsed;
+        let nextResumeId = claimedResumeIdRef.current;
 
         if (draftId) {
             setStatus(INTENT_STATUS.CLAIMING);
             try {
-                await claimResumeDraft(draftId);
+                const claimedResume = await claimResumeDraft(draftId);
+                claimedResumeIdRef.current = claimedResume?.id ?? null;
                 setClaimedId(draftId);
+                setClaimedResumeId(claimedResume?.id ?? null);
+                nextResumeId = claimedResume?.id ?? null;
             } catch (e) {
                 const code = e?.response?.status ?? e?.status;
-                if (code === 409 || code === 410) {
-                    // Non-fatal — draft already claimed or expired
+                if (code === 410) {
+                    const recoveryState = {
+                        type: 'draft_expired',
+                        intent: parsed.intent,
+                        draftId,
+                        hasRecoveredFormData: !!localStorage.getItem('careerResumeFormData'),
+                    };
+                    setResult(recoveryState);
+                    setStatus(INTENT_STATUS.DONE);
+                    navigate(CAREER_ROUTES.PUBLIC_BUILDER, {
+                        replace: true,
+                        state: { careerRecovery: recoveryState },
+                    });
+                    return;
+                }
+
+                if (code === 409) {
+                    // Non-fatal — draft already claimed elsewhere or no longer claimable
                 } else {
                     setError(e);
                     setStatus(INTENT_STATUS.ERROR);
@@ -59,14 +84,28 @@ export const useCareerIntent = ({ autoProcess = true } = {}) => {
             }
         }
 
-        const redirectPath = getCareerRedirectPath(parsed);
+        const redirectPath = getCareerRedirectPath({
+            ...parsed,
+            resumeId: nextResumeId,
+        });
+        const successResult = {
+            type: 'claim_success',
+            intent: parsed.intent,
+            draftId: draftId ?? null,
+            resumeId: nextResumeId,
+            nextPath: redirectPath,
+        };
+
+        setResult(successResult);
         setStatus(INTENT_STATUS.DONE);
 
-        // Only navigate away if we are on /career (the landing page after signup)
-        if (redirectPath !== '/career' && location.pathname === '/career') {
-            navigate(redirectPath, { replace: true });
-        }
-    }, [parsed, user, location.pathname, navigate]);
+        // Always replace-navigate to strip intent params from the URL;
+        // navigate to redirectPath (may be a sub-route or dashboard)
+        navigate(redirectPath, {
+            replace: true,
+            state: { careerIntentResult: successResult },
+        });
+    }, [parsed, user, navigate]);
 
     useEffect(() => {
         if (autoProcess && parsed && user && status === INTENT_STATUS.IDLE) {
@@ -79,8 +118,10 @@ export const useCareerIntent = ({ autoProcess = true } = {}) => {
         draftId:       parsed?.draftId ?? null,
         jobId:         parsed?.jobId  ?? null,
         claimedDraftId,
+        claimedResumeId,
         status,
         error,
+        result,
         hasIntent:     !!parsed,
         process,
     };

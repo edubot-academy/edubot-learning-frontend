@@ -1,9 +1,17 @@
-import { useContext } from 'react';
-import { Link } from 'react-router-dom';
+import { useContext, useEffect, useMemo, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '@app/providers';
 import { CAREER_ROUTES } from '../constants/careerRoutes';
 import { useCareerIntent, INTENT_STATUS } from '../hooks/useCareerIntent';
+import { getApplications } from '../api/applicationApi';
+import { getCoverLetters } from '../api/coverLetterApi';
+import { getJobMatchesByResume } from '../api/jobMatchApi';
+import { getResumes } from '../api/resumeApi';
+import { getCareerUsage } from '../api/usageApi';
+import ApplicationKanbanBoard from '../components/ApplicationKanbanBoard';
+import AiCreditsBadge from '../components/AiCreditsBadge';
+import { CAREER_USAGE_KEYS, getCareerUpgradeUrl } from '../utils/careerUsage';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -61,38 +69,36 @@ const IconTarget = ({ className = 'w-5 h-5' }) => (
     </svg>
 );
 
+const IconCheckCircle = ({ className = 'w-5 h-5' }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={className}>
+        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.78-9.47a.75.75 0 10-1.06-1.06L9.25 10.94 7.28 8.97a.75.75 0 00-1.06 1.06l2.5 2.5a.75.75 0 001.06 0l4-4z" clipRule="evenodd" />
+    </svg>
+);
+
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
 const METRIC_CARDS = [
     {
         key: 'resumeReadiness',
         Icon: IconDocument,
-        value: '—',
-        unit: '/ 100',
         link: CAREER_ROUTES.RESUMES,
         accent: 'orange',
     },
     {
         key: 'bestMatch',
         Icon: IconGlobe,
-        value: '—',
-        unit: 'USD / mo',
         link: CAREER_ROUTES.JOBS,
         accent: 'green',
     },
     {
         key: 'applications',
         Icon: IconInbox,
-        value: '0',
-        unit: 'active',
         link: CAREER_ROUTES.APPLICATIONS,
         accent: 'blue',
     },
     {
         key: 'aiCredits',
         Icon: IconSparkle,
-        value: '3',
-        unit: '/ 3 remaining',
         link: CAREER_ROUTES.USAGE,
         accent: 'purple',
     },
@@ -148,15 +154,178 @@ const MetricCard = ({ card, t }) => {
     );
 };
 
+const formatSalary = (job) => {
+    if (!job?.salaryMin && !job?.salaryMax) return null;
+    if (job.salaryMin && job.salaryMax) {
+        return `$${Number(job.salaryMin).toLocaleString()}-$${Number(job.salaryMax).toLocaleString()}`;
+    }
+    return `From $${Number(job.salaryMin || job.salaryMax).toLocaleString()}`;
+};
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 const CareerDashboardPage = () => {
     const { t } = useTranslation();
+    const location = useLocation();
     const { user } = useContext(AuthContext);
     const firstName = user?.firstName || user?.name?.split(' ')[0] || '';
+    const [resumes, setResumes] = useState([]);
+    const [matches, setMatches] = useState([]);
+    const [applications, setApplications] = useState([]);
+    const [coverLetters, setCoverLetters] = useState([]);
+    const [usage, setUsage] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [loadingMatches, setLoadingMatches] = useState(false);
+    const [error, setError] = useState(null);
 
     // Process any pending career intent (draft claim + redirect) on mount
     const { hasIntent, status: intentStatus } = useCareerIntent();
+    const latestResume = resumes[0] ?? null;
+    const intentResult = location.state?.careerIntentResult ?? null;
+    const nextActionPath =
+        intentResult?.nextPath && intentResult.nextPath !== CAREER_ROUTES.DASHBOARD
+            ? intentResult.nextPath
+            : intentResult?.resumeId
+                ? CAREER_ROUTES.RESUME_DETAIL.replace(':resumeId', intentResult.resumeId)
+                : CAREER_ROUTES.RESUMES;
+
+    useEffect(() => {
+        let mounted = true;
+
+        Promise.all([
+            getResumes(),
+            getCareerUsage(),
+            getApplications().catch(() => []),
+            getCoverLetters().catch(() => []),
+        ])
+            .then(([resumeData, usageData, applicationData, coverLetterData]) => {
+                if (!mounted) return;
+                setResumes(Array.isArray(resumeData) ? resumeData : []);
+                setUsage(usageData ?? null);
+                setApplications(Array.isArray(applicationData) ? applicationData : []);
+                setCoverLetters(Array.isArray(coverLetterData) ? coverLetterData : []);
+            })
+            .catch((err) => {
+                if (!mounted) return;
+                setError(err);
+            })
+            .finally(() => {
+                if (mounted) setLoading(false);
+            });
+
+        return () => {
+            mounted = false;
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!latestResume?.id) {
+            setMatches([]);
+            return;
+        }
+
+        let mounted = true;
+        setLoadingMatches(true);
+        getJobMatchesByResume(latestResume.id)
+            .then((data) => {
+                if (!mounted) return;
+                setMatches(Array.isArray(data) ? data : []);
+            })
+            .catch((err) => {
+                if (!mounted) return;
+                setError(err);
+            })
+            .finally(() => {
+                if (mounted) setLoadingMatches(false);
+            });
+
+        return () => {
+            mounted = false;
+        };
+    }, [latestResume?.id]);
+
+    const activeApplications = useMemo(
+        () => applications.filter((item) => item.status !== 'rejected').length,
+        [applications],
+    );
+    const bestMatch = matches[0] ?? null;
+    const jobsById = useMemo(
+        () => new Map(matches.map((item) => [item.jobId, item])),
+        [matches],
+    );
+    const resumesById = useMemo(
+        () => new Map(resumes.map((item) => [item.id, item])),
+        [resumes],
+    );
+    const coverLettersById = useMemo(
+        () => new Map(coverLetters.map((item) => [item.id, item])),
+        [coverLetters],
+    );
+    const resumeGenerationUsage = usage?.usage?.resumeGenerations ?? null;
+    const jobMatchUsage = usage?.usage?.jobMatchRequests ?? null;
+    const coverLetterUsage = usage?.usage?.coverLetters ?? null;
+    const recommendedNextStep = useMemo(() => {
+        if (!latestResume) {
+            return {
+                title: t('career.dashboard.nextSteps.noResume'),
+                subtitle: t('career.dashboard.emptyState.resumesSubtitle'),
+                cta: t('career.dashboard.nextSteps.noResume'),
+                to: CAREER_ROUTES.PUBLIC_BUILDER,
+            };
+        }
+
+        if (!bestMatch) {
+            return {
+                title: t('career.dashboard.nextSteps.noMatches'),
+                subtitle: t('career.dashboard.emptyState.jobsSubtitle'),
+                cta: t('career.dashboard.nextSteps.noMatches'),
+                to: CAREER_ROUTES.JOBS,
+            };
+        }
+
+        if (activeApplications > 0) {
+            return {
+                title: t('career.dashboard.nextSteps.hasApplications', { count: activeApplications }),
+                subtitle: bestMatch.company
+                    ? `${bestMatch.title} · ${bestMatch.company}`
+                    : bestMatch.title,
+                cta: t('career.dashboard.cards.applications'),
+                to: CAREER_ROUTES.APPLICATIONS,
+            };
+        }
+
+        return {
+            title: t('career.dashboard.nextSteps.noApplications', { salary: formatSalary(bestMatch) || '$2,000+' }),
+            subtitle: bestMatch.company
+                ? `${bestMatch.title} · ${bestMatch.company}`
+                : bestMatch.title,
+            cta: t('career.jobs.actions.apply'),
+            to: CAREER_ROUTES.JOB_DETAIL.replace(':jobId', bestMatch.jobId),
+        };
+    }, [activeApplications, bestMatch, latestResume, t]);
+
+    const metricCards = useMemo(() => ([
+        {
+            ...METRIC_CARDS[0],
+            value: latestResume?.readinessScore ?? '—',
+            unit: latestResume ? '/ 100' : '',
+        },
+        {
+            ...METRIC_CARDS[1],
+            value: bestMatch?.score != null ? `${bestMatch.score}%` : '—',
+            unit: bestMatch?.salaryMax || bestMatch?.salaryMin ? 'top match' : '',
+        },
+        {
+            ...METRIC_CARDS[2],
+            value: activeApplications,
+            unit: activeApplications === 1 ? 'active' : 'active',
+        },
+        {
+            ...METRIC_CARDS[3],
+            value: resumeGenerationUsage?.remaining ?? '—',
+            unit: resumeGenerationUsage ? `/ ${resumeGenerationUsage.limit} left` : '',
+        },
+    ]), [activeApplications, bestMatch?.salaryMax, bestMatch?.salaryMin, bestMatch?.score, latestResume, resumeGenerationUsage]);
 
     if (hasIntent && intentStatus === INTENT_STATUS.CLAIMING) {
         return (
@@ -197,20 +366,92 @@ const CareerDashboardPage = () => {
                         </p>
                     </div>
                     <Link
-                        to={CAREER_ROUTES.PUBLIC_BUILDER}
+                        to={recommendedNextStep.to}
                         className="inline-flex flex-shrink-0 items-center gap-2.5 self-start rounded-xl bg-gradient-to-b from-[#FF8C6E] to-[#E14219] px-6 py-3.5 text-sm font-semibold text-white shadow-sm hover:from-[#C2410C] hover:to-[#C2410C] transition-all duration-300 active:scale-95"
                     >
                         <IconRocket className="w-4 h-4" />
-                        {t('career.dashboard.nextSteps.noResume')}
+                        {recommendedNextStep.cta}
                     </Link>
                 </div>
 
+                {intentResult?.type === 'claim_success' && (
+                    <div className="mb-7 rounded-2xl border border-emerald-200 dark:border-emerald-500/20 bg-gradient-to-r from-emerald-50 via-white to-orange-50 dark:from-emerald-900/15 dark:via-[#1a1a1a] dark:to-[#E14219]/10 p-6">
+                        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="max-w-2xl">
+                                <div className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
+                                    <IconCheckCircle className="w-4 h-4" />
+                                    {t('career.intent.success.badge')}
+                                </div>
+                                <h2 className="mt-3 font-suisse text-2xl font-bold text-[#141619] dark:text-[#E8ECF3]">
+                                    {t('career.intent.success.title')}
+                                </h2>
+                                <p className="mt-2 max-w-xl text-sm leading-6 text-[#3E424A] dark:text-[#a6adba]">
+                                    {t('career.intent.success.subtitle')}
+                                </p>
+                                <div className="mt-4 flex flex-wrap gap-2.5 text-sm">
+                                    <span className="rounded-full border border-gray-200 dark:border-white/10 bg-white/80 dark:bg-white/5 px-3 py-1.5 text-[#141619] dark:text-[#E8ECF3]">
+                                        {t('career.intent.success.points.saved')}
+                                    </span>
+                                    <span className="rounded-full border border-gray-200 dark:border-white/10 bg-white/80 dark:bg-white/5 px-3 py-1.5 text-[#141619] dark:text-[#E8ECF3]">
+                                        {t('career.intent.success.points.jobs')}
+                                    </span>
+                                    <span className="rounded-full border border-gray-200 dark:border-white/10 bg-white/80 dark:bg-white/5 px-3 py-1.5 text-[#141619] dark:text-[#E8ECF3]">
+                                        {t('career.intent.success.points.tools')}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col gap-2.5 sm:min-w-56">
+                                <Link
+                                    to={nextActionPath}
+                                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-[#FF8C6E] to-[#E14219] px-5 py-3 text-sm font-semibold text-white shadow-sm hover:from-[#C2410C] hover:to-[#C2410C] transition-colors"
+                                >
+                                    {t('career.intent.success.primaryCta')}
+                                    <IconArrowRight className="w-4 h-4" />
+                                </Link>
+                                <Link
+                                    to={CAREER_ROUTES.JOBS}
+                                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 px-5 py-3 text-sm font-medium text-[#3E424A] dark:text-[#a6adba] hover:border-[#E14219]/30 hover:text-[#E14219] transition-colors"
+                                >
+                                    {t('career.intent.success.secondaryCta')}
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* ── Metric cards ── */}
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 mb-7">
-                    {METRIC_CARDS.map((card) => (
+                    {metricCards.map((card) => (
                         <MetricCard key={card.key} card={card} t={t} />
                     ))}
                 </div>
+
+                <Link
+                    to={recommendedNextStep.to}
+                    className="group mb-10 flex flex-col gap-4 rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-[#1a1a1a] p-6 shadow-sm hover:-translate-y-0.5 hover:shadow-md transition-all duration-300 sm:flex-row sm:items-center sm:justify-between"
+                >
+                    <div className="flex items-start gap-4">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#FFF3EF] text-[#E14219] dark:bg-[#E14219]/10">
+                            <IconRocket className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <p className="text-sm font-medium text-[#3E424A] dark:text-[#a6adba]">
+                                {t('career.dashboard.cards.nextStep')}
+                            </p>
+                            <p className="mt-1 text-xl font-bold text-[#141619] dark:text-[#E8ECF3]">
+                                {recommendedNextStep.title}
+                            </p>
+                            <p className="mt-2 text-sm text-[#3E424A] dark:text-[#a6adba]">
+                                {recommendedNextStep.subtitle}
+                            </p>
+                        </div>
+                    </div>
+                    <span className="inline-flex items-center gap-2 text-sm font-semibold text-[#E14219] group-hover:text-[#C2410C]">
+                        {recommendedNextStep.cta}
+                        <IconArrowRight className="w-4 h-4" />
+                    </span>
+                </Link>
 
                 {/* ── Section navigation pills ── */}
                 <div className="flex flex-wrap gap-2.5 mb-10">
@@ -244,25 +485,87 @@ const CareerDashboardPage = () => {
                             </Link>
                         </div>
 
-                        {/* Empty state */}
-                        <div className="flex flex-col items-center justify-center py-20 px-8 text-center">
-                            <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50 dark:bg-white/5">
-                                <IconDocument className="w-8 h-8 text-gray-300 dark:text-white/20" />
+                        {loading ? (
+                            <div className="px-6 py-12 text-sm text-[#3E424A] dark:text-[#a6adba]">
+                                Loading resumes...
                             </div>
-                            <p className="text-base font-semibold text-[#141619] dark:text-[#E8ECF3]">
-                                {t('career.dashboard.emptyState.resumes')}
-                            </p>
-                            <p className="mt-2 text-sm text-[#3E424A] dark:text-[#a6adba] max-w-xs">
-                                {t('career.dashboard.emptyState.resumesSubtitle')}
-                            </p>
-                            <Link
-                                to={CAREER_ROUTES.PUBLIC_BUILDER}
-                                className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-[#FF8C6E] to-[#E14219] px-6 py-3 text-sm font-semibold text-white shadow-sm hover:from-[#C2410C] hover:to-[#C2410C] transition-all duration-300 active:scale-95"
-                            >
-                                {t('career.dashboard.nextSteps.noResume')}
-                                <IconArrowRight />
-                            </Link>
-                        </div>
+                        ) : latestResume ? (
+                            <div className="px-6 py-5">
+                                <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50 dark:bg-white/[0.03] p-5 mb-4">
+                                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                        <div>
+                                            <p className="text-xs font-semibold uppercase tracking-wide text-[#E14219] mb-1">
+                                                Latest resume
+                                            </p>
+                                            <h2 className="font-semibold text-lg text-[#141619] dark:text-[#E8ECF3]">
+                                                {latestResume.name || 'My Resume'}
+                                            </h2>
+                                            <p className="mt-1 text-sm text-[#3E424A] dark:text-[#a6adba]">
+                                                {latestResume.generatedResume?.header?.role || latestResume.input?.targetRole || 'Resume'}
+                                            </p>
+                                        </div>
+                                        <div className="text-left sm:text-right">
+                                            <p className="text-3xl font-bold text-[#141619] dark:text-[#E8ECF3]">
+                                                {latestResume.readinessScore ?? '—'}
+                                            </p>
+                                            <p className="text-xs text-[#3E424A] dark:text-[#a6adba]">Readiness score</p>
+                                        </div>
+                                    </div>
+                                    <div className="mt-4 flex flex-wrap gap-2">
+                                        <Link
+                                            to={CAREER_ROUTES.RESUME_DETAIL.replace(':resumeId', latestResume.id)}
+                                            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-[#FF8C6E] to-[#E14219] px-4 py-2.5 text-sm font-semibold text-white"
+                                        >
+                                            Open resume
+                                            <IconArrowRight />
+                                        </Link>
+                                        <span className="inline-flex items-center rounded-full border border-gray-200 dark:border-white/10 px-3 py-1 text-xs text-[#3E424A] dark:text-[#a6adba]">
+                                            {latestResume.templateId || 'classic'}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="grid gap-3">
+                                    {resumes.slice(0, 3).map((resume) => (
+                                        <Link
+                                            key={resume.id}
+                                            to={CAREER_ROUTES.RESUME_DETAIL.replace(':resumeId', resume.id)}
+                                            className="flex items-center justify-between gap-4 rounded-xl border border-gray-100 dark:border-white/10 px-4 py-3 hover:border-[#E14219]/30"
+                                        >
+                                            <div>
+                                                <p className="text-sm font-medium text-[#141619] dark:text-[#E8ECF3]">{resume.name || 'My Resume'}</p>
+                                                <p className="text-xs text-[#3E424A] dark:text-[#a6adba]">
+                                                    {resume.generatedResume?.header?.role || resume.input?.targetRole || 'Resume'}
+                                                </p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-sm font-semibold text-[#141619] dark:text-[#E8ECF3]">{resume.readinessScore ?? '—'}</p>
+                                                <p className="text-[11px] text-[#3E424A] dark:text-[#a6adba]">score</p>
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center py-20 px-8 text-center">
+                                <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50 dark:bg-white/5">
+                                    <IconDocument className="w-8 h-8 text-gray-300 dark:text-white/20" />
+                                </div>
+                                <p className="text-base font-semibold text-[#141619] dark:text-[#E8ECF3]">
+                                    {t('career.dashboard.emptyState.resumes')}
+                                </p>
+                                <p className="mt-2 text-sm text-[#3E424A] dark:text-[#a6adba] max-w-xs">
+                                    {t('career.dashboard.emptyState.resumesSubtitle')}
+                                </p>
+                                <Link
+                                    to={CAREER_ROUTES.PUBLIC_BUILDER}
+                                    className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-[#FF8C6E] to-[#E14219] px-6 py-3 text-sm font-semibold text-white shadow-sm hover:from-[#C2410C] hover:to-[#C2410C] transition-all duration-300 active:scale-95"
+                                >
+                                    {t('career.dashboard.nextSteps.noResume')}
+                                    <IconArrowRight />
+                                </Link>
+                            </div>
+                        )}
                     </div>
 
                     {/* Right — Job matches + quick actions */}
@@ -279,14 +582,65 @@ const CareerDashboardPage = () => {
                                     {t('career.jobs.subtitle')}
                                 </span>
                             </div>
-                            <div className="flex flex-col items-center justify-center py-10 px-5 text-center">
-                                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-gray-100 dark:border-white/10 bg-gray-50 dark:bg-white/5">
-                                    <IconBriefcase className="w-6 h-6 text-gray-300 dark:text-white/20" />
+                            {loadingMatches ? (
+                                <div className="px-5 py-8 text-sm text-[#3E424A] dark:text-[#a6adba]">
+                                    Loading matches...
                                 </div>
-                                <p className="text-xs font-medium text-[#3E424A] dark:text-[#a6adba]">
-                                    {t('career.dashboard.emptyState.jobsSubtitle')}
-                                </p>
-                            </div>
+                            ) : bestMatch ? (
+                                <div className="px-5 py-5">
+                                    <Link
+                                        to={CAREER_ROUTES.JOB_DETAIL.replace(':jobId', bestMatch.jobId)}
+                                        className="block rounded-xl border border-gray-100 dark:border-white/10 bg-gray-50 dark:bg-white/[0.03] p-4 hover:border-[#E14219]/30"
+                                    >
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div>
+                                                <p className="font-medium text-[#141619] dark:text-[#E8ECF3]">{bestMatch.title}</p>
+                                                <p className="mt-1 text-xs text-[#3E424A] dark:text-[#a6adba]">{bestMatch.company}</p>
+                                            </div>
+                                            <span className="rounded-full bg-emerald-50 dark:bg-emerald-900/15 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                                                {bestMatch.score}%
+                                            </span>
+                                        </div>
+                                        {(bestMatch.salaryMax || bestMatch.salaryMin) ? (
+                                            <p className="mt-3 text-sm font-medium text-[#141619] dark:text-[#E8ECF3]">
+                                                {bestMatch.salaryMin && bestMatch.salaryMax
+                                                    ? `$${Number(bestMatch.salaryMin).toLocaleString()}-$${Number(bestMatch.salaryMax).toLocaleString()}`
+                                                    : `From $${Number(bestMatch.salaryMin).toLocaleString()}`}
+                                            </p>
+                                        ) : null}
+                                        <p className="mt-3 text-xs text-[#3E424A] dark:text-[#a6adba] line-clamp-3">
+                                            {bestMatch.explanation}
+                                        </p>
+                                    </Link>
+
+                                    {matches.slice(1, 3).length > 0 ? (
+                                        <div className="mt-3 space-y-2">
+                                            {matches.slice(1, 3).map((match) => (
+                                                <Link
+                                                    key={match.id}
+                                                    to={CAREER_ROUTES.JOB_DETAIL.replace(':jobId', match.jobId)}
+                                                    className="flex items-center justify-between gap-3 rounded-xl border border-gray-100 dark:border-white/10 px-3 py-2.5 hover:border-[#E14219]/30"
+                                                >
+                                                    <div className="min-w-0">
+                                                        <p className="truncate text-sm font-medium text-[#141619] dark:text-[#E8ECF3]">{match.title}</p>
+                                                        <p className="truncate text-xs text-[#3E424A] dark:text-[#a6adba]">{match.company}</p>
+                                                    </div>
+                                                    <span className="text-xs font-semibold text-[#E14219]">{match.score}%</span>
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    ) : null}
+                                </div>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center py-10 px-5 text-center">
+                                    <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-gray-100 dark:border-white/10 bg-gray-50 dark:bg-white/5">
+                                        <IconBriefcase className="w-6 h-6 text-gray-300 dark:text-white/20" />
+                                    </div>
+                                    <p className="text-xs font-medium text-[#3E424A] dark:text-[#a6adba]">
+                                        {t('career.dashboard.emptyState.jobsSubtitle')}
+                                    </p>
+                                </div>
+                            )}
                         </div>
 
                         {/* AI Usage card */}
@@ -297,31 +651,22 @@ const CareerDashboardPage = () => {
                                     <p className="text-sm font-semibold">{t('career.usage.title')}</p>
                                 </div>
                                 <span className="text-xs font-medium text-[#3E424A] dark:text-[#a6adba]">
-                                    {t('career.usage.plan.free')}
+                                    {usage?.plan || t('career.usage.plan.free')}
                                 </span>
                             </div>
                             <div className="space-y-2.5">
                                 {[
-                                    { label: 'Resume generations', used: 0, total: 3 },
-                                    { label: 'Job matches', used: 0, total: 5 },
-                                    { label: 'Cover letters', used: 0, total: 1 },
-                                ].map(({ label, used, total }) => (
-                                    <div key={label}>
-                                        <div className="flex justify-between text-[10px] text-[#3E424A] dark:text-[#a6adba] mb-1">
-                                            <span>{label}</span>
-                                            <span>{used}/{total}</span>
-                                        </div>
-                                        <div className="h-1.5 w-full rounded-full bg-gray-100 dark:bg-white/5 overflow-hidden">
-                                            <div
-                                                className="h-full rounded-full bg-gradient-to-r from-[#FF8C6E] to-[#E14219]"
-                                                style={{ width: `${(used / total) * 100}%` }}
-                                            />
-                                        </div>
+                                    { key: CAREER_USAGE_KEYS.RESUME_GENERATIONS, metric: resumeGenerationUsage },
+                                    { key: CAREER_USAGE_KEYS.JOB_MATCH_REQUESTS, metric: jobMatchUsage },
+                                    { key: CAREER_USAGE_KEYS.COVER_LETTERS, metric: coverLetterUsage },
+                                ].map(({ key, metric }) => (
+                                    <div key={key}>
+                                        {metric ? <AiCreditsBadge metricKey={key} metric={metric} compact /> : null}
                                     </div>
                                 ))}
                             </div>
                             <Link
-                                to={CAREER_ROUTES.USAGE}
+                                to={getCareerUpgradeUrl()}
                                 className="mt-4 flex items-center justify-between text-xs font-medium text-[#E14219] hover:text-[#C2410C] transition-colors"
                             >
                                 {t('career.usage.limitReached.upgradeCta')}
@@ -330,6 +675,39 @@ const CareerDashboardPage = () => {
                         </div>
                     </div>
                 </div>
+
+                <div className="mt-4 rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-[#1a1a1a] overflow-hidden">
+                    <div className="flex flex-col gap-2 border-b border-gray-100 dark:border-white/10 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                            <p className="text-sm font-semibold text-[#141619] dark:text-[#E8ECF3]">Applications pipeline</p>
+                            <p className="mt-1 text-sm text-[#3E424A] dark:text-[#a6adba]">
+                                Saved, applied, interview, and final outcomes in one board.
+                            </p>
+                        </div>
+                        <Link
+                            to={CAREER_ROUTES.APPLICATIONS}
+                            className="text-sm font-medium text-[#E14219] hover:text-[#C2410C]"
+                        >
+                            Open full tracker
+                        </Link>
+                    </div>
+                    <div className="p-6">
+                        <ApplicationKanbanBoard
+                            applications={applications}
+                            jobsById={jobsById}
+                            resumesById={resumesById}
+                            coverLettersById={coverLettersById}
+                            readOnly
+                            emptyMessage={t('career.dashboard.emptyState.applicationsSubtitle')}
+                        />
+                    </div>
+                </div>
+
+                {error ? (
+                    <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:border-amber-500/20 dark:bg-amber-950/20 dark:text-amber-300">
+                        Some dashboard data could not be loaded.
+                    </div>
+                ) : null}
             </div>
         </div>
     );

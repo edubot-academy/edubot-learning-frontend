@@ -11,6 +11,7 @@ import TopCourses from '@features/courses/components/TopCourses';
 import TopLearnersHome from '@features/leaderboard/components/TopLearnersHome';
 import { useTranslation } from 'react-i18next';
 import ExternalResourcesHomeSection from '@features/externalResources/components/ExternalResourcesHomeSection';
+import CareerHomeSection from '@features/career/components/CareerHomeSection';
 
 const HomePage = () => {
     const { t } = useTranslation();
@@ -42,6 +43,7 @@ const HomePage = () => {
             <Benefits />
             <TopCourses coursesData={coursesData} loading={coursesLoading} error={coursesError} />
             <ExternalResourcesHomeSection />
+            <CareerHomeSection />
             <TopLearnersHome />
             <Instructor />
             <Apply />

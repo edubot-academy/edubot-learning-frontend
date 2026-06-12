@@ -8,7 +8,20 @@
 | 2 — Resume builder form | ✅ Done |
 | 3 — Resume preview | 🔄 In progress |
 | 4 — Job matches | 🔄 In progress |
-| 5–10 | Not started |
+| 5 — Protected career routing | 🔄 In progress |
+| 6–10 | Not started |
+
+## Implementation Log
+
+- 2026-06-11: Started protected career frontend slice.
+- 2026-06-11: Added distinct frontend routes for `/career/resumes`, `/career/resumes/:resumeId`, `/career/jobs`, `/career/jobs/:jobId`, `/career/usage`.
+- 2026-06-11: Wired minimal frontend pages to existing backend endpoints for resumes, jobs, saved jobs, resume tailoring, and usage.
+- 2026-06-11: Wired authenticated resume save/download actions from preview and improved post-signup draft-claim redirect toward concrete resume screens.
+- 2026-06-11: Hydrated career dashboard with live resume, usage, applications, and best-match data.
+- 2026-06-11: Added protected applications and cover-letters pages with create/update wiring against backend endpoints.
+- 2026-06-11: Verified the applications and cover-letters slice with a successful production build.
+- 2026-06-11: Added protected interview-prep page wired to live jobs, resumes, applications, and usage data; dedicated interview-plan backend generation endpoint is still pending.
+- 2026-06-11: Replaced remaining authenticated job-action placeholders with live save/apply state in job matches and job detail flows, and deep-linked cover-letter/interview screens with prefilled job and resume context.
 
 ## Branch
 

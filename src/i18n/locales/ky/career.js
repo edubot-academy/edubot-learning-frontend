@@ -45,7 +45,7 @@ export const career = {
             nextSteps: {
                 noResume: 'Резюмеңизди түзүңүз — 2 мүнөт жетет',
                 noMatches: 'Remote жумуштарды табыңыз',
-                noApplications: 'Тапшырууга даярсызбы? Эң ылайыктуу жумушуңуз сизди күтөт',
+                noApplications: 'Тапшырууга даярсызбы? Эң ылайыктуу жумуш {{salary}} сунуштайт',
                 hasApplications: '{{count}} арыз иштелип жатат',
             },
             emptyState: {
@@ -78,6 +78,7 @@ export const career = {
                 improve: 'Жакшыртуу',
                 lockedSave: 'Сактоо үчүн катталуу',
                 lockedDownload: 'PDF жүктөө үчүн катталуу',
+                pdfComingSoon: 'PDF жүктөө жакында жеткиликтүү болот.',
             },
             score: {
                 strongPoints: 'Күчтүү жактары',
@@ -151,13 +152,43 @@ export const career = {
                 cta: 'Аккаунт түзүү',
             },
         },
+        intent: {
+            success: {
+                badge: 'Резюме сакталды',
+                title: 'Резюмеңиз жаңы аккаунтуңузга сакталды.',
+                subtitle: 'Токтогон жериңизден улантыңыз: сакталган резюмени ачыңыз же ылайыктуу remote жумуштарды караңыз.',
+                primaryCta: 'Улантуу',
+                secondaryCta: 'Жумуштарды көрүү',
+                points: {
+                    saved: 'Резюме аккаунтуңузга байланыштырылды',
+                    jobs: 'Кийинки кадамда ылайыктуу жумуштар даяр',
+                    tools: 'Коштомо кат жана interview prep жеткиликтүү',
+                },
+            },
+            recovery: {
+                title: 'Мурунку черновиктин мөөнөтү бүттү.',
+                restored: 'Форманын акыркы маалыматын local storage\'дан төмөндө калыбына келтирдик. Каалаган талааларды оңдоп, кайра түзүңүз.',
+                empty: 'Эски черновикти калыбына келтире алган жокпуз, бирок форманы кайра толтуруп, жаңы резюме түзө аласыз.',
+            },
+        },
         usage: {
             title: 'AI колдонуу',
+            metrics: {
+                resumeGenerations: 'Резюме генерациялары',
+                jobMatchRequests: 'Жумуш дал келүүлөрү',
+                coverLetters: 'Коштомо каттар',
+                interviewPlans: 'Интервью даярдык пландары',
+            },
             plan: {
                 visitor: 'Мейман',
                 free: 'Акысыз',
                 careerPlus: 'Career Plus',
             },
+            badge: {
+                exhausted: 'Лимит бүттү',
+                remaining: '{{limit}} ичинен {{remaining}} калды',
+            },
+            lockedHint: 'Бул AI аракети ушул эсептик мезгилдин аягына чейин жабык. Улантуу үчүн Career Plusка өтүңүз.',
             limitReached: {
                 title: 'Бул айдагы акысыз AI резюме лимитиңиз бүттү.',
                 subtitle: 'Career Plusка өтсөңүз:',
@@ -168,6 +199,7 @@ export const career = {
                     tracking: 'Тапшырууларды көзөмөлдөйсүз',
                 },
                 upgradeCta: 'Career Plus\'ка өтүү',
+                contactCta: 'Career Plus боюнча байланышуу',
             },
             credits: {
                 remaining: '{{used}}/{{total}} колдонулду',

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import NotificationsWidget from '@features/notifications/components/NotificationsWidget';
 import FreeResourcesWidget from '@features/externalResources/components/FreeResourcesWidget';
@@ -549,6 +550,28 @@ const OverviewTab = ({
             </div>
 
             <FreeResourcesWidget userId={student.id} />
+
+            <div className="mx-4 mb-6 rounded-2xl border border-[#E14219]/20 bg-gradient-to-r from-[#1a0f0a] to-[#141619] dark:from-[#1a0f0a] dark:to-[#0e0e0e] px-6 py-5 sm:mx-6 lg:mx-8">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex flex-col gap-1.5">
+                        <p className="text-xs font-semibold text-[#E14219] uppercase tracking-widest">
+                            EduBot Career
+                        </p>
+                        <p className="font-suisse font-semibold text-[#E8ECF3] text-base">
+                            {t('career.public.hero.title')}
+                        </p>
+                        <p className="text-xs text-[#a6adba] max-w-md leading-5">
+                            {t('career.public.hero.subtitle')}
+                        </p>
+                    </div>
+                    <Link
+                        to="/career"
+                        className="shrink-0 inline-flex items-center justify-center rounded-xl bg-gradient-to-b from-[#FF8C6E] to-[#E14219] px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
+                    >
+                        {t('career.dashboard.nextSteps.noResume')}
+                    </Link>
+                </div>
+            </div>
         </div>
     );
 };

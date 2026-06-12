@@ -1,5 +1,14 @@
 # AI Resume Career Assistant — Backend Implementation Plan
 
+## Frontend Integration Log
+
+- 2026-06-11: Frontend started consuming protected career endpoints beyond draft flow.
+- 2026-06-11: First connected protected pages: resumes, jobs, job detail, usage.
+- 2026-06-11: Frontend now uses `POST /career/resumes` for authenticated preview save and consumes claim response to resolve resume-aware redirect paths.
+- 2026-06-11: Hardened career AI JSON parsing for resume generation, parser, and tailor flows to tolerate fenced or truncated model output.
+- 2026-06-11: Rebuilt backend after tightening truncated JSON repair for incomplete string/object endings.
+- 2026-06-11: Frontend now consumes live save/apply state in job flows; remaining backend gaps are a dedicated interview-plan generation endpoint and an application upsert/job-scoped lookup endpoint to avoid client-side dedupe by `jobId`.
+
 ## Overview
 
 The career service lives **inside the existing NestJS monolith** as a new feature module `src/career/`. All endpoints are prefixed `/career/`. The frontend treats it as a separate base URL but it runs on the same Express server. The module boundary makes future extraction easy.
@@ -32,6 +41,7 @@ src/career/
     career-applications.service.ts
     career-usage.service.ts
     career-pdf.service.ts                ← PDF download (Phase 2)
+    career-saved-jobs.service.ts         ← saved jobs
   entities/
     career-resume-draft.entity.ts
     career-resume.entity.ts
@@ -40,6 +50,7 @@ src/career/
     career-application.entity.ts
     career-cover-letter.entity.ts
     career-usage.entity.ts
+    career-saved-job.entity.ts
   dto/
     create-resume-draft.dto.ts
     generate-resume-draft.dto.ts
@@ -53,7 +64,9 @@ src/career/
 
 ## Database — Tables and Migrations
 
-Next migration number after existing ones: **1771000000047**
+Career migration sequence starts at **1771000000047**.
+
+Note: this backend's TypeORM `User` entity maps to table `"user"` (singular). Career migrations therefore reference `"user"("id")`, not `"users"("id")`.
 
 ### Migration 047 — career_resume_drafts
 
@@ -61,7 +74,7 @@ Next migration number after existing ones: **1771000000047**
 CREATE TABLE "career_resume_drafts" (
     "id"              UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
     "sessionId"       varchar(255)  NOT NULL,
-    "userId"          integer       REFERENCES "users"("id") ON DELETE SET NULL,
+    "userId"          integer       REFERENCES "user"("id") ON DELETE SET NULL,
     "input"           jsonb         NOT NULL DEFAULT '{}',
     "generatedResume" jsonb,
     "readinessScore"  integer,
@@ -81,7 +94,7 @@ CREATE INDEX "IDX_career_resume_drafts_userId"    ON "career_resume_drafts" ("us
 ```sql
 CREATE TABLE "career_resumes" (
     "id"              UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
-    "userId"          integer       NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
+    "userId"          integer       NOT NULL REFERENCES "user"("id") ON DELETE CASCADE,
     "name"            varchar(255)  NOT NULL DEFAULT 'My Resume',
     "templateId"      varchar(50)   NOT NULL DEFAULT 'classic',
     "input"           jsonb         NOT NULL DEFAULT '{}',
@@ -93,6 +106,15 @@ CREATE TABLE "career_resumes" (
 );
 CREATE INDEX "IDX_career_resumes_userId" ON "career_resumes" ("userId");
 ```
+
+### Migration 053 — unique sourceDraftId
+
+```sql
+ALTER TABLE "career_resumes"
+ADD CONSTRAINT "UQ_career_resumes_sourceDraftId" UNIQUE ("sourceDraftId");
+```
+
+Prevents two `CareerResume` rows from being created from the same draft (double-claim race condition).
 
 ### Migration 049 — career_jobs
 
@@ -153,7 +175,7 @@ CREATE INDEX "IDX_career_job_matches_resumeId" ON "career_job_matches" ("resumeI
 ```sql
 CREATE TABLE "career_cover_letters" (
     "id"        UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
-    "userId"    integer      NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
+    "userId"    integer      NOT NULL REFERENCES "user"("id") ON DELETE CASCADE,
     "resumeId"  UUID         REFERENCES "career_resumes"("id") ON DELETE SET NULL,
     "jobId"     UUID         REFERENCES "career_jobs"("id") ON DELETE SET NULL,
     "content"   text         NOT NULL,
@@ -164,7 +186,7 @@ CREATE TABLE "career_cover_letters" (
 
 CREATE TABLE "career_applications" (
     "id"            UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
-    "userId"        integer      NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
+    "userId"        integer      NOT NULL REFERENCES "user"("id") ON DELETE CASCADE,
     "jobId"         UUID         NOT NULL REFERENCES "career_jobs"("id") ON DELETE CASCADE,
     "resumeId"      UUID         REFERENCES "career_resumes"("id") ON DELETE SET NULL,
     "coverLetterId" UUID         REFERENCES "career_cover_letters"("id") ON DELETE SET NULL,
@@ -183,7 +205,7 @@ CREATE INDEX "IDX_career_applications_userId" ON "career_applications" ("userId"
 ```sql
 CREATE TABLE "career_usage" (
     "id"                SERIAL      PRIMARY KEY,
-    "userId"            integer     NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
+    "userId"            integer     NOT NULL REFERENCES "user"("id") ON DELETE CASCADE,
     "periodStart"       date        NOT NULL,
     "resumeGenerations" integer     NOT NULL DEFAULT 0,
     "pdfDownloads"      integer     NOT NULL DEFAULT 0,
@@ -198,6 +220,23 @@ CREATE TABLE "career_usage" (
 -- plan: free | career_plus
 ```
 
+### Migration 054 — seed career jobs
+
+Seeds curated remote job listings into `career_jobs`.
+
+### Migration 055 — career_saved_jobs
+
+```sql
+CREATE TABLE "career_saved_jobs" (
+    "id"        UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    "userId"    integer     NOT NULL REFERENCES "user"("id") ON DELETE CASCADE,
+    "jobId"     UUID        NOT NULL REFERENCES "career_jobs"("id") ON DELETE CASCADE,
+    "createdAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT "UQ_career_saved_jobs_user_job" UNIQUE ("userId", "jobId")
+);
+CREATE INDEX "IDX_career_saved_jobs_userId" ON "career_saved_jobs" ("userId");
+```
+
 ---
 
 ## API Endpoints
@@ -207,9 +246,10 @@ CREATE TABLE "career_usage" (
 ```
 POST   /career/resume-drafts                       create draft
 GET    /career/resume-drafts/:id                   get draft
-POST   /career/resume-drafts/:id/generate          trigger AI generation
-POST   /career/resume-drafts/:id/parse             parse pasted text into fields
+POST   /career/resume-drafts/:id/generate          trigger AI generation  [IP throttle: 10/hr]
+POST   /career/resume-drafts/:id/parse             parse pasted text into fields  [IP throttle: 20/hr]
 GET    /career/job-matches?draftId=:id             job matches for a draft (public, returns max 3)
+GET    /career/jobs                                list published jobs
 GET    /career/jobs/:id                            job detail
 ```
 
@@ -226,6 +266,10 @@ GET    /career/resumes/:id/download                download PDF
 POST   /career/resumes/:id/tailor/:jobId           tailor for job (returns new resume)
 
 GET    /career/job-matches?resumeId=:id            matches for saved resume (full list)
+
+GET    /career/jobs/saved                          list saved jobs
+POST   /career/jobs/:id/save                       save job
+DELETE /career/jobs/:id/save                       remove saved job
 
 POST   /career/cover-letters                       generate cover letter
 GET    /career/cover-letters                       list cover letters
@@ -248,6 +292,28 @@ Public endpoints use a custom `@OptionalJwt()` decorator that runs the JWT guard
 
 Protected endpoints use the existing `JwtAuthGuard`.
 
+### Rate limiting on AI endpoints
+
+`POST :id/generate` and `POST :id/parse` run `AuthThrottleGuard` ahead of the optional-JWT guard with IP-keyed limits (10 generation / 20 parse calls per hour). This applies to both anonymous and authenticated callers.
+
+### Draft ownership
+
+If a draft's `userId` is set, `POST :id/generate` requires the JWT user to match it (403 `DRAFT_ACCESS_DENIED` otherwise). Anonymous drafts (`userId = null`) rely solely on the IP throttle.
+
+`POST :id/claim` additionally enforces ownership inside the transaction: if `draft.userId` is already set and differs from the claiming user, the claim is rejected.
+
+### Draft expiry
+
+`findById` compares `expiresAt` to now for all statuses except `claimed`. Expired drafts are updated to `status = 'expired'` and return 410 Gone (`DRAFT_EXPIRED`). `claim()` repeats the expiry check inside the locked transaction so an expired-but-unread ready draft cannot be claimed. The 24-hour TTL is set at creation time.
+
+### Claim concurrency
+
+`claim()` wraps the read–insert–update in a TypeORM transaction with a `SELECT … FOR UPDATE` lock on the draft row. The `UNIQUE ("sourceDraftId")` constraint on `career_resumes` (migration 053) provides a second line of defence at the DB level.
+
+### CareerUsage tracking
+
+`CareerResumeGeneratorService.generate()` uses `CareerUsageService.assertAndIncrement(userId, 'resumeGenerations')` for authenticated users after the request wins the atomic `pending` → `generating` transition and before the AI call. If the user is over limit, the draft is restored to `pending` and generation is not started. The shared usage service stores usage against the current month start in `career_usage`.
+
 ---
 
 ## Session Limit Enforcement (public draft)
@@ -261,11 +327,11 @@ On `POST /career/resume-drafts/`:
 
 ## AI Integration
 
-Import `AiModule` into `CareerModule`. Inject `AiAssistantService` into the generator and parser services.
+Import `AiModule` into `CareerModule`. Inject `AiAssistantService` into generator, parser, matcher, and cover-letter services.
 
 ### Resume generation
 
-`CareerResumeGeneratorService.generate(draft)`:
+`CareerResumeGeneratorService.generate(draft, userId?)`:
 
 ```typescript
 const response = await this.aiAssistant.generateResponse(
@@ -371,7 +437,7 @@ Return plain text — no JSON, no markdown headers.
 
 ## Job Matching Algorithm
 
-`CareerJobMatcherService.scoreMatch(userSkills, context, job)` — pure function, no AI call:
+`CareerJobMatcherService.scoreMatch(userSkills, context, job)` — deterministic score calculation, no AI call:
 
 ```typescript
 function scoreMatch(userSkills: string[], context: string[], job: CareerJob): MatchResult {
@@ -468,13 +534,13 @@ async assertAndIncrement(userId: number, action: UsageAction): Promise<void> {
 
 **Phase 1 (MVP)**: `GET /career/resumes/:id/download` returns the `generatedResume` JSON and a `406 Not Acceptable` with `{ code: 'PDF_NOT_IMPLEMENTED' }`. Frontend shows "Download coming soon."
 
-**Phase 2**: Use `@nestjs/serve-static` + Puppeteer headless to render an HTML template server-side and stream `application/pdf`. Template chosen by `resume.templateId`.
+**Phase 2**: Use `@nestjs/serve-static` + Puppeteer/Playwright headless to render an HTML template server-side and stream `application/pdf`. Template chosen by `resume.templateId`. Phase 2 renderer code may exist behind the service boundary, but the active route stays on the Phase 1 placeholder until product enables PDF downloads.
 
 ---
 
 ## Seed Data
 
-Create a seed script or migration (`1771000000053-seedCareerJobs.ts`) with 10–15 curated remote job listings from real sources (We Work Remotely, RemoteOK) covering:
+Create a seed script or migration (`1771000000054-seedCareerJobs.ts`) with curated remote job listings covering:
 - 3 frontend roles (React, Vue)
 - 3 backend roles (Node.js, Python, Go)
 - 2 fullstack roles
@@ -488,35 +554,45 @@ All marked `isPublished: true`, `isRemote: true`, `hiresInternationally: true`, 
 
 ## Implementation Order
 
-### Step 1 — Migrations and entities
-Write all 6 migration files and matching TypeORM entity classes. Run `npm run migration:run` to verify schema.
+### ✅ Step 1 — Migrations and entities
+Migrations 047–053 written. All TypeORM entity classes created. Schema live.
 
-### Step 2 — Resume drafts (core flow, public)
-- `CareerResumeDraftsService`: create, get, claim, session-limit check.
-- `CareerResumeGeneratorService`: call AI, save result to draft, set `status = 'ready'`.
-- `CareerResumeParserService`: call AI, return parsed fields (does not auto-update draft — frontend merges into form).
-- `CareerResumeDraftsController`: wire up all endpoints.
+### ✅ Step 2 — Resume drafts (core flow, public)
+- `CareerResumeDraftsService`: create, get (with expiry enforcement), claim (transactional + ownership check), session-limit check.
+- `CareerResumeGeneratorService`: test-and-set status, enforce `CareerUsage` for authenticated users, call AI, save result, eagerly persist job matches.
+- `CareerResumeParserService`: validate draft id, call AI, return parsed fields with JSON.parse error handling.
+- `CareerResumeDraftsController`: all endpoints wired; IP throttle on generate/parse; draft ownership guard on generate.
 
-### Step 3 — Jobs and matching
+### ✅ Step 3 — Jobs and matching
 - `CareerJobsService`: list published jobs, get by id.
 - Seed job data.
 - `CareerJobMatcherService`: compute scores for all published jobs, persist match rows.
 - `CareerJobMatchesController`: GET by draftId or resumeId.
+- Draft generation now eagerly persists draft job matches.
 
-### Step 4 — Usage service
-- Wire into generator, job-match list, and cover-letter endpoints.
+### ✅ Step 4 — Usage service
+All metered actions use `CareerUsageService.assertAndIncrement(...)`. `resumeGenerations` is enforced before the AI call after the request wins the draft generation transition; job matches and cover letters are wired in their respective services. PDF download limits are wired in the Phase 2 PDF service but the active MVP endpoint returns `406 PDF_NOT_IMPLEMENTED`.
 
-### Step 5 — Resumes and claim
-- `CareerResumesService`: save from draft (POST claim converts draft to resume), update, list.
-- Wire `POST /career/resume-drafts/:id/claim` → creates `career_resume` from draft data.
+### ✅ Step 5 — Resumes and claim
+- `CareerResumesService`: list, get, create, update.
+- `CareerResumesController`: CRUD endpoints, download placeholder, tailor endpoint.
+- (Claim itself is already implemented in Step 2.)
 
-### Step 6 — Cover letters and applications
+### ✅ Step 6 — Cover letters and applications
 - `CareerCoverLettersService`: generate via AI, CRUD.
 - `CareerApplicationsService`: CRUD.
 
-### Step 7 — Career module wiring
-- Register all entities in `CareerModule`, import `AuthModule` and `AiModule`.
-- Register `CareerModule` in `AppModule`.
+### ✅ Step 7 — Career module wiring
+All entities registered in `CareerModule`. `AuthModule` and `AiModule` imported. `CareerModule` registered in `AppModule`.
+
+### ✅ Step 8 — Saved jobs
+- `CareerSavedJob` entity and migration 055.
+- `CareerSavedJobsService`: save, remove, list user saved jobs.
+- `CareerJobsController`: `GET /career/jobs/saved`, `POST /career/jobs/:id/save`, `DELETE /career/jobs/:id/save`.
+
+### Remaining gaps
+- PDF streaming is still Phase 2 only. MVP returns `406 PDF_NOT_IMPLEMENTED`.
+- Career endpoint coverage is currently focused on service-level tests, not a full HTTP/e2e suite.
 
 ---
 
@@ -536,10 +612,10 @@ Frontend detects `code` to show the correct UI state (signup prompt vs. upgrade 
 
 ---
 
-## Open Decisions
+## Implementation Notes and Open Decisions
 
 - **AI model for resume generation**: GPT-4o-mini (cost-efficient for high volume) or GPT-4o (higher quality). Start with GPT-4o-mini; upgrade model per `AiModelConfigService`.
-- **Job match AI explanation**: Generate at match time (costs a call per match per draft) or generate lazily on first view. Start with lazy — only generate when the frontend requests a job's detail view.
+- **Job match AI explanation**: Currently generated once when match rows are created, then cached on `career_job_matches.explanation`.
 - **Draft expiry cleanup**: Add a cron job (`@nestjs/schedule`) that sets `status = 'expired'` on drafts past `expiresAt`. Run hourly.
-- **PDF generation library**: Puppeteer (accurate CSS → PDF, heavy) vs. pdfkit (lightweight, manual layout). Decide in Phase 2.
+- **PDF generation library**: Phase 2 service code currently uses a headless browser renderer with fallback output, but the active route remains the MVP placeholder until PDF downloads are enabled.
 - **Job scraping**: Out of scope for MVP. Admin adds jobs manually via admin API or direct DB seed.

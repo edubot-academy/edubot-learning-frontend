@@ -43,6 +43,12 @@ const IconSparkle = ({ className = 'w-5 h-5' }) => (
     </svg>
 );
 
+const IconChevron = ({ className = 'w-4 h-4', down = true }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={`${className} transition-transform duration-200 ${down ? '' : 'rotate-180'}`}>
+        <path fillRule="evenodd" d="M5.22 8.22a.75.75 0 011.06 0L10 11.94l3.72-3.72a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.22 9.28a.75.75 0 010-1.06z" clipRule="evenodd" />
+    </svg>
+);
+
 // ─── Template previews ─────────────────────────────────────────────────────────
 
 const ClassicPreview = () => (
@@ -176,32 +182,58 @@ const inputClass = (hasError) =>
 
 // ─── ResumeBuilderForm ─────────────────────────────────────────────────────────
 
-const ResumeBuilderForm = ({ onGenerate, status, savedFormData }) => {
+const ResumeBuilderForm = ({
+    onGenerate,
+    status,
+    savedFormData,
+    initialTemplate = DEFAULT_TEMPLATE_ID,
+    onTemplateChange,
+    onFormChange,
+    generateLocked = false,
+    lockedHint = null,
+}) => {
     const { t } = useTranslation();
 
     const [form, setForm] = useState({
         name:       '',
         targetRole: '',
         skills:     '',
-        context:    [], // selected chip IDs
+        context:    [],
+        experience: [],
     });
-    const [selectedTemplate, setSelectedTemplate] = useState(DEFAULT_TEMPLATE_ID);
+    const [selectedTemplate, setSelectedTemplate] = useState(initialTemplate);
     const [errors, setErrors]   = useState({});
     const [touched, setTouched] = useState({});
     const [submitted, setSubmitted] = useState(false);
+    const [templateSelectionSource, setTemplateSelectionSource] = useState('default');
+    const [showAdvanced, setShowAdvanced] = useState(false);
 
     // Restore saved form data on mount
     useEffect(() => {
         if (savedFormData) {
+            setShowAdvanced(true);
             setForm((prev) => ({
                 ...prev,
                 name:       savedFormData.name       ?? '',
                 targetRole: savedFormData.targetRole ?? '',
                 skills:     savedFormData.skills     ?? '',
                 context:    savedFormData.context    ?? [],
+                experience: savedFormData.experience ?? [],
             }));
         }
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    useEffect(() => {
+        setSelectedTemplate(initialTemplate);
+    }, [initialTemplate]);
+
+    useEffect(() => {
+        if (status === DRAFT_STATUS.READY) setShowAdvanced(true);
+    }, [status]);
+
+    useEffect(() => {
+        onFormChange?.(form);
+    }, [form, onFormChange]);
 
     const skillSuggestions = useMemo(
         () => getSkillSuggestions(form.targetRole),
@@ -232,12 +264,23 @@ const ResumeBuilderForm = ({ onGenerate, status, savedFormData }) => {
     }, [form, submitted]);
 
     const toggleChip = (chipId) => {
-        setForm((prev) => ({
-            ...prev,
-            context: prev.context.includes(chipId)
-                ? prev.context.filter((id) => id !== chipId)
-                : [...prev.context, chipId],
-        }));
+        const nextContext = form.context.includes(chipId)
+            ? form.context.filter((id) => id !== chipId)
+            : [...form.context, chipId];
+
+        setForm((prev) => ({ ...prev, context: nextContext }));
+
+        if (nextContext.length > 0) {
+            if (selectedTemplate !== 'projects_first') {
+                setSelectedTemplate('projects_first');
+                onTemplateChange?.('projects_first');
+            }
+            setTemplateSelectionSource('auto');
+        } else if (templateSelectionSource === 'auto' && selectedTemplate === 'projects_first') {
+            setSelectedTemplate(DEFAULT_TEMPLATE_ID);
+            onTemplateChange?.(DEFAULT_TEMPLATE_ID);
+            setTemplateSelectionSource('default');
+        }
     };
 
     const addSkillSuggestion = (skill) => {
@@ -250,6 +293,29 @@ const ResumeBuilderForm = ({ onGenerate, status, savedFormData }) => {
         }));
     };
 
+    const addExperience = () => {
+        setForm((prev) => ({
+            ...prev,
+            experience: [...prev.experience, { title: '', company: '', period: '', description: '' }],
+        }));
+    };
+
+    const updateExperience = (index, field, value) => {
+        setForm((prev) => ({
+            ...prev,
+            experience: prev.experience.map((item, i) =>
+                i === index ? { ...item, [field]: value } : item,
+            ),
+        }));
+    };
+
+    const removeExperience = (index) => {
+        setForm((prev) => ({
+            ...prev,
+            experience: prev.experience.filter((_, i) => i !== index),
+        }));
+    };
+
     const handleSubmit = (evt) => {
         evt.preventDefault();
         setSubmitted(true);
@@ -257,6 +323,12 @@ const ResumeBuilderForm = ({ onGenerate, status, savedFormData }) => {
         setErrors(validationErrors);
         if (!isValid) return;
         onGenerate(form, selectedTemplate);
+    };
+
+    const handleTemplateSelect = (templateId) => {
+        setSelectedTemplate(templateId);
+        setTemplateSelectionSource('manual');
+        onTemplateChange?.(templateId);
     };
 
     const loadingLabel =
@@ -338,7 +410,7 @@ const ResumeBuilderForm = ({ onGenerate, status, savedFormData }) => {
                                             className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-150 ${
                                                 added
                                                     ? 'border border-[#E14219]/30 bg-[#E14219]/8 text-[#E14219] dark:text-[#FF8C6E] cursor-default'
-                                                    : 'border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-[#3E424A] dark:text-[#a6adba] hover:border-[#E14219]/40 hover:text-[#E14219] hover:bg-[#E14219]/5 active:scale-95'
+                                                    : 'cursor-pointer border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-[#3E424A] dark:text-[#a6adba] hover:border-[#E14219]/40 hover:text-[#E14219] hover:bg-[#E14219]/5 active:scale-95'
                                             }`}
                                         >
                                             {added ? (
@@ -354,6 +426,20 @@ const ResumeBuilderForm = ({ onGenerate, status, savedFormData }) => {
                         </div>
                     )}
                 </Field>
+
+                {/* ── Advanced details toggle ── */}
+                {!showAdvanced && (
+                    <button
+                        type="button"
+                        onClick={() => setShowAdvanced(true)}
+                        className="cursor-pointer w-full flex items-center justify-center gap-2 rounded-xl border border-dashed border-gray-200 dark:border-white/10 py-3 text-sm font-medium text-[#3E424A] dark:text-[#a6adba] hover:border-[#E14219]/40 hover:text-[#E14219] hover:bg-[#E14219]/5 transition-colors"
+                    >
+                        <IconChevron className="w-4 h-4" down />
+                        Add experience &amp; choose format — improves AI output
+                    </button>
+                )}
+
+                {showAdvanced && (<>
 
                 {/* ── Quick option chips ── */}
                 <div>
@@ -372,7 +458,7 @@ const ResumeBuilderForm = ({ onGenerate, status, savedFormData }) => {
                                     type="button"
                                     onClick={() => toggleChip(id)}
                                     disabled={isLoading}
-                                    className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-150 active:scale-95 ${
+                                    className={`cursor-pointer rounded-full px-4 py-2 text-sm font-medium transition-all duration-150 active:scale-95 disabled:cursor-not-allowed ${
                                         active
                                             ? 'border border-[#E14219] bg-gradient-to-b from-[#FF8C6E]/15 to-[#E14219]/10 text-[#E14219] dark:text-[#FF8C6E] shadow-sm'
                                             : 'border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-[#3E424A] dark:text-[#a6adba] hover:border-gray-300 dark:hover:border-white/20 hover:bg-gray-50 dark:hover:bg-white/8'
@@ -385,6 +471,94 @@ const ResumeBuilderForm = ({ onGenerate, status, savedFormData }) => {
                     </div>
                 </div>
 
+                {/* ── Work experience ── */}
+                <div>
+                    <div className="flex items-center justify-between mb-3">
+                        <p className="text-sm font-semibold text-[#141619] dark:text-[#E8ECF3]">
+                            Work Experience
+                            <span className="ml-2 text-xs font-normal text-[#3E424A] dark:text-[#a6adba]">
+                                — optional, improves accuracy
+                            </span>
+                        </p>
+                        <button
+                            type="button"
+                            onClick={addExperience}
+                            disabled={isLoading}
+                            className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg border border-[#E14219]/30 bg-[#E14219]/5 px-3 py-1.5 text-xs font-semibold text-[#E14219] hover:bg-[#E14219]/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <IconPlus className="w-3.5 h-3.5" />
+                            Add entry
+                        </button>
+                    </div>
+
+                    {form.experience.length === 0 ? (
+                        <div className="rounded-xl border border-dashed border-gray-200 dark:border-white/10 px-4 py-5 text-center">
+                            <p className="text-sm text-[#3E424A] dark:text-[#a6adba]">
+                                No experience added — AI will infer from your role and skills
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {form.experience.map((exp, idx) => (
+                                <div
+                                    key={idx}
+                                    className="rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/[0.03] p-4"
+                                >
+                                    <div className="flex items-center justify-between mb-3">
+                                        <p className="text-xs font-semibold text-[#3E424A] dark:text-[#a6adba] uppercase tracking-wide">
+                                            Experience {idx + 1}
+                                        </p>
+                                        <button
+                                            type="button"
+                                            onClick={() => removeExperience(idx)}
+                                            disabled={isLoading}
+                                            className="cursor-pointer text-xs text-rose-500 hover:text-rose-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Remove
+                                        </button>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3 mb-3">
+                                        <input
+                                            type="text"
+                                            placeholder="Job title"
+                                            value={exp.title}
+                                            onChange={(e) => updateExperience(idx, 'title', e.target.value)}
+                                            disabled={isLoading}
+                                            className={inputClass(false)}
+                                        />
+                                        <input
+                                            type="text"
+                                            placeholder="Company"
+                                            value={exp.company}
+                                            onChange={(e) => updateExperience(idx, 'company', e.target.value)}
+                                            disabled={isLoading}
+                                            className={inputClass(false)}
+                                        />
+                                    </div>
+                                    <div className="mb-3">
+                                        <input
+                                            type="text"
+                                            placeholder="Period (e.g. 2022–2024 or Jan 2022 – Present)"
+                                            value={exp.period}
+                                            onChange={(e) => updateExperience(idx, 'period', e.target.value)}
+                                            disabled={isLoading}
+                                            className={inputClass(false)}
+                                        />
+                                    </div>
+                                    <textarea
+                                        rows={3}
+                                        placeholder="Key achievements and responsibilities (one per line — AI will format as bullet points)"
+                                        value={exp.description}
+                                        onChange={(e) => updateExperience(idx, 'description', e.target.value)}
+                                        disabled={isLoading}
+                                        className={inputClass(false)}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
                 {/* ── Template selector ── */}
                 <div>
                     <p className="text-sm font-semibold text-[#141619] dark:text-[#E8ECF3] mb-4">
@@ -393,7 +567,7 @@ const ResumeBuilderForm = ({ onGenerate, status, savedFormData }) => {
                             — {t('career.resume.templates.subtitle')}
                         </span>
                     </p>
-                    <div className="grid grid-cols-5 gap-3">
+                    <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
                         {TEMPLATES.map((tpl) => {
                             const Preview = TEMPLATE_PREVIEWS[tpl.id];
                             const active  = selectedTemplate === tpl.id;
@@ -401,9 +575,9 @@ const ResumeBuilderForm = ({ onGenerate, status, savedFormData }) => {
                                 <button
                                     key={tpl.id}
                                     type="button"
-                                    onClick={() => setSelectedTemplate(tpl.id)}
+                                    onClick={() => handleTemplateSelect(tpl.id)}
                                     disabled={isLoading}
-                                    className={`relative flex flex-col rounded-xl overflow-hidden border transition-all duration-200 group text-left ${
+                                    className={`cursor-pointer relative flex flex-col rounded-xl overflow-hidden border transition-all duration-200 group text-left disabled:cursor-not-allowed ${
                                         active
                                             ? 'border-[#E14219] ring-2 ring-[#E14219]/20 shadow-sm'
                                             : 'border-gray-200 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/20'
@@ -431,6 +605,18 @@ const ResumeBuilderForm = ({ onGenerate, status, savedFormData }) => {
                     </div>
                 </div>
 
+                {/* ── Collapse advanced ── */}
+                <button
+                    type="button"
+                    onClick={() => setShowAdvanced(false)}
+                    className="cursor-pointer w-full flex items-center justify-center gap-2 text-xs text-[#3E424A] dark:text-[#a6adba] hover:text-[#141619] dark:hover:text-[#E8ECF3] transition-colors py-1"
+                >
+                    <IconChevron className="w-3.5 h-3.5" down={false} />
+                    Hide details
+                </button>
+
+                </>)}
+
                 {/* ── Name warning ── */}
                 {!form.name.trim() && (touched.targetRole || submitted) && (
                     <div className="flex items-start gap-3 rounded-xl border border-amber-200 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/5 px-4 py-3">
@@ -444,8 +630,8 @@ const ResumeBuilderForm = ({ onGenerate, status, savedFormData }) => {
                 {/* ── Submit button ── */}
                 <button
                     type="submit"
-                    disabled={isLoading}
-                    className="w-full inline-flex items-center justify-center gap-3 rounded-xl bg-gradient-to-b from-[#FF8C6E] to-[#E14219] px-6 py-4 text-base font-semibold text-white shadow-md hover:from-[#C2410C] hover:to-[#C2410C] transition-all duration-300 active:scale-[0.99] disabled:opacity-80 disabled:cursor-not-allowed disabled:active:scale-100"
+                    disabled={isLoading || generateLocked}
+                    className="cursor-pointer w-full inline-flex items-center justify-center gap-3 rounded-xl bg-gradient-to-b from-[#FF8C6E] to-[#E14219] px-6 py-4 text-base font-semibold text-white shadow-md hover:from-[#C2410C] hover:to-[#C2410C] transition-all duration-300 active:scale-[0.99] disabled:opacity-80 disabled:cursor-not-allowed disabled:active:scale-100"
                 >
                     {isLoading ? (
                         <>
@@ -465,6 +651,12 @@ const ResumeBuilderForm = ({ onGenerate, status, savedFormData }) => {
                         This usually takes 10–30 seconds. Please don&apos;t close this tab.
                     </p>
                 )}
+
+                {generateLocked && lockedHint ? (
+                    <div className="rounded-xl border border-amber-200 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/5 px-4 py-3 text-sm text-amber-700 dark:text-amber-300">
+                        {lockedHint}
+                    </div>
+                ) : null}
 
             </div>
         </form>

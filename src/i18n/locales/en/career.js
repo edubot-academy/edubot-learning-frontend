@@ -45,7 +45,7 @@ export const career = {
             nextSteps: {
                 noResume: 'Build your resume — takes 2 minutes',
                 noMatches: 'Find matching remote jobs',
-                noApplications: 'Ready to apply? Your top match is waiting',
+                noApplications: 'Ready to apply? Your top match pays {{salary}}',
                 hasApplications: '{{count}} applications in progress',
             },
             emptyState: {
@@ -78,6 +78,7 @@ export const career = {
                 improve: 'Improve',
                 lockedSave: 'Sign up to save',
                 lockedDownload: 'Sign up to download',
+                pdfComingSoon: 'PDF download will be available soon.',
             },
             score: {
                 strongPoints: 'Strong points',
@@ -151,13 +152,43 @@ export const career = {
                 cta: 'Create account',
             },
         },
+        intent: {
+            success: {
+                badge: 'Resume saved',
+                title: 'Your resume was saved to your new account.',
+                subtitle: 'Continue where you left off, open your saved resume, or start applying to matching remote roles.',
+                primaryCta: 'Continue',
+                secondaryCta: 'Browse jobs',
+                points: {
+                    saved: 'Resume linked to your account',
+                    jobs: 'Job matches are ready next',
+                    tools: 'Cover letters and interview prep unlocked',
+                },
+            },
+            recovery: {
+                title: 'Your previous draft expired.',
+                restored: 'Your last form input was restored below from local storage. Update anything you want and generate again.',
+                empty: 'We could not recover the old draft itself, but you can fill the form again and generate a new resume.',
+            },
+        },
         usage: {
             title: 'AI usage',
+            metrics: {
+                resumeGenerations: 'Resume generations',
+                jobMatchRequests: 'Job matches',
+                coverLetters: 'Cover letters',
+                interviewPlans: 'Interview plans',
+            },
             plan: {
                 visitor: 'Visitor',
                 free: 'Free',
                 careerPlus: 'Career Plus',
             },
+            badge: {
+                exhausted: 'Limit reached',
+                remaining: '{{remaining}} left of {{limit}}',
+            },
+            lockedHint: 'This AI action is locked for the rest of this billing period. Upgrade to Career Plus to continue.',
             limitReached: {
                 title: 'You\'ve used your free AI resume limit for this month.',
                 subtitle: 'Upgrade to Career Plus to:',
@@ -168,6 +199,7 @@ export const career = {
                     tracking: 'Track applications',
                 },
                 upgradeCta: 'Upgrade to Career Plus',
+                contactCta: 'Talk to us about Career Plus',
             },
             credits: {
                 remaining: '{{used}}/{{total}} used',

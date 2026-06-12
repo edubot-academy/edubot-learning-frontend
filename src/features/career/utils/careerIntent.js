@@ -22,18 +22,31 @@ export const isCareerIntent = (locationSearch) => !!parseCareerIntent(locationSe
 /**
  * Determine the /career sub-path to navigate to after intent processing.
  */
-export const getCareerRedirectPath = ({ intent, jobId } = {}) => {
+export const getCareerRedirectPath = ({ intent, jobId, resumeId } = {}) => {
     switch (intent) {
         case CAREER_INTENT.APPLY:
-        case CAREER_INTENT.COVER_LETTER:
         case CAREER_INTENT.TAILOR:
-        case CAREER_INTENT.INTERVIEW_PLAN:
             return jobId ? `/career/jobs/${jobId}` : '/career/jobs';
+        case CAREER_INTENT.COVER_LETTER: {
+            const params = new URLSearchParams();
+            if (jobId) params.set('jobId', jobId);
+            if (resumeId) params.set('resumeId', resumeId);
+            const query = params.toString();
+            return query ? `/career/cover-letters?${query}` : '/career/cover-letters';
+        }
+        case CAREER_INTENT.INTERVIEW_PLAN: {
+            const params = new URLSearchParams();
+            if (jobId) params.set('jobId', jobId);
+            if (resumeId) params.set('resumeId', resumeId);
+            const query = params.toString();
+            return query ? `/career/interview-prep?${query}` : '/career/interview-prep';
+        }
         case CAREER_INTENT.DOWNLOAD:
-            return '/career/resumes';
+            return resumeId ? `/career/resumes/${resumeId}` : '/career/resumes';
+        case CAREER_INTENT.SAVE:
+            return resumeId ? `/career/resumes/${resumeId}` : '/career';
         case CAREER_INTENT.VIEW_MORE_JOBS:
             return '/career/jobs';
-        case CAREER_INTENT.SAVE:
         default:
             return '/career';
     }

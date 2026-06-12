@@ -31,12 +31,23 @@ export const buildSignupUrl = ({ intent, draftId, jobId } = {}) => {
  * @returns {{ score: number, strong: string[], missing: Suggestion[], ats: Suggestion[] }}
  */
 export const calculateReadinessScore = (formData = {}) => {
-    const { name, targetRole, skills, extras = {} } = formData;
+    const { name, targetRole, skills, extras = {}, experience: formExperience = [] } = formData;
     const skills_ = parseSkillsString(skills);
     let score = 0;
     const strong = [];
     const missing = [];
     const ats = [];
+
+    // Resolve each field from extras first, then fall back to direct formData fields
+    // (populated after generation from the AI-produced resume header).
+    const email       = extras.email?.trim()    || formData.email?.trim();
+    const github      = extras.github?.trim()   || formData.github?.trim();
+    const linkedin    = extras.linkedin?.trim() || formData.linkedin?.trim();
+    const location    = extras.location?.trim() || formData.location?.trim();
+    const englishLevel = extras.englishLevel    || formData.englishLevel;
+    const hasExperience = extras.experience?.trim() ||
+        (Array.isArray(formExperience) && formExperience.some((e) => e.title?.trim()));
+    const hasProjects = extras.projects?.trim() || formData.hasProjects;
 
     // Target role (required, 15 pts)
     if (targetRole?.trim()) {
@@ -68,50 +79,49 @@ export const calculateReadinessScore = (formData = {}) => {
         missing.push({ key: 'name', label: 'Add your full name', placeholder: 'Alex Smith' });
     }
 
-    // Extras — inline fix fields
-    if (extras.email?.trim()) {
+    if (email) {
         score += 8;
         strong.push('Email address provided');
     } else {
         missing.push({ key: 'email', label: 'Add email address', placeholder: 'alex@example.com', inputType: 'email' });
     }
 
-    if (extras.github?.trim()) {
+    if (github) {
         score += 10;
         strong.push('GitHub profile linked');
     } else {
         ats.push({ key: 'github', label: 'Add GitHub — required by most tech recruiters', placeholder: 'github.com/yourname', inputType: 'url' });
     }
 
-    if (extras.linkedin?.trim()) {
+    if (linkedin) {
         score += 5;
         strong.push('LinkedIn profile linked');
     } else {
         missing.push({ key: 'linkedin', label: 'Add LinkedIn profile', placeholder: 'linkedin.com/in/yourname', inputType: 'url' });
     }
 
-    if (extras.englishLevel) {
+    if (englishLevel) {
         score += 8;
-        strong.push(`English level: ${extras.englishLevel}`);
+        strong.push(`English level: ${englishLevel}`);
     } else {
         missing.push({ key: 'englishLevel', label: 'Add English level — critical for international jobs', inputType: 'select', options: ['A2', 'B1', 'B2', 'C1', 'C2', 'Native'] });
     }
 
-    if (extras.location?.trim()) {
+    if (location) {
         score += 5;
         strong.push('Location provided (Remote OK)');
     } else {
         missing.push({ key: 'location', label: 'Add location', placeholder: 'Bishkek, Kyrgyzstan' });
     }
 
-    if (extras.experience?.trim()) {
+    if (hasExperience) {
         score += 12;
         strong.push('Work experience added');
     } else {
         ats.push({ key: 'experience', label: 'Add work experience or internship (optional)', placeholder: 'e.g. Junior Developer at Acme — 2023' });
     }
 
-    if (extras.projects?.trim()) {
+    if (hasProjects) {
         score += 9;
         strong.push('Personal projects included');
     } else {

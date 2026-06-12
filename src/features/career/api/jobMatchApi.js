@@ -22,3 +22,21 @@ export const saveJob = async (jobId) => {
     const res = await api.post(`/career/jobs/${jobId}/save`, {});
     return res.data;
 };
+
+export const removeSavedJob = async (jobId) => {
+    const res = await api.delete(`/career/jobs/${jobId}/save`);
+    return res.data;
+};
+
+export const getJobs = async (limit) => {
+    const res = await api.get('/career/jobs', {
+        params: limit ? { limit } : undefined,
+        skipAuthRedirect: true,
+    });
+    return res.data;
+};
+
+export const getSavedJobs = async () => {
+    const res = await api.get('/career/jobs/saved');
+    return res.data;
+};

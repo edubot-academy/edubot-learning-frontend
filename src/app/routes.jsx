@@ -45,6 +45,14 @@ const ExternalResourcesPage = lazy(() => import('../features/externalResources/p
 const ExternalResourceDetails = lazy(() => import('../features/externalResources/pages/ExternalResourceDetails'));
 const PublicResumeBuilderPage = lazy(() => import('../features/career/pages/PublicResumeBuilderPage'));
 const CareerDashboardPage = lazy(() => import('../features/career/pages/CareerDashboardPage'));
+const ResumeManagerPage = lazy(() => import('../features/career/pages/ResumeManagerPage'));
+const ResumeDetailPage = lazy(() => import('../features/career/pages/ResumeDetailPage'));
+const JobMatchesPage = lazy(() => import('../features/career/pages/JobMatchesPage'));
+const JobDetailPage = lazy(() => import('../features/career/pages/JobDetailPage'));
+const CareerUsagePage = lazy(() => import('../features/career/pages/CareerUsagePage'));
+const ApplicationsPage = lazy(() => import('../features/career/pages/ApplicationsPage'));
+const CoverLettersPage = lazy(() => import('../features/career/pages/CoverLettersPage'));
+const InterviewPrepPage = lazy(() => import('../features/career/pages/InterviewPrepPage'));
 
 export const DashboardTabRedirect = ({ dashboardPath, tab }) => {
     const { search } = useLocation();
@@ -156,6 +164,14 @@ const AppRoutes = () => {
                     <Route path="/resume-builder" element={<PublicResumeBuilderPage />} />
                     <Route element={<PrivateRoute />}>
                         <Route path="/career" element={<CareerDashboardPage />} />
+                        <Route path="/career/resumes" element={<ResumeManagerPage />} />
+                        <Route path="/career/resumes/:resumeId" element={<ResumeDetailPage />} />
+                        <Route path="/career/jobs" element={<JobMatchesPage />} />
+                        <Route path="/career/jobs/:jobId" element={<JobDetailPage />} />
+                        <Route path="/career/applications" element={<ApplicationsPage />} />
+                        <Route path="/career/cover-letters" element={<CoverLettersPage />} />
+                        <Route path="/career/interview-prep" element={<InterviewPrepPage />} />
+                        <Route path="/career/usage" element={<CareerUsagePage />} />
                         <Route path="/career/*" element={<CareerDashboardPage />} />
                     </Route>
 

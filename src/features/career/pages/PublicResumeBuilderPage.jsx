@@ -1,15 +1,19 @@
-import { useCallback, useContext, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { AuthContext } from '@app/providers';
 import { CAREER_ROUTES } from '../constants/careerRoutes';
 import { useResumeDraft, DRAFT_STATUS } from '../hooks/useResumeDraft';
 import { useJobMatches, JOB_MATCH_STATUS } from '../hooks/useJobMatches';
+import { useCareerUsageStatus } from '../hooks/useCareerUsageStatus';
 import ResumeBuilderForm, { ResumeBuilderError } from '../components/ResumeBuilderForm';
 import ResumePreview from '../components/ResumePreview';
 import ResumeReadinessScore from '../components/ResumeReadinessScore';
 import JobMatchCard, { JobMatchCardSkeleton } from '../components/JobMatchCard';
 import CareerSignupPrompt from '../components/CareerSignupPrompt';
+import AiCreditsBadge from '../components/AiCreditsBadge';
+import CareerLimitReachedModal from '../components/CareerLimitReachedModal';
+import { CAREER_USAGE_KEYS, getUsageMetric, isCareerLimitReachedError, isUsageMetricExhausted } from '../utils/careerUsage';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -55,8 +59,11 @@ const STEPS = [
 
 const PublicResumeBuilderPage = () => {
     const { t } = useTranslation();
+    const location = useLocation();
     const { user } = useContext(AuthContext);
     const { status, draft, error, generate, retry, reset, getSavedFormData } = useResumeDraft();
+    const savedFormData = useMemo(() => getSavedFormData(), [getSavedFormData]);
+    const { usage } = useCareerUsageStatus({ enabled: Boolean(user) });
 
     // Auto-fetch job matches once a draft is ready
     const { status: matchStatus, matches, refetch: refetchMatches } = useJobMatches(
@@ -75,6 +82,29 @@ const PublicResumeBuilderPage = () => {
     const [extrasAdded,      setExtrasAdded]         = useState(false);
 
     const resultsRef = useRef(null);
+    const recoveryState = location.state?.careerRecovery ?? null;
+    const hasRecoveredFormData = !!savedFormData;
+    const resumeUsageMetric = getUsageMetric(usage, CAREER_USAGE_KEYS.RESUME_GENERATIONS);
+    const [limitModalOpen, setLimitModalOpen] = useState(false);
+
+    // Merge generated resume header fields into formData so the score panel
+    // recognises email/github/linkedin/location/experience/projects that the AI
+    // already placed in the resume — even after a page refresh when extras resets.
+    const enrichedFormData = useMemo(() => {
+        const base = lastFormData ?? savedFormData ?? {};
+        if (!draft?.generatedResume) return base;
+        const header = draft.generatedResume?.header ?? {};
+        const generatedResume = draft.generatedResume;
+        return {
+            ...base,
+            email:      base.email      || header.email,
+            github:     base.github     || header.github,
+            linkedin:   base.linkedin   || header.linkedin,
+            location:   base.location   || header.location,
+            englishLevel: base.englishLevel,
+            hasProjects: (generatedResume?.projects?.length ?? 0) > 0,
+        };
+    }, [lastFormData, savedFormData, draft]);
 
     const handleGenerate = useCallback((formData, templateId) => {
         setLastFormData(formData);
@@ -82,6 +112,10 @@ const PublicResumeBuilderPage = () => {
         setExtrasAdded(false);
         generate({ ...formData, extras }, templateId);
     }, [generate, extras]);
+
+    const handleFormChange = useCallback((formData) => {
+        setLastFormData(formData);
+    }, []);
 
     const handleRetry = useCallback(() => {
         const saved = getSavedFormData();
@@ -110,6 +144,20 @@ const PublicResumeBuilderPage = () => {
     }, [generate, lastFormData, extras, selectedTemplate]);
 
     const showResults = status === DRAFT_STATUS.READY || status === DRAFT_STATUS.GENERATING;
+    const isResumeGenerationLocked = Boolean(user) && isUsageMetricExhausted(resumeUsageMetric);
+    const hasLimitError = Boolean(error) && isCareerLimitReachedError(error);
+
+    useEffect(() => {
+        if (error && isCareerLimitReachedError(error)) {
+            setLimitModalOpen(true);
+        }
+    }, [error]);
+
+    useEffect(() => {
+        if (status === DRAFT_STATUS.GENERATING) {
+            setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+        }
+    }, [status]);
 
     return (
         <div className="bg-white dark:bg-[#141619] text-[#141619] dark:text-[#E8ECF3]">
@@ -164,14 +212,15 @@ const PublicResumeBuilderPage = () => {
             <section className="border-b border-gray-100 dark:border-white/5 bg-white dark:bg-[#0F1013] px-6 py-5">
                 <div className="mx-auto max-w-5xl flex flex-wrap justify-center gap-x-10 gap-y-3">
                     {[
-                        'English resume output',
-                        'ATS-safe formats',
-                        'Remote jobs from $2K/month',
-                        'No account needed to preview',
-                    ].map((item) => (
-                        <div key={item} className="flex items-center gap-2 text-sm text-[#3E424A] dark:text-[#a6adba]">
+                        { full: 'English resume output',        short: 'English resume'    },
+                        { full: 'ATS-safe formats',             short: 'ATS-safe format'   },
+                        { full: 'Remote jobs from $2K/month',   short: 'From $2K/month'    },
+                        { full: 'No account needed to preview', short: 'No signup to try'  },
+                    ].map(({ full, short }) => (
+                        <div key={full} className="flex items-center gap-2 text-sm text-[#3E424A] dark:text-[#a6adba]">
                             <IconCheck className="w-4 h-4 text-[#E14219] flex-shrink-0" />
-                            {item}
+                            <span className="hidden sm:inline">{full}</span>
+                            <span className="sm:hidden">{short}</span>
                         </div>
                     ))}
                 </div>
@@ -189,11 +238,11 @@ const PublicResumeBuilderPage = () => {
                         <div className="absolute top-8 left-[calc(16.67%+2rem)] right-[calc(16.67%+2rem)] h-px bg-gradient-to-r from-gray-200 via-[#E14219]/30 to-gray-200 dark:from-white/10 dark:via-[#E14219]/20 dark:to-white/10" />
                         {STEPS.map(({ number, titleKey, descKey, Icon }) => (
                             <div key={number} className="relative flex flex-col items-center text-center px-8">
-                                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 shadow-sm mb-5 relative z-10">
+                                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#E14219]/10 border border-[#E14219]/20 shadow-sm mb-5 relative z-10">
                                     <span className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-b from-[#FF8C6E] to-[#E14219] text-xs font-bold text-white shadow">
                                         {number}
                                     </span>
-                                    <Icon className="w-7 h-7 text-[#3E424A] dark:text-[#a6adba]" />
+                                    <Icon className="w-7 h-7 text-[#E14219]" />
                                 </div>
                                 <p className="font-semibold text-base text-[#141619] dark:text-[#E8ECF3] mb-2">
                                     {t(titleKey)}
@@ -210,8 +259,8 @@ const PublicResumeBuilderPage = () => {
                         {STEPS.map(({ number, titleKey, descKey, Icon }) => (
                             <div key={number} className="flex items-start gap-5">
                                 <div className="relative flex-shrink-0">
-                                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 shadow-sm">
-                                        <Icon className="w-6 h-6 text-[#3E424A] dark:text-[#a6adba]" />
+                                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#E14219]/10 border border-[#E14219]/20 shadow-sm">
+                                        <Icon className="w-6 h-6 text-[#E14219]" />
                                     </div>
                                     <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-b from-[#FF8C6E] to-[#E14219] text-[10px] font-bold text-white">
                                         {number}
@@ -237,32 +286,42 @@ const PublicResumeBuilderPage = () => {
                         <p className="mt-3 text-base text-[#3E424A] dark:text-[#a6adba] max-w-xl mx-auto">
                             Fill in a few fields and let AI write your English resume in seconds.
                         </p>
+                        {user && resumeUsageMetric ? (
+                            <div className="mt-4 flex justify-center">
+                                <AiCreditsBadge
+                                    metricKey={CAREER_USAGE_KEYS.RESUME_GENERATIONS}
+                                    metric={resumeUsageMetric}
+                                />
+                            </div>
+                        ) : null}
                     </div>
 
-                    <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-[#1a1a1a] shadow-sm overflow-hidden">
-                        {/* Paste-to-fill strip */}
-                        <div className="flex items-center justify-between gap-4 px-7 py-4 bg-gray-50 dark:bg-white/[0.03] border-b border-gray-100 dark:border-white/5">
-                            <p className="text-sm text-[#3E424A] dark:text-[#a6adba]">
-                                Already have a resume? Paste it to auto-fill.
+                    {recoveryState?.type === 'draft_expired' && (
+                        <div className="mb-6 rounded-2xl border border-amber-200 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/5 px-5 py-4">
+                            <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+                                {t('career.intent.recovery.title')}
                             </p>
-                            <button
-                                disabled
-                                title="Coming soon"
-                                className="flex-shrink-0 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 px-4 py-2 text-sm font-medium text-[#3E424A] dark:text-[#a6adba] opacity-50 cursor-not-allowed"
-                            >
-                                {t('career.public.pasteToFill.button')}
-                            </button>
+                            <p className="mt-1 text-sm text-amber-700 dark:text-amber-400">
+                                {hasRecoveredFormData
+                                    ? t('career.intent.recovery.restored')
+                                    : t('career.intent.recovery.empty')}
+                            </p>
                         </div>
+                    )}
 
-                        {status === DRAFT_STATUS.ERROR ? (
+                    <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-[#1a1a1a] shadow-sm overflow-hidden">
+                        {status === DRAFT_STATUS.ERROR && !hasLimitError ? (
                             <ResumeBuilderError error={error} onRetry={handleRetry} />
                         ) : (
                             <ResumeBuilderForm
                                 onGenerate={handleGenerate}
                                 status={status}
-                                savedFormData={getSavedFormData()}
+                                savedFormData={savedFormData}
                                 initialTemplate={selectedTemplate}
-                                onTemplateChange={setSelectedTemplate}
+                                onTemplateChange={handleTemplateChange}
+                                onFormChange={handleFormChange}
+                                generateLocked={isResumeGenerationLocked}
+                                lockedHint={isResumeGenerationLocked ? t('career.usage.lockedHint') : null}
                             />
                         )}
                     </div>
@@ -292,7 +351,7 @@ const PublicResumeBuilderPage = () => {
                             {/* Score panel */}
                             <div className="w-full lg:w-72 xl:w-80 flex-shrink-0">
                                 <ResumeReadinessScore
-                                    formData={lastFormData ?? getSavedFormData() ?? {}}
+                                    formData={enrichedFormData}
                                     apiScore={draft?.readinessScore ?? null}
                                     extras={extras}
                                     onExtraChange={handleExtraChange}
@@ -305,7 +364,7 @@ const PublicResumeBuilderPage = () => {
                             <div className="flex-1 min-w-0">
                                 <ResumePreview
                                     draft={draft}
-                                    formData={lastFormData ?? getSavedFormData() ?? {}}
+                                    formData={enrichedFormData}
                                     templateId={selectedTemplate}
                                     onTemplateChange={handleTemplateChange}
                                 />
@@ -327,6 +386,13 @@ const PublicResumeBuilderPage = () => {
                     </div>
                 </section>
             )}
+
+            <CareerLimitReachedModal
+                open={limitModalOpen}
+                onClose={() => setLimitModalOpen(false)}
+                metricKey={CAREER_USAGE_KEYS.RESUME_GENERATIONS}
+                metric={resumeUsageMetric}
+            />
 
             {/* ── Job matches ── */}
             {showResults && status === DRAFT_STATUS.READY && (
@@ -415,20 +481,22 @@ const PublicResumeBuilderPage = () => {
                 </section>
             )}
 
-            {/* ── Bottom CTA ── */}
-            <section className="px-6 py-14 sm:px-8 bg-gray-50 dark:bg-[#141619] border-t border-gray-100 dark:border-white/5">
-                <div className="mx-auto max-w-xl text-center">
-                    <p className="text-base text-[#3E424A] dark:text-[#a6adba] mb-2">
-                        Already have an account?
-                    </p>
-                    <Link
-                        to={CAREER_ROUTES.DASHBOARD}
-                        className="inline-flex items-center gap-2 text-base font-semibold text-[#E14219] hover:text-[#C2410C] transition-colors"
-                    >
-                        Go to Career Hub <IconArrowRight />
-                    </Link>
-                </div>
-            </section>
+            {/* ── Bottom CTA (guests only) ── */}
+            {!user && (
+                <section className="px-6 py-14 sm:px-8 bg-gray-50 dark:bg-[#141619] border-t border-gray-100 dark:border-white/5">
+                    <div className="mx-auto max-w-xl text-center">
+                        <p className="text-base text-[#3E424A] dark:text-[#a6adba] mb-2">
+                            Already have an account?
+                        </p>
+                        <Link
+                            to={CAREER_ROUTES.DASHBOARD}
+                            className="inline-flex items-center gap-2 text-base font-semibold text-[#E14219] hover:text-[#C2410C] transition-colors"
+                        >
+                            Go to Career Hub <IconArrowRight />
+                        </Link>
+                    </div>
+                </section>
+            )}
         </div>
     );
 };

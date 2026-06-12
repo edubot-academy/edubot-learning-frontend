@@ -1,8 +1,10 @@
-import { useContext } from 'react';
-import { Link } from 'react-router-dom';
+import { useContext, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '@app/providers';
 import { CAREER_INTENT, buildSignupUrl } from '../utils/careerLimits';
+import { CAREER_ROUTES } from '../constants/careerRoutes';
+import { createResume } from '../api/resumeApi';
 
 // ─── Icons ─────────────────────────────────────────────────────────────────────
 
@@ -29,6 +31,27 @@ const IconGlobe = ({ className = 'w-3.5 h-3.5' }) => (
         <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
     </svg>
 );
+
+// ─── Data normaliser ──────────────────────────────────────────────────────────
+// The AI returns { header: { name, role, email, … }, summary, skills, … }.
+// Legacy/saved resumes may already be flat. Normalise to the flat shape all
+// layout components expect so the layouts never need to know about nesting.
+const normalizeResume = (raw) => {
+    if (!raw || typeof raw !== 'object') return raw;
+    if (!raw.header) return raw; // already flat or no header block
+    const { header = {}, ...rest } = raw;
+    return {
+        name:       header.name,
+        targetRole: header.role,
+        email:      header.email,
+        phone:      header.phone,
+        location:   header.location,
+        linkedin:   header.linkedin,
+        github:     header.github,
+        portfolio:  header.portfolio,
+        ...rest,
+    };
+};
 
 // ─── Resume section renderers ─────────────────────────────────────────────────
 
@@ -79,29 +102,37 @@ const ExperienceItem = ({ item }) => (
     </div>
 );
 
-const ProjectItem = ({ item }) => (
-    <div className="mb-3 last:mb-0">
-        <div className="flex items-baseline justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-2">
-                <span className="font-semibold text-[13px] text-gray-900">{item.name}</span>
-                {item.link && (
-                    <span className="inline-flex items-center gap-0.5 text-[11px] text-blue-600">
-                        <IconGlobe />
-                        {item.link}
-                    </span>
-                )}
+const ProjectItem = ({ item }) => {
+    // AI returns stack as a string; saved resumes may use tech as an array
+    const techItems = Array.isArray(item.tech)
+        ? item.tech
+        : item.stack
+        ? item.stack.split(/[,;]+/).map((s) => s.trim()).filter(Boolean)
+        : [];
+    return (
+        <div className="mb-3 last:mb-0">
+            <div className="flex items-baseline justify-between gap-4 flex-wrap">
+                <div className="flex items-center gap-2">
+                    <span className="font-semibold text-[13px] text-gray-900">{item.name}</span>
+                    {item.link && (
+                        <span className="inline-flex items-center gap-0.5 text-[11px] text-blue-600">
+                            <IconGlobe />
+                            {item.link}
+                        </span>
+                    )}
+                </div>
             </div>
+            {item.description && (
+                <p className="mt-0.5 text-[12px] text-gray-700 leading-relaxed">{item.description}</p>
+            )}
+            {techItems.length > 0 && (
+                <p className="mt-0.5 text-[11px] text-gray-500">
+                    <span className="font-medium">Tech:</span> {techItems.join(', ')}
+                </p>
+            )}
         </div>
-        {item.description && (
-            <p className="mt-0.5 text-[12px] text-gray-700 leading-relaxed">{item.description}</p>
-        )}
-        {Array.isArray(item.tech) && item.tech.length > 0 && (
-            <p className="mt-0.5 text-[11px] text-gray-500">
-                <span className="font-medium">Tech:</span> {item.tech.join(', ')}
-            </p>
-        )}
-    </div>
-);
+    );
+};
 
 // ─── Template renderers ───────────────────────────────────────────────────────
 
@@ -506,12 +537,57 @@ const LockedButton = ({ intent, draftId, label, icon: Icon }) => (
  * @param {string} props.templateId — selected template id
  * @param {function} props.onTemplateChange — called when user switches template
  */
-const ResumePreview = ({ draft, formData, templateId = 'classic', onTemplateChange }) => {
+const ResumePreview = ({ draft, formData, templateId = 'classic', onTemplateChange, resumeId = null }) => {
     const { t } = useTranslation();
     const { user } = useContext(AuthContext);
+    const navigate = useNavigate();
+    const [actionState, setActionState] = useState({ saving: false, downloading: false, message: null });
 
-    const resume = draft?.generatedResume ?? null;
+    const resume = normalizeResume(draft?.generatedResume ?? null);
     const Layout = LAYOUT_MAP[templateId] ?? ClassicLayout;
+
+    const ensureSavedResume = async () => {
+        if (resumeId) {
+            return { id: resumeId };
+        }
+
+        if (!draft?.id) {
+            throw new Error('Resume draft is missing');
+        }
+
+        return createResume({
+            name: draft.generatedResume?.header?.name || formData?.targetRole || 'My Resume',
+            templateId,
+            input: formData,
+            generatedResume: draft.generatedResume,
+            readinessScore: draft.readinessScore,
+            sourceDraftId: draft.id,
+        });
+    };
+
+    const handleSave = async () => {
+        setActionState({ saving: true, downloading: false, message: null });
+        try {
+            const savedResume = await ensureSavedResume();
+            navigate(CAREER_ROUTES.RESUME_DETAIL.replace(':resumeId', savedResume.id));
+        } catch (error) {
+            setActionState({
+                saving: false,
+                downloading: false,
+                message: error?.response?.data?.message || t('career.errors.saveFailed'),
+            });
+            return;
+        }
+        setActionState({ saving: false, downloading: false, message: null });
+    };
+
+    const handleDownload = () => {
+        setActionState({
+            saving: false,
+            downloading: false,
+            message: t('career.resume.preview.pdfComingSoon'),
+        });
+    };
 
     return (
         <div>
@@ -532,20 +608,22 @@ const ResumePreview = ({ draft, formData, templateId = 'classic', onTemplateChan
                     {user ? (
                         <>
                             <button
-                                disabled
-                                title="Save — coming in Phase 5"
-                                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-[#FF8C6E] to-[#E14219] px-4 py-2.5 text-sm font-semibold text-white opacity-60 cursor-not-allowed"
+                                type="button"
+                                onClick={handleSave}
+                                disabled={actionState.saving || actionState.downloading}
+                                className="cursor-pointer inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-[#FF8C6E] to-[#E14219] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60 disabled:cursor-not-allowed"
                             >
                                 <IconBookmark className="w-4 h-4" />
-                                {t('career.resume.preview.save')}
+                                {actionState.saving ? 'Saving...' : t('career.resume.preview.save')}
                             </button>
                             <button
-                                disabled
-                                title="Download PDF — coming in Phase 5"
-                                className="inline-flex items-center gap-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 px-4 py-2.5 text-sm font-medium text-[#3E424A] dark:text-[#a6adba] opacity-60 cursor-not-allowed"
+                                type="button"
+                                onClick={handleDownload}
+                                disabled={actionState.saving || actionState.downloading}
+                                className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 px-4 py-2.5 text-sm font-medium text-[#3E424A] dark:text-[#a6adba] disabled:opacity-60 disabled:cursor-not-allowed"
                             >
                                 <IconDownload className="w-4 h-4" />
-                                {t('career.resume.preview.download')}
+                                {actionState.downloading ? 'Preparing...' : t('career.resume.preview.download')}
                             </button>
                         </>
                     ) : (
@@ -567,18 +645,24 @@ const ResumePreview = ({ draft, formData, templateId = 'classic', onTemplateChan
                 </div>
             </div>
 
+            {actionState.message ? (
+                <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:border-amber-500/20 dark:bg-amber-950/20 dark:text-amber-300">
+                    {actionState.message}
+                </div>
+            ) : null}
+
             {/* ── Template selector ── */}
             {onTemplateChange && (
                 <div className="mb-4">
                     <p className="text-xs text-[#3E424A] dark:text-[#a6adba] mb-2 font-medium">
-                        Switch template — re-renders instantly, no new AI call needed
+                        Switch layout — preview updates instantly
                     </p>
                     <div className="flex gap-2 overflow-x-auto pb-1">
                         {Object.keys(LAYOUT_MAP).map((id) => (
                             <button
                                 key={id}
                                 onClick={() => onTemplateChange(id)}
-                                className={`flex-shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors capitalize ${
+                                className={`cursor-pointer flex-shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors capitalize ${
                                     templateId === id
                                         ? 'bg-[#E14219] text-white'
                                         : 'border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-[#3E424A] dark:text-[#a6adba] hover:bg-gray-50 dark:hover:bg-white/8'

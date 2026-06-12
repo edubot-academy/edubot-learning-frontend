@@ -32,3 +32,33 @@ export const claimResumeDraft = async (draftId) => {
     const res = await api.post(`/career/resume-drafts/${draftId}/claim`, {});
     return res.data;
 };
+
+export const getResumes = async () => {
+    const res = await api.get('/career/resumes');
+    return res.data;
+};
+
+export const getResume = async (resumeId) => {
+    const res = await api.get(`/career/resumes/${resumeId}`);
+    return res.data;
+};
+
+export const createResume = async (payload) => {
+    const res = await api.post('/career/resumes', payload);
+    return res.data;
+};
+
+export const updateResume = async (resumeId, payload) => {
+    const res = await api.patch(`/career/resumes/${resumeId}`, payload);
+    return res.data;
+};
+
+export const downloadResume = async (resumeId) => {
+    const res = await api.get(`/career/resumes/${resumeId}/download`);
+    return res.data;
+};
+
+export const tailorResumeForJob = async (resumeId, jobId) => {
+    const res = await api.post(`/career/resumes/${resumeId}/tailor/${jobId}`, {});
+    return res.data;
+};
