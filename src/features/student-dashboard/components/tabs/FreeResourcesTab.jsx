@@ -14,6 +14,7 @@ import {
     generatePracticeTasks,
     uploadResourceCertificate,
 } from '@features/externalResources/api';
+import { resolveLabel } from '@features/externalResources/data/externalResources';
 import { FiBookmark, FiBookOpen, FiCheckCircle, FiGlobe } from 'react-icons/fi';
 
 const STATUS_COLOR = {
@@ -91,6 +92,7 @@ const ResourceDetailPanel = ({
     updateNotes, removeResource, setCertificateUrl, saveAiContent,
 }) => {
     const slug = entry?.slug;
+    const priceLabelText = resolveLabel(entry?.priceLabel, lang);
     const [apiResource, setApiResource] = useState(null);
     useEffect(() => {
         if (!slug) return;
@@ -250,9 +252,9 @@ const ResourceDetailPanel = ({
                                 {t(`public.externalResources.levels.${entry.level}`, { defaultValue: entry.level })}
                             </span>
                         )}
-                        {entry.priceLabel && (
+                        {priceLabelText && (
                             <span className="text-xs px-2.5 py-1 rounded-full bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400">
-                                {entry.priceLabel}
+                                {priceLabelText}
                             </span>
                         )}
                         {weeksTotal > 0 && (

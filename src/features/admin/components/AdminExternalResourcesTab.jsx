@@ -57,7 +57,7 @@ const BLANK_FORM = {
     language: 'English',
     priceLabel: { ky: 'Акысыз', en: 'Free', ru: 'Бесплатно' },
     certificateLabel: { ky: '', en: '', ru: '' },
-    certificateCost: '',
+    certificateCost: { ky: '', en: '', ru: '' },
     canAuditFree: true,
     durationLabel: { ky: '', en: '', ru: '' },
     isFeatured: false,
@@ -190,7 +190,7 @@ const ResourceModal = ({ resource, categoryOptions = [], onClose, onSave, t }) =
                   language: resource.language ?? 'English',
                   priceLabel: initLocalizedLabel(resource.priceLabel, ''),
                   certificateLabel: initLocalizedLabel(resource.certificateLabel, ''),
-                  certificateCost: resource.certificateCost ?? '',
+                  certificateCost: initLocalizedLabel(resource.certificateCost, ''),
                   canAuditFree: resource.canAuditFree ?? true,
                   durationLabel: initLocalizedLabel(resource.durationLabel, ''),
                   isFeatured: resource.isFeatured ?? false,
@@ -222,7 +222,9 @@ const ResourceModal = ({ resource, categoryOptions = [], onClose, onSave, t }) =
             language: data.language ?? prev.language,
             priceLabel: data.priceLabel ? initLocalizedLabel(data.priceLabel, '') : prev.priceLabel,
             certificateLabel: data.certificateLabel ? initLocalizedLabel(data.certificateLabel, '') : prev.certificateLabel,
-            certificateCost: data.certificateCost ?? prev.certificateCost,
+            certificateCost: Object.hasOwn(data, 'certificateCost')
+                ? initLocalizedLabel(data.certificateCost, '')
+                : prev.certificateCost,
             canAuditFree: data.canAuditFree ?? prev.canAuditFree,
             durationLabel: data.durationLabel ? initLocalizedLabel(data.durationLabel, '') : prev.durationLabel,
         }));
@@ -566,7 +568,12 @@ const ResourceModal = ({ resource, categoryOptions = [], onClose, onSave, t }) =
                                 </Field>
                                 <Field>
                                     <FieldLabel>{t('adminExtResources.fields.certificateCost')}</FieldLabel>
-                                    <input value={form.certificateCost} onChange={(e) => setF('certificateCost', e.target.value)} className="dashboard-field" placeholder="$49" />
+                                    <input
+                                        value={form.certificateCost[lang] ?? ''}
+                                        onChange={(e) => setFL('certificateCost', e.target.value)}
+                                        className="dashboard-field"
+                                        placeholder={lang === 'ky' ? 'Coursera сертификатынын акысы' : lang === 'ru' ? 'Стоимость сертификата Coursera' : '$49'}
+                                    />
                                 </Field>
                                 <Field>
                                     <FieldLabel>{t('adminExtResources.fields.sortOrder')}</FieldLabel>
@@ -966,7 +973,7 @@ const ResourceModal = ({ resource, categoryOptions = [], onClose, onSave, t }) =
                                             </div>
                                             <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
                                                 {resource.provider} · {resource.level} · {resolveLabel(resource.priceLabel, currentLang)}
-                                                {resource.certificateCost ? ` · 🏅 ${resource.certificateCost}` : ''}
+                                                {resolveLabel(resource.certificateCost, currentLang) ? ` · 🏅 ${resolveLabel(resource.certificateCost, currentLang)}` : ''}
                                                 {resource.canAuditFree === false ? ` · ${t('adminExtResources.status.paidOnly')}` : ''}
                                             </p>
                                             <p className="mt-0.5 text-xs text-edubot-muted/70 dark:text-slate-500">

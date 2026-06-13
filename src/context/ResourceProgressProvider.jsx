@@ -7,6 +7,7 @@ import {
     fetchMyExternalResourceProgress,
     upsertExternalResourceProgress,
 } from '../features/externalResources/api';
+import { resolveLabel } from '../features/externalResources/data/externalResources';
 
 const ANON_KEY = 'ext_res_v1_anon';
 
@@ -41,7 +42,7 @@ const normalizeApiEntry = (row) => ({
     coverImageUrl: row.resource?.coverImageUrl ?? null,
     category: row.resource?.category ?? '',
     level: row.resource?.level ?? '',
-    priceLabel: row.resource?.priceLabel ?? '',
+    priceLabel: resolveLabel(row.resource?.priceLabel) ?? '',
 });
 
 const syncToApi = (slug, payload) => {

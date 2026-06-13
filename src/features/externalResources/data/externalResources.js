@@ -6,11 +6,37 @@ const LABEL_TRANSLATIONS = {
     'акысыз':                           { ky: 'Акысыз',                           ru: 'Бесплатно',                         en: 'Free' },
     'толугу менен акысыз':              { ky: 'Толугу менен акысыз',              ru: 'Полностью бесплатно',               en: 'Completely Free' },
     'акысыз / coursera financial aid':  { ky: 'Акысыз / Coursera Financial Aid',  ru: 'Бесплатно / Coursera Financial Aid', en: 'Free / Coursera Financial Aid' },
+    'free':                             { ky: 'Акысыз',                           ru: 'Бесплатно',                         en: 'Free' },
+    'audit free':                       { ky: 'Акысыз угуп окуу',                 ru: 'Бесплатный аудит',                  en: 'Audit free' },
+    'free / paid certificate':          { ky: 'Акысыз / акы төлөнүүчү сертификат', ru: 'Бесплатно / платный сертификат',   en: 'Free / Paid certificate' },
+    'free learning / paid exam':        { ky: 'Акысыз окуу / акы төлөнүүчү экзамен', ru: 'Бесплатное обучение / платный экзамен', en: 'Free learning / Paid exam' },
+    'paid / 7-day free trial':          { ky: 'Акы төлөнөт / 7 күндүк акысыз сыноо', ru: 'Платно / 7-дневный бесплатный пробный период', en: 'Paid / 7-day free trial' },
+    '$199 (one-time)':                  { ky: '$199 (бир жолку төлөм)',           ru: '$199 (разовый платёж)',             en: '$199 (one-time)' },
+    '$49/month in us/canada after trial': { ky: '$49/ай АКШ/Канадада сыноодон кийин', ru: '$49/месяц в США/Канаде после пробного периода', en: '$49/month in US/Canada after trial' },
+    'coursera certificate fee or subscription': { ky: 'Coursera сертификатынын акысы же жазылуу', ru: 'Стоимость сертификата Coursera или подписка', en: 'Coursera certificate fee or subscription' },
+    'exam fee varies by country':       { ky: 'Экзамен акысы өлкөгө жараша өзгөрөт', ru: 'Стоимость экзамена зависит от страны', en: 'Exam fee varies by country' },
     // certificate
     'сертификат бар':                   { ky: 'Сертификат бар',                   ru: 'Сертификат есть',                   en: 'Certificate available' },
     'кесипкөй сертификат':              { ky: 'Кесипкөй сертификат',              ru: 'Профессиональный сертификат',        en: 'Professional certificate' },
     'ачкычтамга бар':                   { ky: 'Ачкычтамга бар',                   ru: 'Есть значки',                       en: 'Badges available' },
     'портфолио долбоорлору':            { ky: 'Портфолио долбоорлору',            ru: 'Проекты для портфолио',              en: 'Portfolio projects' },
+    'google professional certificate':  { ky: 'Google кесипкөй сертификаты',      ru: 'Профессиональный сертификат Google', en: 'Google Professional Certificate' },
+    'google cloud professional certificate': { ky: 'Google Cloud кесипкөй сертификаты', ru: 'Профессиональный сертификат Google Cloud', en: 'Google Cloud Professional Certificate' },
+    'ibm professional certificate':     { ky: 'IBM кесипкөй сертификаты',         ru: 'Профессиональный сертификат IBM',   en: 'IBM Professional Certificate' },
+    'meta professional certificate':    { ky: 'Meta кесипкөй сертификаты',        ru: 'Профессиональный сертификат Meta',  en: 'Meta Professional Certificate' },
+    'coursera certificate available':   { ky: 'Coursera сертификаты жеткиликтүү', ru: 'Сертификат Coursera доступен',      en: 'Coursera certificate available' },
+    'coursera specialization certificate': { ky: 'Coursera адистештирүү сертификаты', ru: 'Сертификат специализации Coursera', en: 'Coursera specialization certificate' },
+    'verified harvardx certificate available': { ky: 'Тастыкталган HarvardX сертификаты жеткиликтүү', ru: 'Доступен подтверждённый сертификат HarvardX', en: 'Verified HarvardX certificate available' },
+    'verified certificate available':   { ky: 'Тастыкталган сертификат жеткиликтүү', ru: 'Подтверждённый сертификат доступен', en: 'Verified certificate available' },
+    'free certificate available':       { ky: 'Акысыз сертификат жеткиликтүү',    ru: 'Бесплатный сертификат доступен',    en: 'Free certificate available' },
+    'microsoft certified: azure fundamentals': { ky: 'Microsoft тастыктаган: Azure Fundamentals', ru: 'Сертификация Microsoft: Azure Fundamentals', en: 'Microsoft Certified: Azure Fundamentals' },
+    'google cloud skill badge':         { ky: 'Google Cloud көндүм бейджи',       ru: 'Значок навыка Google Cloud',        en: 'Google Cloud skill badge' },
+    'kaggle completion certificate':    { ky: 'Kaggle аяктоо сертификаты',        ru: 'Сертификат о завершении Kaggle',    en: 'Kaggle completion certificate' },
+    'aws skill builder course completion': { ky: 'AWS Skill Builder курсун аяктоо белгиси', ru: 'Подтверждение завершения курса AWS Skill Builder', en: 'AWS Skill Builder course completion' },
+    'freecodecamp certification':       { ky: 'freeCodeCamp сертификаты',         ru: 'Сертификат freeCodeCamp',           en: 'freeCodeCamp certification' },
+    'completion certificate':           { ky: 'Аяктоо сертификаты',               ru: 'Сертификат о завершении',           en: 'Completion certificate' },
+    'certificate available after completed exercises': { ky: 'Көнүгүүлөрдү аяктагандан кийин сертификат берилет', ru: 'Сертификат доступен после выполнения упражнений', en: 'Certificate available after completed exercises' },
+    'google certificate':               { ky: 'Google сертификаты',               ru: 'Сертификат Google',                 en: 'Google certificate' },
     // duration
     '12 апта':                          { ky: '12 апта',   ru: '12 недель',   en: '12 weeks' },
     '7 апта':                           { ky: '7 апта',    ru: '7 недель',    en: '7 weeks' },
@@ -20,6 +46,31 @@ const LABEL_TRANSLATIONS = {
     '~100 саат':                        { ky: '~100 саат', ru: '~100 часов',  en: '~100 hours' },
     'өз темпиңизде':                    { ky: 'Өз темпиңизде',     ru: 'В своём темпе', en: 'Self-paced' },
     'жакынча 6 саат, өз алдынча':       { ky: 'Жакынча 6 саат, өз алдынча', ru: '~6 часов', en: '~6 hours' },
+    'self-paced':                       { ky: 'Өз темпиңизде',     ru: 'В своём темпе', en: 'Self-paced' },
+    '4 hours':                          { ky: '4 саат',            ru: '4 часа',        en: '4 hours' },
+    '7 hours':                          { ky: '7 саат',            ru: '7 часов',       en: '7 hours' },
+    '18 hours':                         { ky: '18 саат',           ru: '18 часов',      en: '18 hours' },
+    '45 minutes':                       { ky: '45 мүнөт',          ru: '45 минут',      en: '45 minutes' },
+    '15.1 hours':                       { ky: '15.1 саат',         ru: '15.1 часа',     en: '15.1 hours' },
+    '6 weeks':                          { ky: '6 апта',            ru: '6 недель',      en: '6 weeks' },
+    '6 weeks, self-paced':              { ky: '6 апта, өз алдынча темпте', ru: '6 недель, в своём темпе', en: '6 weeks, self-paced' },
+    '5 weeks, self-paced':              { ky: '5 апта, өз алдынча темпте', ru: '5 недель, в своём темпе', en: '5 weeks, self-paced' },
+    '1–3 months':                       { ky: '1–3 ай',            ru: '1–3 месяца',    en: '1–3 months' },
+    '1 month at 10 hours/week':         { ky: '1 ай, жумасына 10 саат', ru: '1 месяц по 10 часов в неделю', en: '1 month at 10 hours/week' },
+    '2 months at 10 hours/week':        { ky: '2 ай, жумасына 10 саат', ru: '2 месяца по 10 часов в неделю', en: '2 months at 10 hours/week' },
+    '4 weeks at 10 hours/week':         { ky: '4 апта, жумасына 10 саат', ru: '4 недели по 10 часов в неделю', en: '4 weeks at 10 hours/week' },
+    '5 months at 10 hours/week':        { ky: '5 ай, жумасына 10 саат', ru: '5 месяцев по 10 часов в неделю', en: '5 months at 10 hours/week' },
+    '6 months at 10 hours/week':        { ky: '6 ай, жумасына 10 саат', ru: '6 месяцев по 10 часов в неделю', en: '6 months at 10 hours/week' },
+    '7 months at 6 hours/week':         { ky: '7 ай, жумасына 6 саат', ru: '7 месяцев по 6 часов в неделю', en: '7 months at 6 hours/week' },
+    'less than 6 months at under 10 hours/week': { ky: '6 айдан аз, жумасына 10 сааттан аз', ru: 'Менее 6 месяцев, до 10 часов в неделю', en: 'Less than 6 months at under 10 hours/week' },
+    'under 10 hours, self-paced':       { ky: '10 саатка жетпейт, өз темпиңизде', ru: 'Менее 10 часов, в своём темпе', en: 'Under 10 hours, self-paced' },
+    '12 hours 45 minutes':              { ky: '12 саат 45 мүнөт',  ru: '12 часов 45 минут', en: '12 hours 45 minutes' },
+    '12 weeks, 6–9 hours/week':         { ky: '12 апта, жумасына 6–9 саат', ru: '12 недель, 6–9 часов в неделю', en: '12 weeks, 6–9 hours/week' },
+    '3 modules, self-paced':            { ky: '3 модуль, өз темпиңизде', ru: '3 модуля, в своём темпе', en: '3 modules, self-paced' },
+    'self-paced, comprehensive':        { ky: 'Өз темпиңизде, кеңири курс', ru: 'В своём темпе, полный курс', en: 'Self-paced, comprehensive' },
+    'self-paced, semester-style course': { ky: 'Өз темпиңизде, семестр форматындагы курс', ru: 'В своём темпе, курс в формате семестра', en: 'Self-paced, semester-style course' },
+    '6 жума, өз ылдамдыгы менен (болжол менен 6–12 саат)': { ky: '6 жума, өз ылдамдыгы менен (болжол менен 6–12 саат)', ru: '6 недель, в своём темпе (примерно 6–12 часов)', en: '6 weeks, self-paced (about 6–12 hours)' },
+    '6 жума, өз алдынча темпте':        { ky: '6 жума, өз алдынча темпте', ru: '6 недель, в своём темпе', en: '6 weeks, self-paced' },
 };
 
 /**
@@ -29,10 +80,14 @@ const LABEL_TRANSLATIONS = {
  */
 export const resolveLabel = (val, lang = 'ky') => {
     if (!val) return null;
-    if (typeof val === 'object') return val[lang] ?? val.ky ?? null;
-    const entry = LABEL_TRANSLATIONS[val.toLowerCase()];
-    if (entry) return entry[lang] ?? entry.ky ?? val;
-    return val;
+    const raw = typeof val === 'object'
+        ? val[lang] ?? val.ky ?? val.en ?? val.ru ?? null
+        : val;
+    if (!raw) return null;
+    if (typeof raw === 'object') return resolveLabel(raw, lang);
+    const entry = LABEL_TRANSLATIONS[String(raw).trim().toLowerCase()];
+    if (entry) return entry[lang] ?? entry.ky ?? entry.en ?? entry.ru ?? String(raw);
+    return String(raw);
 };
 
 export const KNOWN_EXTERNAL_RESOURCE_CATEGORIES = [

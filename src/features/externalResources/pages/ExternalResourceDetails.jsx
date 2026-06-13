@@ -244,6 +244,7 @@ const ExternalResourceDetails = () => {
     const priceLabelText = resolveLabel(priceLabel, lang);
     const durationLabelText = resolveLabel(durationLabel, lang);
     const certificateLabelText = resolveLabel(certificateLabel, lang);
+    const certificateCostText = resolveLabel(resource.certificateCost, lang);
     const isFree = (
         /акысыз/i.test(typeof priceLabel === 'object' ? priceLabel.ky : priceLabel ?? '') ||
         /free|бесплатно/i.test(typeof priceLabel === 'object' ? priceLabel.en ?? priceLabel.ru : priceLabel ?? '')
@@ -283,39 +284,44 @@ const ExternalResourceDetails = () => {
     const btnOutline = 'w-full inline-flex items-center justify-center gap-2 rounded-xl font-semibold text-base px-5 py-3 border-2 border-[#E14219]/40 text-[#E14219] dark:text-[#FF8C6E] hover:bg-[#E14219]/5 dark:hover:bg-[#E14219]/10 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-[#E14219] focus-visible:outline-none';
     const btnGhost = 'w-full inline-flex items-center justify-center gap-2 rounded-xl font-semibold text-base px-5 py-3 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-[#E14219]/40 hover:text-[#E14219] dark:hover:text-[#FF8C6E] transition-all duration-200 focus-visible:ring-2 focus-visible:ring-[#E14219] focus-visible:outline-none';
 
+    const renderMetaRow = (label, value, valueClassName = 'text-[#141619] dark:text-[#E8ECF3]') => {
+        const isLong = String(value).length > 26;
+
+        return (
+            <div className={`min-w-0 rounded-xl border border-gray-100 dark:border-white/10 bg-gray-50/80 dark:bg-white/[0.03] px-4 py-3 ${isLong ? 'sm:col-span-2 lg:col-span-1' : ''}`}>
+                <span className="block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    {label}
+                </span>
+                <span className={`mt-1 block min-w-0 text-sm font-semibold leading-snug break-words ${valueClassName}`}>
+                    {value}
+                </span>
+            </div>
+        );
+    };
     const renderMetaRows = () => (
-        <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
             {priceLabelText && (
-                <div className="flex justify-between items-center gap-2">
-                    <span className="text-sm text-gray-500 dark:text-gray-400">{t('public.externalResources.price')}</span>
-                    <span className={`text-sm font-semibold ${isFree ? 'text-green-600 dark:text-green-400' : 'text-[#141619] dark:text-[#E8ECF3]'}`}>
-                        {priceLabelText}
-                    </span>
-                </div>
+                renderMetaRow(
+                    t('public.externalResources.price'),
+                    priceLabelText,
+                    isFree ? 'text-green-600 dark:text-green-400' : 'text-[#141619] dark:text-[#E8ECF3]',
+                )
             )}
             {levelText && (
-                <div className="flex justify-between items-center gap-2">
-                    <span className="text-sm text-gray-500 dark:text-gray-400">{t('public.externalResources.level')}</span>
-                    <span className="text-sm font-semibold text-right">{levelText}</span>
-                </div>
+                renderMetaRow(t('public.externalResources.level'), levelText)
             )}
             {durationLabelText && (
-                <div className="flex justify-between items-start gap-2">
-                    <span className="text-sm text-gray-500 dark:text-gray-400 flex-shrink-0">{t('public.externalResources.duration')}</span>
-                    <span className="text-sm font-semibold text-right max-w-[55%]">{durationLabelText}</span>
-                </div>
+                renderMetaRow(t('public.externalResources.duration'), durationLabelText)
             )}
             {certificateLabelText && (
-                <div className="flex justify-between items-start gap-2">
-                    <span className="text-sm text-gray-500 dark:text-gray-400 flex-shrink-0">{t('public.externalResources.certificate')}</span>
-                    <span className="text-sm font-semibold text-right max-w-[55%]">{certificateLabelText}</span>
-                </div>
+                renderMetaRow(t('public.externalResources.certificate'), certificateLabelText)
             )}
-            {resource.certificateCost && (
-                <div className="flex justify-between items-center gap-2">
-                    <span className="text-sm text-gray-500 dark:text-gray-400">{t('public.externalResources.certificateCost')}</span>
-                    <span className="text-sm font-semibold text-amber-600 dark:text-amber-400">{resource.certificateCost}</span>
-                </div>
+            {certificateCostText && (
+                renderMetaRow(
+                    t('public.externalResources.certificateCost'),
+                    certificateCostText,
+                    'text-amber-600 dark:text-amber-400',
+                )
             )}
         </div>
     );
@@ -380,13 +386,13 @@ const ExternalResourceDetails = () => {
                         <ExternalLinkIcon />
                         {t('public.externalResources.auditFreeCta')}
                     </button>
-                    {resource.certificateCost && (
+                    {certificateCostText && (
                         <button
                             onClick={handleOfficialLink}
                             className="w-full inline-flex items-center justify-center gap-2 rounded-xl font-semibold text-base px-5 py-3 border-2 border-amber-400 dark:border-amber-600 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none"
                         >
                             <AcademicCapIcon className="w-4 h-4" />
-                            {t('public.externalResources.getCertificateCta', { cost: resource.certificateCost })}
+                            {t('public.externalResources.getCertificateCta', { cost: certificateCostText })}
                         </button>
                     )}
                 </>
