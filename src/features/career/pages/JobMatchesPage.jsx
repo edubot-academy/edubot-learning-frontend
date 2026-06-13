@@ -13,8 +13,6 @@ import { CAREER_USAGE_KEYS, getUsageMetric, isCareerLimitReachedError, isUsageMe
 import {
     CAREER_MARKETS,
     CAREER_WORK_MODES,
-    filterJobsByMarket,
-    filterJobsByWorkMode,
     getResumeJobMarketPreference,
     getResumeReadinessScore,
     getResumeWorkModePreference,
@@ -132,10 +130,7 @@ const JobMatchesPage = () => {
     const selectedResume = resumes.find((resume) => resume.id === selectedResumeId) || null;
     const selectedResumeReady = isResumeReadyForJobActions(selectedResume);
     const selectedResumeScore = getResumeReadinessScore(selectedResume);
-    const filteredJobs = useMemo(
-        () => filterJobsByWorkMode(filterJobsByMarket(jobs, marketFilter), workModeFilter),
-        [jobs, marketFilter, workModeFilter],
-    );
+    const filteredJobs = jobs;
     const fallbackJobs = filteredJobs.map((job) => ({
         ...job,
         matchedSkills: [],
@@ -314,7 +309,7 @@ const JobMatchesPage = () => {
                                         return (
                                         <div key={match.id || itemJobId} className="space-y-2">
                                             <JobMatchCard
-                                                match={{ ...match, id: itemJobId }}
+                                                match={{ ...match, jobId: itemJobId }}
                                                 resumeId={selectedResumeId}
                                                 actionsLocked={actionsLocked}
                                                 actionLockReason={actionsLocked ? t('career.jobs.gating.actionLocked') : ''}

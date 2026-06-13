@@ -380,7 +380,7 @@ const JobDetailPage = () => {
 
                                     <div className="rounded-2xl bg-gray-50 px-4 py-4 dark:bg-white/[0.03]">
                                         <p className="text-sm font-semibold text-[#141619] dark:text-[#E8ECF3]">
-                                            {resumeReadyForActions ? t('career.jobs.matchScore', { score: Math.max(35, Math.min(95, matchedSkills.length * 12 + (resumeScore || 0) / 2)) }) : t('career.jobs.gating.scoreLocked')}
+                                            {resumeReadyForActions && resumeScore != null ? t('career.resume.preview.score', { score: resumeScore }) : t('career.jobs.gating.scoreLocked')}
                                         </p>
                                         <p className="mt-2 text-sm text-[#3E424A] dark:text-[#a6adba]">
                                             {matchedSkills.length > 0

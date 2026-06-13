@@ -75,8 +75,9 @@ export const useCareerIntent = ({ autoProcess = true } = {}) => {
                     return;
                 }
 
-                if (code === 409) {
-                    // Non-fatal — draft already claimed elsewhere or no longer claimable
+                const errorCode = e?.response?.data?.code;
+                if (code === 403 && errorCode === 'DRAFT_NOT_READY') {
+                    // Non-fatal — draft was already claimed (status is no longer 'ready')
                 } else {
                     setError(e);
                     setStatus(INTENT_STATUS.ERROR);
