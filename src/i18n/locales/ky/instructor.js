@@ -703,6 +703,10 @@ export const instructor = {
             quiz: {
                 passingScore: "Өтүү упайы (%)",
                 timeLimit: "Убакыт лимити (мүнөт, бош болсо чексиз)",
+                fillMode: {
+                    manual: "Кол менен түзөтүү",
+                    paste: "Квиз маалыматын коюу"
+                },
                 formattingHelp: "Текст форматтоо:",
                 boldSample: "калың",
                 boldInsertSample: "калың текст",

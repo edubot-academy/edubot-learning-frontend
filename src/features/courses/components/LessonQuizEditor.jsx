@@ -19,6 +19,7 @@ const LessonQuizEditor = ({
 }) => {
     const { t } = useTranslation();
     const [isAiDrawerOpen, setIsAiDrawerOpen] = useState(false);
+    const [fillMode, setFillMode] = useState('manual');
     const [pasteText, setPasteText] = useState('');
     const [pasteError, setPasteError] = useState('');
     const safeQuiz = quiz ?? createEmptyQuiz();
@@ -174,44 +175,83 @@ const LessonQuizEditor = ({
                 {t('instructorDashboard.courseBuilder.quiz.and')} <code>`{t('instructorDashboard.courseBuilder.quiz.codeSample')}`</code>.
             </p>
 
-            <section className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/70 dark:bg-amber-950/20">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                        <p className="font-semibold text-slate-900 dark:text-white">
-                            {t('instructorDashboard.courseBuilder.quiz.paste.title')}
-                        </p>
-                        <p className="text-sm text-slate-600 dark:text-slate-300">
-                            {t('instructorDashboard.courseBuilder.quiz.paste.help')}
-                        </p>
+            <section className="rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-900/70 dark:bg-amber-950/20">
+                <div className="border-b border-amber-200 px-4 py-3 dark:border-amber-900/70">
+                    <div className="flex flex-wrap gap-2">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setFillMode('manual');
+                                setPasteError('');
+                            }}
+                            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+                                fillMode === 'manual'
+                                    ? 'bg-amber-600 text-white'
+                                    : 'text-amber-800 hover:bg-amber-100 dark:text-amber-200 dark:hover:bg-amber-900/40'
+                            }`}
+                            disabled={disabled}
+                        >
+                            {t('instructorDashboard.courseBuilder.quiz.fillMode.manual')}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setFillMode('paste');
+                                setPasteError('');
+                            }}
+                            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+                                fillMode === 'paste'
+                                    ? 'bg-amber-600 text-white'
+                                    : 'text-amber-800 hover:bg-amber-100 dark:text-amber-200 dark:hover:bg-amber-900/40'
+                            }`}
+                            disabled={disabled}
+                        >
+                            {t('instructorDashboard.courseBuilder.quiz.fillMode.paste')}
+                        </button>
                     </div>
-                    <button
-                        type="button"
-                        className="rounded border border-amber-300 bg-white px-3 py-1.5 text-sm font-medium text-amber-800 hover:bg-amber-100 disabled:opacity-50 dark:border-amber-700 dark:bg-slate-900 dark:text-amber-200"
-                        onClick={handlePasteFill}
-                        disabled={disabled || !pasteText.trim()}
-                    >
-                        {t('instructorDashboard.courseBuilder.quiz.paste.fill')}
-                    </button>
                 </div>
 
-                <textarea
-                    className="mt-3 min-h-36 w-full rounded border border-amber-200 bg-white p-3 font-mono text-sm dark:border-amber-900 dark:bg-slate-900 dark:text-white"
-                    value={pasteText}
-                    onChange={(e) => {
-                        setPasteText(e.target.value);
-                        setPasteError('');
-                    }}
-                    placeholder={t('instructorDashboard.courseBuilder.quiz.paste.placeholder')}
-                    disabled={disabled}
-                />
+                {fillMode === 'paste' ? (
+                    <div className="p-4">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <p className="font-semibold text-slate-900 dark:text-white">
+                                    {t('instructorDashboard.courseBuilder.quiz.paste.title')}
+                                </p>
+                                <p className="text-sm text-slate-600 dark:text-slate-300">
+                                    {t('instructorDashboard.courseBuilder.quiz.paste.help')}
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                className="rounded border border-amber-300 bg-white px-3 py-1.5 text-sm font-medium text-amber-800 hover:bg-amber-100 disabled:opacity-50 dark:border-amber-700 dark:bg-slate-900 dark:text-amber-200"
+                                onClick={handlePasteFill}
+                                disabled={disabled || !pasteText.trim()}
+                            >
+                                {t('instructorDashboard.courseBuilder.quiz.paste.fill')}
+                            </button>
+                        </div>
 
-                {pasteError ? (
-                    <p className="mt-2 text-xs text-rose-600">{pasteError}</p>
-                ) : (
-                    <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                        {t('instructorDashboard.courseBuilder.quiz.paste.supportedFormats')}
-                    </p>
-                )}
+                        <textarea
+                            className="mt-3 min-h-36 w-full rounded border border-amber-200 bg-white p-3 font-mono text-sm dark:border-amber-900 dark:bg-slate-900 dark:text-white"
+                            value={pasteText}
+                            onChange={(e) => {
+                                setPasteText(e.target.value);
+                                setPasteError('');
+                            }}
+                            placeholder={t('instructorDashboard.courseBuilder.quiz.paste.placeholder')}
+                            disabled={disabled}
+                        />
+
+                        {pasteError ? (
+                            <p className="mt-2 text-xs text-rose-600">{pasteError}</p>
+                        ) : (
+                            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                                {t('instructorDashboard.courseBuilder.quiz.paste.supportedFormats')}
+                            </p>
+                        )}
+                    </div>
+                ) : null}
             </section>
 
             {aiDraftEnabled ? (

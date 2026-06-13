@@ -5,6 +5,23 @@ import { createEmptyQuiz } from '../../../../utils/quizUtils';
 import { createEmptyChallenge } from '../../../../utils/challengeUtils';
 import i18n from '../../../../i18n';
 
+export const resolveLessonVideoKey = (lesson = {}) =>
+    lesson.videoKey
+    || lesson.sourceVideoKey
+    || lesson.video?.key
+    || '';
+
+const resetNonVideoLessonMediaState = (lesson) => {
+    lesson.previewVideo = false;
+    lesson.videoKey = '';
+    lesson.sourceVideoKey = null;
+    lesson.playbackKey = null;
+    lesson.playbackStatus = null;
+    lesson.playbackType = null;
+    lesson.playbackUrl = null;
+    lesson.transcodingJobId = null;
+};
+
 /**
  * Creates a lesson payload for API submission
  * @param {Object} lesson - Lesson object
@@ -14,12 +31,17 @@ import i18n from '../../../../i18n';
 export const buildLessonPayload = (lesson, lessonIndex) => {
     const isArticle = lesson.kind === 'article';
     const isVideo = lesson.kind === 'video';
+    const resolvedVideoKey = resolveLessonVideoKey(lesson) || undefined;
 
     return {
         title: lesson.title.trim(),
         kind: lesson.kind || 'video',
         content: isArticle ? lesson.content?.trim() || undefined : undefined,
-        videoKey: isVideo ? lesson.videoKey : undefined,
+        videoKey: isVideo ? resolvedVideoKey : null,
+        sourceVideoKey: isVideo ? resolvedVideoKey : null,
+        playbackKey: isVideo ? undefined : null,
+        playbackStatus: isVideo ? undefined : null,
+        playbackType: isVideo ? undefined : null,
         resourceKey: lesson.resourceKey,
         resourceName: lesson.resourceName?.trim() || undefined,
         previewVideo: isVideo ? lesson.previewVideo : false,
@@ -39,18 +61,16 @@ export const initializeLessonKindData = (lesson, kind) => {
 
     switch (kind) {
         case 'article':
-            updated.previewVideo = false;
+            resetNonVideoLessonMediaState(updated);
             break;
         case 'quiz':
-            updated.previewVideo = false;
-            updated.videoKey = '';
+            resetNonVideoLessonMediaState(updated);
             if (!updated.quiz) {
                 updated.quiz = createEmptyQuiz();
             }
             break;
         case 'code':
-            updated.previewVideo = false;
-            updated.videoKey = '';
+            resetNonVideoLessonMediaState(updated);
             if (!updated.challenge) {
                 updated.challenge = createEmptyChallenge();
             }
@@ -74,15 +94,15 @@ export const handleLessonKindChange = (lesson, newKind) => {
 
     // Reset kind-specific properties when changing
     if (newKind === 'article') {
-        updated.previewVideo = false;
+        resetNonVideoLessonMediaState(updated);
     } else if (newKind === 'quiz') {
-        updated.previewVideo = false;
-        updated.videoKey = '';
+        resetNonVideoLessonMediaState(updated);
         updated.quiz = updated.quiz || createEmptyQuiz();
     } else if (newKind === 'code') {
-        updated.previewVideo = false;
-        updated.videoKey = '';
+        resetNonVideoLessonMediaState(updated);
         updated.challenge = updated.challenge || createEmptyChallenge();
+    } else if (newKind === 'video') {
+        updated.videoKey = resolveLessonVideoKey(updated);
     }
 
     return updated;

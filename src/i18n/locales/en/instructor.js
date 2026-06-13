@@ -703,6 +703,10 @@ export const instructor = {
             quiz: {
                 passingScore: "Passing score (%)",
                 timeLimit: "Time limit (minutes, empty means unlimited)",
+                fillMode: {
+                    manual: "Manual editor",
+                    paste: "Paste quiz data"
+                },
                 formattingHelp: "Text formatting:",
                 boldSample: "bold",
                 boldInsertSample: "bold text",

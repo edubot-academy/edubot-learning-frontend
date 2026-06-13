@@ -2,6 +2,23 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.16.7] - 2026-06-13
+
+### Changed
+
+- Instructor course builder quiz editor: moved the pasted quiz import flow behind a dedicated tab option, with localized tab labels including `Квиз маалыматын коюу` for Kyrgyz.
+
+### Fixed
+
+- Instructor course builder edit flow: normalized existing video lesson source keys during hydration and corrected lesson update payloads so backend-managed playback fields are not echoed back during standard video edits. Non-video lesson transitions now explicitly clear stale video/transcode state, preventing `LESSON_STATE_INVALID` save failures when updating courses.
+
+### Verification
+
+- `npm test -- --run src/features/courses/builder/utils/lessonUtils.spec.js src/utils/quizUtils.spec.js`
+- `npm run build`
+
+---
+
 ## [1.16.6] - 2026-06-13
 
 ### Added

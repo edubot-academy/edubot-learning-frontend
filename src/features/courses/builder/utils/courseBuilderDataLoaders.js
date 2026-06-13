@@ -10,6 +10,7 @@ import { fetchSkills } from '../../../skills/api';
 import { createEmptyQuiz, mapQuizFromApi } from '../../../../utils/quizUtils';
 import { createEmptyChallenge, mapChallengeFromApi } from '../../../../utils/challengeUtils';
 import i18n from '../../../../i18n';
+import { resolveLessonVideoKey } from './lessonUtils';
 
 export const DEFAULT_SKILL_OPTION_LABEL = i18n.t(
     'instructorDashboard.courseBuilder.placeholders.optionalSkill'
@@ -68,6 +69,7 @@ const loadLessonExtras = async ({ courseId, lesson, sectionId, warnings }) => {
         ...lesson,
         kind: lesson.kind || 'video',
         content: lesson.content || '',
+        videoKey: resolveLessonVideoKey(lesson),
         resourceName: lesson.resourceName || '',
         quiz: lesson.kind === 'quiz' ? createEmptyQuiz() : undefined,
         challenge: lesson.kind === 'code' ? createEmptyChallenge() : undefined,

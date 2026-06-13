@@ -3,6 +3,7 @@
 
 import { createEmptyLesson, generateTempId } from './courseBuilderUtils';
 import { getDefaultSectionTitle } from '../constants';
+import { resolveLessonVideoKey } from './lessonUtils';
 
 /**
  * Adds a new section to the curriculum
@@ -111,10 +112,26 @@ export const updateLessonInSection = (curriculum, sectionIndex, lessonIndex, fie
             if (field === 'kind') {
                 if (value === 'article') {
                     updatedLesson.previewVideo = false;
+                    updatedLesson.videoKey = '';
+                    updatedLesson.sourceVideoKey = null;
+                    updatedLesson.playbackKey = null;
+                    updatedLesson.playbackStatus = null;
+                    updatedLesson.playbackType = null;
+                    updatedLesson.playbackUrl = null;
+                    updatedLesson.transcodingJobId = null;
                 }
                 if (value === 'quiz' || value === 'code') {
                     updatedLesson.previewVideo = false;
                     updatedLesson.videoKey = '';
+                    updatedLesson.sourceVideoKey = null;
+                    updatedLesson.playbackKey = null;
+                    updatedLesson.playbackStatus = null;
+                    updatedLesson.playbackType = null;
+                    updatedLesson.playbackUrl = null;
+                    updatedLesson.transcodingJobId = null;
+                }
+                if (value === 'video') {
+                    updatedLesson.videoKey = resolveLessonVideoKey(updatedLesson);
                 }
             }
 

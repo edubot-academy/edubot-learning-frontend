@@ -25,6 +25,7 @@ import {
     reorderExpandedMap,
     handleLessonKindChange,
     createEmptyLesson,
+    buildLessonPayload,
 } from '../utils';
 
 import {
@@ -736,23 +737,7 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
                         const isArticle = lesson.kind === 'article';
                         const isQuiz = lesson.kind === 'quiz';
                         const isCode = lesson.kind === 'code';
-
-                        const lessonPayload = {
-                            title: lesson.title.trim(),
-                            kind: lesson.kind || 'video',
-                            content: isArticle ? lesson.content?.trim() || undefined : undefined,
-                            videoKey: lesson.kind === 'video' ? lesson.videoKey : undefined,
-                            resourceKey: lesson.resourceKey,
-                            resourceName: lesson.resourceName?.trim() || undefined,
-                            previewVideo: lesson.kind === 'video' ? lesson.previewVideo : false,
-                            order: lIdx,
-                            duration:
-                                lesson.kind === 'video'
-                                    ? lesson.duration
-                                    : isArticle
-                                        ? lesson.duration
-                                        : undefined,
-                        };
+                        const lessonPayload = buildLessonPayload(lesson, lIdx);
 
                         const createdLesson = await createLesson(courseId, sec.id, lessonPayload);
 
@@ -824,26 +809,9 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
 
                     // Update or create lessons
                     for (const [lIdx, lesson] of section.lessons.entries()) {
-                        const isArticle = lesson.kind === 'article';
                         const isQuiz = lesson.kind === 'quiz';
                         const isCode = lesson.kind === 'code';
-
-                        const lessonPayload = {
-                            title: lesson.title.trim(),
-                            kind: lesson.kind || 'video',
-                            content: isArticle ? lesson.content?.trim() || undefined : undefined,
-                            videoKey: lesson.kind === 'video' ? lesson.videoKey : undefined,
-                            resourceKey: lesson.resourceKey,
-                            resourceName: lesson.resourceName?.trim() || undefined,
-                            previewVideo: lesson.kind === 'video' ? lesson.previewVideo : false,
-                            order: lIdx,
-                            duration:
-                                lesson.kind === 'video'
-                                    ? lesson.duration
-                                    : isArticle
-                                        ? lesson.duration
-                                        : undefined,
-                        };
+                        const lessonPayload = buildLessonPayload(lesson, lIdx);
 
                         let updatedLesson;
 
