@@ -32,12 +32,16 @@ import {
     unlinkResourceFromCourse,
     aiAutofillResource,
 } from '@features/externalResources/api';
+import {
+    buildCategoryOptions,
+    formatCategoryKey,
+    formatCategoryLabel,
+} from '@features/externalResources/data/externalResources';
 import { parseApiError } from '@shared/api/error';
 import ConfirmationModal from '@shared/ui/ConfirmationModal';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const CATEGORIES = ['programming', 'web', 'ai', 'data', 'english', 'business', 'cloud'];
 const LANGS = ['ky', 'en', 'ru'];
 
 const BLANK_FORM = {
@@ -143,8 +147,12 @@ const LangTabs = ({ active, onChange }) => (
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
 
-const ResourceModal = ({ resource, onClose, onSave, t }) => {
+const ResourceModal = ({ resource, categoryOptions = [], onClose, onSave, t }) => {
     const isEdit = !!resource;
+    const categorySuggestions = buildCategoryOptions([
+        ...categoryOptions.map((category) => category.key),
+        resource?.category,
+    ]).filter((category) => category.key !== 'all');
     const [tab, setTab] = useState('basic');
     const [lang, setLang] = useState('en');
     const [form, setForm] = useState(() =>
@@ -292,6 +300,7 @@ const ResourceModal = ({ resource, onClose, onSave, t }) => {
         try {
             const payload = {
                 ...form,
+                category: formatCategoryKey(form.category) || 'programming',
                 sortOrder: Number(form.sortOrder) || 0,
                 content: buildContent(content),
             };
@@ -476,9 +485,20 @@ const ResourceModal = ({ resource, onClose, onSave, t }) => {
                                 </Field>
                                 <Field>
                                     <FieldLabel>{t('adminExtResources.fields.category')}</FieldLabel>
-                                    <select value={form.category} onChange={(e) => setF('category', e.target.value)} className="dashboard-select w-full">
-                                        {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                                    </select>
+                                    <input
+                                        list="external-resource-category-options"
+                                        value={form.category}
+                                        onChange={(e) => setF('category', e.target.value)}
+                                        className="dashboard-field"
+                                        placeholder="programming"
+                                    />
+                                    <datalist id="external-resource-category-options">
+                                        {categorySuggestions.map((category) => (
+                                            <option key={category.key} value={category.key}>
+                                                {formatCategoryLabel(category.key)}
+                                            </option>
+                                        ))}
+                                    </datalist>
                                 </Field>
                                 <Field>
                                     <FieldLabel>{t('adminExtResources.fields.level')}</FieldLabel>
@@ -771,6 +791,7 @@ const AdminExternalResourcesTab = ({ courses = [] }) => {
     useEffect(() => { loadLinkedResources(linkCourseId); }, [linkCourseId, loadLinkedResources]);
 
     const isLinked = (resourceId) => linkedResources.some((r) => r.id === resourceId);
+    const categoryOptions = buildCategoryOptions(resources.map((resource) => resource.category));
 
     const handleToggleLink = async (resource) => {
         if (!linkCourseId) return;
@@ -805,6 +826,7 @@ const AdminExternalResourcesTab = ({ courses = [] }) => {
             {isModalOpen && (
                 <ResourceModal
                     resource={modalResource === null ? null : modalResource}
+                    categoryOptions={categoryOptions}
                     onClose={() => setModalResource(undefined)}
                     onSave={handleModalSave}
                     t={t}

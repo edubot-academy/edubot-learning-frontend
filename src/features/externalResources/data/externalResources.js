@@ -35,35 +35,88 @@ export const resolveLabel = (val, lang = 'ky') => {
     return val;
 };
 
-export const CATEGORIES = [
-    { key: 'all' },
-    { key: 'programming' },
-    { key: 'data' },
-    { key: 'web' },
-    { key: 'ai' },
+export const KNOWN_EXTERNAL_RESOURCE_CATEGORIES = [
+    'programming',
+    'data',
+    'web',
+    'ai',
+    'english',
+    'business',
+    'cloud',
 ];
 
+export const formatCategoryKey = (value = '') =>
+    String(value)
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, '-');
+
+export const formatCategoryLabel = (value = '') =>
+    String(value)
+        .trim()
+        .split(/[-_\s]+/)
+        .filter(Boolean)
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ');
+
+export const buildCategoryOptions = (categories = []) => {
+    const normalized = [...new Set(
+        categories
+            .map((category) => formatCategoryKey(category))
+            .filter(Boolean)
+            .filter((category) => category !== 'all')
+    )];
+
+    const known = KNOWN_EXTERNAL_RESOURCE_CATEGORIES.filter((category) => normalized.includes(category));
+    const unknown = normalized
+        .filter((category) => !KNOWN_EXTERNAL_RESOURCE_CATEGORIES.includes(category))
+        .sort((a, b) => a.localeCompare(b));
+
+    return [
+        { key: 'all' },
+        ...known.map((key) => ({ key })),
+        ...unknown.map((key) => ({ key })),
+    ];
+};
+
 export const PROVIDER_COLORS = {
-    harvard: '#A51C30',
-    google: '#4285F4',
-    freecodecamp: '#0A0A23',
-    mit: '#8A8B8C',
-    khanacademy: '#1DB954',
+    harvard:        '#A51C30',
+    google:         '#4285F4',
+    freecodecamp:   '#0A0A23',
+    mit:            '#8A8B8C',
+    khanacademy:    '#14BF96',
     theodinproject: '#D24317',
-    meta: '#0668E1',
-    ibm: '#006699',
+    meta:           '#0668E1',
+    ibm:            '#006699',
+    coursera:       '#0056D2',
 };
 
+// Google's favicon service — guaranteed PNG, no hotlink issues, works for every domain
+const _fav = (domain) => `https://www.google.com/s2/favicons?sz=128&domain=${domain}`;
 
-// Curated logo URLs — Wikipedia Commons / official CDNs (override Clearbit for these providers)
 export const PROVIDER_LOGOS = {
-    harvard: 'https://upload.wikimedia.org/wikipedia/en/thumb/2/29/Harvard_shield_wreath.svg/120px-Harvard_shield_wreath.svg.png',
-    google: 'https://www.gstatic.com/images/branding/product/2x/googleg_48dp.png',
-    freecodecamp: 'https://upload.wikimedia.org/wikipedia/commons/3/39/FreeCodeCamp_logo.png',
-    meta: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Meta_Platforms_Inc._logo.svg/200px-Meta_Platforms_Inc._logo.svg.png',
-    khanacademy: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Khan_Academy_Logo.svg/200px-Khan_Academy_Logo.svg.png',
-    theodinproject: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/The_Odin_Project_Logo.svg/200px-The_Odin_Project_Logo.svg.png',
+    harvard:        _fav('harvard.edu'),
+    google:         'https://www.gstatic.com/images/branding/product/2x/googleg_48dp.png',
+    freecodecamp:   _fav('freecodecamp.org'),
+    meta:           _fav('meta.com'),
+    khanacademy:    _fav('khanacademy.org'),
+    theodinproject: _fav('theodinproject.com'),
+    mit:            _fav('mit.edu'),
+    ibm:            _fav('ibm.com'),
+    coursera:       _fav('coursera.org'),
 };
+
+export const PROVIDER_STRIP = [
+    { key: 'google',         name: 'Google' },
+    { key: 'harvard',        name: 'Harvard' },
+    { key: 'meta',           name: 'Meta' },
+    { key: 'freecodecamp',   name: 'freeCodeCamp' },
+    { key: 'khanacademy',    name: 'Khan Academy' },
+    { key: 'theodinproject', name: 'The Odin Project' },
+    { key: 'mit',            name: 'MIT' },
+    { key: 'ibm',            name: 'IBM' },
+    { key: 'coursera',       name: 'Coursera' },
+];
 
 export const EXTERNAL_RESOURCES = [
     {

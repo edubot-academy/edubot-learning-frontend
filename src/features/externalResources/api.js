@@ -2,12 +2,26 @@ import api from '@shared/api/client';
 
 // ─── Public catalog (no auth required) ───────────────────────────────────────
 
-export const fetchExternalResources = async ({ category, featured } = {}) => {
-    const params = {};
+const normalizeExternalResourcesCollection = (payload) => {
+    if (Array.isArray(payload)) {
+        return {
+            data: payload,
+            total: payload.length,
+        };
+    }
+
+    return {
+        data: Array.isArray(payload?.data) ? payload.data : [],
+        total: Number.isFinite(payload?.total) ? payload.total : 0,
+    };
+};
+
+export const fetchExternalResources = async ({ category, featured, limit = 20, offset = 0 } = {}) => {
+    const params = { limit, offset };
     if (category && category !== 'all') params.category = category;
     if (featured) params.featured = 'true';
     const res = await api.get('/external-resources', { params });
-    return res.data;
+    return normalizeExternalResourcesCollection(res.data);
 };
 
 export const fetchExternalResourceBySlug = async (slug) => {

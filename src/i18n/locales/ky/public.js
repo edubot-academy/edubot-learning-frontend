@@ -1186,6 +1186,9 @@ export const publicResources = {
                 data: 'Маалымат',
                 web: 'Веб',
                 ai: 'AI / ML',
+                english: 'Англис тили',
+                business: 'Бизнес',
+                cloud: 'Булут',
             },
             levels: {
                 beginner: 'Башталгыч',

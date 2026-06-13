@@ -14,7 +14,7 @@ const ExternalResourcesHomeSection = () => {
 
     useEffect(() => {
         fetchExternalResources({ featured: true })
-            .then((data) => setPreview(Array.isArray(data) ? data.slice(0, HOME_PREVIEW_COUNT) : []))
+            .then(({ data }) => setPreview(data.slice(0, HOME_PREVIEW_COUNT)))
             .catch(() => setPreview([]));
     }, []);
 

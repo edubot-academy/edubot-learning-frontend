@@ -1186,6 +1186,9 @@ export const publicResources = {
                 data: 'Данные',
                 web: 'Веб',
                 ai: 'AI / ML',
+                english: 'Английский',
+                business: 'Бизнес',
+                cloud: 'Облако',
             },
             levels: {
                 beginner: 'Начальный',

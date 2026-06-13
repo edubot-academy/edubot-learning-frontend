@@ -46,7 +46,7 @@ const CoursesPage = () => {
 
     useEffect(() => {
         fetchExternalResources({ featured: true })
-            .then((data) => setFeaturedResources(Array.isArray(data) ? data.slice(0, 3) : []))
+            .then(({ data }) => setFeaturedResources(data.slice(0, 3)))
             .catch(() => setFeaturedResources([]));
     }, []);
 

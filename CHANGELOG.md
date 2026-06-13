@@ -2,6 +2,30 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.16.3] - 2026-06-13
+
+### Changed
+
+- External resource cards redesigned across home, courses, and `/resources` with a stronger hero image treatment, clearer metadata grouping, and a heavier CTA row aligned to the new visual direction.
+- `ExternalResourceDetails.jsx` refreshed as part of the same external-resources UI pass, including updated iconography, cleaner CTAs, improved section hierarchy, and tighter desktop sidebar layout.
+- `/resources` category pills now derive from actual resource categories returned by the catalog instead of a hard-coded frontend list.
+- Admin external resource modal now accepts freeform category keys with existing-category suggestions, so new categories can be created without a code change.
+
+### Fixed
+
+- Homepage and courses featured-resource sections were treating `fetchExternalResources()` as an array, causing external courses to disappear when the API returned `{ data, total }`.
+- Dynamic category pill labels could render as `[object Object]` because the normalized category helper wrapped the `all` option with an extra object layer.
+- Added missing public locale labels for `english`, `business`, and `cloud` categories in `ky`, `en`, and `ru` so dynamic pills resolve to translated labels for known categories.
+
+### Verification
+
+- `npm run build`
+- Homepage: verify featured external resources render again.
+- `/resources`: verify pills are generated from available categories and new admin-created categories appear automatically.
+- Resource detail page: verify refreshed layout, CTA behavior, and responsive sidebar rendering.
+
+---
+
 ## [1.16.2] - 2026-06-11
 
 ### Added
