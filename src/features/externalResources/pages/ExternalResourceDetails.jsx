@@ -283,6 +283,43 @@ const ExternalResourceDetails = () => {
     const btnOutline = 'w-full inline-flex items-center justify-center gap-2 rounded-xl font-semibold text-base px-5 py-3 border-2 border-[#E14219]/40 text-[#E14219] dark:text-[#FF8C6E] hover:bg-[#E14219]/5 dark:hover:bg-[#E14219]/10 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-[#E14219] focus-visible:outline-none';
     const btnGhost = 'w-full inline-flex items-center justify-center gap-2 rounded-xl font-semibold text-base px-5 py-3 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-[#E14219]/40 hover:text-[#E14219] dark:hover:text-[#FF8C6E] transition-all duration-200 focus-visible:ring-2 focus-visible:ring-[#E14219] focus-visible:outline-none';
 
+    const renderMetaRows = () => (
+        <div className="flex flex-col gap-3">
+            {priceLabelText && (
+                <div className="flex justify-between items-center gap-2">
+                    <span className="text-sm text-gray-500 dark:text-gray-400">{t('public.externalResources.price')}</span>
+                    <span className={`text-sm font-semibold ${isFree ? 'text-green-600 dark:text-green-400' : 'text-[#141619] dark:text-[#E8ECF3]'}`}>
+                        {priceLabelText}
+                    </span>
+                </div>
+            )}
+            {levelText && (
+                <div className="flex justify-between items-center gap-2">
+                    <span className="text-sm text-gray-500 dark:text-gray-400">{t('public.externalResources.level')}</span>
+                    <span className="text-sm font-semibold text-right">{levelText}</span>
+                </div>
+            )}
+            {durationLabelText && (
+                <div className="flex justify-between items-start gap-2">
+                    <span className="text-sm text-gray-500 dark:text-gray-400 flex-shrink-0">{t('public.externalResources.duration')}</span>
+                    <span className="text-sm font-semibold text-right max-w-[55%]">{durationLabelText}</span>
+                </div>
+            )}
+            {certificateLabelText && (
+                <div className="flex justify-between items-start gap-2">
+                    <span className="text-sm text-gray-500 dark:text-gray-400 flex-shrink-0">{t('public.externalResources.certificate')}</span>
+                    <span className="text-sm font-semibold text-right max-w-[55%]">{certificateLabelText}</span>
+                </div>
+            )}
+            {resource.certificateCost && (
+                <div className="flex justify-between items-center gap-2">
+                    <span className="text-sm text-gray-500 dark:text-gray-400">{t('public.externalResources.certificateCost')}</span>
+                    <span className="text-sm font-semibold text-amber-600 dark:text-amber-400">{resource.certificateCost}</span>
+                </div>
+            )}
+        </div>
+    );
+
     // ── Sidebar / mobile-card CTAs ────────────────────────────────────────────
     const renderCTAs = () => (
         <div className="flex flex-col gap-3">
@@ -478,6 +515,8 @@ const ExternalResourceDetails = () => {
                             <p className="text-base font-semibold text-[#141619] dark:text-[#E8ECF3]">{provider}</p>
                         </div>
                     </div>
+                    {renderMetaRows()}
+                    <hr className="my-4 border-gray-100 dark:border-white/10" />
                     {renderCTAs()}
                 </div>
 
@@ -789,6 +828,10 @@ const ExternalResourceDetails = () => {
                                     <p className="text-sm font-semibold text-[#141619] dark:text-[#E8ECF3]">{provider}</p>
                                 </div>
                             </div>
+
+                            {renderMetaRows()}
+
+                            <hr className="border-gray-100 dark:border-white/10" />
 
                             {renderCTAs()}
                         </div>

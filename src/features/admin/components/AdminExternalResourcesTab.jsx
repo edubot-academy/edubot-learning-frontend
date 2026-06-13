@@ -36,6 +36,7 @@ import {
     buildCategoryOptions,
     formatCategoryKey,
     formatCategoryLabel,
+    resolveLabel,
 } from '@features/externalResources/data/externalResources';
 import { parseApiError } from '@shared/api/error';
 import ConfirmationModal from '@shared/ui/ConfirmationModal';
@@ -54,14 +55,34 @@ const BLANK_FORM = {
     category: 'programming',
     level: 'beginner',
     language: 'English',
-    priceLabel: 'Акысыз',
-    certificateLabel: '',
+    priceLabel: { ky: 'Акысыз', en: 'Free', ru: 'Бесплатно' },
+    certificateLabel: { ky: '', en: '', ru: '' },
     certificateCost: '',
     canAuditFree: true,
-    durationLabel: '',
+    durationLabel: { ky: '', en: '', ru: '' },
     isFeatured: false,
     isPublished: false,
     sortOrder: 0,
+};
+
+const initLocalizedLabel = (value, fallback = '') => {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+        return {
+            ky: value.ky ?? fallback,
+            en: value.en ?? fallback,
+            ru: value.ru ?? fallback,
+        };
+    }
+
+    const resolvedKy = resolveLabel(value, 'ky') ?? fallback;
+    const resolvedEn = resolveLabel(value, 'en') ?? fallback;
+    const resolvedRu = resolveLabel(value, 'ru') ?? fallback;
+
+    return {
+        ky: resolvedKy,
+        en: resolvedEn,
+        ru: resolvedRu,
+    };
 };
 
 const initContentEdit = (content) => ({
@@ -167,11 +188,11 @@ const ResourceModal = ({ resource, categoryOptions = [], onClose, onSave, t }) =
                   category: resource.category ?? 'programming',
                   level: resource.level ?? 'beginner',
                   language: resource.language ?? 'English',
-                  priceLabel: resource.priceLabel ?? '',
-                  certificateLabel: resource.certificateLabel ?? '',
+                  priceLabel: initLocalizedLabel(resource.priceLabel, ''),
+                  certificateLabel: initLocalizedLabel(resource.certificateLabel, ''),
                   certificateCost: resource.certificateCost ?? '',
                   canAuditFree: resource.canAuditFree ?? true,
-                  durationLabel: resource.durationLabel ?? '',
+                  durationLabel: initLocalizedLabel(resource.durationLabel, ''),
                   isFeatured: resource.isFeatured ?? false,
                   isPublished: resource.isPublished ?? false,
                   sortOrder: resource.sortOrder ?? 0,
@@ -199,11 +220,11 @@ const ResourceModal = ({ resource, categoryOptions = [], onClose, onSave, t }) =
             category: data.category ?? prev.category,
             level: data.level ?? prev.level,
             language: data.language ?? prev.language,
-            priceLabel: data.priceLabel ?? prev.priceLabel,
-            certificateLabel: data.certificateLabel ?? prev.certificateLabel,
+            priceLabel: data.priceLabel ? initLocalizedLabel(data.priceLabel, '') : prev.priceLabel,
+            certificateLabel: data.certificateLabel ? initLocalizedLabel(data.certificateLabel, '') : prev.certificateLabel,
             certificateCost: data.certificateCost ?? prev.certificateCost,
             canAuditFree: data.canAuditFree ?? prev.canAuditFree,
-            durationLabel: data.durationLabel ?? prev.durationLabel,
+            durationLabel: data.durationLabel ? initLocalizedLabel(data.durationLabel, '') : prev.durationLabel,
         }));
         const c = data.content ?? {};
         setContent({
@@ -266,6 +287,7 @@ const ResourceModal = ({ resource, categoryOptions = [], onClose, onSave, t }) =
     };
 
     const setF = (key, val) => setForm((p) => ({ ...p, [key]: val }));
+    const setFL = (field, val) => setForm((p) => ({ ...p, [field]: { ...p[field], [lang]: val } }));
     const setCL = (field, val) => setContent((p) => ({ ...p, [field]: { ...p[field], [lang]: val } }));
     const setCLines = (field, val) => setContent((p) => ({ ...p, [field]: { ...p[field], [lang]: val } }));
 
@@ -512,17 +534,35 @@ const ResourceModal = ({ resource, categoryOptions = [], onClose, onSave, t }) =
                                     <FieldLabel>{t('adminExtResources.fields.language')}</FieldLabel>
                                     <input value={form.language} onChange={(e) => setF('language', e.target.value)} className="dashboard-field" placeholder="English" />
                                 </Field>
+                                <Field className="sm:col-span-2">
+                                    <LangTabs active={lang} onChange={setLang} />
+                                </Field>
                                 <Field>
                                     <FieldLabel>{t('adminExtResources.fields.priceLabel')}</FieldLabel>
-                                    <input value={form.priceLabel} onChange={(e) => setF('priceLabel', e.target.value)} className="dashboard-field" placeholder="Акысыз" />
+                                    <input
+                                        value={form.priceLabel[lang] ?? ''}
+                                        onChange={(e) => setFL('priceLabel', e.target.value)}
+                                        className="dashboard-field"
+                                        placeholder={lang === 'ky' ? 'Акысыз' : lang === 'ru' ? 'Бесплатно' : 'Free'}
+                                    />
                                 </Field>
                                 <Field>
                                     <FieldLabel>{t('adminExtResources.fields.durationLabel')}</FieldLabel>
-                                    <input value={form.durationLabel} onChange={(e) => setF('durationLabel', e.target.value)} className="dashboard-field" placeholder="12 апта" />
+                                    <input
+                                        value={form.durationLabel[lang] ?? ''}
+                                        onChange={(e) => setFL('durationLabel', e.target.value)}
+                                        className="dashboard-field"
+                                        placeholder={lang === 'ky' ? '12 апта' : lang === 'ru' ? '12 недель' : '12 weeks'}
+                                    />
                                 </Field>
                                 <Field>
                                     <FieldLabel>{t('adminExtResources.fields.certificateLabel')}</FieldLabel>
-                                    <input value={form.certificateLabel} onChange={(e) => setF('certificateLabel', e.target.value)} className="dashboard-field" placeholder="Сертификат бар" />
+                                    <input
+                                        value={form.certificateLabel[lang] ?? ''}
+                                        onChange={(e) => setFL('certificateLabel', e.target.value)}
+                                        className="dashboard-field"
+                                        placeholder={lang === 'ky' ? 'Сертификат бар' : lang === 'ru' ? 'Сертификат есть' : 'Certificate available'}
+                                    />
                                 </Field>
                                 <Field>
                                     <FieldLabel>{t('adminExtResources.fields.certificateCost')}</FieldLabel>
@@ -694,8 +734,9 @@ const ResourceModal = ({ resource, categoryOptions = [], onClose, onSave, t }) =
 
 // ─── Main tab component ───────────────────────────────────────────────────────
 
-const AdminExternalResourcesTab = ({ courses = [] }) => {
-    const { t } = useTranslation();
+    const AdminExternalResourcesTab = ({ courses = [] }) => {
+    const { t, i18n } = useTranslation();
+    const currentLang = i18n.language?.split('-')[0] ?? 'ky';
 
     const [resources, setResources] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -924,7 +965,7 @@ const AdminExternalResourcesTab = ({ courses = [] }) => {
                                                 )}
                                             </div>
                                             <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                                {resource.provider} · {resource.level} · {resource.priceLabel}
+                                                {resource.provider} · {resource.level} · {resolveLabel(resource.priceLabel, currentLang)}
                                                 {resource.certificateCost ? ` · 🏅 ${resource.certificateCost}` : ''}
                                                 {resource.canAuditFree === false ? ` · ${t('adminExtResources.status.paidOnly')}` : ''}
                                             </p>

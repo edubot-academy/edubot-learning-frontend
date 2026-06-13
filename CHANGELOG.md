@@ -2,6 +2,27 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.16.4] - 2026-06-13
+
+### Changed
+
+- Admin external resource editing now stores `priceLabel`, `durationLabel`, and `certificateLabel` as localized `ky` / `en` / `ru` objects instead of single strings, with per-language inputs in the basic metadata form.
+- Existing legacy string label values are normalized when an external resource is reopened in admin, so older resources can be re-saved into the new localized shape without backend changes.
+
+### Fixed
+
+- External resource cards now show the provider line again and restore the free-price pill that disappeared during the previous card redesign.
+- External resource detail pages now show price, level, duration, certificate, and certificate-cost metadata again inside both the mobile action card and the desktop sidebar.
+- Admin external resource list rows now resolve localized price labels correctly instead of rendering raw label objects once localized metadata is saved.
+
+### Verification
+
+- `npm run build`
+- Admin → External Resources: create and edit resources through manual entry, AI autofill, and pasted JSON; verify localized label fields save and re-open correctly.
+- `/resources` and resource detail pages: verify restored metadata is visible on cards, mobile action panels, and desktop sidebars.
+
+---
+
 ## [1.16.3] - 2026-06-13
 
 ### Changed

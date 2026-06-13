@@ -187,6 +187,10 @@ const ExternalResourceCard = ({
             />
 
             <div className="relative z-[2] flex flex-col flex-1 px-4 pt-3.5 pb-3 gap-2 pointer-events-none">
+                <span className="text-xs font-medium text-gray-400 dark:text-gray-500 truncate">
+                    {provider}
+                </span>
+
                 <h3 className="font-suisse font-bold text-[#141619] dark:text-[#E8ECF3] text-base leading-snug line-clamp-2 group-hover:text-[#E14219] dark:group-hover:text-[#FF8C6E] transition-colors">
                     {title}
                 </h3>
@@ -196,11 +200,15 @@ const ExternalResourceCard = ({
                 </p>
 
                 <div className="flex flex-wrap gap-1.5 pt-1">
-                    {!isFree && priceLabelText && (
+                    {isFree ? (
+                        <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full border font-medium bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800">
+                            {priceLabelText}
+                        </span>
+                    ) : priceLabelText ? (
                         <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full border font-medium bg-gray-50 dark:bg-white/5 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700">
                             {priceLabelText}
                         </span>
-                    )}
+                    ) : null}
                     {durationLabelText && (
                         <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full border font-medium bg-gray-50 dark:bg-white/5 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700">
                             <ClockIcon /> {durationLabelText}
