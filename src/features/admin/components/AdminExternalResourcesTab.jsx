@@ -9,12 +9,15 @@ import {
 import {
     FiBookOpen,
     FiCheck,
+    FiChevronLeft,
+    FiChevronRight,
     FiEdit3,
     FiExternalLink,
     FiGlobe,
     FiLink,
     FiLink2,
     FiPlus,
+    FiSearch,
     FiStar,
     FiTrash2,
     FiX,
@@ -44,6 +47,7 @@ import ConfirmationModal from '@shared/ui/ConfirmationModal';
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const LANGS = ['ky', 'en', 'ru'];
+const CATALOG_PAGE_SIZE = 20;
 
 const BLANK_FORM = {
     slug: '',
@@ -757,6 +761,9 @@ const ResourceModal = ({ resource, categoryOptions = [], onClose, onSave, t }) =
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [deleteLoading, setDeleteLoading] = useState(false);
 
+    const [catalogSearch, setCatalogSearch] = useState('');
+    const [catalogPage, setCatalogPage] = useState(1);
+
     const [linkCourseId, setLinkCourseId] = useState('');
     const [linkedResources, setLinkedResources] = useState([]);
     const [linkLoading, setLinkLoading] = useState(false);
@@ -864,6 +871,24 @@ const ResourceModal = ({ resource, categoryOptions = [], onClose, onSave, t }) =
     const publishedCount = resources.filter((r) => r.isPublished).length;
     const featuredCount = resources.filter((r) => r.isFeatured).length;
 
+    const filteredResources = catalogSearch.trim()
+        ? resources.filter((r) => {
+              const q = catalogSearch.toLowerCase();
+              return (
+                  r.title?.toLowerCase().includes(q) ||
+                  r.provider?.toLowerCase().includes(q) ||
+                  r.category?.toLowerCase().includes(q)
+              );
+          })
+        : resources;
+
+    const catalogTotalPages = Math.max(1, Math.ceil(filteredResources.length / CATALOG_PAGE_SIZE));
+    const catalogPageClamped = Math.min(catalogPage, catalogTotalPages);
+    const paginatedResources = filteredResources.slice(
+        (catalogPageClamped - 1) * CATALOG_PAGE_SIZE,
+        catalogPageClamped * CATALOG_PAGE_SIZE,
+    );
+
     const WORKFLOWS = [
         { id: 'catalog', label: t('adminExtResources.workflows.catalog') },
         { id: 'linking', label: t('adminExtResources.workflows.linking') },
@@ -939,74 +964,141 @@ const ResourceModal = ({ resource, categoryOptions = [], onClose, onSave, t }) =
                         </button>
                     }
                 >
+                    {/* Search */}
+                    <div className="mt-4 relative">
+                        <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                        <input
+                            type="search"
+                            value={catalogSearch}
+                            onChange={(e) => { setCatalogSearch(e.target.value); setCatalogPage(1); }}
+                            placeholder={t('adminExtResources.search.placeholder', { defaultValue: 'Search by title, provider, category…' })}
+                            className="dashboard-field pl-9 w-full"
+                        />
+                    </div>
+
                     {loading ? (
                         <div className="mt-6 flex justify-center"><Loader fullScreen={false} /></div>
-                    ) : resources.length ? (
-                        <div className="mt-4 space-y-3">
-                            {resources.map((resource) => (
-                                <article
-                                    key={resource.id}
-                                    className="rounded-2xl border border-edubot-line/70 bg-edubot-surfaceAlt/40 px-4 py-4 dark:border-slate-700 dark:bg-slate-900/60"
-                                >
-                                    <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                                        <div className="min-w-0">
-                                            <div className="flex flex-wrap items-center gap-2">
-                                                <p className="font-semibold text-edubot-ink dark:text-white truncate">{resource.title}</p>
-                                                <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-300">
-                                                    {resource.category}
-                                                </span>
-                                                {resource.isPublished ? (
-                                                    <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
-                                                        {t('adminExtResources.status.published')}
+                    ) : paginatedResources.length ? (
+                        <>
+                            <div className="mt-4 space-y-3">
+                                {paginatedResources.map((resource) => (
+                                    <article
+                                        key={resource.id}
+                                        className="rounded-2xl border border-edubot-line/70 bg-edubot-surfaceAlt/40 px-4 py-4 dark:border-slate-700 dark:bg-slate-900/60"
+                                    >
+                                        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                                            <div className="min-w-0">
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <p className="font-semibold text-edubot-ink dark:text-white truncate">{resource.title}</p>
+                                                    <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                                                        {resource.category}
                                                     </span>
-                                                ) : (
-                                                    <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
-                                                        {t('adminExtResources.status.draft')}
-                                                    </span>
-                                                )}
-                                                {resource.isFeatured && (
-                                                    <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-500/15 dark:text-blue-300">
-                                                        <FiStar className="h-3 w-3" />
-                                                        {t('adminExtResources.status.featured')}
-                                                    </span>
-                                                )}
+                                                    {resource.isPublished ? (
+                                                        <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
+                                                            {t('adminExtResources.status.published')}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
+                                                            {t('adminExtResources.status.draft')}
+                                                        </span>
+                                                    )}
+                                                    {resource.isFeatured && (
+                                                        <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-500/15 dark:text-blue-300">
+                                                            <FiStar className="h-3 w-3" />
+                                                            {t('adminExtResources.status.featured')}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
+                                                    {resource.provider} · {resource.level} · {resolveLabel(resource.priceLabel, currentLang)}
+                                                    {resolveLabel(resource.certificateCost, currentLang) ? ` · 🏅 ${resolveLabel(resource.certificateCost, currentLang)}` : ''}
+                                                    {resource.canAuditFree === false ? ` · ${t('adminExtResources.status.paidOnly')}` : ''}
+                                                </p>
+                                                <p className="mt-0.5 text-xs text-edubot-muted/70 dark:text-slate-500">
+                                                    {resource.content?.studyPlan?.length
+                                                        ? t('adminExtResources.curriculum.weeksCount', { n: resource.content.studyPlan.length })
+                                                        : t('adminExtResources.curriculum.noWeeks')}
+                                                </p>
                                             </div>
-                                            <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                                {resource.provider} · {resource.level} · {resolveLabel(resource.priceLabel, currentLang)}
-                                                {resolveLabel(resource.certificateCost, currentLang) ? ` · 🏅 ${resolveLabel(resource.certificateCost, currentLang)}` : ''}
-                                                {resource.canAuditFree === false ? ` · ${t('adminExtResources.status.paidOnly')}` : ''}
-                                            </p>
-                                            <p className="mt-0.5 text-xs text-edubot-muted/70 dark:text-slate-500">
-                                                {resource.content?.studyPlan?.length
-                                                    ? t('adminExtResources.curriculum.weeksCount', { n: resource.content.studyPlan.length })
-                                                    : t('adminExtResources.curriculum.noWeeks')}
-                                            </p>
+                                            <div className="flex flex-wrap gap-2">
+                                                <button type="button" onClick={() => handleToggle(resource, 'isPublished')} className={`dashboard-button-secondary ${resource.isPublished ? 'text-emerald-600 dark:text-emerald-400' : ''}`}>
+                                                    <FiGlobe className="h-4 w-4" />
+                                                    {resource.isPublished ? t('adminExtResources.actions.unpublish') : t('adminExtResources.actions.publish')}
+                                                </button>
+                                                <button type="button" onClick={() => handleToggle(resource, 'isFeatured')} className={`dashboard-button-secondary ${resource.isFeatured ? 'text-blue-600 dark:text-blue-400' : ''}`}>
+                                                    <FiStar className="h-4 w-4" />
+                                                    {resource.isFeatured ? t('adminExtResources.actions.unfeature') : t('adminExtResources.actions.feature')}
+                                                </button>
+                                                <a href={resource.url} target="_blank" rel="noopener noreferrer" className="dashboard-button-secondary">
+                                                    <FiExternalLink className="h-4 w-4" />
+                                                </a>
+                                                <button type="button" onClick={() => setModalResource(resource)} className="dashboard-button-secondary">
+                                                    <FiEdit3 className="h-4 w-4" />
+                                                    {t('adminExtResources.actions.edit')}
+                                                </button>
+                                                <button type="button" onClick={() => handleDelete(resource)} className="dashboard-button-secondary">
+                                                    <FiTrash2 className="h-4 w-4" />
+                                                    {t('adminExtResources.actions.delete')}
+                                                </button>
+                                            </div>
                                         </div>
-                                        <div className="flex flex-wrap gap-2">
-                                            <button type="button" onClick={() => handleToggle(resource, 'isPublished')} className={`dashboard-button-secondary ${resource.isPublished ? 'text-emerald-600 dark:text-emerald-400' : ''}`}>
-                                                <FiGlobe className="h-4 w-4" />
-                                                {resource.isPublished ? t('adminExtResources.actions.unpublish') : t('adminExtResources.actions.publish')}
-                                            </button>
-                                            <button type="button" onClick={() => handleToggle(resource, 'isFeatured')} className={`dashboard-button-secondary ${resource.isFeatured ? 'text-blue-600 dark:text-blue-400' : ''}`}>
-                                                <FiStar className="h-4 w-4" />
-                                                {resource.isFeatured ? t('adminExtResources.actions.unfeature') : t('adminExtResources.actions.feature')}
-                                            </button>
-                                            <a href={resource.url} target="_blank" rel="noopener noreferrer" className="dashboard-button-secondary">
-                                                <FiExternalLink className="h-4 w-4" />
-                                            </a>
-                                            <button type="button" onClick={() => setModalResource(resource)} className="dashboard-button-secondary">
-                                                <FiEdit3 className="h-4 w-4" />
-                                                {t('adminExtResources.actions.edit')}
-                                            </button>
-                                            <button type="button" onClick={() => handleDelete(resource)} className="dashboard-button-secondary">
-                                                <FiTrash2 className="h-4 w-4" />
-                                                {t('adminExtResources.actions.delete')}
-                                            </button>
-                                        </div>
+                                    </article>
+                                ))}
+                            </div>
+
+                            {/* Pagination */}
+                            {catalogTotalPages > 1 && (
+                                <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+                                    <p className="text-xs text-edubot-muted dark:text-slate-400">
+                                        {t('adminUsers.pagination.summary', {
+                                            page: catalogPageClamped,
+                                            totalPages: catalogTotalPages,
+                                            total: filteredResources.length,
+                                        })}
+                                    </p>
+                                    <div className="flex items-center gap-1">
+                                        <button
+                                            type="button"
+                                            onClick={() => setCatalogPage((p) => Math.max(1, p - 1))}
+                                            disabled={catalogPageClamped === 1}
+                                            className="dashboard-button-secondary disabled:opacity-40"
+                                        >
+                                            <FiChevronLeft className="h-4 w-4" />
+                                            {t('adminUsers.pagination.previous')}
+                                        </button>
+                                        {Array.from({ length: catalogTotalPages }, (_, i) => i + 1)
+                                            .filter((p) => p === 1 || p === catalogTotalPages || Math.abs(p - catalogPageClamped) <= 2)
+                                            .map((p, idx, arr) => (
+                                                <span key={p} className="flex items-center gap-1">
+                                                    {idx > 0 && arr[idx - 1] !== p - 1 && (
+                                                        <span className="px-1 text-edubot-muted dark:text-slate-400 text-sm">…</span>
+                                                    )}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setCatalogPage(p)}
+                                                        className={`h-9 min-w-9 rounded-xl border px-2.5 text-sm font-semibold transition ${
+                                                            catalogPageClamped === p
+                                                                ? 'border-edubot-orange bg-edubot-orange text-white'
+                                                                : 'border-edubot-line bg-white text-edubot-ink hover:border-edubot-orange/40 dark:border-slate-700 dark:bg-slate-900 dark:text-white'
+                                                        }`}
+                                                    >
+                                                        {p}
+                                                    </button>
+                                                </span>
+                                            ))}
+                                        <button
+                                            type="button"
+                                            onClick={() => setCatalogPage((p) => Math.min(catalogTotalPages, p + 1))}
+                                            disabled={catalogPageClamped === catalogTotalPages}
+                                            className="dashboard-button-secondary disabled:opacity-40"
+                                        >
+                                            {t('adminUsers.pagination.next')}
+                                            <FiChevronRight className="h-4 w-4" />
+                                        </button>
                                     </div>
-                                </article>
-                            ))}
-                        </div>
+                                </div>
+                            )}
+                        </>
                     ) : (
                         <div className="mt-4">
                             <EmptyState title={t('adminExtResources.empty.title')} subtitle={t('adminExtResources.empty.subtitle')} />

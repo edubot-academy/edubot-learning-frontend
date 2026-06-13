@@ -2,6 +2,18 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.16.8] - 2026-06-14
+
+### Added
+
+- Admin external resources catalog: added client-side pagination (20 per page) with page number buttons, previous/next controls, and a summary counter. A search input above the list filters by title, provider, or category and resets to page 1 on change.
+
+### Fixed
+
+- External resources on video course details page: removed stale static-data fallback from `CourseDetails` so similar resource cards now always use DB slugs and never produce 404s when clicked.
+
+---
+
 ## [1.16.7] - 2026-06-13
 
 ### Changed
