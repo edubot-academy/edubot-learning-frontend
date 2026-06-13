@@ -714,7 +714,16 @@ export const instructor = {
                 preview: "Preview",
                 option: "Option {{number}}",
                 addOption: "+ Add option",
-                addQuestion: "+ Add new question"
+                addQuestion: "+ Add new question",
+                paste: {
+                    title: "Paste quiz data",
+                    help: "Paste JSON, fenced JSON, or plain quiz text to fill the current quiz editor.",
+                    placeholder: "{\n  \"passingScore\": 70,\n  \"questions\": [\n    {\n      \"prompt\": \"Question\",\n      \"options\": [\n        { \"text\": \"Option 1\", \"isCorrect\": true },\n        { \"text\": \"Option 2\", \"isCorrect\": false }\n      ]\n    }\n  ]\n}",
+                    fill: "Fill from paste",
+                    supportedFormats: "Supports JSON, markdown code fences, smart quotes, trailing commas, and plain question/option text.",
+                    success: "Quiz filled from pasted content.",
+                    errorInvalidInput: "The pasted content does not contain a valid quiz structure."
+                }
             },
             articleEditor: {
                 placeholder: "Write the article text here...",

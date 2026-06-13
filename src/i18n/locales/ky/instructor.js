@@ -714,7 +714,16 @@ export const instructor = {
                 preview: "Алдын ала көрүү",
                 option: "Вариант {{number}}",
                 addOption: "+ Вариант кошуу",
-                addQuestion: "+ Жаңы суроо кошуу"
+                addQuestion: "+ Жаңы суроо кошуу",
+                paste: {
+                    title: "Квиз маалыматын коюу",
+                    help: "Учурдагы квиз редакторун толтуруу үчүн JSON, code fence ичиндеги JSON же жөнөкөй квиз текстин коюңуз.",
+                    placeholder: "{\n  \"passingScore\": 70,\n  \"questions\": [\n    {\n      \"prompt\": \"Суроо\",\n      \"options\": [\n        { \"text\": \"Вариант 1\", \"isCorrect\": true },\n        { \"text\": \"Вариант 2\", \"isCorrect\": false }\n      ]\n    }\n  ]\n}",
+                    fill: "Коюлганынан толтуруу",
+                    supportedFormats: "JSON, markdown code fence, акылдуу тырмакча, ашыкча үтүр жана жөнөкөй суроо/вариант тексти колдоого алынат.",
+                    success: "Квиз коюлган мазмундан толтурулду.",
+                    errorInvalidInput: "Коюлган мазмунда жарактуу квиз түзүмү жок."
+                }
             },
             articleEditor: {
                 placeholder: "Макаланын текстин бул жерге жазыңыз...",

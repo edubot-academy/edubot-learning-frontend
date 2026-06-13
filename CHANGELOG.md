@@ -2,6 +2,23 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.16.6] - 2026-06-13
+
+### Added
+
+- Instructor course builder quiz editor: added pasted-quiz import support for create and edit video-course flows, including JSON payloads, fenced JSON, and plain-text question/option input.
+
+### Fixed
+
+- Instructor quiz paste/import parsing: normalized smart quotes and trailing commas for JSON-like input, resolved plain-text answer hints by option text, letter, or number, and fixed numbered-question parsing so numbered options are not misclassified as new questions.
+
+### Verification
+
+- `npm test -- --run src/utils/quizUtils.spec.js`
+- `npm run build`
+
+---
+
 ## [1.16.5] - 2026-06-13
 
 ### Fixed

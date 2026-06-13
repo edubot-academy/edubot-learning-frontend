@@ -714,7 +714,16 @@ export const instructor = {
                 preview: "Предпросмотр",
                 option: "Вариант {{number}}",
                 addOption: "+ Добавить вариант",
-                addQuestion: "+ Добавить новый вопрос"
+                addQuestion: "+ Добавить новый вопрос",
+                paste: {
+                    title: "Вставить данные квиза",
+                    help: "Вставьте JSON, JSON в code fence или обычный текст квиза, чтобы заполнить текущий редактор.",
+                    placeholder: "{\n  \"passingScore\": 70,\n  \"questions\": [\n    {\n      \"prompt\": \"Вопрос\",\n      \"options\": [\n        { \"text\": \"Вариант 1\", \"isCorrect\": true },\n        { \"text\": \"Вариант 2\", \"isCorrect\": false }\n      ]\n    }\n  ]\n}",
+                    fill: "Заполнить из вставки",
+                    supportedFormats: "Поддерживаются JSON, markdown code fence, умные кавычки, лишние запятые и обычный текст с вопросами и вариантами.",
+                    success: "Квиз заполнен из вставленного содержимого.",
+                    errorInvalidInput: "Во вставленном содержимом нет корректной структуры квиза."
+                }
             },
             articleEditor: {
                 placeholder: "Введите текст статьи здесь...",

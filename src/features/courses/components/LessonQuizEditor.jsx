@@ -1,7 +1,8 @@
 import InlineRichText from '@shared/ui/InlineRichText';
-import { createEmptyQuestion, createEmptyQuiz, cloneQuiz } from '@utils/quizUtils';
+import { createEmptyQuestion, createEmptyQuiz, cloneQuiz, parseImportedQuiz } from '@utils/quizUtils';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import toast from 'react-hot-toast';
 import AiGenerationDrawer from '../../aiLms/components/AiGenerationDrawer';
 
 const LessonQuizEditor = ({
@@ -18,6 +19,8 @@ const LessonQuizEditor = ({
 }) => {
     const { t } = useTranslation();
     const [isAiDrawerOpen, setIsAiDrawerOpen] = useState(false);
+    const [pasteText, setPasteText] = useState('');
+    const [pasteError, setPasteError] = useState('');
     const safeQuiz = quiz ?? createEmptyQuiz();
 
     const updateQuiz = (updater) => {
@@ -118,6 +121,19 @@ const LessonQuizEditor = ({
         });
     };
 
+    const handlePasteFill = () => {
+        setPasteError('');
+        const nextQuiz = parseImportedQuiz(pasteText.trim());
+        if (!nextQuiz) {
+            setPasteError(t('instructorDashboard.courseBuilder.quiz.paste.errorInvalidInput'));
+            return;
+        }
+
+        onChange?.(nextQuiz);
+        setPasteText('');
+        toast.success(t('instructorDashboard.courseBuilder.quiz.paste.success'));
+    };
+
     return (
         <div className={`space-y-4 ${disabled ? 'opacity-70 pointer-events-none' : ''}`}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -157,6 +173,46 @@ const LessonQuizEditor = ({
                 <code>**{t('instructorDashboard.courseBuilder.quiz.boldSample')}**</code>{' '}
                 {t('instructorDashboard.courseBuilder.quiz.and')} <code>`{t('instructorDashboard.courseBuilder.quiz.codeSample')}`</code>.
             </p>
+
+            <section className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/70 dark:bg-amber-950/20">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <p className="font-semibold text-slate-900 dark:text-white">
+                            {t('instructorDashboard.courseBuilder.quiz.paste.title')}
+                        </p>
+                        <p className="text-sm text-slate-600 dark:text-slate-300">
+                            {t('instructorDashboard.courseBuilder.quiz.paste.help')}
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        className="rounded border border-amber-300 bg-white px-3 py-1.5 text-sm font-medium text-amber-800 hover:bg-amber-100 disabled:opacity-50 dark:border-amber-700 dark:bg-slate-900 dark:text-amber-200"
+                        onClick={handlePasteFill}
+                        disabled={disabled || !pasteText.trim()}
+                    >
+                        {t('instructorDashboard.courseBuilder.quiz.paste.fill')}
+                    </button>
+                </div>
+
+                <textarea
+                    className="mt-3 min-h-36 w-full rounded border border-amber-200 bg-white p-3 font-mono text-sm dark:border-amber-900 dark:bg-slate-900 dark:text-white"
+                    value={pasteText}
+                    onChange={(e) => {
+                        setPasteText(e.target.value);
+                        setPasteError('');
+                    }}
+                    placeholder={t('instructorDashboard.courseBuilder.quiz.paste.placeholder')}
+                    disabled={disabled}
+                />
+
+                {pasteError ? (
+                    <p className="mt-2 text-xs text-rose-600">{pasteError}</p>
+                ) : (
+                    <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                        {t('instructorDashboard.courseBuilder.quiz.paste.supportedFormats')}
+                    </p>
+                )}
+            </section>
 
             {aiDraftEnabled ? (
                 <section className="rounded-lg border border-sky-200 bg-sky-50 p-4 text-sm dark:border-sky-900 dark:bg-sky-950/30">
