@@ -6,8 +6,8 @@
 |---|---|
 | 1 — Skeleton & routing | ✅ Done |
 | 2 — Resume builder form | ✅ Done |
-| 3 — Resume preview | 🔄 In progress |
-| 4 — Job matches | 🔄 In progress |
+| 3 — Resume preview | ✅ Done |
+| 4 — Job matches | ✅ Done |
 | 5 — Protected career routing | 🔄 In progress |
 | 6–10 | Not started |
 
@@ -20,8 +20,12 @@
 - 2026-06-11: Hydrated career dashboard with live resume, usage, applications, and best-match data.
 - 2026-06-11: Added protected applications and cover-letters pages with create/update wiring against backend endpoints.
 - 2026-06-11: Verified the applications and cover-letters slice with a successful production build.
-- 2026-06-11: Added protected interview-prep page wired to live jobs, resumes, applications, and usage data; dedicated interview-plan backend generation endpoint is still pending.
+- 2026-06-11: Added protected interview-prep page wired to live jobs, resumes, applications, and usage data.
 - 2026-06-11: Replaced remaining authenticated job-action placeholders with live save/apply state in job matches and job detail flows, and deep-linked cover-letter/interview screens with prefilled job and resume context.
+- 2026-06-12: Added resume language selection (`en` / `ru` / `ky`) and synced it through draft, resume, generation, tailoring, cover-letter, and PDF flows.
+- 2026-06-12: Expanded job targeting to broader market groups (`local`, `central_asia`, `russian_speaking`, `eu`, `us`, `middle_east`, `all`) plus a separate work-mode preference (`remote_only`, `any`).
+- 2026-06-12: Softened job gating so incomplete resumes can still browse live listings while match score and AI actions remain locked behind readiness.
+- 2026-06-12: Wired backend interview-plan generation and real PDF download, then verified both frontend and backend builds.
 
 ## Branch
 
@@ -625,8 +629,8 @@ Timezone: async-friendly, US Eastern overlap not required.
 
 ```txt
 You're missing TypeScript for this role.
-EduBot can help you add it in 2 weeks.
-[Learn TypeScript]   [Apply anyway]
+Improve your resume by highlighting related JavaScript or React work.
+[Tailor resume]   [Apply anyway]
 ```
 
 ### Actions
@@ -1249,7 +1253,7 @@ career.signup.prompt.*
 MVP is ready when:
 
 - Public visitor can open `/resume-builder`.
-- Public visitor can generate one English resume preview from 3 fields.
+- Public visitor can generate one resume preview from 3 fields.
 - Public visitor can paste existing resume text to fill the form.
 - Public visitor can see 3 matching remote jobs with USD salaries.
 - Live readiness score updates as form fields are filled.
@@ -1258,7 +1262,7 @@ MVP is ready when:
 - Registered user always lands at `/career` after signup — no enrollment check.
 - Usage limits are visible and enforced in UI.
 - Kyrgyz and Russian localization keys exist for all new UI text.
-- Resume output is always in English.
+- Resume output respects the selected language (`en`, `ru`, `ky`).
 - Existing EduBot Learning routes and course dashboard are not affected.
 
 ## Open Product Decisions
@@ -1267,4 +1271,198 @@ MVP is ready when:
 - Should public resume preview allow copy-paste of text, or visual preview only?
 - Should PDF generation be entirely backend-owned, or should frontend offer a client-side print-to-PDF fallback?
 - Should job matches start with admin-curated jobs or scraped/aggregated feeds?
-- Should the app support Kyrgyz-language resumes for local Kyrgyz employers in a future phase?
+- Should English remain the default recommendation for international job seekers even when localized resume output is available?
+
+---
+
+## Gap Analysis — Added 2026-06-12
+
+### New Requirements (not in original plan)
+
+#### Resume Language Selection
+
+Users can choose the output language for their generated resume: **English (EN)**, **Russian (RU)**, or **Kyrgyz (KY)**.
+
+- Language picker added to `ResumeBuilderForm` (and resume edit page).
+- Selection stored as `language: 'en' | 'ru' | 'ky'` on the draft and resume objects.
+- AI generation prompt includes: "Write this resume entirely in [language]."
+- PDF output language matches the selection.
+- The original plan assumed English-only output. That remains the default and recommended choice for international jobs, but local KG/KZ employers may require Kyrgyz or Russian.
+- UI labels, section headers, and ATS tips in the resume should match the selected language.
+
+#### Job Market Preference
+
+Users select where they want to work. This drives which job sources are queried and how matches are ranked.
+
+Options:
+
+```
+Local — Kyrgyzstan
+Central Asia
+Russian-speaking markets
+European Union
+United States
+Middle East
+All markets
+```
+
+- Stored as `jobMarketPreference` on the draft / resume input.
+- Set from the resume builder form and mirrored into the job matches page filter.
+- Backend queries the appropriate source based on preference (see Job Sources below).
+- Affects match scoring: timezone fit and international hiring are less relevant for local jobs.
+
+#### Work Mode Preference
+
+Users also select **how** they want to work, independently from geography.
+
+Options:
+
+```
+Remote only
+Remote and onsite
+```
+
+- Stored as `workModePreference` on the draft / resume input.
+- Used by the job matches page and `/career/jobs` API filter.
+- `remote_only` is the current default.
+
+#### Soft Nudge Instead of Hard Gate on Job Matching
+
+The job matches page should not hard-block users without a ready resume. Instead:
+
+- All users see real job listings regardless of resume state.
+- Match score, "Tailor resume", and "Cover letter" actions are locked behind a banner when readiness score < 70 or required fields (targetRole, skills) are missing.
+- Banner: "Complete your resume to unlock your match score and tailored applications."
+- The readiness widget is shown inline above the job list when the score is below threshold.
+- Hard lock (cannot see jobs at all) is removed.
+
+#### Job Detail Page as the "Finish Everything" Hub
+
+`JobDetailPage` must become the single place to complete the full application cycle for a job. Currently the actions are fragmented across separate pages.
+
+Target layout:
+
+```
+Job Detail Page
+├── Full job info (title, company, location, salary, description, required/preferred skills)
+├── Real apply URL — "Apply on [company site]" opens external link in new tab
+├── Match score against selected resume (or prompt to build resume if none)
+├── [Tailor resume for this job] — creates a tailored variant, previewed inline
+├── [Generate cover letter] — inline editor (tone + length), not a redirect to /cover-letters
+├── [Apply] — creates application record + moves to "Applied" in tracker
+├── [Prep for interview] — generates AI plan for this specific job + resume
+└── Application status tracker — shows current status if already applied
+```
+
+Cover letter and interview prep pages remain as standalone pages for managing existing records, but the primary generation flow happens in context on the job detail page.
+
+---
+
+### Job Sources
+
+Jobs are not just remote. The source depends on user's `jobMarketPreference`.
+
+| Market | Primary Source | Notes |
+|--------|---------------|-------|
+| Local | **hh.ru API** + local curated jobs | Kyrgyzstan-first roles. |
+| Central Asia | **hh.ru API** + **enbek.kz API** | Kazakhstan plus the wider region. |
+| Russian-speaking | **hh.ru API** | CIS-oriented roles where Russian is common. |
+| EU | **JSearch (RapidAPI)** | EU-targeted international roles. |
+| US | **JSearch (RapidAPI)** | US-targeted international roles. |
+| Middle East | Regional partner feeds / curated import | UAE, KSA, Qatar and similar markets. |
+| Remote tech-only fallback | **Remotive.io** | Useful when `workModePreference = remote_only`. |
+| Local IT community | **dev.kg scraper** | No public API. HTML-scrapable. The main KG IT job board. |
+| Telegram channels | **Telegram bot parser** | See below. |
+
+#### Backend sync strategy
+
+- External jobs are fetched and cached in the `career_jobs` table (already has `source` and `externalId` columns).
+- Background job syncs each source periodically (hourly for hh.ru, daily for others).
+- Matcher still runs against DB records — no live external API calls per user request.
+- `isPublished` flag allows admin review before jobs appear to users.
+
+#### Telegram bot parser
+
+Kyrgyzstan and Kazakhstan tech job postings are heavily concentrated in Telegram channels (`@devkg`, `@itjobs_kg`, `@workinkg`, etc.).
+
+Two implementation options:
+
+**Option A — Automated scraper**
+- Bot joins target channels using MTProto (Telethon / Pyrogram).
+- New messages trigger AI parsing: extract title, company, skills, salary, apply contact from free-form text.
+- Parsed jobs are staged (isPublished = false) for admin review before going live.
+- Gray-area ToS risk; requires a dedicated phone number.
+
+**Option B — Direct submission bot**
+- Recruiters and companies use a Telegram bot (`@EduBotJobsBot`) to post jobs directly.
+- Structured flow: bot asks for title, company, skills, salary, apply link.
+- Clean data, no scraping, sustainable long-term.
+- Slower to build traction initially.
+
+Recommended: start with Option B for clean data, add Option A for high-volume channels once launched.
+
+---
+
+### Gaps in Existing Features
+
+#### Interview Prep
+
+Status: implemented on the backend and wired into the protected career flow.
+
+Remaining improvement:
+- Improve the generated plan quality and page presentation once real user data comes in.
+
+#### Resume Diff After Tailoring
+
+When a user tailors a resume for a job, a new resume object is created. The user currently has no way to see what changed.
+
+Missing:
+- Side-by-side or diff view between original resume and tailored version on `ResumeDetailPage`.
+- "What changed" summary generated by AI alongside the tailored content.
+
+#### Career Plus Upgrade Flow
+
+`CareerLimitReachedModal` and `AiCreditsBadge` reference Career Plus throughout but there is no upgrade UI behind them. Missing:
+
+- Upgrade page or modal with plan comparison (Free vs Career Plus).
+- Payment integration (provider TBD — see Open Product Decisions).
+- Post-upgrade limit refresh without page reload.
+
+#### Kanban Drag-and-Drop
+
+`ApplicationKanbanBoard.jsx` exists but drag-and-drop between columns is not implemented. Missing:
+
+- Drag-and-drop library integration (recommended: `@dnd-kit/core` — already common in this stack).
+- `PATCH /career/applications/:id` call on drop to persist new status.
+- Optimistic UI update on drag.
+
+#### Paste-to-Fill on Dashboard
+
+The paste-to-fill shortcut (paste existing resume text → AI parses into form) is only available on the public `/resume-builder` page. Authenticated users on `ResumeDetailPage` or `ResumeManagerPage` have no equivalent. Missing:
+
+- Paste-to-fill strip on the authenticated resume edit flow.
+- Same `POST /career/resume-drafts/:id/parse` endpoint can be reused.
+
+---
+
+#### PDF Download
+
+Status: implemented end-to-end.
+
+Current behavior:
+- Backend streams a real PDF from the resume endpoint.
+- Frontend handles blob downloads from both preview and saved resume flows.
+
+Remaining improvement:
+- Add a dedicated print-preview mode if users need tighter control over final layout before spending a download credit.
+
+### Build Priority Order
+
+1. **Job detail as hub** — finish consolidating tailor, cover letter, interview prep, and apply around the selected resume.
+2. **hh.ru integration** — real KG/Central Asia jobs. Biggest trust signal. Backend work.
+3. **dev.kg scraper** — supplements hh.ru for the local IT community.
+4. **JSearch integration** — EU/US jobs.
+5. **Middle East source integration** — curated or partner feed for GCC hiring demand.
+6. **Resume diff view** — after tailoring.
+7. **Career Plus upgrade flow** — monetization.
+8. **Telegram bot** — job sourcing from Telegram channels (Option B first).

@@ -28,9 +28,23 @@ export const removeSavedJob = async (jobId) => {
     return res.data;
 };
 
-export const getJobs = async (limit) => {
+export const getJobs = async (limit, filters = {}) => {
+    const params = {};
+
+    if (limit) {
+        params.limit = limit;
+    }
+
+    if (filters.market) {
+        params.market = filters.market;
+    }
+
+    if (filters.workMode) {
+        params.workMode = filters.workMode;
+    }
+
     const res = await api.get('/career/jobs', {
-        params: limit ? { limit } : undefined,
+        params: Object.keys(params).length > 0 ? params : undefined,
         skipAuthRedirect: true,
     });
     return res.data;

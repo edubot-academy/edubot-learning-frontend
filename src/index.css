@@ -148,6 +148,18 @@ body {
     }
 }
 
+/* Resume builder streaming section animation */
+.stream-section {
+    animation: streamIn 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+@keyframes streamIn {
+    from { opacity: 0; transform: translateY(9px); }
+    to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .stream-section { animation: none; }
+}
+
 /* Links */
 a {
     @apply font-medium transition;

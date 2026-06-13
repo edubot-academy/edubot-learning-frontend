@@ -1,7 +1,15 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BEGINNER_CHIPS, getSkillSuggestions, TEMPLATES, DEFAULT_TEMPLATE_ID } from '../constants/careerCopy';
-import { validateResumeForm, parseSkillsString } from '../utils/resumeValidation';
+import {
+    formatSkillsForInput,
+    validateResumeForm,
+    parseSkillsString,
+    normalizeExperienceEntries,
+    parseExperienceDescription,
+    MAX_EXPERIENCE_BULLETS,
+    MAX_EXPERIENCE_BULLET_LENGTH,
+} from '../utils/resumeValidation';
 import { DRAFT_STATUS } from '../hooks/useResumeDraft';
 
 // ─── Icons ─────────────────────────────────────────────────────────────────────
@@ -180,6 +188,57 @@ const inputClass = (hasError) =>
             : 'border-gray-200 dark:border-white/10 focus:ring-[#E14219]/20 focus:border-[#E14219]/50 text-[#141619] dark:text-[#E8ECF3]'
     }`;
 
+const RESUME_LANGUAGES = ['en', 'ru', 'ky'];
+const JOB_MARKETS = ['local', 'central_asia', 'russian_speaking', 'eu', 'us', 'middle_east', 'all'];
+const WORK_MODES = ['remote_only', 'any'];
+
+const getBackendErrorMessages = (error) => {
+    const message = error?.response?.data?.message;
+    if (Array.isArray(message)) {
+        return message.filter((item) => typeof item === 'string' && item.trim());
+    }
+    if (typeof message === 'string' && message.trim()) {
+        return [message];
+    }
+    return [];
+};
+
+const mapGenerationErrorToFormState = (error, form) => {
+    const messages = getBackendErrorMessages(error);
+    if (messages.length === 0) return null;
+
+    const normalizedMessages = messages.map((message) => message.toLowerCase());
+    const hasBulletValidationError = normalizedMessages.some((message) => message.includes('bullets'));
+
+    if (!hasBulletValidationError) {
+        return {
+            summary: messages[0],
+            fieldErrors: {},
+            focusTarget: null,
+        };
+    }
+
+    const firstExperienceIndex = Array.isArray(form?.experience)
+        ? form.experience.findIndex((item) => `${item?.description ?? ''}`.trim())
+        : -1;
+
+    const targetIndex = firstExperienceIndex >= 0 ? firstExperienceIndex : 0;
+    const experienceErrors = Array.from(
+        { length: Math.max(form?.experience?.length ?? 0, targetIndex + 1) },
+        () => ({}),
+    );
+
+    experienceErrors[targetIndex] = {
+        description: 'Work Experience content could not be formatted into valid bullet points. Keep it concise: max 20 points, max 500 characters per point.',
+    };
+
+    return {
+        summary: 'Generation failed while formatting Work Experience into bullet points. You can paste normal sentences, but keep the content concise: max 20 points and 500 characters per point.',
+        fieldErrors: { experience: experienceErrors },
+        focusTarget: { type: 'experience', index: targetIndex },
+    };
+};
+
 // ─── ResumeBuilderForm ─────────────────────────────────────────────────────────
 
 const ResumeBuilderForm = ({
@@ -191,15 +250,23 @@ const ResumeBuilderForm = ({
     onFormChange,
     generateLocked = false,
     lockedHint = null,
+    maxSkills = 100,
+    generationError = null,
 }) => {
     const { t } = useTranslation();
+    const targetRoleRef = useRef(null);
+    const skillsRef = useRef(null);
+    const experienceDescriptionRefs = useRef([]);
 
     const [form, setForm] = useState({
-        name:       '',
-        targetRole: '',
-        skills:     '',
-        context:    [],
-        experience: [],
+        name:                '',
+        targetRole:          '',
+        skills:              '',
+        language:            'en',
+        jobMarketPreference: 'all',
+        workModePreference:  'remote_only',
+        context:             [],
+        experience:          [],
     });
     const [selectedTemplate, setSelectedTemplate] = useState(initialTemplate);
     const [errors, setErrors]   = useState({});
@@ -207,6 +274,7 @@ const ResumeBuilderForm = ({
     const [submitted, setSubmitted] = useState(false);
     const [templateSelectionSource, setTemplateSelectionSource] = useState('default');
     const [showAdvanced, setShowAdvanced] = useState(false);
+    const [submitErrorSummary, setSubmitErrorSummary] = useState(null);
 
     // Restore saved form data on mount
     useEffect(() => {
@@ -216,7 +284,10 @@ const ResumeBuilderForm = ({
                 ...prev,
                 name:       savedFormData.name       ?? '',
                 targetRole: savedFormData.targetRole ?? '',
-                skills:     savedFormData.skills     ?? '',
+                skills:     formatSkillsForInput(savedFormData.skills),
+                language:   savedFormData.language   ?? 'en',
+                jobMarketPreference: savedFormData.jobMarketPreference ?? 'all',
+                workModePreference: savedFormData.workModePreference ?? 'remote_only',
                 context:    savedFormData.context    ?? [],
                 experience: savedFormData.experience ?? [],
             }));
@@ -234,6 +305,32 @@ const ResumeBuilderForm = ({
     useEffect(() => {
         onFormChange?.(form);
     }, [form, onFormChange]);
+
+    useEffect(() => {
+        if (!generationError) {
+            setSubmitErrorSummary(null);
+            return;
+        }
+
+        const mappedError = mapGenerationErrorToFormState(generationError, form);
+        if (!mappedError) return;
+
+        setSubmitted(true);
+        setSubmitErrorSummary(mappedError.summary);
+        setErrors((prev) => ({ ...prev, ...mappedError.fieldErrors }));
+
+        if (mappedError.focusTarget?.type === 'experience') {
+            setShowAdvanced(true);
+        }
+
+        window.requestAnimationFrame(() => {
+            if (mappedError.focusTarget?.type === 'experience') {
+                const field = experienceDescriptionRefs.current[mappedError.focusTarget.index];
+                field?.focus();
+                field?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        });
+    }, [generationError]);
 
     const skillSuggestions = useMemo(
         () => getSkillSuggestions(form.targetRole),
@@ -259,9 +356,9 @@ const ResumeBuilderForm = ({
     // Re-validate on change when submitted once
     useEffect(() => {
         if (!submitted) return;
-        const { errors: e } = validateResumeForm(form);
+        const { errors: e } = validateResumeForm(form, { maxSkills });
         setErrors(e);
-    }, [form, submitted]);
+    }, [form, maxSkills, submitted]);
 
     const toggleChip = (chipId) => {
         const nextContext = form.context.includes(chipId)
@@ -319,10 +416,45 @@ const ResumeBuilderForm = ({
     const handleSubmit = (evt) => {
         evt.preventDefault();
         setSubmitted(true);
-        const { isValid, errors: validationErrors } = validateResumeForm(form);
+        setSubmitErrorSummary(null);
+        const { isValid, errors: validationErrors } = validateResumeForm(form, { maxSkills });
         setErrors(validationErrors);
-        if (!isValid) return;
-        onGenerate(form, selectedTemplate);
+        if (!isValid) {
+            if (validationErrors.experience) {
+                setShowAdvanced(true);
+            }
+
+            const firstInvalidExperienceIndex = Array.isArray(validationErrors.experience)
+                ? validationErrors.experience.findIndex((entry) => entry?.description)
+                : -1;
+
+            window.requestAnimationFrame(() => {
+                if (validationErrors.targetRole) {
+                    targetRoleRef.current?.focus();
+                    targetRoleRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    return;
+                }
+
+                if (validationErrors.skills) {
+                    skillsRef.current?.focus();
+                    skillsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    return;
+                }
+
+                if (firstInvalidExperienceIndex >= 0) {
+                    const field = experienceDescriptionRefs.current[firstInvalidExperienceIndex];
+                    field?.focus();
+                    field?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+            return;
+        }
+
+        onGenerate({
+            ...form,
+            skills: parseSkillsString(form.skills),
+            experience: normalizeExperienceEntries(form.experience),
+        }, selectedTemplate);
     };
 
     const handleTemplateSelect = (templateId) => {
@@ -339,6 +471,17 @@ const ResumeBuilderForm = ({
     return (
         <form onSubmit={handleSubmit} noValidate>
             <div className="p-7 sm:p-10 space-y-8">
+
+                {submitErrorSummary && (
+                    <div className="rounded-2xl border border-amber-200 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/5 px-5 py-4">
+                        <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+                            Fix the highlighted field
+                        </p>
+                        <p className="mt-1 text-sm text-amber-700 dark:text-amber-400">
+                            {submitErrorSummary}
+                        </p>
+                    </div>
+                )}
 
                 {/* ── Name + Target Role ── */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -372,6 +515,7 @@ const ResumeBuilderForm = ({
                             placeholder={t('career.resume.builder.rolePlaceholder')}
                             disabled={isLoading}
                             className={inputClass((touched.targetRole || submitted) && errors.targetRole)}
+                            ref={targetRoleRef}
                         />
                     </Field>
                 </div>
@@ -390,6 +534,7 @@ const ResumeBuilderForm = ({
                         placeholder={t('career.resume.builder.skillsPlaceholder')}
                         disabled={isLoading}
                         className={inputClass((touched.skills || submitted) && errors.skills)}
+                        ref={skillsRef}
                     />
 
                     {/* Skill suggestions — appear when targetRole is filled */}
@@ -426,6 +571,86 @@ const ResumeBuilderForm = ({
                         </div>
                     )}
                 </Field>
+
+                <div className="grid grid-cols-1 gap-5">
+                    <Field
+                        label={t('career.resume.builder.languageLabel')}
+                        hint={t('career.resume.builder.languageHint')}
+                    >
+                        <div className="grid grid-cols-3 gap-2">
+                            {RESUME_LANGUAGES.map((language) => {
+                                const active = form.language === language;
+                                return (
+                                    <button
+                                        key={language}
+                                        type="button"
+                                        onClick={() => setForm((prev) => ({ ...prev, language }))}
+                                        disabled={isLoading}
+                                        className={`cursor-pointer rounded-xl border px-3 py-3 text-sm font-medium transition-colors ${
+                                            active
+                                                ? 'border-[#E14219] bg-[#E14219]/8 text-[#E14219] dark:text-[#FF8C6E]'
+                                                : 'border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-[#3E424A] dark:text-[#a6adba] hover:border-[#E14219]/30'
+                                        }`}
+                                    >
+                                        {t(`career.resume.builder.languages.${language}`)}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </Field>
+
+                    <Field
+                        label={t('career.resume.builder.marketLabel')}
+                        hint={t('career.resume.builder.marketHint')}
+                    >
+                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                            {JOB_MARKETS.map((market) => {
+                                const active = form.jobMarketPreference === market;
+                                return (
+                                    <button
+                                        key={market}
+                                        type="button"
+                                        onClick={() => setForm((prev) => ({ ...prev, jobMarketPreference: market }))}
+                                        disabled={isLoading}
+                                        className={`cursor-pointer rounded-xl border px-3 py-3 text-left text-sm font-medium transition-colors ${
+                                            active
+                                                ? 'border-[#E14219] bg-[#E14219]/8 text-[#E14219] dark:text-[#FF8C6E]'
+                                                : 'border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-[#3E424A] dark:text-[#a6adba] hover:border-[#E14219]/30'
+                                        }`}
+                                    >
+                                        {t(`career.resume.builder.markets.${market}`)}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </Field>
+
+                    <Field
+                        label={t('career.resume.builder.workModeLabel')}
+                        hint={t('career.resume.builder.workModeHint')}
+                    >
+                        <div className="grid grid-cols-2 gap-2">
+                            {WORK_MODES.map((workMode) => {
+                                const active = form.workModePreference === workMode;
+                                return (
+                                    <button
+                                        key={workMode}
+                                        type="button"
+                                        onClick={() => setForm((prev) => ({ ...prev, workModePreference: workMode }))}
+                                        disabled={isLoading}
+                                        className={`cursor-pointer rounded-xl border px-3 py-3 text-left text-sm font-medium transition-colors ${
+                                            active
+                                                ? 'border-[#E14219] bg-[#E14219]/8 text-[#E14219] dark:text-[#FF8C6E]'
+                                                : 'border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-[#3E424A] dark:text-[#a6adba] hover:border-[#E14219]/30'
+                                        }`}
+                                    >
+                                        {t(`career.resume.builder.workModes.${workMode}`)}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </Field>
+                </div>
 
                 {/* ── Advanced details toggle ── */}
                 {!showAdvanced && (
@@ -491,6 +716,15 @@ const ResumeBuilderForm = ({
                         </button>
                     </div>
 
+                    {submitted && errors.experience && (
+                        <div className="mb-3 flex items-start gap-3 rounded-xl border border-amber-200 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/5 px-4 py-3">
+                            <IconWarning className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                            <p className="text-sm text-amber-700 dark:text-amber-400">
+                                You can paste normal sentences here. The system will format them into bullet points, but keep the content concise: max {MAX_EXPERIENCE_BULLETS} points and {MAX_EXPERIENCE_BULLET_LENGTH} characters per point.
+                            </p>
+                        </div>
+                    )}
+
                     {form.experience.length === 0 ? (
                         <div className="rounded-xl border border-dashed border-gray-200 dark:border-white/10 px-4 py-5 text-center">
                             <p className="text-sm text-[#3E424A] dark:text-[#a6adba]">
@@ -500,6 +734,10 @@ const ResumeBuilderForm = ({
                     ) : (
                         <div className="space-y-4">
                             {form.experience.map((exp, idx) => (
+                                (() => {
+                                    const descriptionError = errors.experience?.[idx]?.description;
+                                    const bulletCount = parseExperienceDescription(exp.description).length;
+                                    return (
                                 <div
                                     key={idx}
                                     className="rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/[0.03] p-4"
@@ -551,9 +789,24 @@ const ResumeBuilderForm = ({
                                         value={exp.description}
                                         onChange={(e) => updateExperience(idx, 'description', e.target.value)}
                                         disabled={isLoading}
-                                        className={inputClass(false)}
+                                        className={inputClass(Boolean(submitted && descriptionError))}
+                                        ref={(node) => {
+                                            experienceDescriptionRefs.current[idx] = node;
+                                        }}
                                     />
+                                    <div className="mt-2 flex items-center justify-between gap-3">
+                                        <p className={`text-xs ${submitted && descriptionError ? 'text-amber-600 dark:text-amber-400' : 'text-[#3E424A] dark:text-[#a6adba]'}`}>
+                                            {submitted && descriptionError
+                                                ? descriptionError
+                                                : 'You can paste normal sentences here. The system formats them into bullet points after generation.'}
+                                        </p>
+                                        <span className="text-[11px] text-[#3E424A] dark:text-[#a6adba] whitespace-nowrap">
+                                            {bulletCount}/{MAX_EXPERIENCE_BULLETS} points
+                                        </span>
+                                    </div>
                                 </div>
+                                    );
+                                })()
                             ))}
                         </div>
                     )}

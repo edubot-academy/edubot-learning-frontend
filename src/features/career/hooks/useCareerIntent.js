@@ -4,6 +4,7 @@ import { AuthContext } from '@app/providers';
 import { claimResumeDraft } from '../api/resumeApi';
 import { CAREER_ROUTES } from '../constants/careerRoutes';
 import { parseCareerIntent, getCareerRedirectPath } from '../utils/careerIntent';
+import { hasSavedCareerFormData } from '../utils/resumeDraftStorage';
 
 export const INTENT_STATUS = {
     IDLE:      'idle',
@@ -63,7 +64,7 @@ export const useCareerIntent = ({ autoProcess = true } = {}) => {
                         type: 'draft_expired',
                         intent: parsed.intent,
                         draftId,
-                        hasRecoveredFormData: !!localStorage.getItem('careerResumeFormData'),
+                        hasRecoveredFormData: hasSavedCareerFormData(user, { allowGuestFallback: true }),
                     };
                     setResult(recoveryState);
                     setStatus(INTENT_STATUS.DONE);

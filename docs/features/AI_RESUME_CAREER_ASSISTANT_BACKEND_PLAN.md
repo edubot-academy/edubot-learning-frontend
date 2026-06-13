@@ -144,7 +144,7 @@ CREATE TABLE "career_jobs" (
     "updatedAt"            TIMESTAMPTZ  NOT NULL DEFAULT now()
 );
 -- experienceLevel: junior | mid | senior
--- source: manual | scraped
+-- source: manual | hh | enbek | jsearch | remotive | devkg | telegram | partner
 CREATE INDEX "IDX_career_jobs_isPublished" ON "career_jobs" ("isPublished");
 ```
 
@@ -220,9 +220,18 @@ CREATE TABLE "career_usage" (
 -- plan: free | career_plus
 ```
 
-### Migration 054 — seed career jobs
+### Migration 054 — no demo job seed
 
-Seeds curated remote job listings into `career_jobs`.
+The original demo seed migration has been neutralized. `career_jobs` must be populated by real job ingestion, admin-created listings, or partner imports. Demo rows with `externalId LIKE 'career-seed-%'` are removed by a follow-up cleanup migration.
+
+### Migration 057 — remove demo career jobs
+
+Deletes already-inserted demo rows:
+
+```sql
+DELETE FROM "career_jobs"
+WHERE "externalId" LIKE 'career-seed-%';
+```
 
 ### Migration 055 — career_saved_jobs
 
@@ -538,17 +547,45 @@ async assertAndIncrement(userId: number, action: UsageAction): Promise<void> {
 
 ---
 
-## Seed Data
+## Job Ingestion
 
-Create a seed script or migration (`1771000000054-seedCareerJobs.ts`) with curated remote job listings covering:
-- 3 frontend roles (React, Vue)
-- 3 backend roles (Node.js, Python, Go)
-- 2 fullstack roles
-- 2 mobile roles (Flutter, React Native)
-- 2 data/ML roles
-- 1 DevOps/cloud role
+`career_jobs` is a cache of real external/admin job listings. It must not rely on demo seed data.
 
-All marked `isPublished: true`, `isRemote: true`, `hiresInternationally: true`, with realistic USD salary ranges.
+### Required sources
+
+| Market | Primary source | Notes |
+|--------|----------------|-------|
+| Local / Kyrgyzstan | hh.ru API + local curated jobs | Kyrgyzstan-first roles. |
+| Central Asia | hh.ru API + enbek.kz API | Kazakhstan plus the wider region. |
+| Russian-speaking | hh.ru API | CIS-oriented roles where Russian is common. |
+| EU | JSearch / RapidAPI | EU-targeted international roles. |
+| US | JSearch / RapidAPI | US-targeted international roles. |
+| Middle East | Partner feeds / curated import | UAE, KSA, Qatar and similar markets. |
+| Remote fallback | Remotive.io | Useful when `workModePreference = remote_only`. |
+| Local IT community | dev.kg scraper | No public API; HTML-scrapable. |
+| Telegram channels | Telegram direct submission bot first; parser later | Prefer structured submissions before scraping channels. |
+
+### Sync strategy
+
+- Fetch external jobs into `career_jobs`; user-facing requests read from the DB, not live third-party APIs.
+- Use `source` and `externalId` for idempotent upserts.
+- Set `isPublished = false` for scraped/parser jobs that need admin review.
+- Set `isPublished = true` only for trusted APIs, partner feeds, or reviewed jobs.
+- Run scheduled sync jobs with `@nestjs/schedule`: hourly for hh.ru/remotive where safe, daily for slower paid APIs or partner feeds.
+- Normalize external data into existing columns: title, company, location, remote flag, salary, required/preferred skills, description, apply URL, source, externalId.
+- Preserve source-specific raw data only if a future `metadata jsonb` column is added.
+
+### API behavior
+
+`GET /career/jobs` must support:
+
+```txt
+limit?: number
+market?: local | central_asia | russian_speaking | eu | us | middle_east | all
+workMode?: remote_only | any
+```
+
+The API filters cached jobs by market/source/location and work mode. It must return an empty list when no real jobs are available rather than falling back to demo listings.
 
 ---
 
@@ -565,10 +602,15 @@ Migrations 047–053 written. All TypeORM entity classes created. Schema live.
 
 ### ✅ Step 3 — Jobs and matching
 - `CareerJobsService`: list published jobs, get by id.
-- Seed job data.
 - `CareerJobMatcherService`: compute scores for all published jobs, persist match rows.
 - `CareerJobMatchesController`: GET by draftId or resumeId.
 - Draft generation now eagerly persists draft job matches.
+
+### ⏳ Step 3b — Real job ingestion
+- Add provider clients for the selected first sources.
+- Add a scheduled `CareerJobSyncService` that upserts into `career_jobs`.
+- Implement market/work-mode-aware backend filtering for `GET /career/jobs`.
+- Add tests covering source upsert idempotency, published filtering, and empty-state behavior when no jobs exist.
 
 ### ✅ Step 4 — Usage service
 All metered actions use `CareerUsageService.assertAndIncrement(...)`. `resumeGenerations` is enforced before the AI call after the request wins the draft generation transition; job matches and cover letters are wired in their respective services. PDF download limits are wired in the Phase 2 PDF service but the active MVP endpoint returns `406 PDF_NOT_IMPLEMENTED`.
@@ -591,6 +633,7 @@ All entities registered in `CareerModule`. `AuthModule` and `AiModule` imported.
 - `CareerJobsController`: `GET /career/jobs/saved`, `POST /career/jobs/:id/save`, `DELETE /career/jobs/:id/save`.
 
 ### Remaining gaps
+- Real job ingestion/sync is not complete. Without it, `/career/jobs` returns only manually inserted/admin imported rows.
 - PDF streaming is still Phase 2 only. MVP returns `406 PDF_NOT_IMPLEMENTED`.
 - Career endpoint coverage is currently focused on service-level tests, not a full HTTP/e2e suite.
 
@@ -618,4 +661,4 @@ Frontend detects `code` to show the correct UI state (signup prompt vs. upgrade 
 - **Job match AI explanation**: Currently generated once when match rows are created, then cached on `career_job_matches.explanation`.
 - **Draft expiry cleanup**: Add a cron job (`@nestjs/schedule`) that sets `status = 'expired'` on drafts past `expiresAt`. Run hourly.
 - **PDF generation library**: Phase 2 service code currently uses a headless browser renderer with fallback output, but the active route remains the MVP placeholder until PDF downloads are enabled.
-- **Job scraping**: Out of scope for MVP. Admin adds jobs manually via admin API or direct DB seed.
+- **Job ingestion**: Required for the location/market preference feature. Prefer API/partner/direct-submission sources first; use scraping only where no API exists and ToS risk is acceptable.

@@ -536,8 +536,9 @@ const LockedButton = ({ intent, draftId, label, icon: Icon }) => (
  * @param {Object} props.formData — current form data (used for skeleton / fallback)
  * @param {string} props.templateId — selected template id
  * @param {function} props.onTemplateChange — called when user switches template
+ * @param {boolean} props.paperOnly — render only the paper content (no action bar, chrome, or template selector)
  */
-const ResumePreview = ({ draft, formData, templateId = 'classic', onTemplateChange, resumeId = null }) => {
+const ResumePreview = ({ draft, formData, templateId = 'classic', onTemplateChange, resumeId = null, paperOnly = false }) => {
     const { t } = useTranslation();
     const { user } = useContext(AuthContext);
     const navigate = useNavigate();
@@ -545,6 +546,20 @@ const ResumePreview = ({ draft, formData, templateId = 'classic', onTemplateChan
 
     const resume = normalizeResume(draft?.generatedResume ?? null);
     const Layout = LAYOUT_MAP[templateId] ?? ClassicLayout;
+
+    if (paperOnly) {
+        return (
+            <div className="bg-white p-8 sm:p-9 min-h-[520px]">
+                {resume && typeof resume === 'string' ? (
+                    <ResumeTextFallback text={resume} />
+                ) : resume && typeof resume === 'object' ? (
+                    <Layout resume={resume} />
+                ) : (
+                    <ResumeSkeleton formData={formData} />
+                )}
+            </div>
+        );
+    }
 
     const ensureSavedResume = async () => {
         if (resumeId) {

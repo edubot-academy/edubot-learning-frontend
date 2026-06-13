@@ -65,6 +65,17 @@ const LockedAction = ({ to, label, small }) => (
     </Link>
 );
 
+const DisabledAction = ({ label, small }) => (
+    <span
+        className={`inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/[0.03] font-medium text-[#3E424A] dark:text-[#a6adba] ${
+            small ? 'px-3 py-1.5 text-xs' : 'px-4 py-2 text-sm'
+        }`}
+    >
+        <IconLock className="w-3 h-3 text-gray-400 flex-shrink-0" />
+        {label}
+    </span>
+);
+
 // ─── Job match skeleton card ───────────────────────────────────────────────────
 
 export const JobMatchCardSkeleton = () => (
@@ -103,6 +114,8 @@ const JobMatchCard = ({
     match,
     draftId,
     resumeId,
+    actionsLocked = false,
+    actionLockReason = '',
     isSaved = false,
     applicationStatus = null,
     onToggleSave,
@@ -129,6 +142,7 @@ const JobMatchCard = ({
         asksCoverLetter,
         hiresInternationally,
     } = match;
+    const hasScore = Number.isFinite(score);
 
     const salaryLabel = salaryMin && salaryMax
         ? `$${Number(salaryMin).toLocaleString()}–$${Number(salaryMax).toLocaleString()}`
@@ -154,11 +168,12 @@ const JobMatchCard = ({
             <div
                 className="h-1"
                 style={{
-                    background:
-                        score >= 80 ? 'linear-gradient(90deg, #22c55e, #16a34a)' :
-                        score >= 60 ? 'linear-gradient(90deg, #f59e0b, #d97706)' :
-                                      'linear-gradient(90deg, #E14219, #C2410C)',
-                    width: `${score}%`,
+                    background: hasScore
+                        ? (score >= 80 ? 'linear-gradient(90deg, #22c55e, #16a34a)' :
+                           score >= 60 ? 'linear-gradient(90deg, #f59e0b, #d97706)' :
+                                         'linear-gradient(90deg, #E14219, #C2410C)')
+                        : 'linear-gradient(90deg, rgba(225,66,25,0.35), rgba(225,66,25,0.08))',
+                    width: hasScore ? `${score}%` : '100%',
                 }}
             />
 
@@ -175,9 +190,15 @@ const JobMatchCard = ({
                         </p>
                     </div>
 
-                    <span className={`flex-shrink-0 inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-bold ${scoreStyle(score)}`}>
-                        {score}%
-                    </span>
+                    {hasScore ? (
+                        <span className={`flex-shrink-0 inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-bold ${scoreStyle(score)}`}>
+                            {score}%
+                        </span>
+                    ) : (
+                        <span className="flex-shrink-0 inline-flex items-center rounded-full border border-gray-200 dark:border-white/10 px-2.5 py-1 text-xs font-semibold text-[#3E424A] dark:text-[#a6adba]">
+                            {t('career.jobs.actions.view')}
+                        </span>
+                    )}
                 </div>
 
                 {/* ── Salary ── */}
@@ -209,7 +230,7 @@ const JobMatchCard = ({
                 </div>
 
                 {/* ── Explanation ── */}
-                {explanation && (
+                {hasScore && explanation && (
                     <div className="rounded-xl border border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-white/[0.03] px-4 py-3 mb-4">
                         <p className="text-xs font-semibold text-[#3E424A] dark:text-[#a6adba] mb-1 uppercase tracking-wide">
                             {score}% match — Why?
@@ -221,7 +242,7 @@ const JobMatchCard = ({
                 )}
 
                 {/* ── Skills ── */}
-                {matchedSkills.length > 0 && (
+                {hasScore && matchedSkills.length > 0 && (
                     <div className="mb-3">
                         <p className="text-xs font-semibold text-[#141619] dark:text-[#E8ECF3] mb-1.5">
                             {t('career.jobs.matchedSkills')}
@@ -240,7 +261,7 @@ const JobMatchCard = ({
                     </div>
                 )}
 
-                {missingSkills.length > 0 && (
+                {hasScore && missingSkills.length > 0 && (
                     <div className="mb-4">
                         <p className="text-xs font-semibold text-[#141619] dark:text-[#E8ECF3] mb-1.5">
                             {t('career.jobs.missingSkills')}
@@ -262,12 +283,19 @@ const JobMatchCard = ({
                                 <span className="font-medium text-[#141619] dark:text-[#E8ECF3]">
                                     {missingSkills.join(', ')}
                                 </span>
-                                {' '}— EduBot can help you add{' '}
-                                {missingSkills.length === 1 ? 'it' : 'them'} quickly.
+                                {' '}— highlight adjacent experience before you apply.
                             </p>
                         )}
                     </div>
                 )}
+
+                {actionsLocked && actionLockReason ? (
+                    <div className="mb-4 rounded-xl border border-amber-200 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/5 px-4 py-3">
+                        <p className="text-xs text-amber-700 dark:text-amber-300">
+                            {actionLockReason}
+                        </p>
+                    </div>
+                ) : null}
 
                 {/* ── Cover letter prompt ── */}
                 {asksCoverLetter && (
@@ -296,7 +324,7 @@ const JobMatchCard = ({
                                 ) : (
                                     <button
                                         type="button"
-                                        disabled={applyBusy || !resumeId || !onApply}
+                                        disabled={applyBusy || !resumeId || !onApply || actionsLocked}
                                         onClick={() => onApply?.(jobId)}
                                         className="cursor-pointer flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-[#FF8C6E] to-[#E14219] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60 disabled:cursor-not-allowed"
                                     >
@@ -325,29 +353,44 @@ const JobMatchCard = ({
                             {/* Secondary row: Tailor, Cover Letter, Interview Prep */}
                             {showMore && (
                                 <div className="flex flex-wrap gap-1.5 pt-1">
-                                    <Link
-                                        to={tailorRoute}
-                                        className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-1.5 text-xs font-medium text-[#3E424A] dark:text-[#a6adba] hover:bg-gray-50 dark:hover:bg-white/8 transition-colors"
-                                    >
-                                        <IconSparkle className="w-3.5 h-3.5" />
-                                        {t('career.jobs.actions.tailor')}
-                                    </Link>
-                                    <Link
-                                        to={coverLetterRoute}
-                                        className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-1.5 text-xs font-medium text-[#3E424A] dark:text-[#a6adba] hover:bg-gray-50 dark:hover:bg-white/8 transition-colors"
-                                    >
-                                        <IconSparkle className="w-3.5 h-3.5" />
-                                        {asksCoverLetter
-                                            ? t('career.jobs.actions.coverLetter')
-                                            : t('career.jobs.coverLetter.optional')}
-                                    </Link>
-                                    <Link
-                                        to={interviewRoute}
-                                        className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-1.5 text-xs font-medium text-[#3E424A] dark:text-[#a6adba] hover:bg-gray-50 dark:hover:bg-white/8 transition-colors"
-                                    >
-                                        <IconSparkle className="w-3.5 h-3.5" />
-                                        {t('career.jobs.actions.interviewPrep')}
-                                    </Link>
+                                    {actionsLocked ? (
+                                        <>
+                                            <DisabledAction label={t('career.jobs.actions.tailor')} small />
+                                            <DisabledAction
+                                                label={asksCoverLetter
+                                                    ? t('career.jobs.actions.coverLetter')
+                                                    : t('career.jobs.coverLetter.optional')}
+                                                small
+                                            />
+                                            <DisabledAction label={t('career.jobs.actions.interviewPrep')} small />
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Link
+                                                to={tailorRoute}
+                                                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-1.5 text-xs font-medium text-[#3E424A] dark:text-[#a6adba] hover:bg-gray-50 dark:hover:bg-white/8 transition-colors"
+                                            >
+                                                <IconSparkle className="w-3.5 h-3.5" />
+                                                {t('career.jobs.actions.tailor')}
+                                            </Link>
+                                            <Link
+                                                to={coverLetterRoute}
+                                                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-1.5 text-xs font-medium text-[#3E424A] dark:text-[#a6adba] hover:bg-gray-50 dark:hover:bg-white/8 transition-colors"
+                                            >
+                                                <IconSparkle className="w-3.5 h-3.5" />
+                                                {asksCoverLetter
+                                                    ? t('career.jobs.actions.coverLetter')
+                                                    : t('career.jobs.coverLetter.optional')}
+                                            </Link>
+                                            <Link
+                                                to={interviewRoute}
+                                                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-1.5 text-xs font-medium text-[#3E424A] dark:text-[#a6adba] hover:bg-gray-50 dark:hover:bg-white/8 transition-colors"
+                                            >
+                                                <IconSparkle className="w-3.5 h-3.5" />
+                                                {t('career.jobs.actions.interviewPrep')}
+                                            </Link>
+                                        </>
+                                    )}
                                 </div>
                             )}
                         </div>

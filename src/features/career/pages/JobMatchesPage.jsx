@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import JobMatchCard from '../components/JobMatchCard';
@@ -10,6 +10,16 @@ import { useCareerUsageStatus } from '../hooks/useCareerUsageStatus';
 import AiCreditsBadge from '../components/AiCreditsBadge';
 import CareerLimitReachedModal from '../components/CareerLimitReachedModal';
 import { CAREER_USAGE_KEYS, getUsageMetric, isCareerLimitReachedError, isUsageMetricExhausted } from '../utils/careerUsage';
+import {
+    CAREER_MARKETS,
+    CAREER_WORK_MODES,
+    filterJobsByMarket,
+    filterJobsByWorkMode,
+    getResumeJobMarketPreference,
+    getResumeReadinessScore,
+    getResumeWorkModePreference,
+    isResumeReadyForJobActions,
+} from '../utils/resumeMatch';
 
 const JobMatchesPage = () => {
     const { t } = useTranslation();
@@ -26,6 +36,8 @@ const JobMatchesPage = () => {
     const [message, setMessage] = useState(null);
     const [error, setError] = useState(null);
     const [limitModalOpen, setLimitModalOpen] = useState(false);
+    const [marketFilter, setMarketFilter] = useState('all');
+    const [workModeFilter, setWorkModeFilter] = useState('remote_only');
     const { usage } = useCareerUsageStatus();
     const jobMatchMetric = getUsageMetric(usage, CAREER_USAGE_KEYS.JOB_MATCH_REQUESTS);
     const jobMatchLocked = isUsageMetricExhausted(jobMatchMetric);
@@ -38,6 +50,8 @@ const JobMatchesPage = () => {
                 const nextResumes = Array.isArray(resumeData) ? resumeData : [];
                 setResumes(nextResumes);
                 setSelectedResumeId(nextResumes[0]?.id || '');
+                setMarketFilter(getResumeJobMarketPreference(nextResumes[0]));
+                setWorkModeFilter(getResumeWorkModePreference(nextResumes[0]));
                 setSavedJobs(Array.isArray(savedData) ? savedData : []);
                 setApplications(Array.isArray(applicationData) ? applicationData : []);
                 setJobs(Array.isArray(jobData) ? jobData : []);
@@ -56,8 +70,30 @@ const JobMatchesPage = () => {
     }, []);
 
     useEffect(() => {
-        if (!selectedResumeId || jobMatchLocked) {
+        let mounted = true;
+
+        getJobs(12, { market: marketFilter, workMode: workModeFilter })
+            .then((jobData) => {
+                if (!mounted) return;
+                setJobs(Array.isArray(jobData) ? jobData : []);
+            })
+            .catch((err) => {
+                if (!mounted) return;
+                setError(err);
+            });
+
+        return () => {
+            mounted = false;
+        };
+    }, [marketFilter, workModeFilter]);
+
+    useEffect(() => {
+        const selectedResume = resumes.find((resume) => resume.id === selectedResumeId) || null;
+        const canFetchMatches = Boolean(selectedResumeId) && !jobMatchLocked && isResumeReadyForJobActions(selectedResume);
+
+        if (!canFetchMatches) {
             setMatches([]);
+            setLoadingMatches(false);
             return;
         }
 
@@ -83,7 +119,7 @@ const JobMatchesPage = () => {
         return () => {
             mounted = false;
         };
-    }, [jobMatchLocked, selectedResumeId]);
+    }, [jobMatchLocked, resumes, selectedResumeId]);
 
     const applicationsByJobId = new Map();
     applications.forEach((item) => {
@@ -93,6 +129,23 @@ const JobMatchesPage = () => {
     });
 
     const savedJobIds = new Set(savedJobs.map((item) => item.jobId));
+    const selectedResume = resumes.find((resume) => resume.id === selectedResumeId) || null;
+    const selectedResumeReady = isResumeReadyForJobActions(selectedResume);
+    const selectedResumeScore = getResumeReadinessScore(selectedResume);
+    const filteredJobs = useMemo(
+        () => filterJobsByWorkMode(filterJobsByMarket(jobs, marketFilter), workModeFilter),
+        [jobs, marketFilter, workModeFilter],
+    );
+    const fallbackJobs = filteredJobs.map((job) => ({
+        ...job,
+        matchedSkills: [],
+        missingSkills: [],
+        explanation: '',
+    }));
+    const displayedItems = selectedResumeReady && matches.length > 0 ? matches : fallbackJobs;
+    const gatingMessage = !selectedResumeId
+        ? t('career.jobs.gating.noResume')
+        : t('career.jobs.gating.incompleteResume');
 
     const handleToggleSave = async (jobId, isSaved) => {
         setSaveBusyJobId(jobId);
@@ -116,7 +169,7 @@ const JobMatchesPage = () => {
     };
 
     const handleApply = async (jobId) => {
-        if (!selectedResumeId) return;
+        if (!selectedResumeId || !selectedResumeReady) return;
         setApplyBusyJobId(jobId);
         setMessage(null);
         try {
@@ -181,7 +234,13 @@ const JobMatchesPage = () => {
                                 </label>
                                 <select
                                     value={selectedResumeId}
-                                    onChange={(e) => setSelectedResumeId(e.target.value)}
+                                    onChange={(e) => {
+                                        const nextResumeId = e.target.value;
+                                        const nextResume = resumes.find((resume) => resume.id === nextResumeId) || null;
+                                        setSelectedResumeId(nextResumeId);
+                                        setMarketFilter(getResumeJobMarketPreference(nextResume));
+                                        setWorkModeFilter(getResumeWorkModePreference(nextResume));
+                                    }}
                                     disabled={jobMatchLocked}
                                     className="w-full rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 px-4 py-3 text-sm"
                                 >
@@ -197,34 +256,83 @@ const JobMatchesPage = () => {
                                         Credit limit reached. Upgrade to unlock more job match requests.
                                     </p>
                                 ) : null}
+                                <div className="mt-4">
+                                    <label className="mb-2 block text-sm font-medium text-[#3E424A] dark:text-[#a6adba]">
+                                        {t('career.jobs.gating.marketLabel')}
+                                    </label>
+                                    <select
+                                        value={marketFilter}
+                                        onChange={(e) => setMarketFilter(e.target.value)}
+                                        className="w-full rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 px-4 py-3 text-sm"
+                                    >
+                                        {CAREER_MARKETS.map((market) => (
+                                            <option key={market} value={market}>
+                                                {t(`career.jobs.gating.markets.${market}`)}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="mt-4">
+                                    <label className="mb-2 block text-sm font-medium text-[#3E424A] dark:text-[#a6adba]">
+                                        {t('career.jobs.gating.workModeLabel')}
+                                    </label>
+                                    <select
+                                        value={workModeFilter}
+                                        onChange={(e) => setWorkModeFilter(e.target.value)}
+                                        className="w-full rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 px-4 py-3 text-sm"
+                                    >
+                                        {CAREER_WORK_MODES.map((workMode) => (
+                                            <option key={workMode} value={workMode}>
+                                                {t(`career.jobs.gating.workModes.${workMode}`)}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                {!selectedResumeReady ? (
+                                    <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/5 dark:text-amber-300">
+                                        <p className="font-medium">{t('career.jobs.gating.title')}</p>
+                                        <p className="mt-1">{gatingMessage}</p>
+                                        {selectedResumeId && selectedResumeScore != null ? (
+                                            <p className="mt-2 text-xs">
+                                                {t('career.resume.preview.score', { score: selectedResumeScore })}
+                                            </p>
+                                        ) : null}
+                                    </div>
+                                ) : null}
                             </div>
 
                             {loadingMatches ? (
                                 <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-[#1a1a1a] p-6 text-sm text-[#3E424A] dark:text-[#a6adba]">
                                     Loading matches...
                                 </div>
-                            ) : matches.length > 0 ? (
+                            ) : displayedItems.length > 0 ? (
                                 <div className="grid gap-4">
-                                    {matches.map((match) => (
-                                        <div key={match.id} className="space-y-2">
+                                    {displayedItems.map((match) => {
+                                        const itemJobId = match.jobId || match.id;
+                                        const actionsLocked = !selectedResumeReady;
+
+                                        return (
+                                        <div key={match.id || itemJobId} className="space-y-2">
                                             <JobMatchCard
-                                                match={{ ...match, id: match.jobId }}
+                                                match={{ ...match, id: itemJobId }}
                                                 resumeId={selectedResumeId}
-                                                isSaved={savedJobIds.has(match.jobId)}
-                                                applicationStatus={applicationsByJobId.get(match.jobId)?.status || null}
+                                                actionsLocked={actionsLocked}
+                                                actionLockReason={actionsLocked ? t('career.jobs.gating.actionLocked') : ''}
+                                                isSaved={savedJobIds.has(itemJobId)}
+                                                applicationStatus={applicationsByJobId.get(itemJobId)?.status || null}
                                                 onToggleSave={handleToggleSave}
                                                 onApply={handleApply}
-                                                saveBusy={saveBusyJobId === match.jobId}
-                                                applyBusy={applyBusyJobId === match.jobId}
+                                                saveBusy={saveBusyJobId === itemJobId}
+                                                applyBusy={applyBusyJobId === itemJobId}
                                             />
                                             <Link
-                                                to={CAREER_ROUTES.JOB_DETAIL.replace(':jobId', match.jobId)}
+                                                to={CAREER_ROUTES.JOB_DETAIL.replace(':jobId', itemJobId)}
                                                 className="inline-flex text-sm font-medium text-[#E14219] hover:underline"
                                             >
                                                 {t('career.jobs.actions.view')}
                                             </Link>
                                         </div>
-                                    ))}
+                                    );})}
                                 </div>
                             ) : (
                                 <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-[#1a1a1a] p-8">

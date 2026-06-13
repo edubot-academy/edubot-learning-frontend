@@ -35,7 +35,7 @@ const RING_CIRC = 2 * Math.PI * RING_R;
 const ScoreRing = ({ score, color }) => {
     const fill = (score / 100) * RING_CIRC;
     return (
-        <svg viewBox="0 0 100 100" className="w-24 h-24 -rotate-90" aria-hidden="true">
+        <svg viewBox="0 0 100 100" className="w-[132px] h-[132px] -rotate-90" aria-hidden="true">
             {/* Track */}
             <circle cx="50" cy="50" r={RING_R} fill="none" stroke="#e5e7eb" strokeWidth="9" />
             {/* Progress */}
@@ -64,14 +64,19 @@ const InlineField = ({ suggestion, value, onChange }) => {
 
     if (!open) {
         return (
-            <li className="flex items-center justify-between gap-3">
-                <span className="text-sm text-[#3E424A] dark:text-[#a6adba] leading-snug">
-                    {suggestion.label}
-                </span>
+            <li className="flex items-start gap-3 rounded-xl border border-gray-100 dark:border-white/10 bg-gray-50 dark:bg-white/[0.03] px-4 py-3">
+                <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-medium text-[#141619] dark:text-[#E8ECF3] leading-snug">
+                        {suggestion.label}
+                    </p>
+                    {suggestion.hint && (
+                        <p className="text-[11.5px] text-[#3E424A] dark:text-[#a6adba] mt-0.5">{suggestion.hint}</p>
+                    )}
+                </div>
                 <button
                     type="button"
                     onClick={() => setOpen(true)}
-                    className="cursor-pointer flex-shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-[#E14219]/30 bg-[#E14219]/5 px-3 py-1 text-xs font-semibold text-[#E14219] hover:bg-[#E14219]/10 transition-colors"
+                    className="cursor-pointer flex-shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-[#141619] dark:bg-white px-3 py-1.5 text-[12px] font-semibold text-white dark:text-[#141619] hover:opacity-90 transition-opacity"
                 >
                     <IconPlus className="w-3 h-3" />
                     Add now
@@ -194,83 +199,67 @@ const ResumeReadinessScore = ({
 
     return (
         <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-[#1a1a1a] overflow-hidden">
-            {/* ── Header ── */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-white/5">
-                <h3 className="font-suisse font-semibold text-base text-[#141619] dark:text-[#E8ECF3]">
-                    Resume Score
-                </h3>
-                {apiScore != null && (
-                    <span className="text-xs text-[#3E424A] dark:text-[#a6adba]">
-                        from AI analysis
-                    </span>
-                )}
-            </div>
-
-            <div className="p-6">
-                {/* ── Score ring + number ── */}
-                <div className="flex items-center gap-5 mb-6">
-                    <div className="relative flex-shrink-0">
-                        <ScoreRing score={displayScore} color={color} />
-                        <div
-                            className="absolute inset-0 flex flex-col items-center justify-center"
-                            role="status"
-                            aria-label={`Resume score: ${displayScore} out of 100`}
-                        >
-                            <span className={`text-2xl font-bold tabular-nums ${color.text}`} aria-hidden="true">
-                                {displayScore}
-                            </span>
-                            <span className="text-[10px] text-[#3E424A] dark:text-[#a6adba]" aria-hidden="true">/100</span>
-                        </div>
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-[#141619] dark:text-[#E8ECF3] mb-1">
-                            {displayScore >= 80
-                                ? 'Great resume — ready to send'
-                                : displayScore >= 55
-                                ? 'Good start — a few improvements needed'
-                                : 'Fill in more fields to improve your match rate'}
-                        </p>
-                        <p className="text-xs text-[#3E424A] dark:text-[#a6adba]">
-                            {unfilledSuggestions.length > 0
-                                ? `${unfilledSuggestions.length} quick ${unfilledSuggestions.length === 1 ? 'fix' : 'fixes'} can push your score higher`
-                                : 'All key fields are filled in'}
-                        </p>
-
-                        {/* Regenerate button — appears after extras are added */}
-                        {hasExtrasToRegenerate && (
-                            <button
-                                type="button"
-                                onClick={onRegenerate}
-                                className="cursor-pointer mt-3 inline-flex items-center gap-2 rounded-lg bg-gradient-to-b from-[#FF8C6E] to-[#E14219] px-3.5 py-2 text-xs font-semibold text-white hover:from-[#C2410C] hover:to-[#C2410C] transition-colors"
-                            >
-                                <IconSparkle className="w-3.5 h-3.5" />
-                                Regenerate with improvements
-                            </button>
-                        )}
+            {/* ── Ring + title side by side ── */}
+            <div className="flex gap-5 items-start px-7 pt-7 pb-5">
+                <div className="relative flex-shrink-0">
+                    <ScoreRing score={displayScore} color={color} />
+                    <div
+                        className="absolute inset-0 flex flex-col items-center justify-center"
+                        role="status"
+                        aria-label={`Resume score: ${displayScore} out of 100`}
+                    >
+                        <span className={`text-[30px] leading-none font-bold tabular-nums ${color.text}`} aria-hidden="true">
+                            {displayScore}
+                        </span>
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mt-0.5" aria-hidden="true">of 100</span>
                     </div>
                 </div>
 
-                {/* ── Strong points ── */}
-                {strong.length > 0 && (
-                    <div className="mb-5">
-                        <p className="text-xs font-semibold text-[#141619] dark:text-[#E8ECF3] mb-2.5 uppercase tracking-wide">
-                            Strong points
-                        </p>
-                        <ul className="space-y-1.5">
-                            {strong.map((item, i) => (
-                                <li key={i} className="flex items-start gap-2">
-                                    <IconCheck className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0 mt-0.5" />
-                                    <span className="text-sm text-[#3E424A] dark:text-[#a6adba]">{item}</span>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                )}
+                <div className="flex-1 min-w-0 pt-2">
+                    <h3 className="font-suisse font-semibold text-[18px] text-[#141619] dark:text-[#E8ECF3]">
+                        Resume readiness
+                    </h3>
+                    <p className="text-[13px] text-[#3E424A] dark:text-[#a6adba] mt-1.5 leading-relaxed">
+                        {displayScore >= 80
+                            ? "Strong resume — you're in the top tier of applicants."
+                            : displayScore >= 60
+                            ? 'Good start. Apply the fixes below to clear ATS filters confidently.'
+                            : 'A few key details missing. Add them to get past ATS quickly.'}
+                    </p>
+                    {hasExtrasToRegenerate && (
+                        <button
+                            type="button"
+                            onClick={onRegenerate}
+                            className="cursor-pointer mt-3 inline-flex items-center gap-2 rounded-lg bg-gradient-to-b from-[#FF8C6E] to-[#E14219] px-3.5 py-2 text-xs font-semibold text-white hover:from-[#C2410C] hover:to-[#C2410C] transition-colors"
+                        >
+                            <IconSparkle className="w-3.5 h-3.5" />
+                            Regenerate with improvements
+                        </button>
+                    )}
+                </div>
+            </div>
 
-                {/* ── Required missing ── */}
-                {requiredSuggestions.length > 0 && (
-                    <div className="mb-4 rounded-xl border border-amber-200 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/5 px-4 py-3">
+            {/* ── Strong points ── */}
+            {strong.length > 0 && (
+                <div className="px-7 pb-5">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-[#3E424A] dark:text-[#a6adba] mb-3">
+                        Strong points
+                    </p>
+                    <ul className="space-y-2">
+                        {strong.map((item, i) => (
+                            <li key={i} className="flex items-start gap-2">
+                                <IconCheck className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                                <span className="text-[13px] text-[#3E424A] dark:text-[#a6adba]">{item}</span>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+
+            {/* ── Required missing ── */}
+            {requiredSuggestions.length > 0 && (
+                <div className="px-7 pb-4">
+                    <div className="rounded-xl border border-amber-200 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/5 px-4 py-3">
                         <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 mb-1">
                             Required to generate
                         </p>
@@ -280,28 +269,30 @@ const ResumeReadinessScore = ({
                             </p>
                         ))}
                     </div>
-                )}
+                </div>
+            )}
 
-                {/* ── One-click fix suggestions ── */}
-                {unfilledSuggestions.length > 0 && (
-                    <div>
-                        <p className="text-xs font-semibold text-[#141619] dark:text-[#E8ECF3] mb-3 uppercase tracking-wide">
-                            Improve your score
-                        </p>
-                        <ul className="space-y-3">
-                            {unfilledSuggestions.map((s) => (
-                                <InlineField
-                                    key={s.key}
-                                    suggestion={s}
-                                    value={extras[s.key]}
-                                    onChange={onExtraChange}
-                                />
-                            ))}
-                        </ul>
-                    </div>
-                )}
+            {/* ── Improve your score ── */}
+            {unfilledSuggestions.length > 0 && (
+                <div className="px-7 py-5 border-t border-gray-100 dark:border-white/5">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-[#3E424A] dark:text-[#a6adba] mb-4">
+                        Improve your score
+                    </p>
+                    <ul className="space-y-3">
+                        {unfilledSuggestions.map((s) => (
+                            <InlineField
+                                key={s.key}
+                                suggestion={s}
+                                value={extras[s.key]}
+                                onChange={onExtraChange}
+                            />
+                        ))}
+                    </ul>
+                </div>
+            )}
 
-                {unfilledSuggestions.length === 0 && strong.length > 0 && (
+            {unfilledSuggestions.length === 0 && strong.length > 0 && (
+                <div className="px-7 py-5 border-t border-gray-100 dark:border-white/5">
                     <div className="rounded-xl bg-emerald-50 dark:bg-emerald-500/5 border border-emerald-200 dark:border-emerald-500/20 px-4 py-3 text-center">
                         <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
                             All fields filled — looking great!
@@ -317,8 +308,8 @@ const ResumeReadinessScore = ({
                             </button>
                         )}
                     </div>
-                )}
-            </div>
+                </div>
+            )}
         </div>
     );
 };
