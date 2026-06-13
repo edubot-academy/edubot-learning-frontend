@@ -5,7 +5,6 @@ import { AuthContext } from '../context/AuthContext';
 import Loader from '@shared/ui/Loader';
 import SectionContainer from '@features/marketing/components/SectionContainer';
 import ExternalResourceCard from '@features/externalResources/components/ExternalResourceCard';
-import { getResourcesRelatedToCourse } from '@features/externalResources/data/externalResources';
 import { fetchResourcesByCourse } from '@features/externalResources/api';
 import { useCourseDetailsController } from '@features/courses/course-details/useCourseDetailsRuntime';
 import {
@@ -88,12 +87,7 @@ const CourseDetailsPage = () => {
     if (error) return <CourseDetailsErrorState message={error} />;
     if (!course) return <CourseDetailsNotFoundState />;
 
-    // Guard against stale course: the controller may still hold the previous course
-    // for one render cycle after id changes. Showing related resources from the wrong
-    // course is worse than showing nothing briefly.
-    const staticResources = String(course.id) === String(id) ? getResourcesRelatedToCourse(course) : [];
-    // Use API result only when it has items; empty [] falls back to static data
-    const relatedResources = (linkedResources?.length ? linkedResources : staticResources).map((r) => ({
+    const relatedResources = (linkedResources ?? []).map((r) => ({
         ...r,
         ctaLabel: t('public.externalResources.courseDetailCta'),
     }));
