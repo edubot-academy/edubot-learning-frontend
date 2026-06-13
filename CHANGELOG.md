@@ -2,6 +2,24 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.16.5] - 2026-06-13
+
+### Fixed
+
+- Resource progress synchronization: local anonymous progress is now preserved and only cleared after background sync POSTs have settled; optimistic updates from post-login flows are preserved during the merge. `toggleWeek` and `updateNotes` now compute and persist state from the latest committed store to avoid stale-closure races.
+- Admin external resource editor: improved AI autofill and "Paste JSON" flows, more robust localized label initialization, and better category suggestion handling when creating or editing resources.
+- External resource details and dashboard widgets: restored provider line and free-price pill rendering, fixed progress-percent calculation and ensured API-backed data is used instead of stale static fixtures when navigating between pages.
+- Certificate upload: uploaded certificate URLs are now saved and surfaced correctly in progress entries.
+- Miscellaneous defensive error handling and UI clarity fixes across external-resources flows.
+
+### Verification
+
+- `npm run lint`
+- `npm run build`
+- Dashboard → Free Resources: verify save/start/complete flows, study-plan toggles, notes persistence, and AI companion tabs behave as expected.
+
+---
+
 ## [1.16.4] - 2026-06-13
 
 ### Changed
