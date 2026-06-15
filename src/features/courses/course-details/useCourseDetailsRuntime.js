@@ -13,6 +13,7 @@ import {
     updateVideoTime,
     fetchEnrollment,
     fetchLessonQuiz,
+    fetchLessonQuizResult,
     submitLessonQuiz,
     fetchLessonChallenge,
     submitLessonChallenge,
@@ -53,6 +54,10 @@ export const useLessonQuiz = ({ courseId, activeLesson, onEnrollmentAccessError,
                 const quiz = await fetchLessonQuiz(courseId, lesson.sectionId, lesson.id);
                 setLessonQuizData((prev) => ({ ...prev, [lesson.id]: quiz }));
                 setLessonQuizAnswers((prev) => ({ ...prev, [lesson.id]: {} }));
+                const lastResult = await fetchLessonQuizResult(courseId, lesson.sectionId, lesson.id);
+                if (lastResult) {
+                    setLessonQuizResults((prev) => ({ ...prev, [lesson.id]: lastResult }));
+                }
             } catch (err) {
                 if (
                     onEnrollmentAccessError(

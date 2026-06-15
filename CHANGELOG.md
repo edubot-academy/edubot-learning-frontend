@@ -2,6 +2,15 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.16.11] - 2026-06-15
+
+### Fixed
+
+- Instructor dashboard students tab: removed an overly strict frontend filter (`status === 'approved' && isPublished`) that excluded company-specific delivery courses from the course list, causing the students tab to appear empty for instructors who teach company-assigned courses. All of the instructor's courses are now shown regardless of publication status.
+- Quiz: `useCourseDetailsRuntime` now fetches the student's last quiz result (`GET .../quiz/result`) when loading a lesson's quiz, so previously-submitted answers and scores are restored immediately on re-open without requiring a re-submission.
+
+---
+
 ## [1.16.10] - 2026-06-15
 
 ### Fixed

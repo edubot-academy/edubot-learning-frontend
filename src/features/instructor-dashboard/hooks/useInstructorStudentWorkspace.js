@@ -72,9 +72,7 @@ export const useInstructorStudentWorkspace = ({ activeTab, user }) => {
 
         try {
             const data = await fetchInstructorStudentCourses();
-            const list = (data?.courses || []).filter(
-                (course) => course?.status === 'approved' && course?.isPublished
-            );
+            const list = Array.isArray(data?.courses) ? data.courses : [];
 
             setStudentCourses(list);
             setStudentCoursesTotal(

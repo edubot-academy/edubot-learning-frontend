@@ -380,6 +380,17 @@ export async function upsertLessonQuiz(courseId, sectionId, lessonId, quizData) 
     return response.data;
 }
 
+export async function fetchLessonQuizResult(courseId, sectionId, lessonId) {
+    try {
+        const response = await api.get(
+            `/courses/${courseId}/sections/${sectionId}/lessons/${lessonId}/quiz/result`
+        );
+        return response.data;
+    } catch {
+        return null;
+    }
+}
+
 export async function submitLessonQuiz(courseId, sectionId, lessonId, answers) {
     const response = await api.post(
         `/courses/${courseId}/sections/${sectionId}/lessons/${lessonId}/quiz/submit`,
