@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useRef, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FiDownload } from 'react-icons/fi';
 import { getResourceMeta } from '../../../utils/lessonUtils';
@@ -28,8 +28,7 @@ const sanitizeHtml = async (html = '') => {
 const ArticleLessonViewer = ({ lesson }) => {
     const { t } = useTranslation();
     const [sanitizedContent, setSanitizedContent] = useState('');
-    const contentRef = useRef(null);
-    
+
     const resourceMeta =
         !lesson.locked && lesson.resourceUrl
             ? getResourceMeta(lesson.resourceKey, lesson.resourceName)
@@ -54,65 +53,6 @@ const ArticleLessonViewer = ({ lesson }) => {
         };
     }, [lesson?.content]);
 
-    useEffect(() => {
-        if (contentRef.current && sanitizedContent) {
-            const contentElement = contentRef.current;
-            
-            const styleElement = document.createElement('style');
-            styleElement.textContent = `
-                .article-content.dark-mode h1,
-                .article-content.dark-mode h2,
-                .article-content.dark-mode h3,
-                .article-content.dark-mode h4,
-                .article-content.dark-mode h5,
-                .article-content.dark-mode h6 {
-                    color: #ffffff;
-                }
-                .article-content.dark-mode p {
-                    color: #d1d5db;
-                }
-                .article-content.dark-mode a {
-                    color: #60a5fa;
-                }
-                .article-content.dark-mode a:hover {
-                    color: #93c5fd;
-                }
-                .article-content.dark-mode code {
-                    background-color: #374151;
-                    color: #f3f4f6;
-                }
-                .article-content.dark-mode pre {
-                    background-color: #374151;
-                    color: #f3f4f6;
-                    border-color: #4b5563;
-                }
-                .article-content.dark-mode blockquote {
-                    border-color: #4b5563;
-                    color: #9ca3af;
-                }
-                .article-content.dark-mode ul,
-                .article-content.dark-mode ol {
-                    color: #d1d5db;
-                }
-                .article-content.dark-mode table {
-                    border-color: #4b5563;
-                }
-                .article-content.dark-mode th,
-                .article-content.dark-mode td {
-                    border-color: #4b5563;
-                    color: #d1d5db;
-                }
-            `;
-            contentElement.appendChild(styleElement);
-            
-            return () => {
-                if (styleElement.parentNode === contentElement) {
-                    contentElement.removeChild(styleElement);
-                }
-            };
-        }
-    }, [sanitizedContent]);
-
     return (
         <div className="mb-6 rounded-lg shadow-md p-6 min-h-[320px] w-full max-w-full
                        bg-white dark:bg-[#1A1A1A]
@@ -126,27 +66,22 @@ const ArticleLessonViewer = ({ lesson }) => {
                     {t('public.courseShared.article.locked')}
                 </div>
             ) : sanitizedContent ? (
-                <div className="relative">
-                    <div 
-                        ref={contentRef}
-                        className="article-content overflow-y-auto 
-                                   max-h-[400px] md:max-h-[500px]
-                                   pr-4
-                                   scrollbar-thin scrollbar-thumb-gray-200 
-                                   dark:scrollbar-thumb-gray-700
-                                   scrollbar-track-transparent
-                                   dark:scrollbar-track-gray-800
-                                   hover:scrollbar-thumb-gray-300
-                                   dark:hover:scrollbar-thumb-gray-600
-                                   scrollbar-thumb-rounded-full
-                                   scrollbar-track-rounded-full
-                                   pb-8
-                                   text-gray-700 dark:text-gray-300"
-                        dangerouslySetInnerHTML={{ __html: sanitizedContent }}
-                        role="article"
-                        aria-label={t('public.courseShared.article.contentAria')}
-                    />
-                </div>
+                <div
+                    className="prose dark:prose-invert max-w-none
+                               overflow-y-auto max-h-[400px] md:max-h-[500px]
+                               pr-4 pb-8
+                               scrollbar-thin scrollbar-thumb-gray-200
+                               dark:scrollbar-thumb-gray-700
+                               scrollbar-track-transparent
+                               dark:scrollbar-track-gray-800
+                               hover:scrollbar-thumb-gray-300
+                               dark:hover:scrollbar-thumb-gray-600
+                               scrollbar-thumb-rounded-full
+                               scrollbar-track-rounded-full"
+                    dangerouslySetInnerHTML={{ __html: sanitizedContent }}
+                    role="article"
+                    aria-label={t('public.courseShared.article.contentAria')}
+                />
             ) : (
                 <p 
                     className="text-gray-500 dark:text-gray-400"
