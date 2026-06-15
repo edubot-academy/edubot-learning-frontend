@@ -1,6 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import DOMPurify from 'dompurify';
+import { useEffect, useCallback, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useEditor, EditorContent } from '@tiptap/react'
+import StarterKit from '@tiptap/starter-kit'
+import Underline from '@tiptap/extension-underline'
+import Link from '@tiptap/extension-link'
+import Placeholder from '@tiptap/extension-placeholder'
+import DOMPurify from 'dompurify'
 import {
     FaBold,
     FaItalic,
@@ -14,473 +19,294 @@ import {
     FaEraser,
     FaCode,
     FaQuoteLeft,
-} from 'react-icons/fa';
+} from 'react-icons/fa'
+import '../../../styles/tiptap-editor.css'
 
-const TOOLBAR_GROUPS = [
-    [
-        { label: 'H1', command: 'formatBlock', value: 'H1' },
-        { label: 'H2', command: 'formatBlock', value: 'H2' },
-        { label: 'H3', command: 'formatBlock', value: 'H3' },
-        { label: 'H4', command: 'formatBlock', value: 'H4' },
-        { label: 'P', command: 'formatBlock', value: 'P' },
-    ],
-    [
-        { icon: <FaBold />, command: 'bold', titleKey: 'bold' },
-        { icon: <FaItalic />, command: 'italic', titleKey: 'italic' },
-        { icon: <FaUnderline />, command: 'underline', titleKey: 'underline' },
-    ],
-    [
-        { icon: <FaListUl />, command: 'insertUnorderedList', titleKey: 'bulletedList' },
-        { icon: <FaListOl />, command: 'insertOrderedList', titleKey: 'numberedList' },
-        { icon: <FaQuoteLeft />, command: 'formatBlock', value: 'BLOCKQUOTE', titleKey: 'quote' },
-        { icon: <FaCode />, command: 'inlineCode', titleKey: 'inlineCode' },
-    ],
-    [
-        { icon: <FaLink />, command: 'createLink', titleKey: 'insertLink' },
-        { icon: <FaUnlink />, command: 'unlink', titleKey: 'removeLink' },
-    ],
-    [
-        { icon: <FaUndo />, command: 'undo', titleKey: 'undo' },
-        { icon: <FaRedo />, command: 'redo', titleKey: 'redo' },
-        { icon: <FaEraser />, command: 'removeFormat', titleKey: 'clearFormat' },
-    ],
-];
-
-const DEFAULT_FORMATS = {
-    block: 'P',
-    bold: false,
-    italic: false,
-    underline: false,
-    unorderedList: false,
-    orderedList: false,
-    quote: false,
-    code: false,
-    hasLink: false,
-};
-
-const normalizeBlockValue = (value) => value?.replace(/[<>]/g, '').toUpperCase() || 'P';
-
-const ensureUrl = (rawUrl = '') => {
-    const value = rawUrl.trim();
-    if (!value) return null;
-
-    if (/^https?:\/\//i.test(value) || /^mailto:/i.test(value) || /^tel:/i.test(value)) {
-        return value;
-    }
-
-    return `https://${value}`;
-};
-
-const sanitizeEditorHtml = (html = '') =>
+const sanitizeHtml = (html = '') =>
     DOMPurify.sanitize(html, {
         ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel):|data:image\/)/i,
-    });
+        ADD_ATTR: ['data-type', 'data-question', 'data-options'],
+    })
 
-const ArticleEditor = ({
-    value = '',
-    onChange,
-    placeholder,
-    disabled = false,
-}) => {
-    const { t } = useTranslation();
-    const editorPlaceholder =
-        placeholder || t('instructorDashboard.courseBuilder.articleEditor.placeholder');
-    const editorRef = useRef(null);
-    const [history, setHistory] = useState([value || '']);
-    const [historyIndex, setHistoryIndex] = useState(0);
-    const [isUndoing, setIsUndoing] = useState(false);
+const ArticleEditor = ({ value = '', onChange, placeholder, disabled = false }) => {
+    const { t } = useTranslation()
+    const lastValueRef = useRef(value)
 
-    const showPlaceholder = useMemo(() => {
-        if (!value) return true;
-        const stripped = value.replace(/<[^>]*>/g, '').trim();
-        return stripped.length === 0;
-    }, [value]);
+    const editor = useEditor({
+        extensions: [
+            StarterKit.configure({
+                heading: { levels: [1, 2, 3, 4] },
+            }),
+            Underline,
+            Link.configure({
+                openOnClick: false,
+                autolink: true,
+                linkOnPaste: true,
+                HTMLAttributes: {
+                    rel: 'noopener noreferrer',
+                    target: '_blank',
+                },
+            }),
+            Placeholder.configure({
+                placeholder:
+                    placeholder ||
+                    t('instructorDashboard.courseBuilder.articleEditor.placeholder'),
+            }),
+        ],
+        content: sanitizeHtml(value),
+        editable: !disabled,
+        onUpdate: ({ editor: ed }) => {
+            const html = sanitizeHtml(ed.getHTML())
+            lastValueRef.current = html
+            onChange?.(html)
+        },
+    })
 
-    const [activeFormats, setActiveFormats] = useState({ ...DEFAULT_FORMATS });
-
+    // Sync external value changes (e.g. loading a saved lesson)
     useEffect(() => {
-        if (!editorRef.current) return;
-        const sanitizedValue = sanitizeEditorHtml(value || '');
-        if (editorRef.current.innerHTML !== sanitizedValue) {
-            editorRef.current.innerHTML = sanitizedValue;
+        if (!editor || editor.isDestroyed) return
+        const sanitized = sanitizeHtml(value || '')
+        if (sanitized !== lastValueRef.current) {
+            lastValueRef.current = sanitized
+            editor.commands.setContent(sanitized, false)
         }
-    }, [value]);
+    }, [editor, value])
 
-    const isNodeInsideEditor = useCallback((node) => {
-        if (!editorRef.current || !node) return false;
-        const textNodeType = typeof Node !== 'undefined' ? Node.TEXT_NODE : 3;
-        const elementNode = node.nodeType === textNodeType ? node.parentNode : node;
-        return editorRef.current.contains(elementNode);
-    }, []);
-
-    const emitChange = () => {
-        if (!onChange || !editorRef.current) return;
-        const sanitized = sanitizeEditorHtml(editorRef.current.innerHTML);
-        if (editorRef.current.innerHTML !== sanitized) {
-            editorRef.current.innerHTML = sanitized;
-        }
-
-        // Add to history if not undoing
-        if (!isUndoing) {
-            const newHistory = history.slice(0, historyIndex + 1);
-            newHistory.push(sanitized);
-
-            // Limit history to 50 items
-            if (newHistory.length > 50) {
-                newHistory.shift();
-            } else {
-                setHistoryIndex(newHistory.length - 1);
-            }
-            setHistory(newHistory);
-        }
-
-        onChange(sanitized);
-    };
-
-    const canUndo = historyIndex > 0;
-    const canRedo = historyIndex < history.length - 1;
-
-    const handleUndo = () => {
-        if (!canUndo || !editorRef.current) return;
-        setIsUndoing(true);
-        const newIndex = historyIndex - 1;
-        setHistoryIndex(newIndex);
-        editorRef.current.innerHTML = history[newIndex];
-        setIsUndoing(false);
-        refreshActiveFormats();
-    };
-
-    const handleRedo = () => {
-        if (!canRedo || !editorRef.current) return;
-        setIsUndoing(true);
-        const newIndex = historyIndex + 1;
-        setHistoryIndex(newIndex);
-        editorRef.current.innerHTML = history[newIndex];
-        setIsUndoing(false);
-        refreshActiveFormats();
-    };
-
-    const refreshActiveFormats = useCallback(() => {
-        if (typeof document === 'undefined' || !editorRef.current) return;
-
-        const selection = document.getSelection();
-        if (!selection || selection.rangeCount === 0 || !isNodeInsideEditor(selection.anchorNode)) {
-            setActiveFormats({ ...DEFAULT_FORMATS });
-            return;
-        }
-
-        const blockValue = normalizeBlockValue(document.queryCommandValue('formatBlock'));
-
-        const anchorNode =
-            selection.anchorNode?.nodeType === Node.TEXT_NODE
-                ? selection.anchorNode.parentElement
-                : selection.anchorNode;
-
-        // Check if cursor is inside a code tag
-        const isInsideCode = anchorNode?.tagName === 'CODE' || anchorNode?.closest?.('code');
-
-        setActiveFormats({
-            block: blockValue,
-            bold: document.queryCommandState('bold'),
-            italic: document.queryCommandState('italic'),
-            underline: document.queryCommandState('underline'),
-            unorderedList: document.queryCommandState('insertUnorderedList'),
-            orderedList: document.queryCommandState('insertOrderedList'),
-            quote: blockValue === 'BLOCKQUOTE',
-            code: blockValue === 'PRE' || isInsideCode,
-            hasLink: Boolean(anchorNode?.closest?.('a')),
-        });
-    }, [isNodeInsideEditor]);
-
+    // Sync disabled state
     useEffect(() => {
-        refreshActiveFormats();
-    }, [refreshActiveFormats, value]);
+        if (!editor || editor.isDestroyed) return
+        editor.setEditable(!disabled)
+    }, [editor, disabled])
 
-    useEffect(() => {
-        if (typeof document === 'undefined') return;
-        const handler = () => refreshActiveFormats();
-        document.addEventListener('selectionchange', handler);
-        return () => document.removeEventListener('selectionchange', handler);
-    }, [refreshActiveFormats]);
+    const handleLink = useCallback(() => {
+        if (!editor) return
+        const rawUrl = window.prompt(
+            t('instructorDashboard.courseBuilder.articleEditor.linkUrlPrompt')
+        )
+        if (!rawUrl?.trim()) return
+        const url = /^(?:https?|mailto|tel):/i.test(rawUrl.trim())
+            ? rawUrl.trim()
+            : `https://${rawUrl.trim()}`
 
-    const handleCommand = (command, commandValue) => {
-        if (disabled || typeof document === 'undefined') return;
-
-        if (command === 'undo') {
-            handleUndo();
-            return;
-        }
-
-        if (command === 'redo') {
-            handleRedo();
-            return;
-        }
-
-        if (command === 'createLink') {
-            if (typeof window === 'undefined') return;
-            const rawUrl = window.prompt(
-                t('instructorDashboard.courseBuilder.articleEditor.linkUrlPrompt')
-            );
-            const normalized = ensureUrl(rawUrl || '');
-            if (!normalized) return;
-
-            const selection = window.getSelection();
-            if (!selection) return;
-
-            if (selection.isCollapsed) {
-                const linkText = window.prompt(
-                    t('instructorDashboard.courseBuilder.articleEditor.linkTextPrompt')
-                );
-                if (!linkText) return;
-                const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
-                if (!range) return;
-                const textNode = document.createTextNode(linkText);
-                range.insertNode(textNode);
-                selection.removeAllRanges();
-                const textRange = document.createRange();
-                textRange.selectNodeContents(textNode);
-                selection.addRange(textRange);
-            }
-
-            document.execCommand('createLink', false, normalized);
-        } else if (command === 'inlineCode') {
-            // Handle inline code formatting (toggle) - like normal text editors
-            const selection = window.getSelection();
-            if (!selection) return;
-
-            const anchorNode = selection.isCollapsed
-                ? selection.anchorNode.parentElement
-                : selection.anchorNode;
-
-            // Check if we're inside a code tag
-            const isInsideCode = anchorNode?.tagName === 'CODE' || anchorNode?.closest?.('code');
-
-            if (isInsideCode) {
-                // Remove code formatting
-                const codeElement = anchorNode?.tagName === 'CODE' ? anchorNode : anchorNode?.closest?.('code');
-                if (codeElement) {
-                    const textContent = codeElement.textContent;
-                    const textNode = document.createTextNode(textContent);
-
-                    try {
-                        codeElement.parentNode.replaceChild(textNode, codeElement);
-
-                        // Select the text that was in the code element
-                        selection.removeAllRanges();
-                        const newRange = document.createRange();
-                        newRange.selectNodeContents(textNode);
-                        selection.addRange(newRange);
-
-                        emitChange();
-                    } catch (error) {
-                        console.error('Error removing code formatting:', error);
-                    }
-                }
-            } else {
-                // Add code formatting - normal text editor behavior
-                if (selection.isCollapsed) {
-                    // If no selection, insert code tags and position cursor inside
-                    const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
-                    if (!range) return;
-
-                    const codeElement = document.createElement('code');
-                    codeElement.textContent = ''; // Empty code element
-
-                    range.insertNode(codeElement);
-
-                    // Position cursor inside the code element
-                    selection.removeAllRanges();
-                    const newRange = document.createRange();
-                    newRange.selectNodeContents(codeElement);
-                    newRange.collapse(false); // Collapse to end
-                    selection.addRange(newRange);
-
-                    emitChange();
-                } else {
-                    // If there's selection, wrap it in code tags
-                    const range = selection.getRangeAt(0);
-                    const selectedText = range.toString();
-
-                    if (selectedText) {
-                        const codeElement = document.createElement('code');
-                        codeElement.textContent = selectedText;
-
-                        try {
-                            range.deleteContents();
-                            range.insertNode(codeElement);
-
-                            // Select the code element
-                            selection.removeAllRanges();
-                            const newRange = document.createRange();
-                            newRange.selectNodeContents(codeElement);
-                            selection.addRange(newRange);
-
-                            emitChange();
-                        } catch (error) {
-                            console.error('Error wrapping text in code tags:', error);
-                        }
-                    }
-                }
-            }
+        if (editor.state.selection.empty) {
+            const linkText = window.prompt(
+                t('instructorDashboard.courseBuilder.articleEditor.linkTextPrompt')
+            )
+            if (!linkText) return
+            editor
+                .chain()
+                .focus()
+                .insertContent({
+                    type: 'text',
+                    text: linkText,
+                    marks: [{ type: 'link', attrs: { href: url, target: '_blank', rel: 'noopener noreferrer' } }],
+                })
+                .run()
         } else {
-            document.execCommand(command, false, commandValue ?? null);
+            editor.chain().focus().setLink({ href: url }).run()
         }
+    }, [editor, t])
 
-        editorRef.current?.focus();
-        emitChange();
-        refreshActiveFormats();
-    };
+    if (!editor) return null
 
-    const handleKeyDown = (e) => {
-        // Handle backtick wrapping for inline code
-        if (e.key === '`') {
-            e.preventDefault();
-            const selection = window.getSelection();
-            if (!selection || !editorRef.current) return;
+    const btn = (active, isDisabled) =>
+        `h-8 min-w-8 px-2 text-sm rounded-md flex items-center justify-center transition ${
+            active
+                ? 'bg-edubot-orange text-white'
+                : isDisabled
+                ? 'text-slate-400 dark:text-gray-500 cursor-not-allowed'
+                : 'text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-600'
+        }`
 
-            const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
-            if (!range) return;
+    const group =
+        'inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-gray-600 bg-white dark:bg-gray-700 p-1'
 
-            if (selection.isCollapsed) {
-                // Insert backticks and position cursor in middle
-                const backticks = document.createTextNode('``');
-                range.insertNode(backticks);
-
-                // Move cursor between the backticks
-                selection.removeAllRanges();
-                const newRange = document.createRange();
-                newRange.setStart(backticks, 1);
-                newRange.setEnd(backticks, 1);
-                selection.addRange(newRange);
-            } else {
-                // Wrap selected text in backticks
-                const selectedText = range.toString();
-                const codeElement = document.createElement('code');
-                codeElement.textContent = selectedText;
-
-                try {
-                    range.deleteContents();
-                    range.insertNode(codeElement);
-
-                    // Select the code element
-                    selection.removeAllRanges();
-                    const newRange = document.createRange();
-                    newRange.selectNodeContents(codeElement);
-                    selection.addRange(newRange);
-                } catch (error) {
-                    console.error('Error wrapping text in code tags:', error);
-                }
-            }
-
-            emitChange();
-            refreshActiveFormats();
-            return;
-        }
-
-        // Handle other keyboard shortcuts
-        if (e.ctrlKey || e.metaKey) {
-            switch (e.key) {
-                case 'z':
-                    e.preventDefault();
-                    if (e.shiftKey) {
-                        handleRedo();
-                    } else {
-                        handleUndo();
-                    }
-                    break;
-                case 'y':
-                    e.preventDefault();
-                    handleRedo();
-                    break;
-                case 'b':
-                    e.preventDefault();
-                    handleCommand('bold');
-                    break;
-                case 'i':
-                    e.preventDefault();
-                    handleCommand('italic');
-                    break;
-                default:
-                    break;
-            }
-        }
-    };
-
-    const handlePaste = (e) => {
-        if (!editorRef.current) return;
-        e.preventDefault();
-        const text = e.clipboardData.getData('text/plain');
-        if (typeof document !== 'undefined') {
-            document.execCommand('insertText', false, text);
-        }
-        emitChange();
-    };
-
-    const isButtonActive = (button) => {
-        switch (button.command) {
-            case 'formatBlock': {
-                const expected = normalizeBlockValue(button.value || 'P');
-                if (expected === 'PRE') {
-                    return activeFormats.code;
-                }
-                return activeFormats.block === expected;
-            }
-            case 'inlineCode':
-                return activeFormats.code;
-            case 'bold':
-                return activeFormats.bold;
-            case 'italic':
-                return activeFormats.italic;
-            case 'underline':
-                return activeFormats.underline;
-            case 'insertUnorderedList':
-                return activeFormats.unorderedList;
-            case 'insertOrderedList':
-                return activeFormats.orderedList;
-            case 'unlink':
-                return activeFormats.hasLink;
-            default:
-                return false;
-        }
-    };
+    const canUndo = editor.can().chain().focus().undo().run()
+    const canRedo = editor.can().chain().focus().redo().run()
 
     return (
         <div className="rounded-xl border border-slate-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-sm">
+            {/* Toolbar */}
             <div className="sticky top-0 z-10 border-b border-slate-200 dark:border-gray-600 bg-gradient-to-r from-slate-50 to-white dark:from-gray-700 dark:to-gray-800 px-3 py-2">
                 <div className="flex flex-wrap items-center gap-2">
-                    {TOOLBAR_GROUPS.map((group, groupIdx) => (
-                        <div
-                            key={`group-${groupIdx}`}
-                            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-gray-600 bg-white dark:bg-gray-700 p-1"
+                    {/* Headings + Paragraph */}
+                    <div className={group}>
+                        {[1, 2, 3, 4].map((level) => (
+                            <button
+                                key={level}
+                                type="button"
+                                disabled={disabled}
+                                onClick={() =>
+                                    editor.chain().focus().toggleHeading({ level }).run()
+                                }
+                                className={btn(
+                                    editor.isActive('heading', { level }),
+                                    disabled
+                                )}
+                            >
+                                H{level}
+                            </button>
+                        ))}
+                        <button
+                            type="button"
+                            disabled={disabled}
+                            onClick={() => editor.chain().focus().setParagraph().run()}
+                            className={btn(editor.isActive('paragraph'), disabled)}
                         >
-                            {group.map(({ label, icon, command, value: commandValue, titleKey }) => {
-                                const isDisabled = disabled ||
-                                    (command === 'undo' && !canUndo) ||
-                                    (command === 'redo' && !canRedo);
-                                const title = titleKey
-                                    ? t(`instructorDashboard.courseBuilder.articleEditor.toolbar.${titleKey}`)
-                                    : label;
+                            P
+                        </button>
+                    </div>
 
-                                return (
-                                    <button
-                                        type="button"
-                                        key={`${command}-${label || titleKey || commandValue || ''}`}
-                                        onClick={() => handleCommand(command, commandValue)}
-                                        title={title || label}
-                                        disabled={isDisabled}
-                                        className={`h-8 min-w-8 px-2 text-sm rounded-md flex items-center justify-center transition ${isButtonActive({ command, value: commandValue })
-                                            ? 'bg-edubot-orange text-white'
-                                            : isDisabled
-                                                ? 'text-slate-400 dark:text-gray-500 cursor-not-allowed'
-                                                : 'text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-600'
-                                            }`}
-                                    >
-                                        {icon || label}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    ))}
+                    {/* Inline formatting */}
+                    <div className={group}>
+                        <button
+                            type="button"
+                            disabled={disabled}
+                            onClick={() => editor.chain().focus().toggleBold().run()}
+                            className={btn(editor.isActive('bold'), disabled)}
+                            title={t(
+                                'instructorDashboard.courseBuilder.articleEditor.toolbar.bold'
+                            )}
+                        >
+                            <FaBold />
+                        </button>
+                        <button
+                            type="button"
+                            disabled={disabled}
+                            onClick={() => editor.chain().focus().toggleItalic().run()}
+                            className={btn(editor.isActive('italic'), disabled)}
+                            title={t(
+                                'instructorDashboard.courseBuilder.articleEditor.toolbar.italic'
+                            )}
+                        >
+                            <FaItalic />
+                        </button>
+                        <button
+                            type="button"
+                            disabled={disabled}
+                            onClick={() => editor.chain().focus().toggleUnderline().run()}
+                            className={btn(editor.isActive('underline'), disabled)}
+                            title={t(
+                                'instructorDashboard.courseBuilder.articleEditor.toolbar.underline'
+                            )}
+                        >
+                            <FaUnderline />
+                        </button>
+                    </div>
+
+                    {/* Blocks */}
+                    <div className={group}>
+                        <button
+                            type="button"
+                            disabled={disabled}
+                            onClick={() => editor.chain().focus().toggleBulletList().run()}
+                            className={btn(editor.isActive('bulletList'), disabled)}
+                            title={t(
+                                'instructorDashboard.courseBuilder.articleEditor.toolbar.bulletedList'
+                            )}
+                        >
+                            <FaListUl />
+                        </button>
+                        <button
+                            type="button"
+                            disabled={disabled}
+                            onClick={() => editor.chain().focus().toggleOrderedList().run()}
+                            className={btn(editor.isActive('orderedList'), disabled)}
+                            title={t(
+                                'instructorDashboard.courseBuilder.articleEditor.toolbar.numberedList'
+                            )}
+                        >
+                            <FaListOl />
+                        </button>
+                        <button
+                            type="button"
+                            disabled={disabled}
+                            onClick={() => editor.chain().focus().toggleBlockquote().run()}
+                            className={btn(editor.isActive('blockquote'), disabled)}
+                            title={t(
+                                'instructorDashboard.courseBuilder.articleEditor.toolbar.quote'
+                            )}
+                        >
+                            <FaQuoteLeft />
+                        </button>
+                        <button
+                            type="button"
+                            disabled={disabled}
+                            onClick={() => editor.chain().focus().toggleCode().run()}
+                            className={btn(editor.isActive('code'), disabled)}
+                            title={t(
+                                'instructorDashboard.courseBuilder.articleEditor.toolbar.inlineCode'
+                            )}
+                        >
+                            <FaCode />
+                        </button>
+                    </div>
+
+                    {/* Links */}
+                    <div className={group}>
+                        <button
+                            type="button"
+                            disabled={disabled}
+                            onClick={handleLink}
+                            className={btn(editor.isActive('link'), disabled)}
+                            title={t(
+                                'instructorDashboard.courseBuilder.articleEditor.toolbar.insertLink'
+                            )}
+                        >
+                            <FaLink />
+                        </button>
+                        <button
+                            type="button"
+                            disabled={disabled || !editor.isActive('link')}
+                            onClick={() => editor.chain().focus().unsetLink().run()}
+                            className={btn(false, disabled || !editor.isActive('link'))}
+                            title={t(
+                                'instructorDashboard.courseBuilder.articleEditor.toolbar.removeLink'
+                            )}
+                        >
+                            <FaUnlink />
+                        </button>
+                    </div>
+
+                    {/* History + Clear */}
+                    <div className={group}>
+                        <button
+                            type="button"
+                            disabled={disabled || !canUndo}
+                            onClick={() => editor.chain().focus().undo().run()}
+                            className={btn(false, disabled || !canUndo)}
+                            title={t(
+                                'instructorDashboard.courseBuilder.articleEditor.toolbar.undo'
+                            )}
+                        >
+                            <FaUndo />
+                        </button>
+                        <button
+                            type="button"
+                            disabled={disabled || !canRedo}
+                            onClick={() => editor.chain().focus().redo().run()}
+                            className={btn(false, disabled || !canRedo)}
+                            title={t(
+                                'instructorDashboard.courseBuilder.articleEditor.toolbar.redo'
+                            )}
+                        >
+                            <FaRedo />
+                        </button>
+                        <button
+                            type="button"
+                            disabled={disabled}
+                            onClick={() =>
+                                editor.chain().focus().clearNodes().unsetAllMarks().run()
+                            }
+                            className={btn(false, disabled)}
+                            title={t(
+                                'instructorDashboard.courseBuilder.articleEditor.toolbar.clearFormat'
+                            )}
+                        >
+                            <FaEraser />
+                        </button>
+                    </div>
+
                 </div>
 
                 <p className="mt-2 text-[11px] text-slate-500 dark:text-gray-400">
@@ -488,31 +314,17 @@ const ArticleEditor = ({
                 </p>
             </div>
 
-            <div className="relative p-3">
-                {showPlaceholder && (
-                    <span className="absolute top-6 left-6 text-slate-400 dark:text-gray-500 pointer-events-none select-none">
-                        {editorPlaceholder}
-                    </span>
-                )}
-
-                <div
-                    ref={editorRef}
-                    className={`article-editor-content min-h-[260px] rounded-lg border border-slate-200 dark:border-gray-600 bg-white dark:bg-gray-800 p-4 text-[15px] leading-7 outline-none transition focus:border-edubot-orange focus:ring-2 focus:ring-edubot-orange/20 text-gray-900 dark:text-white ${disabled ? 'opacity-60 cursor-not-allowed bg-slate-50 dark:bg-gray-700' : 'cursor-text'
-                        }`}
-                    contentEditable={!disabled}
-                    suppressContentEditableWarning
-                    onInput={emitChange}
-                    onBlur={emitChange}
-                    onKeyUp={refreshActiveFormats}
-                    onMouseUp={refreshActiveFormats}
-                    onKeyDown={handleKeyDown}
-                    onPaste={handlePaste}
-                    role="textbox"
-                    aria-multiline="true"
+            {/* Editor content area */}
+            <div className="p-3">
+                <EditorContent
+                    editor={editor}
+                    className={`article-editor-content rounded-lg border border-slate-200 dark:border-gray-600 bg-white dark:bg-gray-800 p-4 text-[15px] leading-7 text-gray-900 dark:text-white focus-within:border-edubot-orange focus-within:ring-2 focus-within:ring-edubot-orange/20 transition ${
+                        disabled ? 'opacity-60 cursor-not-allowed' : ''
+                    }`}
                 />
             </div>
         </div>
-    );
-};
+    )
+}
 
-export default ArticleEditor;
+export default ArticleEditor

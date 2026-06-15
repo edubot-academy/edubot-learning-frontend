@@ -90,6 +90,7 @@ export const courses = {
             yourAnswer: "Your answer",
             skipped: "Skipped",
             correctAnswer: "Correct answer",
+            explanation: "Explanation",
             skip: "Skip",
             submit: "Finish",
             next: "Next",

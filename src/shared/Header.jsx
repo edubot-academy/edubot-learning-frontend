@@ -311,22 +311,29 @@ const Header = () => {
                                             {searchError}
                                         </div>
                                     ) : results.length > 0 ? (
-                                        results.map((course) => (
+                                        results.map((item) => (
                                             <button
-                                                key={course.id}
+                                                key={item.type === 'external' ? `ext-${item.slug}` : item.id}
                                                 onClick={() => {
-                                                    navigate(`/courses/${course.id}`);
+                                                    navigate(item.type === 'external' ? `/resources/${item.slug}` : `/courses/${item.id}`);
                                                     setShowDropdown(false);
                                                     setSearch('');
                                                 }}
                                                 className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 border-b border-gray-200 dark:border-gray-700 last:border-b-0"
                                             >
-                                                <div className="font-semibold text-sm text-gray-900 dark:text-white">
-                                                    {course.title}
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-semibold text-sm text-gray-900 dark:text-white">
+                                                        {item.title}
+                                                    </span>
+                                                    {item.type === 'external' && (
+                                                        <span className="shrink-0 text-[10px] bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 px-1.5 py-0.5 rounded">
+                                                            {item.provider}
+                                                        </span>
+                                                    )}
                                                 </div>
-                                                {course.description && (
+                                                {item.description && (
                                                     <div className="text-xs text-gray-500 dark:text-gray-300 mt-1 line-clamp-1">
-                                                        {course.description}
+                                                        {item.description}
                                                     </div>
                                                 )}
                                             </button>
@@ -620,23 +627,30 @@ const Header = () => {
                                         </div>
                                     ) : results.length > 0 ? (
                                         <div className="bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 rounded max-h-64 overflow-y-auto">
-                                            {results.map((course) => (
+                                            {results.map((item) => (
                                                 <button
-                                                    key={course.id}
+                                                    key={item.type === 'external' ? `ext-${item.slug}` : item.id}
                                                     onClick={() => {
-                                                        navigate(`/courses/${course.id}`);
+                                                        navigate(item.type === 'external' ? `/resources/${item.slug}` : `/courses/${item.id}`);
                                                         setShowDropdown(false);
                                                         setSearch('');
                                                         setSearchOpen(false);
                                                     }}
                                                     className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-b-0"
                                                 >
-                                                    <div className="font-semibold text-sm text-gray-900 dark:text-white">
-                                                        {course.title}
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-semibold text-sm text-gray-900 dark:text-white">
+                                                            {item.title}
+                                                        </span>
+                                                        {item.type === 'external' && (
+                                                            <span className="shrink-0 text-[10px] bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 px-1.5 py-0.5 rounded">
+                                                                {item.provider}
+                                                            </span>
+                                                        )}
                                                     </div>
-                                                    {course.description && (
+                                                    {item.description && (
                                                         <div className="text-xs text-gray-500 dark:text-gray-300 mt-1 line-clamp-1">
-                                                            {course.description}
+                                                            {item.description}
                                                         </div>
                                                     )}
                                                 </button>

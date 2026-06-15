@@ -727,13 +727,19 @@ export const instructor = {
                     supportedFormats: "JSON, markdown code fence, акылдуу тырмакча, ашыкча үтүр жана жөнөкөй суроо/вариант тексти колдоого алынат.",
                     success: "Квиз коюлган мазмундан толтурулду.",
                     errorInvalidInput: "Коюлган мазмунда жарактуу квиз түзүмү жок."
-                }
+                },
+                richTextHint: "Форматтоо үчүн текстти тандаңыз: калың, курсив же код",
+                explanation: {
+                    label: "Түшүндүрмө",
+                    hint: "(студент жооп бергенден кийин көрүнөт)",
+                    placeholder: "Туура жооп эмне үчүн туура экенин түшүндүрүңүз…",
+                },
             },
             articleEditor: {
                 placeholder: "Макаланын текстин бул жерге жазыңыз...",
                 linkUrlPrompt: "Шилтемени жазыңыз (https://...)",
                 linkTextPrompt: "Шилтеменин тексти",
-                keyboardHint: "Кеңеш: Ctrl/Cmd + B калың, Ctrl/Cmd + I курсив. Код үчүн </> баскычы же ` баскычы колдонулат.",
+                keyboardHint: "Кеңеш: Ctrl/Cmd + B — калың, Ctrl/Cmd + I — курсив. Google Docs, Word же веб-баракчалардан чаптаганда форматтоо автоматтык сакталат.",
                 toolbar: {
                     bold: "Калың",
                     italic: "Курсив",

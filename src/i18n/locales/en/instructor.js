@@ -727,13 +727,19 @@ export const instructor = {
                     supportedFormats: "Supports JSON, markdown code fences, smart quotes, trailing commas, and plain question/option text.",
                     success: "Quiz filled from pasted content.",
                     errorInvalidInput: "The pasted content does not contain a valid quiz structure."
-                }
+                },
+                richTextHint: "Select text to format as bold, italic, or code",
+                explanation: {
+                    label: "Explanation",
+                    hint: "(shown after student answers)",
+                    placeholder: "Explain why the correct answer is right…",
+                },
             },
             articleEditor: {
                 placeholder: "Write the article text here...",
                 linkUrlPrompt: "Enter the link (https://...)",
                 linkTextPrompt: "Link text",
-                keyboardHint: "Tip: Ctrl/Cmd + B for bold, Ctrl/Cmd + I for italic. Use the </> button or the ` key for code.",
+                keyboardHint: "Tip: Ctrl/Cmd + B for bold, Ctrl/Cmd + I for italic. Paste from Google Docs, Word, or web pages — formatting is preserved automatically.",
                 toolbar: {
                     bold: "Bold",
                     italic: "Italic",

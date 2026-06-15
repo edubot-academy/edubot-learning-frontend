@@ -1,9 +1,11 @@
-import InlineRichText from '@shared/ui/InlineRichText';
-import { createEmptyQuestion, createEmptyQuiz, cloneQuiz, parseImportedQuiz } from '@utils/quizUtils';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
+import { FiTrash2, FiChevronUp, FiChevronDown, FiPlus } from 'react-icons/fi';
+import { createEmptyQuestion, createEmptyQuiz, cloneQuiz, parseImportedQuiz } from '@utils/quizUtils';
 import AiGenerationDrawer from '../../aiLms/components/AiGenerationDrawer';
+import QuizRichInput from './QuizRichInput';
+import InlineRichText from '@shared/ui/InlineRichText';
 
 const LessonQuizEditor = ({
     quiz,
@@ -30,13 +32,7 @@ const LessonQuizEditor = ({
         onChange?.(cloned);
     };
 
-    const appendFormattingToken = (value, type) => {
-        if (type === 'bold') {
-            return `${value || ''}${value ? ' ' : ''}**${t('instructorDashboard.courseBuilder.quiz.boldInsertSample')}**`;
-        }
-
-        return `${value || ''}${value ? ' ' : ''}\`${t('instructorDashboard.courseBuilder.quiz.codeInsertSample')}\``;
-    };
+    // ── Settings ──────────────────────────────────────────────────────────────
 
     const handlePassingScoreChange = (value) => {
         const numeric = Number(value);
@@ -48,19 +44,42 @@ const LessonQuizEditor = ({
     const handleTimeLimitChange = (minutesValue) => {
         updateQuiz((q) => {
             const numeric = Number(minutesValue);
-            if (!Number.isFinite(numeric) || numeric <= 0) {
-                q.timeLimitSeconds = null;
-            } else {
-                q.timeLimitSeconds = Math.round(numeric * 60);
-            }
+            q.timeLimitSeconds = (Number.isFinite(numeric) && numeric > 0)
+                ? Math.round(numeric * 60)
+                : null;
         });
     };
 
+    // ── Question mutations ─────────────────────────────────────────────────────
+
     const handleQuestionPromptChange = (index, value) => {
+        updateQuiz((q) => { q.questions[index].prompt = value; });
+    };
+
+    const handleExplanationChange = (index, value) => {
+        updateQuiz((q) => { q.questions[index].explanation = value; });
+    };
+
+    const addQuestion = () => {
+        updateQuiz((q) => { q.questions.push(createEmptyQuestion()); });
+    };
+
+    const removeQuestion = (index) => {
         updateQuiz((q) => {
-            q.questions[index].prompt = value;
+            if (q.questions.length <= 1) return;
+            q.questions.splice(index, 1);
         });
     };
+
+    const moveQuestion = (index, direction) => {
+        updateQuiz((q) => {
+            const target = index + direction;
+            if (target < 0 || target >= q.questions.length) return;
+            [q.questions[index], q.questions[target]] = [q.questions[target], q.questions[index]];
+        });
+    };
+
+    // ── Option mutations ───────────────────────────────────────────────────────
 
     const handleOptionTextChange = (questionIdx, optionIdx, value) => {
         updateQuiz((q) => {
@@ -74,19 +93,6 @@ const LessonQuizEditor = ({
                 ...opt,
                 isCorrect: idx === optionIdx,
             }));
-        });
-    };
-
-    const addQuestion = () => {
-        updateQuiz((q) => {
-            q.questions.push(createEmptyQuestion());
-        });
-    };
-
-    const removeQuestion = (index) => {
-        updateQuiz((q) => {
-            if (q.questions.length <= 1) return;
-            q.questions.splice(index, 1);
         });
     };
 
@@ -104,23 +110,7 @@ const LessonQuizEditor = ({
         });
     };
 
-    const addPromptFormatting = (questionIdx, type) => {
-        updateQuiz((q) => {
-            q.questions[questionIdx].prompt = appendFormattingToken(
-                q.questions[questionIdx].prompt,
-                type
-            );
-        });
-    };
-
-    const addOptionFormatting = (questionIdx, optionIdx, type) => {
-        updateQuiz((q) => {
-            q.questions[questionIdx].options[optionIdx].text = appendFormattingToken(
-                q.questions[questionIdx].options[optionIdx].text,
-                type
-            );
-        });
-    };
+    // ── Paste import ───────────────────────────────────────────────────────────
 
     const handlePasteFill = () => {
         setPasteError('');
@@ -129,24 +119,32 @@ const LessonQuizEditor = ({
             setPasteError(t('instructorDashboard.courseBuilder.quiz.paste.errorInvalidInput'));
             return;
         }
-
         onChange?.(nextQuiz);
         setPasteText('');
         toast.success(t('instructorDashboard.courseBuilder.quiz.paste.success'));
     };
 
+    // ── Shared classes ─────────────────────────────────────────────────────────
+
+    const inputClass =
+        'w-full border rounded-lg px-3 py-2 bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-edubot-orange/40 focus:border-edubot-orange transition text-sm';
+
     return (
-        <div className={`space-y-4 ${disabled ? 'opacity-70 pointer-events-none' : ''}`}>
+        <div className={`space-y-5 ${disabled ? 'opacity-70 pointer-events-none' : ''}`}>
+
+            {/* ── Settings row ──────────────────────────────────────────────── */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label className="block text-sm font-medium mb-1">{t('instructorDashboard.courseBuilder.quiz.passingScore')}</label>
+                    <label className="block text-sm font-medium mb-1">
+                        {t('instructorDashboard.courseBuilder.quiz.passingScore')}
+                    </label>
                     <input
                         type="number"
                         min="0"
                         max="100"
                         value={safeQuiz.passingScore ?? 70}
                         onChange={(e) => handlePassingScoreChange(e.target.value)}
-                        className="w-full border rounded p-2 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                        className={inputClass}
                         disabled={disabled}
                     />
                 </div>
@@ -157,61 +155,35 @@ const LessonQuizEditor = ({
                     <input
                         type="number"
                         min="0"
-                        value={
-                            safeQuiz.timeLimitSeconds
-                                ? Math.round(safeQuiz.timeLimitSeconds / 60)
-                                : ''
-                        }
+                        value={safeQuiz.timeLimitSeconds ? Math.round(safeQuiz.timeLimitSeconds / 60) : ''}
                         onChange={(e) => handleTimeLimitChange(e.target.value)}
-                        className="w-full border rounded p-2 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                        className={inputClass}
                         disabled={disabled}
                     />
                 </div>
             </div>
 
-            <p className="text-xs text-slate-500">
-                {t('instructorDashboard.courseBuilder.quiz.formattingHelp')}{' '}
-                <code>**{t('instructorDashboard.courseBuilder.quiz.boldSample')}**</code>{' '}
-                {t('instructorDashboard.courseBuilder.quiz.and')} <code>`{t('instructorDashboard.courseBuilder.quiz.codeSample')}`</code>.
-            </p>
-
-            <section className="rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-900/70 dark:bg-amber-950/20">
-                <div className="border-b border-amber-200 px-4 py-3 dark:border-amber-900/70">
-                    <div className="flex flex-wrap gap-2">
+            {/* ── Fill mode tabs ────────────────────────────────────────────── */}
+            <section className="rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-900/70 dark:bg-amber-950/20">
+                <div className="border-b border-amber-200 dark:border-amber-900/70 px-4 py-3 flex flex-wrap gap-2">
+                    {['manual', 'paste'].map((mode) => (
                         <button
+                            key={mode}
                             type="button"
-                            onClick={() => {
-                                setFillMode('manual');
-                                setPasteError('');
-                            }}
+                            onClick={() => { setFillMode(mode); setPasteError(''); }}
+                            disabled={disabled}
                             className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-                                fillMode === 'manual'
+                                fillMode === mode
                                     ? 'bg-amber-600 text-white'
                                     : 'text-amber-800 hover:bg-amber-100 dark:text-amber-200 dark:hover:bg-amber-900/40'
                             }`}
-                            disabled={disabled}
                         >
-                            {t('instructorDashboard.courseBuilder.quiz.fillMode.manual')}
+                            {t(`instructorDashboard.courseBuilder.quiz.fillMode.${mode}`)}
                         </button>
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setFillMode('paste');
-                                setPasteError('');
-                            }}
-                            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-                                fillMode === 'paste'
-                                    ? 'bg-amber-600 text-white'
-                                    : 'text-amber-800 hover:bg-amber-100 dark:text-amber-200 dark:hover:bg-amber-900/40'
-                            }`}
-                            disabled={disabled}
-                        >
-                            {t('instructorDashboard.courseBuilder.quiz.fillMode.paste')}
-                        </button>
-                    </div>
+                    ))}
                 </div>
 
-                {fillMode === 'paste' ? (
+                {fillMode === 'paste' && (
                     <div className="p-4">
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <div>
@@ -231,18 +203,13 @@ const LessonQuizEditor = ({
                                 {t('instructorDashboard.courseBuilder.quiz.paste.fill')}
                             </button>
                         </div>
-
                         <textarea
-                            className="mt-3 min-h-36 w-full rounded border border-amber-200 bg-white p-3 font-mono text-sm dark:border-amber-900 dark:bg-slate-900 dark:text-white"
+                            className="mt-3 min-h-36 w-full rounded-lg border border-amber-200 bg-white p-3 font-mono text-sm dark:border-amber-900 dark:bg-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-400"
                             value={pasteText}
-                            onChange={(e) => {
-                                setPasteText(e.target.value);
-                                setPasteError('');
-                            }}
+                            onChange={(e) => { setPasteText(e.target.value); setPasteError(''); }}
                             placeholder={t('instructorDashboard.courseBuilder.quiz.paste.placeholder')}
                             disabled={disabled}
                         />
-
                         {pasteError ? (
                             <p className="mt-2 text-xs text-rose-600">{pasteError}</p>
                         ) : (
@@ -251,19 +218,16 @@ const LessonQuizEditor = ({
                             </p>
                         )}
                     </div>
-                ) : null}
+                )}
             </section>
 
-            {aiDraftEnabled ? (
-                <section className="rounded-lg border border-sky-200 bg-sky-50 p-4 text-sm dark:border-sky-900 dark:bg-sky-950/30">
+            {/* ── AI draft ──────────────────────────────────────────────────── */}
+            {aiDraftEnabled && (
+                <section className="rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm dark:border-sky-900 dark:bg-sky-950/30">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div>
-                            <p className="font-semibold text-slate-900 dark:text-white">
-                                {t('ai.quizDraft')}
-                            </p>
-                            <p className="text-slate-600 dark:text-slate-300">
-                                {t('ai.quizDraftHelp')}
-                            </p>
+                            <p className="font-semibold text-slate-900 dark:text-white">{t('ai.quizDraft')}</p>
+                            <p className="text-slate-600 dark:text-slate-300">{t('ai.quizDraftHelp')}</p>
                         </div>
                         <button
                             type="button"
@@ -283,30 +247,15 @@ const LessonQuizEditor = ({
                             <div className="flex flex-wrap justify-end gap-2">
                                 {aiDraft ? (
                                     <>
-                                        <button
-                                            type="button"
-                                            className="dashboard-button-secondary"
-                                            onClick={onCancelAiDraft}
-                                            disabled={disabled}
-                                        >
+                                        <button type="button" className="dashboard-button-secondary" onClick={onCancelAiDraft} disabled={disabled}>
                                             {t('ai.cancelDraft')}
                                         </button>
-                                        <button
-                                            type="button"
-                                            className="dashboard-button-primary"
-                                            onClick={onUseAiDraft}
-                                            disabled={disabled}
-                                        >
+                                        <button type="button" className="dashboard-button-primary" onClick={onUseAiDraft} disabled={disabled}>
                                             {t('ai.useDraft')}
                                         </button>
                                     </>
                                 ) : (
-                                    <button
-                                        type="button"
-                                        className="dashboard-button-primary disabled:opacity-60"
-                                        onClick={onRequestAiDraft}
-                                        disabled={disabled || aiDrafting}
-                                    >
+                                    <button type="button" className="dashboard-button-primary disabled:opacity-60" onClick={onRequestAiDraft} disabled={disabled || aiDrafting}>
                                         {aiDrafting ? t('ai.generating') : t('ai.suggestQuiz')}
                                     </button>
                                 )}
@@ -315,36 +264,28 @@ const LessonQuizEditor = ({
                     >
                         <div className="space-y-4">
                             <div className="grid gap-2 text-xs text-slate-600 dark:text-slate-300 sm:grid-cols-3">
-                                <div className="rounded-2xl border border-sky-100 bg-sky-50 px-3 py-2 dark:border-sky-900 dark:bg-sky-950/30">
-                                    <span className="font-semibold text-slate-900 dark:text-white">{t('ai.quizDraftFlow.createsLabel')}</span>
-                                    <span className="mt-1 block">{t('ai.quizDraftFlow.creates')}</span>
-                                </div>
-                                <div className="rounded-2xl border border-sky-100 bg-sky-50 px-3 py-2 dark:border-sky-900 dark:bg-sky-950/30">
-                                    <span className="font-semibold text-slate-900 dark:text-white">{t('ai.quizDraftFlow.appliesLabel')}</span>
-                                    <span className="mt-1 block">{t('ai.quizDraftFlow.applies')}</span>
-                                </div>
-                                <div className="rounded-2xl border border-sky-100 bg-sky-50 px-3 py-2 dark:border-sky-900 dark:bg-sky-950/30">
-                                    <span className="font-semibold text-slate-900 dark:text-white">{t('ai.quizDraftFlow.nextLabel')}</span>
-                                    <span className="mt-1 block">{t('ai.quizDraftFlow.next')}</span>
-                                </div>
+                                {['creates', 'applies', 'next'].map((key) => (
+                                    <div key={key} className="rounded-2xl border border-sky-100 bg-sky-50 px-3 py-2 dark:border-sky-900 dark:bg-sky-950/30">
+                                        <span className="font-semibold text-slate-900 dark:text-white">{t(`ai.quizDraftFlow.${key}Label`)}</span>
+                                        <span className="mt-1 block">{t(`ai.quizDraftFlow.${key}`)}</span>
+                                    </div>
+                                ))}
                             </div>
-                            {aiDraft ? (
+                            {aiDraft && (
                                 <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
                                     <p className="font-semibold text-slate-900 dark:text-white">{aiDraft.title}</p>
-                                    {aiDraft.description ? (
-                                        <p className="mt-1 text-slate-600 dark:text-slate-300">{aiDraft.description}</p>
-                                    ) : null}
+                                    {aiDraft.description && <p className="mt-1 text-slate-600 dark:text-slate-300">{aiDraft.description}</p>}
                                     <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                                         {t('ai.questionCount', { count: aiDraft.questions?.length ?? 0 })}
                                     </p>
                                     <div className="mt-3 space-y-3">
-                                        {(aiDraft.questions || []).map((question, questionIndex) => (
-                                            <div key={`${question.prompt || 'question'}-${questionIndex}`} className="rounded-2xl border border-sky-100 bg-sky-50/60 p-3 dark:border-sky-900 dark:bg-sky-950/30">
-                                                <p className="text-sm font-semibold text-slate-900 dark:text-white">{questionIndex + 1}. {question.prompt}</p>
+                                        {(aiDraft.questions || []).map((question, qi) => (
+                                            <div key={`${question.prompt}-${qi}`} className="rounded-2xl border border-sky-100 bg-sky-50/60 p-3 dark:border-sky-900 dark:bg-sky-950/30">
+                                                <p className="text-sm font-semibold text-slate-900 dark:text-white">{qi + 1}. {question.prompt}</p>
                                                 <ul className="mt-2 space-y-1 text-xs text-slate-600 dark:text-slate-300">
-                                                    {(question.options || []).map((option, optionIndex) => (
-                                                        <li key={`${option.text || 'option'}-${optionIndex}`} className={option.isCorrect ? 'font-semibold text-emerald-700 dark:text-emerald-300' : ''}>
-                                                            {option.isCorrect ? `${t('ai.quizDraftCorrect')} ` : ''}{option.text}
+                                                    {(question.options || []).map((opt, oi) => (
+                                                        <li key={`${opt.text}-${oi}`} className={opt.isCorrect ? 'font-semibold text-emerald-700 dark:text-emerald-300' : ''}>
+                                                            {opt.isCorrect ? `${t('ai.quizDraftCorrect')} ` : ''}{opt.text}
                                                         </li>
                                                     ))}
                                                 </ul>
@@ -352,166 +293,153 @@ const LessonQuizEditor = ({
                                         ))}
                                     </div>
                                 </div>
-                            ) : null}
-                            {aiDraftError ? <p className="text-sm text-rose-600">{aiDraftError}</p> : null}
+                            )}
+                            {aiDraftError && <p className="text-sm text-rose-600">{aiDraftError}</p>}
                         </div>
                     </AiGenerationDrawer>
                 </section>
-            ) : null}
+            )}
 
-            <div className="space-y-6">
+            {/* ── Questions ─────────────────────────────────────────────────── */}
+            <div className="space-y-5">
                 {safeQuiz.questions.map((question, qIdx) => (
                     <div
                         key={qIdx}
-                        className="border border-edubot-teal rounded p-4 bg-white dark:bg-gray-800 space-y-3"
+                        className="rounded-xl border border-edubot-teal/40 bg-white dark:bg-gray-800 shadow-sm"
                     >
-                        <div className="flex justify-between items-center gap-3">
-                            <h4 className="font-semibold">{t('instructorDashboard.courseBuilder.quiz.question', { number: qIdx + 1 })}</h4>
-                            <button
-                                type="button"
-                                className="text-sm text-red-600 hover:underline disabled:text-gray-400"
-                                onClick={() => removeQuestion(qIdx)}
-                                disabled={disabled || safeQuiz.questions.length <= 1}
-                            >
-                                {t('instructorDashboard.courseBuilder.actions.delete')}
-                            </button>
-                        </div>
-
-                        <div className="space-y-2">
-                            <textarea
-                                className="w-full border rounded p-2 min-h-20 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                placeholder={t('instructorDashboard.courseBuilder.quiz.questionPlaceholder')}
-                                value={question.prompt}
-                                onChange={(e) => handleQuestionPromptChange(qIdx, e.target.value)}
-                                disabled={disabled}
-                            />
-
-                            <div className="flex items-center gap-2">
+                        {/* Question header */}
+                        <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                            <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                                {t('instructorDashboard.courseBuilder.quiz.question', { number: qIdx + 1 })}
+                            </span>
+                            <div className="flex items-center gap-1">
                                 <button
                                     type="button"
-                                    className="px-2 py-1 text-xs border border-slate-300 rounded hover:bg-slate-50 dark:border-gray-600 dark:hover:bg-gray-700"
-                                    onClick={() => addPromptFormatting(qIdx, 'bold')}
-                                    disabled={disabled}
+                                    onClick={() => moveQuestion(qIdx, -1)}
+                                    disabled={disabled || qIdx === 0}
+                                    className="h-7 w-7 rounded flex items-center justify-center text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 disabled:opacity-30 transition-colors"
+                                    title="Move up"
                                 >
-                                        + **{t('instructorDashboard.courseBuilder.quiz.boldSample')}**
+                                    <FiChevronUp size={16} />
                                 </button>
                                 <button
                                     type="button"
-                                    className="px-2 py-1 text-xs border border-slate-300 rounded hover:bg-slate-50 dark:border-gray-600 dark:hover:bg-gray-700"
-                                    onClick={() => addPromptFormatting(qIdx, 'code')}
-                                    disabled={disabled}
+                                    onClick={() => moveQuestion(qIdx, 1)}
+                                    disabled={disabled || qIdx === safeQuiz.questions.length - 1}
+                                    className="h-7 w-7 rounded flex items-center justify-center text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 disabled:opacity-30 transition-colors"
+                                    title="Move down"
                                 >
-                                        + `{t('instructorDashboard.courseBuilder.quiz.codeSample')}`
+                                    <FiChevronDown size={16} />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => removeQuestion(qIdx)}
+                                    disabled={disabled || safeQuiz.questions.length <= 1}
+                                    className="h-7 w-7 rounded flex items-center justify-center text-red-400 hover:text-red-600 disabled:opacity-30 transition-colors"
+                                    title={t('instructorDashboard.courseBuilder.actions.delete')}
+                                >
+                                    <FiTrash2 size={14} />
                                 </button>
                             </div>
-
-                            {question.prompt?.trim() && (
-                                <div className="text-sm rounded border border-slate-200 bg-slate-50 p-2 dark:border-gray-600 dark:bg-gray-700">
-                                    <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-gray-400 mb-1">
-                                        {t('instructorDashboard.courseBuilder.quiz.preview')}
-                                    </p>
-                                    <InlineRichText text={question.prompt} />
-                                </div>
-                            )}
                         </div>
 
-                        <div className="space-y-3">
-                            {question.options.map((option, oIdx) => (
-                                <label
-                                    key={oIdx}
-                                    className={`flex items-start gap-3 rounded border p-2 transition ${option.isCorrect
-                                        ? 'bg-emerald-50 border-emerald-400 ring-1 ring-emerald-200 dark:bg-emerald-900/20'
-                                        : 'bg-gray-50 border-gray-200 dark:bg-gray-700 dark:border-gray-600'
-                                        } ${disabled ? '' : 'cursor-pointer'}`}
-                                >
-                                    <input
-                                        type="radio"
-                                        name={`question-${qIdx}`}
-                                        checked={option.isCorrect}
-                                        onChange={() => handleCorrectOptionChange(qIdx, oIdx)}
-                                        disabled={disabled}
-                                        className="mt-2"
-                                    />
-
-                                    <div className="flex-1 space-y-2" onClick={(e) => e.stopPropagation()}>
-                                        <input
-                                            className="w-full border rounded p-2 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                            placeholder={t('instructorDashboard.courseBuilder.quiz.option', {
-                                                number: oIdx + 1,
-                                            })}
-                                            value={option.text}
-                                            onChange={(e) =>
-                                                handleOptionTextChange(qIdx, oIdx, e.target.value)
-                                            }
-                                            disabled={disabled}
-                                        />
-
-                                        <div className="flex items-center gap-2">
-                                            <button
-                                                type="button"
-                                                className="px-2 py-1 text-xs border border-slate-300 rounded hover:bg-slate-50 dark:border-gray-600 dark:hover:bg-gray-700"
-                                                onClick={(e) => {
-                                                    e.preventDefault();
-                                                    addOptionFormatting(qIdx, oIdx, 'bold');
-                                                }}
-                                                disabled={disabled}
-                                            >
-                                                + **{t('instructorDashboard.courseBuilder.quiz.boldSample')}**
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className="px-2 py-1 text-xs border border-slate-300 rounded hover:bg-slate-50 dark:border-gray-600 dark:hover:bg-gray-700"
-                                                onClick={(e) => {
-                                                    e.preventDefault();
-                                                    addOptionFormatting(qIdx, oIdx, 'code');
-                                                }}
-                                                disabled={disabled}
-                                            >
-                                                + `{t('instructorDashboard.courseBuilder.quiz.codeSample')}`
-                                            </button>
-                                        </div>
-
-                                        {option.text?.trim() && (
-                                            <div className="text-sm rounded border border-slate-200 bg-white p-2 dark:border-gray-600 dark:bg-gray-800">
-                                                <InlineRichText text={option.text} />
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <button
-                                        type="button"
-                                        className="text-xs text-red-600 hover:underline disabled:text-gray-400 mt-2"
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            removeOption(qIdx, oIdx);
-                                        }}
-                                        disabled={disabled || question.options.length <= 2}
-                                    >
-                                        {t('instructorDashboard.courseBuilder.actions.delete')}
-                                    </button>
+                        <div className="p-4 space-y-4">
+                            {/* Question prompt */}
+                            <div>
+                                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">
+                                    {t('instructorDashboard.courseBuilder.quiz.questionPlaceholder')}
                                 </label>
-                            ))}
-                        </div>
+                                <QuizRichInput
+                                    value={question.prompt}
+                                    onChange={(val) => handleQuestionPromptChange(qIdx, val)}
+                                    placeholder={t('instructorDashboard.courseBuilder.quiz.questionPlaceholder')}
+                                    disabled={disabled}
+                                    className="rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2.5 text-sm text-gray-900 dark:text-white focus-within:ring-2 focus-within:ring-edubot-orange/40 focus-within:border-edubot-orange transition"
+                                />
+                                <p className="mt-1 text-[11px] text-gray-400 dark:text-gray-500">
+                                    {t('instructorDashboard.courseBuilder.quiz.richTextHint')}
+                                </p>
+                            </div>
 
-                        <button
-                            type="button"
-                            className="text-sm text-edubot-orange hover:underline"
-                            onClick={() => addOption(qIdx)}
-                            disabled={disabled || question.options.length >= 6}
-                        >
-                            {t('instructorDashboard.courseBuilder.quiz.addOption')}
-                        </button>
+                            {/* Options */}
+                            <div className="space-y-2">
+                                {question.options.map((option, oIdx) => (
+                                    <div
+                                        key={oIdx}
+                                        className={`flex items-start gap-3 rounded-lg border p-2.5 transition ${
+                                            option.isCorrect
+                                                ? 'border-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 ring-1 ring-emerald-200 dark:ring-emerald-800'
+                                                : 'border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50'
+                                        }`}
+                                    >
+                                        <input
+                                            type="radio"
+                                            name={`question-${qIdx}`}
+                                            checked={option.isCorrect}
+                                            onChange={() => handleCorrectOptionChange(qIdx, oIdx)}
+                                            disabled={disabled}
+                                            className="mt-2.5 accent-emerald-500 cursor-pointer"
+                                        />
+                                        <div className="flex-1 min-w-0" onClick={(e) => e.stopPropagation()}>
+                                            <QuizRichInput
+                                                value={option.text}
+                                                onChange={(val) => handleOptionTextChange(qIdx, oIdx, val)}
+                                                placeholder={t('instructorDashboard.courseBuilder.quiz.option', { number: oIdx + 1 })}
+                                                disabled={disabled}
+                                                className="text-sm text-gray-900 dark:text-white"
+                                            />
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={(e) => { e.stopPropagation(); removeOption(qIdx, oIdx); }}
+                                            disabled={disabled || question.options.length <= 2}
+                                            className="mt-1.5 flex-shrink-0 text-gray-300 dark:text-gray-600 hover:text-red-500 disabled:opacity-0 transition-colors"
+                                            title={t('instructorDashboard.courseBuilder.actions.delete')}
+                                        >
+                                            <FiTrash2 size={13} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {question.options.length < 6 && (
+                                <button
+                                    type="button"
+                                    onClick={() => addOption(qIdx)}
+                                    disabled={disabled}
+                                    className="flex items-center gap-1.5 text-sm text-edubot-orange hover:text-orange-600 transition-colors"
+                                >
+                                    <FiPlus size={14} />
+                                    {t('instructorDashboard.courseBuilder.quiz.addOption')}
+                                </button>
+                            )}
+
+                            {/* Explanation */}
+                            <div>
+                                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">
+                                    {t('instructorDashboard.courseBuilder.quiz.explanation.label')}{' '}
+                                    <span className="font-normal">{t('instructorDashboard.courseBuilder.quiz.explanation.hint')}</span>
+                                </label>
+                                <QuizRichInput
+                                    value={question.explanation ?? ''}
+                                    onChange={(val) => handleExplanationChange(qIdx, val)}
+                                    placeholder={t('instructorDashboard.courseBuilder.quiz.explanation.placeholder')}
+                                    disabled={disabled}
+                                    className="rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2.5 text-sm text-gray-900 dark:text-white focus-within:ring-2 focus-within:ring-edubot-orange/40 focus-within:border-edubot-orange transition"
+                                />
+                            </div>
+                        </div>
                     </div>
                 ))}
             </div>
 
             <button
                 type="button"
-                className="text-sm text-edubot-orange hover:underline"
                 onClick={addQuestion}
                 disabled={disabled}
+                className="flex items-center gap-2 rounded-lg border border-dashed border-edubot-orange/50 px-4 py-2.5 text-sm font-medium text-edubot-orange hover:bg-orange-50 dark:hover:bg-orange-950/20 transition-colors w-full justify-center"
             >
+                <FiPlus size={15} />
                 {t('instructorDashboard.courseBuilder.quiz.addQuestion')}
             </button>
         </div>

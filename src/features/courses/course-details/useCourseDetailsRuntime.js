@@ -978,11 +978,11 @@ export const useCourseDetailsController = ({ courseId, searchParams, user }) => 
                 setResumeVideoTime(0);
             }
 
-            if (isQuiz) {
+            if (isQuiz && !lesson.locked) {
                 await loadQuizForLesson(lesson);
             }
 
-            if (isCode) {
+            if (isCode && !lesson.locked) {
                 await loadChallengeForLesson(lesson);
             }
 

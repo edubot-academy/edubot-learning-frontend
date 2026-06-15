@@ -90,6 +90,7 @@ export const courses = {
             yourAnswer: "Сиздин жооп",
             skipped: "Калтырылды",
             correctAnswer: "Туура жооп",
+            explanation: "Түшүндүрмө",
             skip: "Өткөрүү",
             submit: "Жыйынтыктоо",
             next: "Кийинкиси",

@@ -2,6 +2,31 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.16.9] - 2026-06-15
+
+### Added
+
+- Header search dropdowns (desktop + mobile) now include external resources alongside courses. External resource results navigate to `/resources/:slug` and display an orange provider badge (e.g. "Coursera") next to the title.
+- Quiz editor: migrated question prompt, answer options, and explanation inputs to TipTap v2 rich-text editor with bold, italic, underline, inline code, and link formatting via a bubble menu. Replaced the legacy `contentEditable`/`execCommand` path across `ArticleEditor` and a new `QuizRichInput` component.
+- Quiz paste import: added `explanation` field extraction for all three languages — `Explanation:` (English), `Объяснение:` / `Пояснение:` (Russian), `Түшүндүрмө:` (Kyrgyz) — so pasted quiz blocks with explanations are fully imported.
+- Quiz explanation display: `LessonQuizPlayer` now shows the explanation block (sky-blue card) after the student views their answers, using the localized `courseLearning.quiz.explanation` key.
+- i18n: added `richTextHint`, `explanation.label`, `explanation.hint`, and `explanation.placeholder` keys to the `instructorDashboard.courseBuilder.quiz` namespace in all three locales (en / ky / ru).
+
+### Fixed
+
+- `ArticleEditor`: expanded URL-scheme allow-list to include `mailto:` and `tel:` links (previously only `http/https` were accepted, corrupting other schemes). Switched link insertion to use a structured ProseMirror node instead of an HTML template literal, eliminating an XSS vector via unescaped link text. Fixed external `value` sync to compare sanitized content so spurious `setContent` calls no longer reset cursor position.
+- `QuizRichInput`: added DOMPurify sanitization on every editor `onUpdate` event, restricting output to `p / strong / em / u / code` with no attributes.
+- `LessonQuizPlayer`: fixed an always-true quiz submission guard — the previous check tested `preparedAnswers.length` (always truthy) instead of `preparedAnswers.every(a => a.optionId !== null)`, so skipped questions could be silently submitted.
+- `quizUtils`: moved smart-quote normalization to a second-pass fallback only, preventing it from corrupting valid JSON string values that contain curly quotes.
+- Course learning: `handleLessonClick` in `useCourseDetailsRuntime` now guards `loadQuizForLesson` and `loadChallengeForLesson` with `!lesson.locked`, preventing unnecessary API calls (and a swallowed 403 toast) when an unenrolled student clicks a locked lesson.
+
+### Verification
+
+- `npm test -- --run src/utils/quizUtils.spec.js`
+- `npm run build`
+
+---
+
 ## [1.16.8] - 2026-06-14
 
 ### Added

@@ -93,7 +93,7 @@ const LessonQuizPlayer = ({
         if (!onSubmit) return;
 
         const preparedAnswers = prepareAnswersForSubmission();
-        const allQuestionsCovered = preparedAnswers.length === quiz?.questions?.length;
+        const allQuestionsCovered = preparedAnswers.every((a) => a.optionId !== null);
 
         if (!allQuestionsCovered) {
             toast.error(t('courseLearning.quiz.toasts.allQuestionsRequired'));
@@ -266,6 +266,15 @@ const LessonQuizPlayer = ({
                                                 </ul>
                                             </div>
                                         )}
+
+                                    {question.explanation && (
+                                        <div className="mt-2 rounded-lg border border-sky-200 bg-sky-50 dark:border-sky-800 dark:bg-sky-950/30 px-3 py-2 text-sm text-sky-900 dark:text-sky-200">
+                                            <p className="text-xs font-semibold uppercase tracking-wide text-sky-600 dark:text-sky-400 mb-1">
+                                                {t('courseLearning.quiz.explanation')}
+                                            </p>
+                                            <InlineRichText text={question.explanation} />
+                                        </div>
+                                    )}
                                 </div>
                             )
                         )}

@@ -11,6 +11,7 @@ export const createEmptyOption = (isCorrect = false) => ({
 export const createEmptyQuestion = () => ({
     id: undefined,
     prompt: '',
+    explanation: '',
     options: [createEmptyOption(true), createEmptyOption(false)],
 });
 
@@ -29,10 +30,12 @@ const stripCodeFences = (value) => value
     .trim();
 
 const normalizeJsonLikeString = (value) => stripCodeFences(value)
-    .replace(/[\u201C\u201D]/g, '"')
-    .replace(/[\u2018\u2019]/g, '\'')
     .replace(/,\s*([}\]])/g, '$1')
     .trim();
+
+const normalizeSmartQuotes = (value) => value
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/[\u2018\u2019]/g, "'");
 
 const extractPromptFromLine = (line) => line
     .replace(/^(question|q)\s*\d*\s*[:.)-]?\s*/i, '')
@@ -125,7 +128,8 @@ const parsePlainTextQuiz = (input) => {
         const isQuestionLine = /^(question|q)\s*\d*\s*[:.)-]/i.test(line);
         const isNumberedQuestionLine = isLikelyNumberedQuestionLine(line, currentQuestion);
         const isOptionLine = /^([-*]|\d+\s*[.)-]|[A-Z]\s*[.)-]|\[\s*[xX ]\s*\])/.test(line);
-        const isCorrectHint = /\b(correct answer|answer)\s*[:=-]/i.test(line);
+        const isCorrectHint = /(?:correct answer|answer|туура жооп|правильный ответ|верный ответ|дұрыс жауап)\s*[:=-]/i.test(line);
+        const isExplanationHint = /(?:explanation|түшүндүрмө|объяснение|пояснение|түсіндіру)\s*[:=-]/i.test(line);
 
         if (isQuestionLine || isNumberedQuestionLine || (!currentQuestion && !isOptionLine)) {
             const prompt = extractPromptFromLine(line);
@@ -133,6 +137,7 @@ const parsePlainTextQuiz = (input) => {
             currentQuestion = {
                 id: undefined,
                 prompt,
+                explanation: '',
                 options: [],
             };
             questions.push(currentQuestion);
@@ -140,6 +145,11 @@ const parsePlainTextQuiz = (input) => {
         }
 
         if (!currentQuestion) {
+            return;
+        }
+
+        if (isExplanationHint) {
+            currentQuestion.explanation = line.replace(/^.*?[:=-]\s*/, '').trim();
             return;
         }
 
@@ -185,6 +195,7 @@ const parsePlainTextQuiz = (input) => {
             return {
                 id: undefined,
                 prompt: question.prompt,
+                explanation: question.explanation || '',
                 options,
             };
         })
@@ -301,6 +312,7 @@ const normalizeImportedQuestion = (question) => {
     return {
         id: undefined,
         prompt,
+        explanation: '',
         options: options.map((option) => ({
             id: undefined,
             text: option.text,
@@ -316,7 +328,11 @@ export const parseImportedQuiz = (input) => {
         try {
             return parseImportedQuiz(JSON.parse(normalizedInput));
         } catch {
-            return parsePlainTextQuiz(input);
+            try {
+                return parseImportedQuiz(JSON.parse(normalizeSmartQuotes(normalizedInput)));
+            } catch {
+                return parsePlainTextQuiz(input);
+            }
         }
     }
 
@@ -378,19 +394,20 @@ export const normalizeQuizForApi = (quiz) => {
         .map((question, qIdx) => {
             const options = (question.options || [])
                 .map((option, oIdx) => ({
-                    text: (option.text || '').trim(),
+                    text: option.text || '',
                     isCorrect: Boolean(option.isCorrect),
                     order: oIdx,
                 }))
-                .filter((option) => option.text.length > 0);
+                .filter((option) => stripHtml(option.text).length > 0);
 
             return {
-                prompt: (question.prompt || '').trim(),
+                prompt: question.prompt || '',
+                explanation: question.explanation || '',
                 order: qIdx,
                 options,
             };
         })
-        .filter((q) => q.prompt && q.options.length >= 2);
+        .filter((q) => stripHtml(q.prompt) && q.options.length >= 2);
 
     return {
         passingScore,
@@ -398,6 +415,8 @@ export const normalizeQuizForApi = (quiz) => {
         questions,
     };
 };
+
+const stripHtml = (html = '') => html.replace(/<[^>]*>/g, '').trim();
 
 export const validateQuiz = (quiz) => {
     if (!quiz) {
@@ -409,7 +428,7 @@ export const validateQuiz = (quiz) => {
     }
 
     for (const [index, question] of quiz.questions.entries()) {
-        const prompt = question.prompt?.trim();
+        const prompt = stripHtml(question.prompt);
         if (!prompt) {
             return i18n.t('quizUtils.validation.questionPromptRequired', { number: index + 1 });
         }
@@ -420,7 +439,7 @@ export const validateQuiz = (quiz) => {
         if (!hasCorrect) {
             return i18n.t('quizUtils.validation.questionNeedsCorrectAnswer', { number: index + 1 });
         }
-        const hasEmpty = question.options.some((opt) => !opt.text?.trim());
+        const hasEmpty = question.options.some((opt) => !stripHtml(opt.text));
         if (hasEmpty) {
             return i18n.t('quizUtils.validation.questionOptionsRequired', { number: index + 1 });
         }
@@ -435,6 +454,7 @@ export const mapQuizFromApi = (apiQuiz = {}, includeAnswers = false) => ({
     questions: (apiQuiz.questions || []).map((question) => ({
         id: question.id,
         prompt: question.prompt,
+        explanation: question.explanation ?? '',
         order: question.order,
         options: (question.options || []).map((option) => ({
             id: option.id,
