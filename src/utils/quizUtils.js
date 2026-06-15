@@ -29,6 +29,35 @@ const stripCodeFences = (value) => value
     .replace(/\s*```$/, '')
     .trim();
 
+const escHtml = (str) =>
+    str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+// Matches backtick code spans OR bare HTML tags. Must stay in sync with QuizRichInput.jsx.
+const INLINE_CODE_RE = /(`[^`\n]+`)|(<\/?[a-zA-Z][a-zA-Z0-9]*(?:\s[^<>]*)?\/?>)/g;
+
+// Converts plain text (from paste parsing) to TipTap-compatible rich-text HTML so that
+// validateQuiz's stripHtml() sees real content instead of stripping the text away.
+// e.g. '<table>' → '<p><code>&lt;table&gt;</code></p>'
+const convertPlainToRichText = (val) => {
+    if (!val) return '';
+    if (val.trimStart().startsWith('<p>') && val.trimEnd().endsWith('</p>')) return val;
+    const parts = [];
+    let last = 0;
+    INLINE_CODE_RE.lastIndex = 0;
+    let m;
+    while ((m = INLINE_CODE_RE.exec(val)) !== null) {
+        if (m.index > last) parts.push(escHtml(val.slice(last, m.index)));
+        if (m[1]) {
+            parts.push(`<code>${escHtml(m[1].slice(1, -1))}</code>`);
+        } else {
+            parts.push(`<code>${escHtml(m[0])}</code>`);
+        }
+        last = m.index + m[0].length;
+    }
+    if (last < val.length) parts.push(escHtml(val.slice(last)));
+    return `<p>${parts.join('')}</p>`;
+};
+
 const normalizeJsonLikeString = (value) => stripCodeFences(value)
     .replace(/,\s*([}\]])/g, '$1')
     .trim();
@@ -136,7 +165,7 @@ const parsePlainTextQuiz = (input) => {
             if (!prompt) return;
             currentQuestion = {
                 id: undefined,
-                prompt,
+                prompt: convertPlainToRichText(prompt),
                 explanation: '',
                 options: [],
             };
@@ -149,7 +178,7 @@ const parsePlainTextQuiz = (input) => {
         }
 
         if (isExplanationHint) {
-            currentQuestion.explanation = line.replace(/^.*?[:=-]\s*/, '').trim();
+            currentQuestion.explanation = convertPlainToRichText(line.replace(/^.*?[:=-]\s*/, '').trim());
             return;
         }
 
@@ -177,7 +206,7 @@ const parsePlainTextQuiz = (input) => {
 
             currentQuestion.options.push({
                 id: undefined,
-                text: optionText,
+                text: convertPlainToRichText(optionText),
                 isCorrect,
             });
         }

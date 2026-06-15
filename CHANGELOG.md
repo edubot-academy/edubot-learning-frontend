@@ -2,6 +2,14 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.16.10] - 2026-06-15
+
+### Fixed
+
+- Quiz paste import: option text, prompts, and explanations containing bare HTML tags (e.g. `<table>`, `<input>`) are now converted to TipTap-compatible rich-text HTML (`<p><code>&lt;table&gt;</code></p>`) during parsing. Previously, `validateQuiz`'s `stripHtml` call stripped these tags entirely, producing an empty string and a false "incomplete quiz" validation error that scrolled to the first affected question (typically Q8–9 in HTML-topic quizzes).
+
+---
+
 ## [1.16.9] - 2026-06-15
 
 ### Added
