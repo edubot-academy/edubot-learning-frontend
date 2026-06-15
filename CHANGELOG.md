@@ -2,6 +2,14 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.16.12] - 2026-06-15
+
+### Fixed
+
+- Quiz lesson checkbox: `handleQuizSubmit` was calling `onLessonComplete` unconditionally on the no-skipped-questions path, checking off the lesson in the sidebar even when the quiz was failed. On refresh the checkbox disappeared because the backend only records lesson completion for passed quizzes. Fixed to mirror the skipped-questions path — `onLessonComplete` is now guarded by `result.passed`, so the checkbox only persists when the student actually passes.
+
+---
+
 ## [1.16.11] - 2026-06-15
 
 ### Fixed

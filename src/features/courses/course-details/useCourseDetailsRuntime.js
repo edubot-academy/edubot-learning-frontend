@@ -177,7 +177,9 @@ export const useLessonQuiz = ({ courseId, activeLesson, onEnrollmentAccessError,
                         ? i18n.t('public.courseDetails.runtime.quiz.passed')
                         : i18n.t('public.courseDetails.runtime.quiz.failed')
                 );
-                onLessonComplete(activeLesson.id);
+                if (result.passed) {
+                    onLessonComplete(activeLesson.id);
+                }
             } catch (err) {
                 if (
                     onEnrollmentAccessError(
