@@ -83,6 +83,8 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
     // Refs for dirty tracking (edit mode)
     const dirtySectionIdsRef = useRef(new Set());
     const dirtyLessonIdsRef = useRef(new Set());
+    const dirtyQuizLessonIdsRef = useRef(new Set());
+    const dirtyChallengeLessonIdsRef = useRef(new Set());
     const [aiLessonQuizDraftEnabled, setAiLessonQuizDraftEnabled] = useState(false);
     const [aiLessonQuizDraft, setAiLessonQuizDraft] = useState(null);
     const [aiLessonQuizDraftingKey, setAiLessonQuizDraftingKey] = useState('');
@@ -163,16 +165,26 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
     }, [t]);
 
     // Mark section as dirty (edit mode)
-    const markSectionDirtyByIndex = useCallback((sectionIndex, sourceSections = curriculum) => {
+    const markSectionDirtyByIndex = useCallback((sectionIndex, sourceSections) => {
         const section = sourceSections?.[sectionIndex];
         if (section?.id) dirtySectionIdsRef.current.add(section.id);
-    }, [curriculum]);
+    }, []);
 
     // Mark lesson as dirty (edit mode)
-    const markLessonDirtyByIndex = useCallback((sectionIndex, lessonIndex, sourceSections = curriculum) => {
+    const markLessonDirtyByIndex = useCallback((sectionIndex, lessonIndex, sourceSections) => {
         const lesson = sourceSections?.[sectionIndex]?.lessons?.[lessonIndex];
         if (lesson?.id) dirtyLessonIdsRef.current.add(lesson.id);
-    }, [curriculum]);
+    }, []);
+
+    const markLessonQuizDirtyByIndex = useCallback((sectionIndex, lessonIndex, sourceSections) => {
+        const lesson = sourceSections?.[sectionIndex]?.lessons?.[lessonIndex];
+        if (lesson?.id) dirtyQuizLessonIdsRef.current.add(lesson.id);
+    }, []);
+
+    const markLessonChallengeDirtyByIndex = useCallback((sectionIndex, lessonIndex, sourceSections) => {
+        const lesson = sourceSections?.[sectionIndex]?.lessons?.[lessonIndex];
+        if (lesson?.id) dirtyChallengeLessonIdsRef.current.add(lesson.id);
+    }, []);
 
     // Section operations
     const handleAddSection = useCallback(() => {
@@ -248,13 +260,25 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
                     updated[sectionIndex].lessons[lessonIndex],
                     value
                 );
+
+                if (value === 'quiz') {
+                    markLessonQuizDirtyByIndex(sectionIndex, lessonIndex, updated);
+                } else if (value === 'code') {
+                    markLessonChallengeDirtyByIndex(sectionIndex, lessonIndex, updated);
+                }
             }
 
             markLessonDirtyByIndex(sectionIndex, lessonIndex, updated);
             markSectionDirtyByIndex(sectionIndex, updated);
             return updated;
         });
-    }, [setCurriculum, markLessonDirtyByIndex, markSectionDirtyByIndex]);
+    }, [
+        setCurriculum,
+        markLessonDirtyByIndex,
+        markLessonQuizDirtyByIndex,
+        markLessonChallengeDirtyByIndex,
+        markSectionDirtyByIndex,
+    ]);
 
     const handleDeleteLesson = useCallback((sectionIndex, lessonIndex) => {
         // Validation: first section must have at least one lesson
@@ -274,6 +298,8 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
                     { sectionId: curriculum[sectionIndex].id, lessonId: lesson.id },
                 ]);
                 dirtyLessonIdsRef.current.delete(lesson.id);
+                dirtyQuizLessonIdsRef.current.delete(lesson.id);
+                dirtyChallengeLessonIdsRef.current.delete(lesson.id);
             }
 
             markSectionDirtyByIndex(sectionIndex, updated);
@@ -286,9 +312,10 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
         setCurriculum((prev) => {
             const updated = updateLessonQuiz(prev, sectionIndex, lessonIndex, ensureQuizShape(newQuiz));
             markLessonDirtyByIndex(sectionIndex, lessonIndex, updated);
+            markLessonQuizDirtyByIndex(sectionIndex, lessonIndex, updated);
             return updated;
         });
-    }, [setCurriculum, markLessonDirtyByIndex]);
+    }, [setCurriculum, markLessonDirtyByIndex, markLessonQuizDirtyByIndex]);
 
     const handleRequestAiLessonQuizDraft = useCallback(async (sectionIndex, lessonIndex) => {
         const lesson = curriculum?.[sectionIndex]?.lessons?.[lessonIndex];
@@ -430,9 +457,10 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
         setCurriculum((prev) => {
             const updated = updateLessonChallenge(prev, sectionIndex, lessonIndex, ensureChallengeShape(newChallenge));
             markLessonDirtyByIndex(sectionIndex, lessonIndex, updated);
+            markLessonChallengeDirtyByIndex(sectionIndex, lessonIndex, updated);
             return updated;
         });
-    }, [setCurriculum, markLessonDirtyByIndex]);
+    }, [setCurriculum, markLessonDirtyByIndex, markLessonChallengeDirtyByIndex]);
 
     // Drag and drop operations
     const handleSectionDrop = useCallback((targetIdx) => {
@@ -835,13 +863,22 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
                         }
 
                         // Save quiz if needed
-                        if (isQuiz && lesson.quiz) {
+                        if (
+                            isQuiz &&
+                            lesson.quiz &&
+                            (!lesson.id || dirtyQuizLessonIdsRef.current.has(updatedLesson.id))
+                        ) {
                             const quizPayload = normalizeQuizForApi(ensureQuizShape(lesson.quiz));
                             await upsertLessonQuiz(courseId, sec.id, updatedLesson.id, quizPayload);
+                            dirtyQuizLessonIdsRef.current.delete(updatedLesson.id);
                         }
 
                         // Save challenge if needed
-                        if (isCode && lesson.challenge) {
+                        if (
+                            isCode &&
+                            lesson.challenge &&
+                            (!lesson.id || dirtyChallengeLessonIdsRef.current.has(updatedLesson.id))
+                        ) {
                             const challengePayload = normalizeChallengeForApi(
                                 ensureChallengeShape(lesson.challenge)
                             );
@@ -851,6 +888,7 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
                                 updatedLesson.id,
                                 challengePayload
                             );
+                            dirtyChallengeLessonIdsRef.current.delete(updatedLesson.id);
                         }
                     }
                 }
@@ -891,6 +929,8 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
             // Clear dirty tracking refs after successful save
             dirtySectionIdsRef.current.clear();
             dirtyLessonIdsRef.current.clear();
+            dirtyQuizLessonIdsRef.current.clear();
+            dirtyChallengeLessonIdsRef.current.clear();
             setOriginalSections(savedCurriculum);
 
             toast.success(

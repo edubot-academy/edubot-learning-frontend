@@ -2,6 +2,7 @@
 // Shared between CreateCourse and EditInstructorCourse
 // Extracted from Step 2 JSX in both components
 
+import { memo, useCallback } from 'react';
 import { LESSON_KIND_OPTIONS } from "../../../../constants/lessons";
 import LessonQuizEditor from '../../components/LessonQuizEditor';
 import LessonChallengeEditor from '../../components/LessonChallengeEditor';
@@ -13,6 +14,269 @@ import ConfirmationModal from '../../../../shared/ui/ConfirmationModal';
 import { CURRICULUM_WORKSPACE_SECTIONS } from '../constants';
 import { minutesInputToSeconds, secondsToMinutesInput } from '../../../../utils/timeUtils';
 import { useTranslation } from 'react-i18next';
+
+const LessonCard = memo(({
+    lesson,
+    lessonIssue,
+    sIdx,
+    lIdx,
+    sectionLessonCount,
+    dragLesson,
+    disabled,
+    lessonKindOptions,
+    courseId,
+    setDragLesson,
+    setConfirmDelete,
+    handleLessonDrop,
+    handleMoveLesson,
+    handleUpdateLesson,
+    aiLessonKitDraftEnabled,
+    aiLessonKitDraft,
+    aiLessonKitDraftingKey,
+    aiLessonKitDraftError,
+    handleRequestAiLessonKitDraft,
+    handleUseAiLessonKitDraft,
+    handleCancelAiLessonKitDraft,
+    handleQuizChange,
+    aiLessonQuizDraftEnabled,
+    aiLessonQuizDraft,
+    aiLessonQuizDraftingKey,
+    aiLessonQuizDraftError,
+    handleRequestAiLessonQuizDraft,
+    handleUseAiLessonQuizDraft,
+    handleCancelAiLessonQuizDraft,
+    handleChallengeChange,
+    handleFileUpload,
+}) => {
+    const { t } = useTranslation();
+
+    const handleDeleteAsset = useCallback((type) => {
+        if (type === 'video') {
+            handleUpdateLesson(sIdx, lIdx, 'videoKey', '');
+            handleUpdateLesson(sIdx, lIdx, 'videoUrl', '');
+            handleUpdateLesson(sIdx, lIdx, 'previewVideo', false);
+            return;
+        }
+
+        handleUpdateLesson(sIdx, lIdx, 'resourceKey', '');
+        handleUpdateLesson(sIdx, lIdx, 'resourceUrl', '');
+        handleUpdateLesson(sIdx, lIdx, 'resourceName', '');
+    }, [handleUpdateLesson, lIdx, sIdx]);
+
+    return (
+        <div
+            id={`lesson-${sIdx}-${lIdx}`}
+            onDragOver={(event) => event.preventDefault()}
+            onDrop={() => handleLessonDrop?.(sIdx, lIdx)}
+            className={`mb-4 rounded-xl border p-3 transition ${lessonIssue
+                ? 'border-rose-200 bg-rose-50/70 dark:border-rose-900/70 dark:bg-rose-950/20'
+                : 'border-gray-200 bg-white dark:border-gray-600 dark:bg-gray-800'
+                } ${dragLesson?.sectionIdx === sIdx && dragLesson?.lessonIdx === lIdx
+                    ? 'ring-2 ring-sky-300 dark:ring-sky-700 opacity-80'
+                    : ''
+                }`}
+            data-workspace-section={CURRICULUM_WORKSPACE_SECTIONS.LESSON_CONTENT.id}
+        >
+            <LessonCardHeader
+                lessonIndex={lIdx}
+                lessonKind={lesson.kind}
+                lessonIssue={lessonIssue}
+                onDragStart={() => setDragLesson({ sectionIdx: sIdx, lessonIdx: lIdx })}
+                onDragEnd={() => setDragLesson(null)}
+                onDelete={() =>
+                    setConfirmDelete({
+                        type: 'lesson',
+                        sectionIndex: sIdx,
+                        lessonIndex: lIdx,
+                        title: lesson.title,
+                    })
+                }
+                disabled={disabled}
+            />
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                    {t('instructorDashboard.courseBuilder.curriculum.lessonOrder')}
+                </span>
+                <button
+                    type="button"
+                    onClick={() => handleMoveLesson?.(sIdx, lIdx, 'up')}
+                    disabled={disabled || lIdx === 0}
+                    className="rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-[#1f1f1f] dark:text-slate-300"
+                    aria-label={t('instructorDashboard.courseBuilder.aria.moveLessonUp', {
+                        title:
+                            lesson.title ||
+                            t('instructorDashboard.courseBuilder.fallbacks.lesson', {
+                                number: lIdx + 1,
+                            }),
+                    })}
+                >
+                    {t('instructorDashboard.courseBuilder.actions.up')}
+                </button>
+                <button
+                    type="button"
+                    onClick={() => handleMoveLesson?.(sIdx, lIdx, 'down')}
+                    disabled={disabled || lIdx === sectionLessonCount - 1}
+                    className="rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-[#1f1f1f] dark:text-slate-300"
+                    aria-label={t('instructorDashboard.courseBuilder.aria.moveLessonDown', {
+                        title:
+                            lesson.title ||
+                            t('instructorDashboard.courseBuilder.fallbacks.lesson', {
+                                number: lIdx + 1,
+                            }),
+                    })}
+                >
+                    {t('instructorDashboard.courseBuilder.actions.down')}
+                </button>
+            </div>
+            <LessonMetaFields
+                title={lesson.title}
+                kind={lesson.kind || 'video'}
+                kindOptions={lessonKindOptions}
+                onTitleChange={(value) => handleUpdateLesson(sIdx, lIdx, 'title', value)}
+                onKindChange={(value) => handleUpdateLesson(sIdx, lIdx, 'kind', value)}
+                disabled={disabled}
+            />
+
+            {aiLessonKitDraftEnabled && lesson.id ? (
+                <section className="mb-4 rounded-lg border border-violet-200 bg-violet-50 p-4 text-sm dark:border-violet-900 dark:bg-violet-950/30">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                            <p className="font-semibold text-slate-900 dark:text-white">
+                                {t('ai.lessonKitDraft')}
+                            </p>
+                            <p className="text-slate-600 dark:text-slate-300">
+                                {t('ai.lessonKitDraftHelp')}
+                            </p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            <button
+                                type="button"
+                                className="rounded border border-violet-300 bg-white px-3 py-1.5 text-sm font-medium text-violet-800 hover:bg-violet-100 disabled:opacity-50 dark:border-violet-700 dark:bg-slate-900 dark:text-violet-200"
+                                onClick={() => handleRequestAiLessonKitDraft?.(sIdx, lIdx)}
+                                disabled={disabled || aiLessonKitDraftingKey === `${sIdx}-${lIdx}`}
+                            >
+                                {aiLessonKitDraftingKey === `${sIdx}-${lIdx}` ? t('ai.generating') : t('ai.suggestLessonKit')}
+                            </button>
+                            {aiLessonKitDraft?.key === `${sIdx}-${lIdx}` ? (
+                                <>
+                                    <button
+                                        type="button"
+                                        className="rounded border border-emerald-300 bg-white px-3 py-1.5 text-sm font-medium text-emerald-800 hover:bg-emerald-50 dark:border-emerald-700 dark:bg-slate-900 dark:text-emerald-200"
+                                        onClick={() => handleUseAiLessonKitDraft?.(sIdx, lIdx)}
+                                        disabled={disabled}
+                                    >
+                                        {t('ai.useDraft')}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="rounded border border-rose-300 bg-white px-3 py-1.5 text-sm font-medium text-rose-700 hover:bg-rose-50 dark:border-rose-700 dark:bg-slate-900 dark:text-rose-200"
+                                        onClick={() => handleCancelAiLessonKitDraft?.()}
+                                        disabled={disabled}
+                                    >
+                                        {t('ai.cancelDraft')}
+                                    </button>
+                                </>
+                            ) : null}
+                        </div>
+                    </div>
+                    {aiLessonKitDraft?.key === `${sIdx}-${lIdx}` ? (
+                        <div className="mt-3 rounded border border-violet-100 bg-white p-3 dark:border-violet-900 dark:bg-slate-900">
+                            <p className="font-medium text-slate-900 dark:text-white">{aiLessonKitDraft.output.summary}</p>
+                            {aiLessonKitDraft.output.objectives?.length ? (
+                                <ul className="mt-2 list-disc space-y-1 pl-5 text-slate-600 dark:text-slate-300">
+                                    {aiLessonKitDraft.output.objectives.slice(0, 3).map((objective, index) => (
+                                        <li key={`${objective}-${index}`}>{objective}</li>
+                                    ))}
+                                </ul>
+                            ) : null}
+                        </div>
+                    ) : null}
+                    {aiLessonKitDraftError && aiLessonKitDraft?.key === `${sIdx}-${lIdx}` ? (
+                        <p className="mt-2 text-xs text-rose-600">{aiLessonKitDraftError}</p>
+                    ) : null}
+                </section>
+            ) : null}
+
+            {lesson.kind === 'article' && (
+                <>
+                    <label className="block mb-1 font-medium">
+                        {t('instructorDashboard.courseBuilder.curriculum.articleText')}
+                    </label>
+                    <ArticleEditor
+                        value={lesson.content || ''}
+                        onChange={(val) => handleUpdateLesson(sIdx, lIdx, 'content', val)}
+                        placeholder={t('instructorDashboard.courseBuilder.placeholders.articleText')}
+                        disabled={disabled}
+                    />
+                    <label className="block mb-1 font-medium">
+                        {t('instructorDashboard.courseBuilder.curriculum.readingTime')}
+                    </label>
+                    <input
+                        type="number"
+                        min="0.5"
+                        step="0.5"
+                        className="w-full p-2 mb-2 border rounded bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white disabled:opacity-50"
+                        value={secondsToMinutesInput(lesson.duration)}
+                        onChange={(e) =>
+                            handleUpdateLesson(
+                                sIdx,
+                                lIdx,
+                                'duration',
+                                minutesInputToSeconds(e.target.value)
+                            )
+                        }
+                        placeholder={t('instructorDashboard.courseBuilder.placeholders.minutesExample')}
+                        disabled={disabled}
+                    />
+                </>
+            )}
+
+            {lesson.kind === 'quiz' && (
+                <LessonQuizEditor
+                    quiz={lesson.quiz}
+                    onChange={(newQuiz) => handleQuizChange(sIdx, lIdx, newQuiz)}
+                    aiDraftEnabled={Boolean(aiLessonQuizDraftEnabled && lesson.id)}
+                    aiDraft={aiLessonQuizDraft?.key === `${sIdx}-${lIdx}` ? aiLessonQuizDraft.output : null}
+                    aiDrafting={aiLessonQuizDraftingKey === `${sIdx}-${lIdx}`}
+                    aiDraftError={aiLessonQuizDraftError}
+                    onRequestAiDraft={() => handleRequestAiLessonQuizDraft?.(sIdx, lIdx)}
+                    onUseAiDraft={() => handleUseAiLessonQuizDraft?.(sIdx, lIdx)}
+                    onCancelAiDraft={() => handleCancelAiLessonQuizDraft?.()}
+                    disabled={disabled}
+                />
+            )}
+
+            {lesson.kind === 'code' && (
+                <LessonChallengeEditor
+                    challenge={lesson.challenge}
+                    onChange={(newChallenge) => handleChallengeChange(sIdx, lIdx, newChallenge)}
+                    disabled={disabled}
+                />
+            )}
+
+            <LessonAssetsPanel
+                kind={lesson.kind}
+                onVideoFile={(file) => {
+                    handleFileUpload(courseId, sIdx, lIdx, 'video', file);
+                }}
+                videoExists={Boolean(lesson.videoUrl || lesson.videoKey)}
+                videoProgress={lesson.uploadProgress?.video || 0}
+                onVideoDelete={() => handleDeleteAsset('video')}
+                previewVideo={Boolean(lesson.previewVideo)}
+                onPreviewVideoChange={(checked) =>
+                    handleUpdateLesson(sIdx, lIdx, 'previewVideo', checked)
+                }
+                previewLabel={t('instructorDashboard.courseBuilder.assets.previewVideo')}
+                onResourceFile={(file) => {
+                    handleFileUpload(courseId, sIdx, lIdx, 'resource', file);
+                }}
+                resourceExists={Boolean(lesson.resourceUrl || lesson.resourceKey)}
+                resourceProgress={lesson.uploadProgress?.resource || 0}
+                onResourceDelete={() => handleDeleteAsset('resource')}
+            />
+        </div>
+    );
+});
 
 /**
  * Curriculum Step component
@@ -196,19 +460,6 @@ export const CurriculumStep = ({
     };
 
     const sectionChips = generateSectionChips(curriculum);
-
-    const handleDeleteAsset = (sectionIndex, lessonIndex, type) => {
-        if (type === 'video') {
-            handleUpdateLesson(sectionIndex, lessonIndex, 'videoKey', '');
-            handleUpdateLesson(sectionIndex, lessonIndex, 'videoUrl', '');
-            handleUpdateLesson(sectionIndex, lessonIndex, 'previewVideo', false);
-            return;
-        }
-
-        handleUpdateLesson(sectionIndex, lessonIndex, 'resourceKey', '');
-        handleUpdateLesson(sectionIndex, lessonIndex, 'resourceUrl', '');
-        handleUpdateLesson(sectionIndex, lessonIndex, 'resourceName', '');
-    };
 
     return (
         <div className="space-y-6">
@@ -528,234 +779,42 @@ export const CurriculumStep = ({
                                 </button>
                             </div>
                         </div>
-                        {section.lessons.map((lesson, lIdx) => {
-                            const lessonIssue = getLessonIssue(lesson);
-                            return (
-                                <div
-                                    id={`lesson-${sIdx}-${lIdx}`}
-                                    key={lesson.id ?? lesson.tempId ?? `lesson-${sIdx}-${lIdx}`}
-                                    onDragOver={(event) => event.preventDefault()}
-                                    onDrop={() => handleLessonDrop(sIdx, lIdx)}
-                                    className={`mb-4 rounded-xl border p-3 transition ${lessonIssue
-                                        ? 'border-rose-200 bg-rose-50/70 dark:border-rose-900/70 dark:bg-rose-950/20'
-                                        : 'border-gray-200 bg-white dark:border-gray-600 dark:bg-gray-800'
-                                        } ${dragLesson?.sectionIdx === sIdx && dragLesson?.lessonIdx === lIdx
-                                            ? 'ring-2 ring-sky-300 dark:ring-sky-700 opacity-80'
-                                            : ''
-                                        }`}
-                                    data-workspace-section={CURRICULUM_WORKSPACE_SECTIONS.LESSON_CONTENT.id}
-                                >
-                                    <LessonCardHeader
-                                        lessonIndex={lIdx}
-                                        lessonKind={lesson.kind}
-                                        lessonIssue={lessonIssue}
-                                        onDragStart={() => setDragLesson({ sectionIdx: sIdx, lessonIdx: lIdx })}
-                                        onDragEnd={() => setDragLesson(null)}
-                                        onDelete={() =>
-                                            setConfirmDelete({
-                                                type: 'lesson',
-                                                sectionIndex: sIdx,
-                                                lessonIndex: lIdx,
-                                                title: lesson.title,
-                                            })
-                                        }
-                                        disabled={disabled}
-                                    />
-                                    <div className="mb-3 flex flex-wrap items-center gap-2">
-                                        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                                            {t('instructorDashboard.courseBuilder.curriculum.lessonOrder')}
-                                        </span>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleMoveLesson?.(sIdx, lIdx, 'up')}
-                                            disabled={disabled || lIdx === 0}
-                                            className="rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-[#1f1f1f] dark:text-slate-300"
-                                            aria-label={t('instructorDashboard.courseBuilder.aria.moveLessonUp', {
-                                                title:
-                                                    lesson.title ||
-                                                    t('instructorDashboard.courseBuilder.fallbacks.lesson', {
-                                                        number: lIdx + 1,
-                                                    }),
-                                            })}
-                                        >
-                                            {t('instructorDashboard.courseBuilder.actions.up')}
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleMoveLesson?.(sIdx, lIdx, 'down')}
-                                            disabled={disabled || lIdx === section.lessons.length - 1}
-                                            className="rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-[#1f1f1f] dark:text-slate-300"
-                                            aria-label={t('instructorDashboard.courseBuilder.aria.moveLessonDown', {
-                                                title:
-                                                    lesson.title ||
-                                                    t('instructorDashboard.courseBuilder.fallbacks.lesson', {
-                                                        number: lIdx + 1,
-                                                    }),
-                                            })}
-                                        >
-                                            {t('instructorDashboard.courseBuilder.actions.down')}
-                                        </button>
-                                    </div>
-                                    <LessonMetaFields
-                                        title={lesson.title}
-                                        kind={lesson.kind || 'video'}
-                                        kindOptions={lessonKindOptions}
-                                        onTitleChange={(value) => handleUpdateLesson(sIdx, lIdx, 'title', value)}
-                                        onKindChange={(value) => handleUpdateLesson(sIdx, lIdx, 'kind', value)}
-                                        disabled={disabled}
-                                    />
-
-                                    {aiLessonKitDraftEnabled && lesson.id ? (
-                                        <section className="mb-4 rounded-lg border border-violet-200 bg-violet-50 p-4 text-sm dark:border-violet-900 dark:bg-violet-950/30">
-                                            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                                                <div>
-                                                    <p className="font-semibold text-slate-900 dark:text-white">
-                                                        {t('ai.lessonKitDraft')}
-                                                    </p>
-                                                    <p className="text-slate-600 dark:text-slate-300">
-                                                        {t('ai.lessonKitDraftHelp')}
-                                                    </p>
-                                                </div>
-                                                <div className="flex flex-wrap gap-2">
-                                                    <button
-                                                        type="button"
-                                                        className="rounded border border-violet-300 bg-white px-3 py-1.5 text-sm font-medium text-violet-800 hover:bg-violet-100 disabled:opacity-50 dark:border-violet-700 dark:bg-slate-900 dark:text-violet-200"
-                                                        onClick={() => handleRequestAiLessonKitDraft?.(sIdx, lIdx)}
-                                                        disabled={disabled || aiLessonKitDraftingKey === `${sIdx}-${lIdx}`}
-                                                    >
-                                                        {aiLessonKitDraftingKey === `${sIdx}-${lIdx}` ? t('ai.generating') : t('ai.suggestLessonKit')}
-                                                    </button>
-                                                    {aiLessonKitDraft?.key === `${sIdx}-${lIdx}` ? (
-                                                        <>
-                                                            <button
-                                                                type="button"
-                                                                className="rounded border border-emerald-300 bg-white px-3 py-1.5 text-sm font-medium text-emerald-800 hover:bg-emerald-50 dark:border-emerald-700 dark:bg-slate-900 dark:text-emerald-200"
-                                                                onClick={() => handleUseAiLessonKitDraft?.(sIdx, lIdx)}
-                                                                disabled={disabled}
-                                                            >
-                                                                {t('ai.useDraft')}
-                                                            </button>
-                                                            <button
-                                                                type="button"
-                                                                className="rounded border border-rose-300 bg-white px-3 py-1.5 text-sm font-medium text-rose-700 hover:bg-rose-50 dark:border-rose-700 dark:bg-slate-900 dark:text-rose-200"
-                                                                onClick={() => handleCancelAiLessonKitDraft?.()}
-                                                                disabled={disabled}
-                                                            >
-                                                                {t('ai.cancelDraft')}
-                                                            </button>
-                                                        </>
-                                                    ) : null}
-                                                </div>
-                                            </div>
-                                            {aiLessonKitDraft?.key === `${sIdx}-${lIdx}` ? (
-                                                <div className="mt-3 rounded border border-violet-100 bg-white p-3 dark:border-violet-900 dark:bg-slate-900">
-                                                    <p className="font-medium text-slate-900 dark:text-white">{aiLessonKitDraft.output.summary}</p>
-                                                    {aiLessonKitDraft.output.objectives?.length ? (
-                                                        <ul className="mt-2 list-disc space-y-1 pl-5 text-slate-600 dark:text-slate-300">
-                                                            {aiLessonKitDraft.output.objectives.slice(0, 3).map((objective, index) => (
-                                                                <li key={`${objective}-${index}`}>{objective}</li>
-                                                            ))}
-                                                        </ul>
-                                                    ) : null}
-                                                </div>
-                                            ) : null}
-                                            {aiLessonKitDraftError && aiLessonKitDraft?.key === `${sIdx}-${lIdx}` ? (
-                                                <p className="mt-2 text-xs text-rose-600">{aiLessonKitDraftError}</p>
-                                            ) : null}
-                                        </section>
-                                    ) : null}
-
-                                    {/* Article Content */}
-                                    {lesson.kind === 'article' && (
-                                        <>
-                                            <label className="block mb-1 font-medium">
-                                                {t('instructorDashboard.courseBuilder.curriculum.articleText')}
-                                            </label>
-                                            <ArticleEditor
-                                                value={lesson.content || ''}
-                                                onChange={(val) =>
-                                                    handleUpdateLesson(sIdx, lIdx, 'content', val)
-                                                }
-                                                placeholder={t('instructorDashboard.courseBuilder.placeholders.articleText')}
-                                                disabled={disabled}
-                                            />
-                                            <label className="block mb-1 font-medium">
-                                                {t('instructorDashboard.courseBuilder.curriculum.readingTime')}
-                                            </label>
-                                            <input
-                                                type="number"
-                                                min="0.5"
-                                                step="0.5"
-                                                className="w-full p-2 mb-2 border rounded bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white disabled:opacity-50"
-                                                value={secondsToMinutesInput(lesson.duration)}
-                                                onChange={(e) => {
-                                                    handleUpdateLesson(
-                                                        sIdx,
-                                                        lIdx,
-                                                        'duration',
-                                                        minutesInputToSeconds(e.target.value)
-                                                    );
-                                                }}
-                                                placeholder={t('instructorDashboard.courseBuilder.placeholders.minutesExample')}
-                                                disabled={disabled}
-                                            />
-                                        </>
-                                    )}
-
-                                    {/* Quiz Editor */}
-                                    {lesson.kind === 'quiz' && (
-                                        <LessonQuizEditor
-                                            quiz={lesson.quiz}
-                                            onChange={(newQuiz) =>
-                                                handleQuizChange(sIdx, lIdx, newQuiz)
-                                            }
-                                            aiDraftEnabled={Boolean(aiLessonQuizDraftEnabled && lesson.id)}
-                                            aiDraft={aiLessonQuizDraft?.key === `${sIdx}-${lIdx}` ? aiLessonQuizDraft.output : null}
-                                            aiDrafting={aiLessonQuizDraftingKey === `${sIdx}-${lIdx}`}
-                                            aiDraftError={aiLessonQuizDraftError}
-                                            onRequestAiDraft={() => handleRequestAiLessonQuizDraft?.(sIdx, lIdx)}
-                                            onUseAiDraft={() => handleUseAiLessonQuizDraft?.(sIdx, lIdx)}
-                                            onCancelAiDraft={() => handleCancelAiLessonQuizDraft?.()}
-                                            disabled={disabled}
-                                        />
-                                    )}
-
-                                    {/* Challenge Editor */}
-                                    {lesson.kind === 'code' && (
-                                        <LessonChallengeEditor
-                                            challenge={lesson.challenge}
-                                            onChange={(newChallenge) =>
-                                                handleChallengeChange(sIdx, lIdx, newChallenge)
-                                            }
-                                            disabled={disabled}
-                                        />
-                                    )}
-
-                                    {/* File Upload */}
-                                    <LessonAssetsPanel
-                                        kind={lesson.kind}
-                                        onVideoFile={(file) => {
-                                            handleFileUpload(courseId, sIdx, lIdx, 'video', file);
-                                        }}
-                                        videoExists={Boolean(lesson.videoUrl || lesson.videoKey)}
-                                        videoProgress={lesson.uploadProgress?.video || 0}
-                                        onVideoDelete={() => handleDeleteAsset(sIdx, lIdx, 'video')}
-                                        previewVideo={Boolean(lesson.previewVideo)}
-                                        onPreviewVideoChange={(checked) =>
-                                            handleUpdateLesson(sIdx, lIdx, 'previewVideo', checked)
-                                        }
-                                        previewLabel={t('instructorDashboard.courseBuilder.assets.previewVideo')}
-                                        onResourceFile={(file) => {
-                                            handleFileUpload(courseId, sIdx, lIdx, 'resource', file);
-                                        }}
-                                        resourceExists={Boolean(lesson.resourceUrl || lesson.resourceKey)}
-                                        resourceProgress={lesson.uploadProgress?.resource || 0}
-                                        onResourceDelete={() => handleDeleteAsset(sIdx, lIdx, 'resource')}
-                                    />
-
-                                </div>
-                            );
-                        })}
+                        {section.lessons.map((lesson, lIdx) => (
+                            <LessonCard
+                                key={lesson.id ?? lesson.tempId ?? `lesson-${sIdx}-${lIdx}`}
+                                lesson={lesson}
+                                lessonIssue={getLessonIssue(lesson)}
+                                sIdx={sIdx}
+                                lIdx={lIdx}
+                                sectionLessonCount={section.lessons.length}
+                                dragLesson={dragLesson}
+                                disabled={disabled}
+                                lessonKindOptions={lessonKindOptions}
+                                courseId={courseId}
+                                setDragLesson={setDragLesson}
+                                setConfirmDelete={setConfirmDelete}
+                                handleLessonDrop={handleLessonDrop}
+                                handleMoveLesson={handleMoveLesson}
+                                handleUpdateLesson={handleUpdateLesson}
+                                aiLessonKitDraftEnabled={aiLessonKitDraftEnabled}
+                                aiLessonKitDraft={aiLessonKitDraft}
+                                aiLessonKitDraftingKey={aiLessonKitDraftingKey}
+                                aiLessonKitDraftError={aiLessonKitDraftError}
+                                handleRequestAiLessonKitDraft={handleRequestAiLessonKitDraft}
+                                handleUseAiLessonKitDraft={handleUseAiLessonKitDraft}
+                                handleCancelAiLessonKitDraft={handleCancelAiLessonKitDraft}
+                                handleQuizChange={handleQuizChange}
+                                aiLessonQuizDraftEnabled={aiLessonQuizDraftEnabled}
+                                aiLessonQuizDraft={aiLessonQuizDraft}
+                                aiLessonQuizDraftingKey={aiLessonQuizDraftingKey}
+                                aiLessonQuizDraftError={aiLessonQuizDraftError}
+                                handleRequestAiLessonQuizDraft={handleRequestAiLessonQuizDraft}
+                                handleUseAiLessonQuizDraft={handleUseAiLessonQuizDraft}
+                                handleCancelAiLessonQuizDraft={handleCancelAiLessonQuizDraft}
+                                handleChallengeChange={handleChallengeChange}
+                                handleFileUpload={handleFileUpload}
+                            />
+                        ))}
                         <div className="sticky bottom-4 mt-6 flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white/95 px-4 py-3 backdrop-blur dark:border-slate-700 dark:bg-[#151515]/95">
                             <div className="flex-1">
                                 <p className="text-sm text-slate-600 dark:text-slate-300">

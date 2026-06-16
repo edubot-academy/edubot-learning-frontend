@@ -2,6 +2,22 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.16.15] - 2026-06-16
+
+### Fixed
+
+- TipTap editor warnings: disabled duplicate `link` and `underline` registrations inside `StarterKit` where standalone extensions are already mounted, removing repeated console warnings in the article and quiz rich-text editors.
+- Instructor course builder save flow: quiz and coding-challenge payloads are now tracked independently so editing one lesson no longer forces every quiz/challenge lesson through an upsert on save.
+- Instructor course builder lesson kind changes: switching an existing lesson to `quiz` or `code` now marks the initialized nested quiz/challenge payload dirty so the first save persists the new lesson content correctly.
+- Curriculum editor rendering: stabilized dirty-tracking callbacks used by lesson update handlers so extracted memoized lesson cards can avoid unnecessary full-list rerenders during lesson editing.
+
+### Verification
+
+- `npm run build`
+- `git diff --check`
+
+---
+
 ## [1.16.14] - 2026-06-16
 
 ### Changed

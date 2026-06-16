@@ -55,6 +55,7 @@ const EXTENSIONS_BASE = [
         codeBlock: false,
         horizontalRule: false,
         hardBreak: false,
+        underline: false,
         strike: false,
         dropcursor: false,
         gapcursor: false,

@@ -42,6 +42,8 @@ const ArticleEditor = ({ value = '', onChange, placeholder, disabled = false }) 
         extensions: [
             StarterKit.configure({
                 heading: { levels: [1, 2, 3, 4] },
+                link: false,
+                underline: false,
             }),
             Underline,
             Table.configure({ resizable: true }),
