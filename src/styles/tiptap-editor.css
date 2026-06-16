@@ -61,6 +61,74 @@
     color: #f9a8d4;
 }
 
+/* Code block */
+.ProseMirror pre {
+    background-color: #1e293b;
+    color: #e2e8f0;
+    border-radius: 0.5rem;
+    padding: 1rem 1.25rem;
+    margin: 0.75rem 0;
+    overflow-x: auto;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.875em;
+    line-height: 1.6;
+}
+.ProseMirror pre code {
+    background: none;
+    color: inherit;
+    padding: 0;
+    border-radius: 0;
+    font-size: inherit;
+}
+.dark .ProseMirror pre {
+    background-color: #0f172a;
+    color: #cbd5e1;
+}
+
+/* Table */
+.ProseMirror table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 0.75rem 0;
+    overflow: hidden;
+    border-radius: 0.5rem;
+    border: 1px solid #e5e7eb;
+}
+.dark .ProseMirror table { border-color: #374151; }
+
+.ProseMirror th,
+.ProseMirror td {
+    border: 1px solid #e5e7eb;
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    vertical-align: top;
+    min-width: 80px;
+    position: relative;
+}
+.dark .ProseMirror th,
+.dark .ProseMirror td { border-color: #374151; }
+
+.ProseMirror th {
+    background-color: #f8fafc;
+    font-weight: 600;
+    color: #374151;
+}
+.dark .ProseMirror th {
+    background-color: #1e293b;
+    color: #e2e8f0;
+}
+
+.ProseMirror td { background-color: #ffffff; }
+.dark .ProseMirror td { background-color: #111827; }
+
+.ProseMirror .selectedCell::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-color: rgba(249, 115, 22, 0.15);
+    pointer-events: none;
+}
+
 /* Links */
 .ProseMirror a {
     color: #f97316;

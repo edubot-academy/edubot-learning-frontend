@@ -5,6 +5,7 @@ import StarterKit from '@tiptap/starter-kit'
 import Underline from '@tiptap/extension-underline'
 import Link from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
+import { Table, TableRow, TableHeader, TableCell } from '@tiptap/extension-table'
 import DOMPurify from 'dompurify'
 import {
     FaBold,
@@ -19,6 +20,11 @@ import {
     FaEraser,
     FaCode,
     FaQuoteLeft,
+    FaTerminal,
+    FaTable,
+    FaPlus,
+    FaMinus,
+    FaTrash,
 } from 'react-icons/fa'
 import '../../../styles/tiptap-editor.css'
 
@@ -38,6 +44,10 @@ const ArticleEditor = ({ value = '', onChange, placeholder, disabled = false }) 
                 heading: { levels: [1, 2, 3, 4] },
             }),
             Underline,
+            Table.configure({ resizable: true }),
+            TableRow,
+            TableHeader,
+            TableCell,
             Link.configure({
                 openOnClick: false,
                 autolink: true,
@@ -240,6 +250,84 @@ const ArticleEditor = ({ value = '', onChange, placeholder, disabled = false }) 
                         >
                             <FaCode />
                         </button>
+                        <button
+                            type="button"
+                            disabled={disabled}
+                            onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+                            className={btn(editor.isActive('codeBlock'), disabled)}
+                            title="Code block"
+                        >
+                            <FaTerminal />
+                        </button>
+                    </div>
+
+                    {/* Table */}
+                    <div className={group}>
+                        {!editor.isActive('table') ? (
+                            <button
+                                type="button"
+                                disabled={disabled}
+                                onClick={() =>
+                                    editor
+                                        .chain()
+                                        .focus()
+                                        .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+                                        .run()
+                                }
+                                className={btn(false, disabled)}
+                                title="Insert table"
+                            >
+                                <FaTable />
+                            </button>
+                        ) : (
+                            <>
+                                <button
+                                    type="button"
+                                    disabled={disabled}
+                                    onClick={() => editor.chain().focus().addRowAfter().run()}
+                                    className={btn(false, disabled)}
+                                    title="Add row"
+                                >
+                                    <FaPlus className="text-[10px]" />R
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={disabled}
+                                    onClick={() => editor.chain().focus().addColumnAfter().run()}
+                                    className={btn(false, disabled)}
+                                    title="Add column"
+                                >
+                                    <FaPlus className="text-[10px]" />C
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={disabled}
+                                    onClick={() => editor.chain().focus().deleteRow().run()}
+                                    className={btn(false, disabled)}
+                                    title="Delete row"
+                                >
+                                    <FaMinus className="text-[10px]" />R
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={disabled}
+                                    onClick={() => editor.chain().focus().deleteColumn().run()}
+                                    className={btn(false, disabled)}
+                                    title="Delete column"
+                                >
+                                    <FaMinus className="text-[10px]" />C
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={disabled}
+                                    onClick={() => editor.chain().focus().deleteTable().run()}
+                                    className={btn(false, disabled)}
+                                    title="Delete table"
+                                >
+                                    <FaTrash />
+                                </button>
+                            </>
+                        )}
                     </div>
 
                     {/* Links */}

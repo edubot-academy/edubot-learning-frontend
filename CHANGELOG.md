@@ -2,6 +2,21 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.16.13] - 2026-06-16
+
+### Added
+
+- `ArticleEditor`: added **code block** button (`FaTerminal`) to the toolbar that toggles a multi-line fenced code block (`toggleCodeBlock`). StarterKit already included the ProseMirror node; the button was simply missing.
+- `ArticleEditor`: added **table** support via `@tiptap/extension-table`. Toolbar shows an "Insert table" button (3×3 with header row) when the cursor is outside a table; switches to row/column add-delete controls and a delete-table button when the cursor is inside a table.
+- `tiptap-editor.css`: added styles for `<pre>` code blocks (dark terminal background, monospace, horizontal scroll) and tables (bordered, rounded corners, header-row highlight, orange selected-cell overlay).
+
+### Fixed
+
+- Installed missing `chart.js` peer dependency required by `react-chartjs-2`, which was causing production builds to fail with a Rollup unresolved-import error.
+- Fixed `@tiptap/extension-table` import: the package exports `Table`, `TableRow`, `TableHeader`, and `TableCell` as named exports from a single entry point; the initial code used separate default imports from four packages, which Rollup rejected.
+
+---
+
 ## [1.16.12] - 2026-06-15
 
 ### Fixed
