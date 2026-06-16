@@ -1,7 +1,9 @@
+import { lazy, Suspense } from 'react';
 import PropTypes from 'prop-types';
 import { useLocation } from 'react-router-dom';
-import Header from '@shared/Header';
-import Footer from '@shared/Footer';
+
+const Header = lazy(() => import('@shared/Header'));
+const Footer = lazy(() => import('@shared/Footer'));
 
 const MainLayout = ({ children }) => {
     const { pathname } = useLocation();
@@ -9,11 +11,17 @@ const MainLayout = ({ children }) => {
 
     return (
         <div className="flex flex-col min-h-screen">
-            <Header />
+            <Suspense fallback={<div className="sticky top-0 h-[88px] w-full" aria-hidden="true" />}>
+                <Header />
+            </Suspense>
             <main id="main-content" className="flex-grow focus:outline-none" tabIndex={-1}>
                 {children}
             </main>
-            {!hideFooter && <Footer />}
+            {!hideFooter && (
+                <Suspense fallback={null}>
+                    <Footer />
+                </Suspense>
+            )}
         </div>
     );
 };

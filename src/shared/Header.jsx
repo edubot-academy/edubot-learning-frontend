@@ -1,12 +1,10 @@
-import { useState, useContext, useEffect, useRef } from 'react';
+import { lazy, Suspense, useState, useContext, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FaBars } from 'react-icons/fa';
 import { IoSearch } from 'react-icons/io5';
 import { useTranslation } from 'react-i18next';
 import { useDarkMode } from '../contexts/DarkModeContext';
 import EduBotLogo from '@assets/images/edubot-signup.png';
-import ThemeToggle from '@shared-ui/ThemeToggle';
-import LanguageSwitcher from '@shared-ui/LanguageSwitcher';
 
 import { IoHeartOutline, IoHeart } from 'react-icons/io5';
 import { BsCart2 } from 'react-icons/bs';
@@ -14,13 +12,18 @@ import { FaRegUser } from 'react-icons/fa';
 
 import { AuthContext } from '@app/providers';
 import { fetchUnreadNotificationsCount, searchCourses } from '@services/api';
-import SideBar from '@shared-ui/SideBar';
-import SidebarOverlay from '@shared-ui/SidebarOverlay';
-import UserMenuDropdown from '@shared-ui/UserMenuDropdown';
 import { getUserAvatarUrl } from '@shared/utils/avatar';
 import { isPlatformAdmin } from '@shared/utils/roles';
 import { useFavourites } from '../context/FavouritesContext';
 import { useCart } from '../context/CartContext';
+
+const ThemeToggle = lazy(() => import('@shared-ui/ThemeToggle'));
+const LanguageSwitcher = lazy(() => import('@shared-ui/LanguageSwitcher'));
+const SideBar = lazy(() => import('@shared-ui/SideBar'));
+const SidebarOverlay = lazy(() => import('@shared-ui/SidebarOverlay'));
+const UserMenuDropdown = lazy(() => import('@shared-ui/UserMenuDropdown'));
+
+const headerControlFallback = <div className="h-10 w-10" aria-hidden="true" />;
 
 const NavLinks = ({ isMobile, user }) => {
     const { t } = useTranslation();
@@ -354,10 +357,14 @@ const Header = () => {
                     </div>
 
                     <div className="flex items-center space-x-4">
-                        <LanguageSwitcher />
+                        <Suspense fallback={headerControlFallback}>
+                            <LanguageSwitcher />
+                        </Suspense>
 
                         <div className="relative top-[-12px]">
-                            <ThemeToggle dark={darkMode} setDark={setDarkMode} />
+                            <Suspense fallback={headerControlFallback}>
+                                <ThemeToggle dark={darkMode} setDark={setDarkMode} />
+                            </Suspense>
                         </div>
 
                         {user ? (
@@ -450,10 +457,12 @@ const Header = () => {
                                     >
                                         <div className="relative">
                                             <div className="absolute -top-2 left-0 right-0 h-2 bg-transparent"></div>
-                                            <UserMenuDropdown
-                                                user={user}
-                                                onClose={() => setUserMenuOpen(false)}
-                                            />
+                                            <Suspense fallback={null}>
+                                                <UserMenuDropdown
+                                                    user={user}
+                                                    onClose={() => setUserMenuOpen(false)}
+                                                />
+                                            </Suspense>
                                         </div>
                                     </div>
                                 </div>
@@ -577,10 +586,12 @@ const Header = () => {
 
                                     {userMenuOpen && (
                                         <div className="absolute right-0 top-full mt-2 z-50">
-                                            <UserMenuDropdown
-                                                user={user}
-                                                onClose={() => setUserMenuOpen(false)}
-                                            />
+                                            <Suspense fallback={null}>
+                                                <UserMenuDropdown
+                                                    user={user}
+                                                    onClose={() => setUserMenuOpen(false)}
+                                                />
+                                            </Suspense>
                                         </div>
                                     )}
                                 </div>
@@ -669,25 +680,33 @@ const Header = () => {
             </div>
 
             {/* SideBar Overlays */}
-            <SidebarOverlay isOpen={menuOpen} onClose={() => setMenuOpen(false)} position="left">
-                <SideBar
-                    setMenuOpen={setMenuOpen}
-                    setPosition={setPositionBar}
-                    handleIconClick={handleIconClick}
-                />
-            </SidebarOverlay>
+            {(menuOpen || positionBar) && (
+                <Suspense fallback={null}>
+                    <SidebarOverlay
+                        isOpen={menuOpen}
+                        onClose={() => setMenuOpen(false)}
+                        position="left"
+                    >
+                        <SideBar
+                            setMenuOpen={setMenuOpen}
+                            setPosition={setPositionBar}
+                            handleIconClick={handleIconClick}
+                        />
+                    </SidebarOverlay>
 
-            <SidebarOverlay
-                isOpen={positionBar}
-                onClose={() => setPositionBar(false)}
-                position="right"
-            >
-                <SideBar
-                    setMenuOpen={setMenuOpen}
-                    setPosition={setPositionBar}
-                    handleIconClick={handleIconClick}
-                />
-            </SidebarOverlay>
+                    <SidebarOverlay
+                        isOpen={positionBar}
+                        onClose={() => setPositionBar(false)}
+                        position="right"
+                    >
+                        <SideBar
+                            setMenuOpen={setMenuOpen}
+                            setPosition={setPositionBar}
+                            handleIconClick={handleIconClick}
+                        />
+                    </SidebarOverlay>
+                </Suspense>
+            )}
         </header>
     );
 };

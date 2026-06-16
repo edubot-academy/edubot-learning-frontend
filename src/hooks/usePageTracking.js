@@ -1,12 +1,21 @@
 import { useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
-import ReactGA from 'react-ga4';
 
 const usePageTracking = () => {
     const location = useLocation();
 
     useEffect(() => {
-        ReactGA.send({ hitType: 'pageview', page: location.pathname });
+        let cancelled = false;
+
+        import('react-ga4').then((module) => {
+            if (!cancelled) {
+                module.default.send({ hitType: 'pageview', page: location.pathname });
+            }
+        });
+
+        return () => {
+            cancelled = true;
+        };
     }, [location]);
 };
 

@@ -2,6 +2,26 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.16.14] - 2026-06-16
+
+### Changed
+
+- Migrated the editor stack from mixed TipTap majors to a consistent TipTap `v3.26.1` dependency set across `@tiptap/core`, `@tiptap/react`, `@tiptap/pm`, `@tiptap/starter-kit`, and related extensions.
+- Build chunking: replaced the previous fixed Vite `manualChunks` map with package-family chunk grouping for router, TipTap, charts, i18n, markdown, HTTP, toast, icons, and sentry bundles. Deferred header/footer shell UI and analytics/toaster loading behind lazy boundaries to reduce bootstrap work.
+
+### Fixed
+
+- Resolved `npm install` peer-dependency failures caused by mixing TipTap `v2.27.2` and `v3.26.1` packages in the same dependency tree.
+- Quiz rich-text editor: updated `BubbleMenu` import to the TipTap v3 path (`@tiptap/react/menus`) so production builds succeed after the editor upgrade.
+- Vite production build: removed the empty `react` chunk warning and cleared chunk-graph warnings introduced during manual chunk splitting.
+
+### Verification
+
+- `npm install --force`
+- `npm run build`
+
+---
+
 ## [1.16.13] - 2026-06-16
 
 ### Added
