@@ -11,21 +11,38 @@ import {
     FiPlay,
     FiAward,
     FiGlobe,
+    FiRepeat,
 } from 'react-icons/fi';
 import { STUDENT_DASHBOARD_TABS } from '@shared/constants/dashboardTabs';
 import { applyWorkspaceGroups } from '@shared/utils/workspaceGroups';
 
 export const STUDENT_WORKSPACE_GROUPS = Object.freeze({
+    TODAY: Object.freeze({
+        id: 'today',
+        labelKey: 'studentDashboard.shell.workspaceGroups.today.label',
+        descriptionKey: 'studentDashboard.shell.workspaceGroups.today.description',
+        tabs: Object.freeze([
+            STUDENT_DASHBOARD_TABS.OVERVIEW,
+            STUDENT_DASHBOARD_TABS.SCHEDULE,
+        ]),
+    }),
     LEARNING: Object.freeze({
         id: 'learning',
         labelKey: 'studentDashboard.shell.workspaceGroups.learning.label',
         descriptionKey: 'studentDashboard.shell.workspaceGroups.learning.description',
         tabs: Object.freeze([
-            STUDENT_DASHBOARD_TABS.OVERVIEW,
             STUDENT_DASHBOARD_TABS.MY_COURSES,
-            STUDENT_DASHBOARD_TABS.SCHEDULE,
             STUDENT_DASHBOARD_TABS.RESOURCES,
             STUDENT_DASHBOARD_TABS.FREE_RESOURCES,
+        ]),
+    }),
+    PRACTICE: Object.freeze({
+        id: 'practice',
+        labelKey: 'studentDashboard.shell.workspaceGroups.practice.label',
+        descriptionKey: 'studentDashboard.shell.workspaceGroups.practice.description',
+        tabs: Object.freeze([
+            STUDENT_DASHBOARD_TABS.TASKS,
+            STUDENT_DASHBOARD_TABS.VOCABULARY_REVIEWS,
         ]),
     }),
     PROGRESS: Object.freeze({
@@ -33,7 +50,6 @@ export const STUDENT_WORKSPACE_GROUPS = Object.freeze({
         labelKey: 'studentDashboard.shell.workspaceGroups.progress.label',
         descriptionKey: 'studentDashboard.shell.workspaceGroups.progress.description',
         tabs: Object.freeze([
-            STUDENT_DASHBOARD_TABS.TASKS,
             STUDENT_DASHBOARD_TABS.PROGRESS,
             STUDENT_DASHBOARD_TABS.CERTIFICATES,
             STUDENT_DASHBOARD_TABS.LEADERBOARD,
@@ -59,23 +75,28 @@ export const STUDENT_WORKSPACE_GROUP_BY_ID = Object.freeze(
 );
 
 const RAW_NAV_ITEMS = [
-    // Primary Navigation - Core Learning Activities
+    // TODAY - Daily at-a-glance
     { id: STUDENT_DASHBOARD_TABS.OVERVIEW, labelKey: 'studentDashboard.shell.nav.overview', icon: FiHome, category: 'primary', priority: 1 },
-    { id: STUDENT_DASHBOARD_TABS.MY_COURSES, labelKey: 'studentDashboard.shell.nav.myCourses', icon: FiBookOpen, category: 'primary', priority: 2 },
-    { id: STUDENT_DASHBOARD_TABS.SCHEDULE, labelKey: 'studentDashboard.shell.nav.schedule', icon: FiCalendar, category: 'primary', priority: 3 },
+    { id: STUDENT_DASHBOARD_TABS.SCHEDULE, labelKey: 'studentDashboard.shell.nav.schedule', icon: FiCalendar, category: 'primary', priority: 2 },
+
+    // LEARNING - Course content
+    { id: STUDENT_DASHBOARD_TABS.MY_COURSES, labelKey: 'studentDashboard.shell.nav.myCourses', icon: FiBookOpen, category: 'primary', priority: 3 },
     { id: STUDENT_DASHBOARD_TABS.RESOURCES, labelKey: 'studentDashboard.shell.nav.resources', icon: FiFolder, category: 'primary', priority: 4 },
     { id: STUDENT_DASHBOARD_TABS.FREE_RESOURCES, labelKey: 'studentDashboard.shell.nav.freeResources', icon: FiGlobe, category: 'primary', priority: 5 },
-    { id: STUDENT_DASHBOARD_TABS.TASKS, labelKey: 'studentDashboard.shell.nav.tasks', icon: FiPlay, category: 'primary', priority: 6 },
-    { id: STUDENT_DASHBOARD_TABS.PROGRESS, labelKey: 'studentDashboard.shell.nav.progress', icon: FiBarChart2, category: 'primary', priority: 7 },
-    { id: STUDENT_DASHBOARD_TABS.CERTIFICATES, labelKey: 'studentDashboard.shell.nav.certificates', icon: FiAward, category: 'primary', priority: 8 },
 
-    // Secondary Navigation - Learning Management
-    { id: STUDENT_DASHBOARD_TABS.CHAT, labelKey: 'studentDashboard.shell.nav.chat', icon: FiMessageCircle, category: 'secondary', priority: 2 },
+    // PRACTICE - Active work
+    { id: STUDENT_DASHBOARD_TABS.TASKS, labelKey: 'studentDashboard.shell.nav.tasks', icon: FiPlay, category: 'primary', priority: 6 },
+    { id: STUDENT_DASHBOARD_TABS.VOCABULARY_REVIEWS, labelKey: 'studentDashboard.shell.nav.vocabularyReviews', icon: FiRepeat, category: 'primary', priority: 7 },
+
+    // PROGRESS - Tracking
+    { id: STUDENT_DASHBOARD_TABS.PROGRESS, labelKey: 'studentDashboard.shell.nav.progress', icon: FiBarChart2, category: 'secondary', priority: 1 },
+    { id: STUDENT_DASHBOARD_TABS.CERTIFICATES, labelKey: 'studentDashboard.shell.nav.certificates', icon: FiAward, category: 'secondary', priority: 2 },
     { id: STUDENT_DASHBOARD_TABS.LEADERBOARD, labelKey: 'studentDashboard.shell.nav.leaderboard', icon: FiCheckCircle, category: 'secondary', priority: 3 },
 
-    // Administrative - Settings & Communication
-    { id: STUDENT_DASHBOARD_TABS.PROFILE, labelKey: 'studentDashboard.shell.nav.profile', icon: FiUser, category: 'admin', priority: 1 },
-    { id: STUDENT_DASHBOARD_TABS.NOTIFICATIONS, labelKey: 'studentDashboard.shell.nav.notifications', icon: FiBell, category: 'admin', priority: 2 },
+    // SUPPORT - Communication & settings
+    { id: STUDENT_DASHBOARD_TABS.CHAT, labelKey: 'studentDashboard.shell.nav.chat', icon: FiMessageCircle, category: 'admin', priority: 1 },
+    { id: STUDENT_DASHBOARD_TABS.PROFILE, labelKey: 'studentDashboard.shell.nav.profile', icon: FiUser, category: 'admin', priority: 2 },
+    { id: STUDENT_DASHBOARD_TABS.NOTIFICATIONS, labelKey: 'studentDashboard.shell.nav.notifications', icon: FiBell, category: 'admin', priority: 3 },
 ];
 
 export const NAV_ITEMS = applyWorkspaceGroups(RAW_NAV_ITEMS, STUDENT_WORKSPACE_GROUPS);

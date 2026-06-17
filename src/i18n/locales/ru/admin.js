@@ -351,6 +351,66 @@ export const admin = {
             limitSaved: "Лимит AI LMS функции сохранен.",
             limitSaveError: "Не удалось сохранить лимит AI LMS функции.",
             instructorsLoadError: "Не удалось загрузить инструкторов."
+        },
+        usage: {
+            title: "Статистика использования",
+            description: "Использование токенов и запросов по области, функции и периоду.",
+            filters: {
+                feature: "Функция",
+                status: "Статус",
+                allFeatures: "Все функции",
+                allStatuses: "Все статусы"
+            },
+            table: {
+                id: "ID",
+                scope: "Область",
+                feature: "Функция",
+                status: "Статус",
+                period: "Период",
+                daily: "Дневной",
+                tokens: "Токены"
+            },
+            empty: "Нет записей использования по текущим фильтрам.",
+            load: "Загрузить статистику",
+            toasts: { error: "Не удалось загрузить статистику использования." }
+        },
+        audit: {
+            title: "Журнал аудита",
+            description: "События генерации и активность функций по всем областям.",
+            filters: {
+                feature: "Функция",
+                action: "Действие",
+                allFeatures: "Все функции",
+                allActions: "Все действия"
+            },
+            table: {
+                id: "ID",
+                action: "Действие",
+                feature: "Функция",
+                generation: "Генерация",
+                scope: "Область",
+                user: "User ID",
+                date: "Дата"
+            },
+            empty: "Нет записей аудита по текущим фильтрам.",
+            load: "Загрузить журнал",
+            viewGeneration: "Показать",
+            toasts: { error: "Не удалось загрузить журнал аудита." }
+        },
+        generation: {
+            title: "Детали генерации",
+            close: "Закрыть",
+            notFound: "Генерация не найдена.",
+            fields: {
+                id: "ID",
+                feature: "Функция",
+                status: "Статус",
+                model: "Модель",
+                tokens: "Всего токенов",
+                createdAt: "Создано"
+            },
+            outputLabel: "Вывод (JSON)",
+            toasts: { error: "Не удалось загрузить детали генерации." }
         }
     },
     adminAiPrompts: {

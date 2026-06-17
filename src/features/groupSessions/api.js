@@ -68,7 +68,7 @@ const normalizeActivities = (activities) => {
         throw new Error('activities must be an array');
     }
 
-    const validTypes = new Set(['discussion', 'exercise', 'quiz', 'group_work']);
+    const validTypes = new Set(['discussion', 'exercise', 'quiz', 'group_work', 'vocabulary', 'fill_blank', 'word_match', 'listening', 'writing_correction']);
     const validStatuses = new Set(['planned', 'active', 'done']);
 
     return activities
@@ -138,6 +138,7 @@ const normalizeActivities = (activities) => {
                 description: description || undefined,
                 type,
                 status,
+                payload: activity?.payload !== undefined ? activity.payload : undefined,
                 questions: questions?.map((question, questionIndex) =>
                     clean({
                         id:
@@ -208,6 +209,11 @@ const normalizeSessionPayload = (payload = {}, { partial = false } = {}) => {
                 : undefined,
         recordingUrl: payload.recordingUrl,
         materials: normalizeMaterials(payload.materials),
+        isMakeup: payload.isMakeup !== undefined ? Boolean(payload.isMakeup) : undefined,
+        makeupForSessionId:
+            payload.makeupForSessionId !== undefined && payload.makeupForSessionId !== null && payload.makeupForSessionId !== ''
+                ? ensurePositiveInt(payload.makeupForSessionId, 'makeupForSessionId')
+                : undefined,
     });
 
     if (payload.notes !== undefined) {

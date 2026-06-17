@@ -125,7 +125,14 @@ export const publicResources = {
                 viewFull: "Толук рейтингди көрүү",
                 fallbackTitle: "Рейтинг эскертүүсү",
                 fallbackBody: "Бул жуманын мыктылары азырынча жүктөлгөн жок. Жасалма студенттер көрсөтүлгөн жок.",
-                empty: "Лидерборд маалыматтары азырынча жок."
+                empty: "Лидерборд маалыматтары азырынча жок.",
+                badges: {
+                    finisher: "Курсту бүтүргөн",
+                    streak: "{{count}}-күн серия",
+                    quizChampion: "Тест чемпиону",
+                    topLearner: "Топ студент",
+                    fastProgress: "Тез прогресс"
+                }
             }
         },
         leaderboard: {
@@ -138,6 +145,7 @@ export const publicResources = {
             tabs: {
                 overview: "Кыскача",
                 weekly: "Апталык рейтинг",
+                rankings: "Рейтинг",
                 skills: "Көндүмдөр"
             },
             tracks: {

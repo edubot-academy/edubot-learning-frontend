@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import { FiCalendar, FiEdit3, FiMapPin, FiPaperclip, FiVideo } from 'react-icons/fi';
+import { FiCalendar, FiEdit3, FiMapPin, FiPaperclip, FiRepeat, FiVideo } from 'react-icons/fi';
 import { COURSE_SESSION_STATUS, COURSE_TYPE } from '@shared/contracts';
 
 const SessionSetupModal = ({
@@ -183,6 +183,49 @@ const SessionSetupModal = ({
                         <div className="space-y-5">
                             <section className="rounded-[1.75rem] border border-edubot-line/70 bg-edubot-surfaceAlt/35 p-5 dark:border-slate-700 dark:bg-slate-900/35">
                                 <div className="flex items-center gap-2 text-sm font-semibold text-edubot-ink dark:text-white">
+                                    <FiRepeat className="h-4 w-4 text-edubot-orange" />
+                                    {t('groupSessions.setup.sections.makeup')}
+                                </div>
+                                <div className="mt-4 space-y-3">
+                                    <label className="inline-flex cursor-pointer items-center gap-3">
+                                        <input
+                                            type="checkbox"
+                                            checked={Boolean(sessionForm.isMakeup)}
+                                            onChange={(e) =>
+                                                isCreateWorkspace
+                                                    ? setQuickSession((prev) => ({ ...prev, isMakeup: e.target.checked, makeupForSessionId: e.target.checked ? prev.makeupForSessionId : '' }))
+                                                    : setEditSession((prev) => ({ ...prev, isMakeup: e.target.checked, makeupForSessionId: e.target.checked ? prev.makeupForSessionId : '' }))
+                                            }
+                                            className="h-4 w-4 rounded border-edubot-line text-edubot-orange focus:ring-edubot-orange/30"
+                                        />
+                                        <span className="text-sm font-medium text-edubot-ink dark:text-white">
+                                            {t('groupSessions.setup.fields.isMakeup')}
+                                        </span>
+                                    </label>
+                                    {Boolean(sessionForm.isMakeup) && (
+                                        <div className="space-y-1.5">
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                value={sessionForm.makeupForSessionId || ''}
+                                                onChange={(e) =>
+                                                    isCreateWorkspace
+                                                        ? setQuickSession((prev) => ({ ...prev, makeupForSessionId: e.target.value }))
+                                                        : setEditSession((prev) => ({ ...prev, makeupForSessionId: e.target.value }))
+                                                }
+                                                placeholder={t('groupSessions.setup.fields.makeupForSessionId')}
+                                                className="dashboard-field"
+                                            />
+                                            <p className="text-xs text-edubot-muted dark:text-slate-400">
+                                                {t('groupSessions.setup.help.makeupSession')}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </section>
+
+                            <section className="rounded-[1.75rem] border border-edubot-line/70 bg-edubot-surfaceAlt/35 p-5 dark:border-slate-700 dark:bg-slate-900/35">
+                                <div className="flex items-center gap-2 text-sm font-semibold text-edubot-ink dark:text-white">
                                     {isOffline ? (
                                         <FiMapPin className="h-4 w-4 text-edubot-orange" />
                                     ) : isOnlineLive ? (
@@ -321,6 +364,8 @@ SessionSetupModal.propTypes = {
         endsAt: PropTypes.string,
         status: PropTypes.string,
         recordingUrl: PropTypes.string,
+        isMakeup: PropTypes.bool,
+        makeupForSessionId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     }).isRequired,
     isCreateWorkspace: PropTypes.bool.isRequired,
     isOpen: PropTypes.bool.isRequired,
@@ -337,6 +382,8 @@ SessionSetupModal.propTypes = {
         recordingUrl: PropTypes.string,
         materialTitle: PropTypes.string,
         materialUrl: PropTypes.string,
+        isMakeup: PropTypes.bool,
+        makeupForSessionId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     }).isRequired,
     selectedCourse: PropTypes.shape({
         title: PropTypes.string,

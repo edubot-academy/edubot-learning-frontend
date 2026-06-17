@@ -8,6 +8,9 @@ export { default as ProfileSection } from './components/ProfileSection.jsx';
 export { default as AiSection } from './components/AiSection.jsx';
 export { default as OfferingsSection } from './components/OfferingsSection.jsx';
 export { default as ChatTab } from './components/ChatTab.jsx';
+export { default as TemplatesTab } from './components/TemplatesTab.jsx';
+export { default as AiGeneratorTab } from './components/AiGeneratorTab.jsx';
+export { default as MessageDraftsTab } from './components/MessageDraftsTab.jsx';
 
 // UI Components
 export { default as InstructorStatCard } from './components/InstructorStatCard.jsx';

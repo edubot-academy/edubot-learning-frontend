@@ -39,13 +39,21 @@ export const student = {
                 showMenu: "Показать меню"
             },
             workspaceGroups: {
+                today: {
+                    label: "Сегодня",
+                    description: "Ежедневный обзор и ближайшее расписание."
+                },
                 learning: {
                     label: "Учебное пространство",
-                    description: "Основные действия для курсов, расписания и учебных материалов."
+                    description: "Доступ к курсам, ресурсам и бесплатным материалам."
+                },
+                practice: {
+                    label: "Практика и повторение",
+                    description: "Выполняйте задания и закрепляйте лексику с помощью интервального повторения."
                 },
                 progress: {
                     label: "Выполнение и прогресс",
-                    description: "Мониторинг заданий, прогресса, сертификатов и рейтинга."
+                    description: "Мониторинг прогресса, сертификатов и рейтинга."
                 },
                 support: {
                     label: "Связь и настройки",
@@ -59,6 +67,7 @@ export const student = {
                 resources: "Ресурсы",
                 freeResources: "Бесплатное обучение",
                 tasks: "Задания",
+                vocabularyReviews: "Словарь",
                 progress: "Прогресс",
                 certificates: "Сертификаты",
                 chat: "Чат",
@@ -101,6 +110,35 @@ export const student = {
                 removeConfirm: "Убрать этот курс из вашего списка?",
                 removeConfirmYes: "Да, убрать",
                 removeConfirmCancel: "Отмена"
+            }
+        },
+        vocabularyReviews: {
+            eyebrow: "Интервальное повторение",
+            title: "Словарные карточки",
+            description: "Повторяйте карточки по системе Лейтнера. Карточки переходят в более высокие ящики при правильном ответе.",
+            dueCount_one: "{{count}} карточка к повторению",
+            dueCount_other: "{{count}} карточек к повторению",
+            boxLabel: "Ящик {{box}}",
+            word: "Слово",
+            definition: "Определение",
+            tapToFlip: "Нажмите, чтобы перевернуть",
+            gotIt: "Знаю",
+            notYet: "Не знаю",
+            card: "Карточка {{current}} из {{total}}",
+            empty: {
+                title: "Всё повторено!",
+                description: "Сейчас нет карточек для повторения. Возвращайтесь позже.",
+                refresh: "Проверить снова"
+            },
+            done: {
+                title: "Сессия завершена!",
+                subtitle: "Отличная работа! Вот итоги.",
+                known: "{{count}} известно",
+                stillLearning: "{{count}} учу",
+                reviewAgain: "Повторить снова"
+            },
+            toasts: {
+                error: "Не удалось загрузить карточки. Попробуйте снова."
             }
         },
         overview: {
@@ -742,7 +780,43 @@ export const student = {
                 exercise: "Упражнение",
                 quiz: "Квиз",
                 groupWork: "Групповая работа",
+                vocabulary: "Словарный запас",
+                fillBlank: "Заполнить пропуски",
+                wordMatch: "Сопоставить слова",
+                listening: "Аудирование",
+                writingCorrection: "Письмо",
                 work: "Работа"
+            },
+            interactive: {
+                noContent: "Содержимое активности недоступно.",
+                vocab: {
+                    progress: "{{reviewed}} из {{total}} изучено",
+                    card: "Карточка {{current}} / {{total}}",
+                    word: "Слово",
+                    definition: "Определение",
+                    tapToFlip: "Нажмите, чтобы перевернуть",
+                    gotIt: "Знаю",
+                    notYet: "Не знаю",
+                    allReviewed: "Готово! Знаю: {{known}}, учу: {{unknown}}"
+                },
+                fillBlank: {
+                    sentence: "Предложение {{n}}"
+                },
+                wordMatch: {
+                    instructions: "Выберите слово слева, затем соответствие справа.",
+                    allMatched: "Все пары сопоставлены!"
+                },
+                listening: {
+                    audioTitle: "Аудио",
+                    noAudio: "Ваш браузер не поддерживает аудио.",
+                    noAudioFile: "Аудиофайл не предоставлен.",
+                    answerPlaceholder: "Ваш ответ…"
+                },
+                writing: {
+                    prompt: "Задание",
+                    rubric: "Критерии оценки",
+                    placeholder: "Напишите ваш ответ здесь…"
+                }
             },
             reviewStatuses: {
                 submitted: "На проверке",
@@ -776,6 +850,7 @@ export const student = {
                 activitySubmitUnavailable: "Отправка недоступна для этой активности.",
                 homeworkSubmitUnavailable: "Отправка недоступна для этого задания.",
                 addAnswerLinkOrFile: "Добавьте ответ, ссылку или файл.",
+                completeInteractiveActivity: "Выполните задание перед отправкой.",
                 activitySubmitted: "Активность отправлена.",
                 homeworkSubmitted: "Задание отправлено.",
                 activitySubmitError: "Не удалось отправить активность.",

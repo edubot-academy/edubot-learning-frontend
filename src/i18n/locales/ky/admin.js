@@ -351,6 +351,66 @@ export const admin = {
             limitSaved: "AI LMS функция лимити сакталды.",
             limitSaveError: "AI LMS функция лимитин сактоо мүмкүн болгон жок.",
             instructorsLoadError: "Инструкторлорду жүктөө мүмкүн болгон жок."
+        },
+        usage: {
+            title: "Колдонуу статистикасы",
+            description: "Алкак, функция жана мезгил боюнча токен жана суроо-талап колдонуусу.",
+            filters: {
+                feature: "Функция",
+                status: "Статус",
+                allFeatures: "Бардык функциялар",
+                allStatuses: "Бардык статустар"
+            },
+            table: {
+                id: "ID",
+                scope: "Алкак",
+                feature: "Функция",
+                status: "Статус",
+                period: "Мезгил",
+                daily: "Күндүк",
+                tokens: "Токендер"
+            },
+            empty: "Учурдагы чыпкаларга туура келген колдонуу жазуулары жок.",
+            load: "Статистиканы жүктөө",
+            toasts: { error: "Колдонуу статистикасын жүктөө мүмкүн болгон жок." }
+        },
+        audit: {
+            title: "Аудит журналы",
+            description: "Бардык алкактар боюнча генерация окуялары жана функция активдүүлүгү.",
+            filters: {
+                feature: "Функция",
+                action: "Аракет",
+                allFeatures: "Бардык функциялар",
+                allActions: "Бардык аракеттер"
+            },
+            table: {
+                id: "ID",
+                action: "Аракет",
+                feature: "Функция",
+                generation: "Генерация",
+                scope: "Алкак",
+                user: "User ID",
+                date: "Дата"
+            },
+            empty: "Учурдагы чыпкаларга туура келген аудит жазуулары жок.",
+            load: "Журналды жүктөө",
+            viewGeneration: "Көрүү",
+            toasts: { error: "Аудит журналын жүктөө мүмкүн болгон жок." }
+        },
+        generation: {
+            title: "Генерация маалыматтары",
+            close: "Жабуу",
+            notFound: "Генерация табылган жок.",
+            fields: {
+                id: "ID",
+                feature: "Функция",
+                status: "Статус",
+                model: "Модель",
+                tokens: "Бардык токендер",
+                createdAt: "Түзүлдү"
+            },
+            outputLabel: "Чыгуу (JSON)",
+            toasts: { error: "Генерация маалыматтарын жүктөө мүмкүн болгон жок." }
         }
     },
     adminAiPrompts: {

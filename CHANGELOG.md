@@ -2,6 +2,36 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.17.0] - 2026-06-17
+
+### Added
+
+- **Instructor AI Studio workspace group**: three new tabs — `AiGeneratorTab`, `MessageDraftsTab`, and `TemplatesTab` — lazy-loaded in `InstructorDashboard`. AI Generator and Message Drafts are grouped under a new _AI Studio_ sidebar section; Templates sits in the _Teaching_ group.
+- **Lesson plan and quiz template features**: new `lessonPlanTemplates` and `quizTemplates` feature modules backing the `TemplatesTab`.
+- **Interactive activity types**: five new session activity types — `vocabulary`, `fill_blank`, `word_match`, `listening`, and `writing_correction` — registered in the session API's `normalizeActivities` allowlist and wired through `SessionActivitiesTab` (instructor) with color-coded chip/panel styles. The `payload` field is now passed through activity normalization.
+- **`ActivityInteractiveForm` component**: student-facing form for submitting interactive activity answers. Submission is handled in `useStudentTaskSubmission` — interactive answers are JSON-serialized and posted via `submitStudentActivity`; for `vocabulary` type, `seedVocabularyCards` is fire-and-forgotten after submission.
+- **Vocabulary review tab**: new `VocabularyReviewsTab` registered in `StudentDashboardShell` as a self-loading tab (`vocabulary-reviews`), backed by three new student API calls: `seedVocabularyCards`, `getDueVocabularyCards`, and `recordVocabularyReview`.
+- **`VOCABULARY_REVIEWS` dashboard tab constant**: added to `STUDENT_DASHBOARD_TABS`; `TEMPLATES`, `AI_GENERATOR`, and `MESSAGE_DRAFTS` added to `INSTRUCTOR_DASHBOARD_TABS`.
+- **Admin AI audit panel**: `AdminAiAuditPanel` component embedded at the bottom of the AI LMS settings tab, using two new admin API endpoints — `getAdminAiUsage` and `getAdminAiAuditLogs`.
+- **AI LMS API expansion**: `generateAiLiveQuizDraft`, `generateAiFreeFormContent`, and `getAiGeneration` added alongside the existing session-feedback and quiz-draft generators.
+- **Makeup session support**: `SessionSetupModal` now has a "Makeup session" section with an `isMakeup` checkbox and a `makeupForSessionId` number input (revealed when checked). `normalizeSessionPayload` in the group sessions API validates and passes both fields through. i18n keys added across all three locales.
+- **Interactive task draft detection**: `TasksTab` detects `interactiveAnswers` in the draft state so the "unsaved work" indicator fires for interactive activities.
+- **Interactive activity type labels and styles**: `ACTIVITY_TYPE_LABEL_KEY` and `ACTIVITY_TYPE_META` in `TasksTab` extended with color-coded badge/panel styles for all five new types.
+
+### Changed
+
+- **Instructor dashboard nav restructure**: workspace group renamed from _Delivery Workbench_ to _Teaching_; `ATTENDANCE` tab moved from the Settings group into Teaching; _AI Studio_ group added for AI Generator and Message Drafts; analytics nav items re-prioritized; nav constants updated accordingly.
+- **Student dashboard nav restructure**: new _Today_ workspace group (Overview + Schedule) and _Practice_ group (Tasks + Vocabulary Reviews) introduced; Progress, Certificates, and Leaderboard consolidated under _Progress_; Chat moved into the admin/support group. Nav items re-prioritized throughout.
+- **Leaderboard components refactored**: `LeaderboardExperience`, `LeaderboardHub`, and `TopLearnersHome` substantially rewritten — cleaner helper extraction, `FiTrendingDown` added alongside `FiTrendingUp`, avatar rendered with `loading="lazy"` and `rounded-full`.
+- **`InternalLeaderboard` fixes**: avatar fallback now uses a gradient background matching `LeaderboardAvatar`; track filter buttons gain `cursor-pointer`; the _Student of the Week_ metric card now displays the student's name instead of `'1'`/`'0'`.
+
+### Verification
+
+- `npm run build`
+- `git diff --check`
+
+---
+
 ## [1.16.15] - 2026-06-16
 
 ### Fixed

@@ -139,11 +139,14 @@ export const instructor = {
             sessions: "Сессиялар",
             homework: "Үй тапшырма",
             chat: "Чат",
+            attendance: "Катышуу",
+            templates: "Үлгүлөр",
+            aiGenerator: "AI Генератор",
+            messageDrafts: "Билдирүү черновиктери",
             analytics: "Аналитика",
             leaderboard: "Рейтинг",
             profile: "Профиль",
             ai: "AI ассистент",
-            attendance: "Катышуу",
             notifications: "Билдирүүлөр"
         },
         workspaceGroups: {
@@ -155,9 +158,13 @@ export const instructor = {
                 label: "Курс башкаруу",
                 description: "Курс, студент, группа, агым жана сертификат башкаруу иштери."
             },
-            deliveryWorkbench: {
-                label: "Сабак өткөрүү",
-                description: "Сессия, катышуу, үй тапшырма жана чат боюнча күнүмдүк иштер."
+            teaching: {
+                label: "Окутуучунун жумуш аймагы",
+                description: "Сессиялар, үй тапшырма, катышуу, чат жана кайра колдонулуучу үлгүлөр."
+            },
+            aiStudio: {
+                label: "AI Студия",
+                description: "AI менен тирүү викториналар, эркин мазмун жана билдирүү черновиктерин жаратыңыз."
             },
             settings: {
                 label: "Профиль жана орнотуулар",
@@ -1566,6 +1573,82 @@ export const instructor = {
                 studentSearchFailed: "Студенттерди издөөдө ката кетти.",
                 enrollFailed: "Студентти группага кошууда ката кетти."
             }
+        },
+        templates: {
+            eyebrow: "Иш аймагы",
+            quizTab: "Тест шаблондору",
+            lessonPlanTab: "Сабак пландары",
+            quizTemplates: {
+                title: "Тест шаблондору",
+                description: "Сессияларга тиркее турган кайта колдонулуучу тесттер.",
+                createPlaceholder: "Шаблон аты",
+                create: "Түзүү",
+                empty: { title: "Тест шаблону жок", subtitle: "Биринчи кайта колдонулуучу тест шаблонун түзүңүз." },
+                actions: { duplicate: "Көчүрүү", delete: "Өчүрүү" },
+                toasts: { createFailed: "Шаблонду түзүү мүмкүн болбоду.", deleteFailed: "Шаблонду өчүрүү мүмкүн болбоду.", duplicated: "Шаблон көчүрүлдү." }
+            },
+            lessonPlanTemplates: {
+                title: "Сабак планынын шаблондору",
+                description: "Сессиялар үчүн кайта колдонулуучу пландар жана конспекттер.",
+                titlePlaceholder: "План аты",
+                contentPlaceholder: "Мазмун, план же эскертүүлөр...",
+                save: "Планды сактоо",
+                update: "Планды жаңыртуу",
+                new: "Жаңы план",
+                empty: { title: "Сабак планы жок", subtitle: "Биринчи кайта колдонулуучу сабак планын түзүңүз." },
+                actions: { edit: "Түзөтүү", delete: "Өчүрүү", cancel: "Жокко чыгаруу" },
+                toasts: { createFailed: "Планды сактоо мүмкүн болбоду.", updateFailed: "Планды жаңыртуу мүмкүн болбоду.", deleteFailed: "Планды өчүрүү мүмкүн болбоду." }
+            }
+        },
+        aiGenerator: {
+            eyebrow: "AI Studio",
+            liveQuizTab: "Жандуу тест",
+            freeFormTab: "Эркин форма",
+            liveQuiz: {
+                title: "Жандуу тест черногу",
+                description: "Келерки сессияга тест тапшырмасын жаратыңыз.",
+                topicLabel: "Тема",
+                topicPlaceholder: "мис. Present perfect",
+                questionCountLabel: "Суроолордун саны",
+                difficultyLabel: "Кыйынчылык",
+                difficulty: { easy: "Жеңил", medium: "Орто", hard: "Кыйын" },
+                generate: "Тест жаратуу",
+                generating: "Жаратылууда..."
+            },
+            freeForm: {
+                title: "Эркин форматтагы мазмун",
+                description: "Каалаган тема боюнча түшүндүрмө, машыгуу же иш барагын жаратыңыз.",
+                topicLabel: "Тема",
+                topicPlaceholder: "мис. Тексти түшүнүү стратегиялары",
+                typeLabel: "Мазмун түрү",
+                types: { explanation: "Түшүндүрмө", exercise: "Машыгуу", worksheet: "Иш барагы" },
+                generate: "Мазмун жаратуу",
+                generating: "Жаратылууда..."
+            },
+            result: {
+                title: "Генерация натыйжасы",
+                copy: "Көчүрүү",
+                accept: "Кабыл алуу",
+                reject: "Четке кагуу",
+                toasts: { accepted: "Натыйжа кабыл алынды.", rejected: "Натыйжа четке кагылды.", copied: "Көчүрүлдү." }
+            },
+            toasts: { error: "Генерация ийгиликсиз. Кайра аракет кылыңыз." }
+        },
+        messageDrafts: {
+            eyebrow: "AI Studio",
+            title: "Кат черногу",
+            description: "Студенттерге жекелештирилген каттарды AI жардамы менен жаратыңыз.",
+            courseLabel: "Курс",
+            coursePlaceholder: "Курс тандаңыз",
+            studentLabel: "Студент",
+            studentPlaceholder: "Студент тандаңыз",
+            purposeLabel: "Максат / контекст",
+            purposePlaceholder: "мис. 3 сессияны өткөрүп жиберди — колдоп-шыктандыруу.",
+            generate: "Черног жаратуу",
+            generating: "Жаратылууда...",
+            result: { title: "Черног", copy: "Көчүрүү", toasts: { copied: "Черног көчүрүлдү." } },
+            empty: { course: "Студенттерди жүктөө үчүн курс тандаңыз.", student: "Бул курста студент табылган жок." },
+            toasts: { selectStudent: "Алгач курс жана студент тандаңыз.", error: "Кат черногун жаратуу ийгиликсиз болду." }
         },
         generateSessions: {
             eyebrow: "Сессия түзүү",

@@ -23,18 +23,26 @@ import { FiAward, FiBookOpen, FiStar, FiTrendingUp } from 'react-icons/fi';
 const TRACKS = ['all', 'video', 'live'];
 
 const Avatar = ({ src, name }) => {
-    if (src) {
-        return <img src={src} alt={name || 'Student'} className="w-10 h-10 rounded-full object-cover" />;
-    }
-    const initials = (name || 'ED')
+    const initials = String(name || 'ED')
         .split(' ')
-        .map((chunk) => chunk[0])
+        .map((w) => w[0] || '')
         .join('')
         .slice(0, 2)
         .toUpperCase();
 
+    if (src) {
+        return (
+            <img
+                src={src}
+                alt={name || 'Student'}
+                loading="lazy"
+                className="w-10 h-10 rounded-full object-cover"
+            />
+        );
+    }
+
     return (
-        <div className="w-10 h-10 rounded-full bg-orange-500 text-white flex items-center justify-center font-semibold">
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 via-amber-400 to-yellow-300 text-white flex items-center justify-center font-semibold">
             {initials}
         </div>
     );
@@ -253,7 +261,7 @@ const InternalLeaderboard = () => {
                                 onClick={() => setTrack(option)}
                                 aria-pressed={track === option}
                                 title={t(`internalLeaderboard.tracks.${option}.helper`)}
-                                className={`rounded-xl px-3 py-2 text-sm font-medium transition-all ${
+                                className={`cursor-pointer rounded-xl px-3 py-2 text-sm font-medium transition-all ${
                                     track === option
                                         ? 'bg-edubot-orange text-white'
                                         : 'text-edubot-muted hover:text-edubot-ink dark:text-slate-300 dark:hover:text-white'
@@ -280,7 +288,7 @@ const InternalLeaderboard = () => {
                 />
                 <DashboardMetricCard
                     label={t('internalLeaderboard.metrics.studentOfWeek')}
-                    value={studentOfWeek?.fullName ? '1' : '0'}
+                    value={studentOfWeek?.fullName || '—'}
                     icon={FiAward}
                     tone="green"
                 />

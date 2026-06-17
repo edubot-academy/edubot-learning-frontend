@@ -125,7 +125,14 @@ export const publicResources = {
                 viewFull: "Смотреть полный рейтинг",
                 fallbackTitle: "Уведомление рейтинга",
                 fallbackBody: "Лучшие студенты этой недели пока не загрузились. Тестовые студенты не отображаются.",
-                empty: "Данные лидерборда пока недоступны."
+                empty: "Данные лидерборда пока недоступны.",
+                badges: {
+                    finisher: "Завершил курс",
+                    streak: "Серия {{count}}д",
+                    quizChampion: "Чемпион тестов",
+                    topLearner: "Топ студент",
+                    fastProgress: "Быстрый прогресс"
+                }
             }
         },
         leaderboard: {
@@ -138,6 +145,7 @@ export const publicResources = {
             tabs: {
                 overview: "Обзор",
                 weekly: "Недельный рейтинг",
+                rankings: "Рейтинг",
                 skills: "Навыки"
             },
             tracks: {

@@ -13,6 +13,7 @@ import CertificatesTab from './tabs/CertificatesTab.jsx';
 import ProfileTab from './tabs/ProfileTab.jsx';
 import ChatTab from './ChatTab.jsx';
 import FreeResourcesTab from './tabs/FreeResourcesTab.jsx';
+import VocabularyReviewsTab from './tabs/VocabularyReviewsTab.jsx';
 import LeaderboardHub from '@features/leaderboard/components/LeaderboardHub.jsx';
 import {
     DashboardLayout,
@@ -36,7 +37,7 @@ const ACCESS_REQUIRED_TABS = [
 const LIST_LOADING_TABS = ['my-courses', 'schedule', 'resources', 'tasks', 'certificates'];
 
 // Tabs that fetch their own data and must not be blocked by the shell's loading gate
-const SELF_LOADING_TABS = ['free-resources'];
+const SELF_LOADING_TABS = ['free-resources', 'vocabulary-reviews'];
 
 const StudentDashboardShell = ({
     accessStateDetails,
@@ -129,6 +130,8 @@ const StudentDashboardShell = ({
                 );
             case 'free-resources':
                 return <FreeResourcesTab />;
+            case 'vocabulary-reviews':
+                return <VocabularyReviewsTab />;
             case 'chat':
                 return <ChatTab />;
             case 'overview':

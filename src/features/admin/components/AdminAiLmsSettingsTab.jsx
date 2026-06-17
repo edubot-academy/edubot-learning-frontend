@@ -16,6 +16,7 @@ import {
     updateAiLmsAdminFeatureLimit,
     updateAiLmsAdminSettings,
 } from '../../aiLms/api';
+import AdminAiAuditPanel from './AdminAiAuditPanel';
 
 const FEATURES = [
     'feedback_draft',
@@ -420,6 +421,8 @@ const AdminAiLmsSettingsTab = ({ companies = [] }) => {
                     })}
                 </div>
             </DashboardInsetPanel>
+
+            <AdminAiAuditPanel scopeParams={scopeParams} />
         </div>
     );
 };

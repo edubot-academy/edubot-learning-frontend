@@ -139,11 +139,14 @@ export const instructor = {
             sessions: "Sessions",
             homework: "Homework",
             chat: "Chat",
+            attendance: "Attendance",
+            templates: "Templates",
+            aiGenerator: "AI Generator",
+            messageDrafts: "Message Drafts",
             analytics: "Analytics",
             leaderboard: "Leaderboard",
             profile: "Profile",
             ai: "AI assistant",
-            attendance: "Attendance",
             notifications: "Notifications"
         },
         workspaceGroups: {
@@ -155,9 +158,13 @@ export const instructor = {
                 label: "Course management",
                 description: "Manage courses, students, groups, offerings, and certificates."
             },
-            deliveryWorkbench: {
-                label: "Lesson delivery",
-                description: "Daily session, attendance, homework, and chat workflows."
+            teaching: {
+                label: "Teaching workbench",
+                description: "Sessions, homework, attendance, chat, and reusable templates."
+            },
+            aiStudio: {
+                label: "AI Studio",
+                description: "Generate live quizzes, free-form content, and message drafts with AI."
             },
             settings: {
                 label: "Profile and settings",
@@ -1566,6 +1573,82 @@ export const instructor = {
                 studentSearchFailed: "Could not search students.",
                 enrollFailed: "Could not add the student to the group."
             }
+        },
+        templates: {
+            eyebrow: "Teaching workbench",
+            quizTab: "Quiz Templates",
+            lessonPlanTab: "Lesson Plans",
+            quizTemplates: {
+                title: "Quiz Templates",
+                description: "Reusable quizzes you can attach to sessions.",
+                createPlaceholder: "Template name",
+                create: "Create",
+                empty: { title: "No quiz templates yet", subtitle: "Create your first reusable quiz template." },
+                actions: { duplicate: "Duplicate", delete: "Delete" },
+                toasts: { createFailed: "Could not create template.", deleteFailed: "Could not delete template.", duplicated: "Template duplicated." }
+            },
+            lessonPlanTemplates: {
+                title: "Lesson Plan Templates",
+                description: "Reusable outlines and lesson plans for your sessions.",
+                titlePlaceholder: "Plan name",
+                contentPlaceholder: "Lesson content, outline, or notes...",
+                save: "Save plan",
+                update: "Update plan",
+                new: "New plan",
+                empty: { title: "No lesson plans yet", subtitle: "Create your first reusable lesson plan." },
+                actions: { edit: "Edit", delete: "Delete", cancel: "Cancel" },
+                toasts: { createFailed: "Could not save plan.", updateFailed: "Could not update plan.", deleteFailed: "Could not delete plan." }
+            }
+        },
+        aiGenerator: {
+            eyebrow: "AI Studio",
+            liveQuizTab: "Live Quiz",
+            freeFormTab: "Free-Form",
+            liveQuiz: {
+                title: "Live Quiz Draft",
+                description: "Generate a quiz activity you can use in an upcoming session.",
+                topicLabel: "Topic",
+                topicPlaceholder: "e.g. Present perfect tense",
+                questionCountLabel: "Number of questions",
+                difficultyLabel: "Difficulty",
+                difficulty: { easy: "Easy", medium: "Medium", hard: "Hard" },
+                generate: "Generate quiz",
+                generating: "Generating..."
+            },
+            freeForm: {
+                title: "Free-Form Content",
+                description: "Generate explanations, exercises, or worksheets on any topic.",
+                topicLabel: "Topic",
+                topicPlaceholder: "e.g. Reading comprehension strategies",
+                typeLabel: "Content type",
+                types: { explanation: "Explanation", exercise: "Exercise", worksheet: "Worksheet" },
+                generate: "Generate content",
+                generating: "Generating..."
+            },
+            result: {
+                title: "Generated output",
+                copy: "Copy",
+                accept: "Accept",
+                reject: "Reject",
+                toasts: { accepted: "Generation accepted.", rejected: "Generation rejected.", copied: "Copied to clipboard." }
+            },
+            toasts: { error: "Generation failed. Please try again." }
+        },
+        messageDrafts: {
+            eyebrow: "AI Studio",
+            title: "Message Drafts",
+            description: "Generate personalised messages for your students with AI.",
+            courseLabel: "Course",
+            coursePlaceholder: "Select a course",
+            studentLabel: "Student",
+            studentPlaceholder: "Select a student",
+            purposeLabel: "Purpose / context",
+            purposePlaceholder: "e.g. Missed 3 sessions this week — encourage to stay on track.",
+            generate: "Generate draft",
+            generating: "Generating...",
+            result: { title: "Draft", copy: "Copy", toasts: { copied: "Draft copied to clipboard." } },
+            empty: { course: "Select a course to load students.", student: "No students found in this course." },
+            toasts: { selectStudent: "Please select a course and a student first.", error: "Failed to generate message draft." }
         },
         generateSessions: {
             eyebrow: "Session generation",

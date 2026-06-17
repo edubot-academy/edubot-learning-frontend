@@ -158,3 +158,18 @@ export const submitStudentActivityQuiz = async (sessionId, activityId, payload) 
     const { data } = await api.post(`/student/sessions/${sessionId}/activities/${activityId}/quiz-attempt`, payload);
     return data;
 };
+
+export const seedVocabularyCards = async (activityId) => {
+    const { data } = await api.post('/vocabulary-reviews/seed', { activityId });
+    return data;
+};
+
+export const getDueVocabularyCards = async () => {
+    const { data } = await api.get('/vocabulary-reviews/due');
+    return data;
+};
+
+export const recordVocabularyReview = async (reviewId, correct) => {
+    const { data } = await api.post('/vocabulary-reviews/record', { reviewId, correct: Boolean(correct) });
+    return data;
+};

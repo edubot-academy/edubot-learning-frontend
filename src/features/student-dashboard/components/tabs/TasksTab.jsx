@@ -30,6 +30,7 @@ import {
     fetchStudentActivitySubmissionAttachmentPreview,
     fetchStudentHomeworkSubmissionAttachmentPreview,
 } from '../../../student/api.js';
+import { ActivityInteractiveForm, INTERACTIVE_ACTIVITY_TYPES } from '../ActivityInteractiveForm.jsx';
 import { parseApiError } from '@shared/api/error';
 
 const MAX_HOMEWORK_FILE_SIZE_BYTES = 20 * 1024 * 1024;
@@ -92,6 +93,11 @@ const ACTIVITY_TYPE_LABEL_KEY = {
     discussion: 'studentDashboard.tasks.activityTypes.discussion',
     exercise: 'studentDashboard.tasks.activityTypes.exercise',
     quiz: 'studentDashboard.tasks.activityTypes.quiz',
+    vocabulary: 'studentDashboard.tasks.activityTypes.vocabulary',
+    fill_blank: 'studentDashboard.tasks.activityTypes.fillBlank',
+    word_match: 'studentDashboard.tasks.activityTypes.wordMatch',
+    listening: 'studentDashboard.tasks.activityTypes.listening',
+    writing_correction: 'studentDashboard.tasks.activityTypes.writingCorrection',
     group_work: 'studentDashboard.tasks.activityTypes.groupWork',
 };
 
@@ -123,6 +129,41 @@ const ACTIVITY_TYPE_META = {
             'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300',
         panelClass:
             'border-emerald-200/80 bg-emerald-50/70 dark:border-emerald-500/20 dark:bg-emerald-500/10',
+    },
+    vocabulary: {
+        icon: FiFileText,
+        badgeClass:
+            'border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-500/30 dark:bg-purple-500/10 dark:text-purple-300',
+        panelClass:
+            'border-purple-200/80 bg-purple-50/70 dark:border-purple-500/20 dark:bg-purple-500/10',
+    },
+    fill_blank: {
+        icon: FiEdit3,
+        badgeClass:
+            'border-teal-200 bg-teal-50 text-teal-700 dark:border-teal-500/30 dark:bg-teal-500/10 dark:text-teal-300',
+        panelClass:
+            'border-teal-200/80 bg-teal-50/70 dark:border-teal-500/20 dark:bg-teal-500/10',
+    },
+    word_match: {
+        icon: FiLink,
+        badgeClass:
+            'border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-300',
+        panelClass:
+            'border-indigo-200/80 bg-indigo-50/70 dark:border-indigo-500/20 dark:bg-indigo-500/10',
+    },
+    listening: {
+        icon: FiBookOpen,
+        badgeClass:
+            'border-cyan-200 bg-cyan-50 text-cyan-700 dark:border-cyan-500/30 dark:bg-cyan-500/10 dark:text-cyan-300',
+        panelClass:
+            'border-cyan-200/80 bg-cyan-50/70 dark:border-cyan-500/20 dark:bg-cyan-500/10',
+    },
+    writing_correction: {
+        icon: FiEdit3,
+        badgeClass:
+            'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300',
+        panelClass:
+            'border-rose-200/80 bg-rose-50/70 dark:border-rose-500/20 dark:bg-rose-500/10',
     },
 };
 
@@ -560,7 +601,8 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                             const hasQuizDraft = Object.values(draft.quizAnswers || {}).some((value) =>
                                 Array.isArray(value) ? value.length > 0 : Boolean(value)
                             );
-                            const hasDraftWork = hasTextDraft || hasLinkDraft || Boolean(draft.file) || hasQuizDraft;
+                            const hasInteractiveDraft = draft.interactiveAnswers != null;
+                            const hasDraftWork = hasTextDraft || hasLinkDraft || Boolean(draft.file) || hasQuizDraft || hasInteractiveDraft;
                             const isSubmitting = submittingTaskState?.key === item.key;
                             const isUploading = isSubmitting && submittingTaskState?.phase === 'uploading';
                             const isExpanded = expandedTaskId === item.key;
@@ -882,7 +924,13 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
 
                                                     {isExpanded ? (
                                                         <div className="mt-4 space-y-3">
-                                                            {item.task.kind === 'activity' && item.task.taskType === 'quiz' ? (
+                                                            {item.task.kind === 'activity' && INTERACTIVE_ACTIVITY_TYPES.has(item.task.activityType) ? (
+                                                                <ActivityInteractiveForm
+                                                                    task={item.task}
+                                                                    answers={draft.interactiveAnswers ?? null}
+                                                                    onChange={(next) => updateDraft(item.key, 'interactiveAnswers', next)}
+                                                                />
+                                                            ) : item.task.kind === 'activity' && item.task.taskType === 'quiz' ? (
                                                                 <div className="space-y-4">
                                                                     {(item.task.questions || []).map((question, questionIndex) => {
                                                                         const isMultiple = question.questionMode === 'multiple_choice';

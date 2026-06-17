@@ -39,13 +39,21 @@ export const student = {
                 showMenu: "Менюну көрсөтүү"
             },
             workspaceGroups: {
+                today: {
+                    label: "Бүгүнкү иш аймак",
+                    description: "Күнүмдүк кыскача маалымат жана жакынкы сабак жүгүртмөсү."
+                },
                 learning: {
                     label: "Окуу иш аймагы",
-                    description: "Курстар, сабак жүгүртмөсү жана окуу материалдары боюнча негизги аракеттер."
+                    description: "Курстарга, ресурстарга жана акысыз материалдарга кирүү."
+                },
+                practice: {
+                    label: "Машыгуу жана кайталоо",
+                    description: "Тапшырмаларды аткаруу жана сөздүк аралыктуу кайталоо менен бекемдөө."
                 },
                 progress: {
                     label: "Аткаруу жана прогресс",
-                    description: "Тапшырмалар, прогресс, сертификаттар жана рейтинг мониторинги."
+                    description: "Прогресс, сертификаттар жана рейтинг мониторинги."
                 },
                 support: {
                     label: "Байланыш жана орнотуулар",
@@ -59,6 +67,7 @@ export const student = {
                 resources: "Ресурстар",
                 freeResources: "Акысыз окуу",
                 tasks: "Тапшырмалар",
+                vocabularyReviews: "Сөздүк",
                 progress: "Прогресс",
                 certificates: "Сертификаттар",
                 chat: "Чат",
@@ -101,6 +110,35 @@ export const student = {
                 removeConfirm: "Бул курсту тизмеңизден алып салуу?",
                 removeConfirmYes: "Ооба, алып сал",
                 removeConfirmCancel: "Жок"
+            }
+        },
+        vocabularyReviews: {
+            eyebrow: "Аралыктуу кайталоо",
+            title: "Сөздүк карточкалар",
+            description: "Лейтнер системасы боюнча карточкаларды кайталаңыз. Туура жооп берген сайын карточкалар жогорку кутуга өтөт.",
+            dueCount_one: "{{count}} карточка чейин",
+            dueCount_other: "{{count}} карточка кайталоого",
+            boxLabel: "{{box}} кутуча",
+            word: "Сөз",
+            definition: "Аныктама",
+            tapToFlip: "Буруу үчүн басыңыз",
+            gotIt: "Билем",
+            notYet: "Билбейм",
+            card: "{{current}} / {{total}} карточка",
+            empty: {
+                title: "Баары кайталанды!",
+                description: "Азыр кайталай турган карточка жок. Кийинчерээк кайтып келиңиз.",
+                refresh: "Дагы текшерүү"
+            },
+            done: {
+                title: "Сессия аяктады!",
+                subtitle: "Жакшы иш! Жыйынтыктар.",
+                known: "{{count}} билдим",
+                stillLearning: "{{count}} үйрөнүп жатам",
+                reviewAgain: "Кайра кайталоо"
+            },
+            toasts: {
+                error: "Карточкаларды жүктөө мүмкүн болгон жок. Кайра аракет кылыңыз."
             }
         },
         overview: {
@@ -742,7 +780,43 @@ export const student = {
                 exercise: "Көнүгүү",
                 quiz: "Квиз",
                 groupWork: "Топтук иш",
+                vocabulary: "Сөздүк",
+                fillBlank: "Бош орундарды толтуруу",
+                wordMatch: "Сөздөрдү дал келтирүү",
+                listening: "Угуу",
+                writingCorrection: "Жазуу",
                 work: "Иш"
+            },
+            interactive: {
+                noContent: "Активиттин мазмуну жок.",
+                vocab: {
+                    progress: "{{total}} дан {{reviewed}} каралды",
+                    card: "Карта {{current}} / {{total}}",
+                    word: "Сөз",
+                    definition: "Аныктама",
+                    tapToFlip: "Буруу үчүн басыңыз",
+                    gotIt: "Билем",
+                    notYet: "Билбейм",
+                    allReviewed: "Бүттү! Билем: {{known}}, үйрөнүп жатам: {{unknown}}"
+                },
+                fillBlank: {
+                    sentence: "Сүйлөм {{n}}"
+                },
+                wordMatch: {
+                    instructions: "Солдон сөз тандаңыз, андан кийин оңдон дал келтириңиз.",
+                    allMatched: "Бардык жуп дал келтирилди!"
+                },
+                listening: {
+                    audioTitle: "Аудио",
+                    noAudio: "Браузериңиз аудиону колдобойт.",
+                    noAudioFile: "Аудио файл берилген эмес.",
+                    answerPlaceholder: "Жообуңуз…"
+                },
+                writing: {
+                    prompt: "Тапшырма",
+                    rubric: "Баалоо критерийлери",
+                    placeholder: "Жообуңузду бул жерге жазыңыз…"
+                }
             },
             reviewStatuses: {
                 submitted: "Текшерилип жатат",
@@ -776,6 +850,7 @@ export const student = {
                 activitySubmitUnavailable: "Бул иш үчүн submit жеткиликтүү эмес.",
                 homeworkSubmitUnavailable: "Бул тапшырма үчүн submit жеткиликтүү эмес.",
                 addAnswerLinkOrFile: "Жооп, шилтеме же файл кошуңуз.",
+                completeInteractiveActivity: "Жөнөтүүдөн мурун тапшырманы аяктаңыз.",
                 activitySubmitted: "Иш ийгиликтүү жөнөтүлдү.",
                 homeworkSubmitted: "Тапшырма ийгиликтүү жөнөтүлдү.",
                 activitySubmitError: "Ишти жөнөтүү мүмкүн болбоду.",

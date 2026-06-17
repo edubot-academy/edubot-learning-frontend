@@ -45,6 +45,9 @@ const InternalLeaderboard = lazy(() => import('./InternalLeaderboard'));
 const InstructorHomework = lazy(() => import('./InstructorHomework'));
 const NotificationsTab = lazy(() => import('@features/notifications/components/NotificationsTab'));
 const ChatTab = lazy(() => import('@features/instructor-dashboard/components/ChatTab.jsx'));
+const TemplatesTab = lazy(() => import('@features/instructor-dashboard/components/TemplatesTab.jsx'));
+const AiGeneratorTab = lazy(() => import('@features/instructor-dashboard/components/AiGeneratorTab.jsx'));
+const MessageDraftsTab = lazy(() => import('@features/instructor-dashboard/components/MessageDraftsTab.jsx'));
 
 const TabSuspense = ({ children }) => (
     <Suspense fallback={<Loader fullScreen={false} />}>{children}</Suspense>
@@ -488,6 +491,24 @@ const InstructorDashboard = () => {
                         loading={loadingOfferings}
                         refreshOfferings={handleRefreshOfferings}
                     />
+                );
+            case 'templates':
+                return (
+                    <TabSuspense>
+                        <TemplatesTab />
+                    </TabSuspense>
+                );
+            case 'ai-generator':
+                return (
+                    <TabSuspense>
+                        <AiGeneratorTab />
+                    </TabSuspense>
+                );
+            case 'message-drafts':
+                return (
+                    <TabSuspense>
+                        <MessageDraftsTab courses={courses} />
+                    </TabSuspense>
                 );
             case 'overview':
             default:

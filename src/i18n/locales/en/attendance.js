@@ -680,13 +680,54 @@ export const attendance = {
                 discussion: "Discussion",
                 exercise: "Exercise",
                 quiz: "Quiz",
-                groupWork: "Group work"
+                groupWork: "Group work",
+                vocabulary: "Vocabulary",
+                fillBlank: "Fill in the blanks",
+                wordMatch: "Word match",
+                listening: "Listening",
+                writingCorrection: "Writing correction"
             },
             typeHelp: {
                 discussion: "Students can submit text or a short answer",
                 exercise: "Completed with text, a file, or a link",
                 quiz: "Auto-graded with immediate results",
-                groupWork: "Each student submits an individual result or short report"
+                groupWork: "Each student submits an individual result or short report",
+                vocabulary: "Flashcard review — students flip cards and mark what they know",
+                fillBlank: "Students complete sentences with missing words",
+                wordMatch: "Students match words on the left with meanings on the right",
+                listening: "Students listen to an audio clip and answer a question",
+                writingCorrection: "Students write a response based on a prompt"
+            },
+            payload: {
+                vocabulary: {
+                    wordLabel: "Word",
+                    definitionLabel: "Definition",
+                    addWord: "Add word",
+                    wordPlaceholder: "Word",
+                    definitionPlaceholder: "Definition"
+                },
+                fillBlank: {
+                    addSentence: "Add sentence",
+                    sentencePlaceholder: "Sentence (use ___ for the blank)",
+                    blankPlaceholder: "Correct answer"
+                },
+                wordMatch: {
+                    addPair: "Add pair",
+                    leftPlaceholder: "Left (word)",
+                    rightPlaceholder: "Right (meaning)"
+                },
+                listening: {
+                    audioUrlLabel: "Audio URL",
+                    audioUrlPlaceholder: "https://...",
+                    promptLabel: "Question / prompt",
+                    promptPlaceholder: "What did you hear about…?"
+                },
+                writingCorrection: {
+                    promptLabel: "Writing prompt",
+                    promptPlaceholder: "Write about…",
+                    rubricLabel: "Grading criteria (optional)",
+                    rubricPlaceholder: "Check for grammar, vocabulary…"
+                }
             },
             status: {
                 planned: "Planned",
@@ -958,7 +999,8 @@ export const attendance = {
                 locationAndMaterials: "Location and materials",
                 materialsAndRecording: "Materials and recording",
                 materials: "Materials",
-                context: "Context"
+                context: "Context",
+                makeup: "Makeup session"
             },
             fields: {
                 sessionIndex: "Session index *",
@@ -966,13 +1008,16 @@ export const attendance = {
                 groupLocation: "Group location",
                 recordingUrl: "Recording link",
                 materialTitle: "Material title",
-                materialUrl: "Material URL"
+                materialUrl: "Material URL",
+                isMakeup: "This is a makeup session",
+                makeupForSessionId: "Original session number"
             },
             help: {
                 nextSessionIndex: "Next available number: {{index}}. Change it only if needed.",
                 uniqueSessionIndex: "The number must be unique within this group.",
                 editMaterialsInResources: "To change materials, edit the session and update saved links in the Resources tab.",
-                saveChangesHere: "Save all changes here."
+                saveChangesHere: "Save all changes here.",
+                makeupSession: "Enable if this session replaces a missed one and enter the original session number."
             },
             context: {
                 course: "Course",

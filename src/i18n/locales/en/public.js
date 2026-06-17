@@ -125,7 +125,14 @@ export const publicResources = {
                 viewFull: "View full ranking",
                 fallbackTitle: "Ranking notice",
                 fallbackBody: "This week’s best learners have not loaded yet. Placeholder students are not shown.",
-                empty: "Leaderboard data is not available yet."
+                empty: "Leaderboard data is not available yet.",
+                badges: {
+                    finisher: "Course Finisher",
+                    streak: "{{count}}d Streak",
+                    quizChampion: "Quiz Champion",
+                    topLearner: "Top Learner",
+                    fastProgress: "Fast Progress"
+                }
             }
         },
         leaderboard: {
@@ -138,6 +145,7 @@ export const publicResources = {
             tabs: {
                 overview: "Overview",
                 weekly: "Weekly ranking",
+                rankings: "Rankings",
                 skills: "Skills"
             },
             tracks: {

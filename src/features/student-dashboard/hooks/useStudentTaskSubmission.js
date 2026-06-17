@@ -8,6 +8,8 @@ import {
     uploadSessionHomeworkAttachment,
     uploadStudentActivityAttachment,
 } from '@services/api';
+import { seedVocabularyCards } from '../../student/api';
+import { INTERACTIVE_ACTIVITY_TYPES } from '../components/ActivityInteractiveForm';
 import {
     getTaskKey,
     resolveSessionHomeworkIds,
@@ -36,6 +38,18 @@ export const useStudentTaskSubmission = ({ onRefreshTasks }) => {
                         optionIds: Array.isArray(value) ? value.map(Number) : value ? [Number(value)] : [],
                     }));
                     await submitStudentActivityQuiz(sessionId, activityId, { answers });
+                } else if (INTERACTIVE_ACTIVITY_TYPES.has(task.activityType)) {
+                    const interactiveAnswers = submission?.interactiveAnswers;
+                    if (!interactiveAnswers) {
+                        toast.error(t('studentDashboard.tasks.toasts.completeInteractiveActivity'));
+                        return false;
+                    }
+                    await submitStudentActivity(sessionId, activityId, {
+                        text: JSON.stringify(interactiveAnswers),
+                    });
+                    if (task.activityType === 'vocabulary') {
+                        seedVocabularyCards(activityId).catch(() => {});
+                    }
                 } else {
                     const text = submission?.text?.trim() || '';
                     const link = submission?.link?.trim() || '';

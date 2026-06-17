@@ -680,13 +680,54 @@ export const attendance = {
                 discussion: "Талкуу",
                 exercise: "Көнүгүү",
                 quiz: "Квиз",
-                groupWork: "Топтук иш"
+                groupWork: "Топтук иш",
+                vocabulary: "Сөздүк",
+                fillBlank: "Боштукту толтуруу",
+                wordMatch: "Сөздөрдү дал келтирүү",
+                listening: "Угуу",
+                writingCorrection: "Текст жазуу"
             },
             typeHelp: {
                 discussion: "Студент текст же кыска жооп бере алат",
                 exercise: "Текст, файл же шилтеме менен аткарылат",
                 quiz: "Авто бааланат, натыйжа дароо чыгат",
-                groupWork: "Ар бир студент өзүнчө жыйынтык же кыска отчет тапшырат"
+                groupWork: "Ар бир студент өзүнчө жыйынтык же кыска отчет тапшырат",
+                vocabulary: "Флэш-карточкалар — студенттер карточкаларды оодарып, билгенин белгилейт",
+                fillBlank: "Студенттер сүйлөмдөрдөгү боштуктарды толтурат",
+                wordMatch: "Студенттер сол жактагы сөздөрдү оң жактагы маанилери менен дал келтирет",
+                listening: "Студенттер аудио угуп, суроого жооп берет",
+                writingCorrection: "Студенттер берилген тапшырмага текст жазат"
+            },
+            payload: {
+                vocabulary: {
+                    wordLabel: "Сөз",
+                    definitionLabel: "Аныктама",
+                    addWord: "Сөз кошуу",
+                    wordPlaceholder: "Сөз",
+                    definitionPlaceholder: "Аныктама"
+                },
+                fillBlank: {
+                    addSentence: "Сүйлөм кошуу",
+                    sentencePlaceholder: "Сүйлөм (___ деп боштук белгилеңиз)",
+                    blankPlaceholder: "Туура жооп"
+                },
+                wordMatch: {
+                    addPair: "Жуп кошуу",
+                    leftPlaceholder: "Сол (сөз)",
+                    rightPlaceholder: "Оң (маани)"
+                },
+                listening: {
+                    audioUrlLabel: "Аудио URL",
+                    audioUrlPlaceholder: "https://...",
+                    promptLabel: "Суроо / тапшырма",
+                    promptPlaceholder: "Аудиодо эмне жөнүндө айтылды…?"
+                },
+                writingCorrection: {
+                    promptLabel: "Жазуу тапшырмасы",
+                    promptPlaceholder: "Жазыңыз…",
+                    rubricLabel: "Баалоо критерийлери (милдеттүү эмес)",
+                    rubricPlaceholder: "Грамматиканы, сөздүк запасты текшериңиз…"
+                }
             },
             status: {
                 planned: "Пландалды",
@@ -958,7 +999,8 @@ export const attendance = {
                 locationAndMaterials: "Жайгашкан жер жана материалдар",
                 materialsAndRecording: "Материалдар жана жазуу",
                 materials: "Материалдар",
-                context: "Контекст"
+                context: "Контекст",
+                makeup: "Ордун толтуруу сессиясы"
             },
             fields: {
                 sessionIndex: "Сессия номери *",
@@ -966,13 +1008,16 @@ export const attendance = {
                 groupLocation: "Группанын локациясы",
                 recordingUrl: "Жазуу шилтемеси",
                 materialTitle: "Материал аталышы",
-                materialUrl: "Материал URL"
+                materialUrl: "Материал URL",
+                isMakeup: "Бул ордун толтуруу сессиясы",
+                makeupForSessionId: "Оригинал сессиянын номери"
             },
             help: {
                 nextSessionIndex: "Кийинки жеткиликтүү номер: {{index}}. Зарыл болсо гана өзгөртүңүз.",
                 uniqueSessionIndex: "Номер ушул группанын ичинде уникалдуу болушу керек.",
                 editMaterialsInResources: "Материалдарды өзгөртүү үчүн сессияны түзөтүү режимин колдонуп, ресурстар табындагы сакталган шилтемелерди жаңыртыңыз.",
-                saveChangesHere: "Бардык өзгөртүүлөрдү ушул жерде сактаңыз."
+                saveChangesHere: "Бардык өзгөртүүлөрдү ушул жерде сактаңыз.",
+                makeupSession: "Эгер сессия өткөрүп жиберилген сессиянын ордун толтурса, иштетиңиз жана оригинал номерди жазыңыз."
             },
             context: {
                 course: "Курс",

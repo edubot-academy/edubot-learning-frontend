@@ -67,6 +67,21 @@ export const updateAiLmsAdminFeatureLimit = async (payload) => {
     return data;
 };
 
+export const generateAiLiveQuizDraft = async (payload) => {
+    const { data } = await api.post('/ai-lms/live-quiz-draft', payload);
+    return data;
+};
+
+export const generateAiFreeFormContent = async (payload) => {
+    const { data } = await api.post('/ai-lms/free-form', payload);
+    return data;
+};
+
+export const getAiGeneration = async (generationId) => {
+    const { data } = await api.get(`/ai-lms/generations/${generationId}`);
+    return data;
+};
+
 export const acceptAiGeneration = async (generationId) => {
     const { data } = await api.patch(`/ai-lms/generations/${generationId}/accept`);
     return data;
@@ -74,5 +89,20 @@ export const acceptAiGeneration = async (generationId) => {
 
 export const rejectAiGeneration = async (generationId) => {
     const { data } = await api.patch(`/ai-lms/generations/${generationId}/reject`);
+    return data;
+};
+
+export const getAdminAiUsage = async (params = {}) => {
+    const { data } = await api.get('/ai-lms/admin/usage', { params });
+    return data;
+};
+
+export const getAdminAiAuditLogs = async (params = {}) => {
+    const { data } = await api.get('/ai-lms/admin/audit-logs', { params });
+    return data;
+};
+
+export const getAdminAiGeneration = async (generationId) => {
+    const { data } = await api.get(`/ai-lms/admin/generations/${generationId}`);
     return data;
 };

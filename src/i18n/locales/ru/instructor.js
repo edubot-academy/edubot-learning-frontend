@@ -139,11 +139,14 @@ export const instructor = {
             sessions: "Сессии",
             homework: "Домашняя работа",
             chat: "Чат",
+            attendance: "Посещаемость",
+            templates: "Шаблоны",
+            aiGenerator: "AI Генератор",
+            messageDrafts: "Черновики сообщений",
             analytics: "Аналитика",
             leaderboard: "Рейтинг",
             profile: "Профиль",
             ai: "AI ассистент",
-            attendance: "Посещаемость",
             notifications: "Уведомления"
         },
         workspaceGroups: {
@@ -155,9 +158,13 @@ export const instructor = {
                 label: "Управление курсами",
                 description: "Управляйте курсами, студентами, группами, потоками и сертификатами."
             },
-            deliveryWorkbench: {
-                label: "Проведение занятий",
-                description: "Ежедневные процессы по сессиям, посещаемости, домашней работе и чату."
+            teaching: {
+                label: "Рабочее место преподавателя",
+                description: "Сессии, домашняя работа, посещаемость, чат и многоразовые шаблоны."
+            },
+            aiStudio: {
+                label: "AI Студия",
+                description: "Генерируйте живые викторины, свободный контент и черновики сообщений с AI."
             },
             settings: {
                 label: "Профиль и настройки",
@@ -1566,6 +1573,82 @@ export const instructor = {
                 studentSearchFailed: "Не удалось найти студентов.",
                 enrollFailed: "Не удалось добавить студента в группу."
             }
+        },
+        templates: {
+            eyebrow: "Рабочее пространство",
+            quizTab: "Шаблоны тестов",
+            lessonPlanTab: "Планы уроков",
+            quizTemplates: {
+                title: "Шаблоны тестов",
+                description: "Многоразовые тесты, которые можно прикреплять к сессиям.",
+                createPlaceholder: "Название шаблона",
+                create: "Создать",
+                empty: { title: "Нет шаблонов тестов", subtitle: "Создайте первый шаблон теста." },
+                actions: { duplicate: "Дублировать", delete: "Удалить" },
+                toasts: { createFailed: "Не удалось создать шаблон.", deleteFailed: "Не удалось удалить шаблон.", duplicated: "Шаблон продублирован." }
+            },
+            lessonPlanTemplates: {
+                title: "Шаблоны планов уроков",
+                description: "Многоразовые планы и конспекты уроков для сессий.",
+                titlePlaceholder: "Название плана",
+                contentPlaceholder: "Содержание, план или заметки...",
+                save: "Сохранить план",
+                update: "Обновить план",
+                new: "Новый план",
+                empty: { title: "Планов уроков нет", subtitle: "Создайте первый план урока." },
+                actions: { edit: "Редактировать", delete: "Удалить", cancel: "Отмена" },
+                toasts: { createFailed: "Не удалось сохранить план.", updateFailed: "Не удалось обновить план.", deleteFailed: "Не удалось удалить план." }
+            }
+        },
+        aiGenerator: {
+            eyebrow: "AI Studio",
+            liveQuizTab: "Живой тест",
+            freeFormTab: "Свободная форма",
+            liveQuiz: {
+                title: "Черновик живого теста",
+                description: "Создайте тестовое задание для предстоящей сессии.",
+                topicLabel: "Тема",
+                topicPlaceholder: "напр. Present perfect",
+                questionCountLabel: "Количество вопросов",
+                difficultyLabel: "Сложность",
+                difficulty: { easy: "Лёгкий", medium: "Средний", hard: "Сложный" },
+                generate: "Создать тест",
+                generating: "Создание..."
+            },
+            freeForm: {
+                title: "Контент в свободной форме",
+                description: "Создавайте объяснения, упражнения или рабочие листы на любую тему.",
+                topicLabel: "Тема",
+                topicPlaceholder: "напр. Стратегии понимания текста",
+                typeLabel: "Тип контента",
+                types: { explanation: "Объяснение", exercise: "Упражнение", worksheet: "Рабочий лист" },
+                generate: "Создать контент",
+                generating: "Создание..."
+            },
+            result: {
+                title: "Результат генерации",
+                copy: "Копировать",
+                accept: "Принять",
+                reject: "Отклонить",
+                toasts: { accepted: "Результат принят.", rejected: "Результат отклонён.", copied: "Скопировано." }
+            },
+            toasts: { error: "Ошибка генерации. Попробуйте ещё раз." }
+        },
+        messageDrafts: {
+            eyebrow: "AI Studio",
+            title: "Черновики сообщений",
+            description: "Создавайте персонализированные сообщения для студентов с помощью ИИ.",
+            courseLabel: "Курс",
+            coursePlaceholder: "Выберите курс",
+            studentLabel: "Студент",
+            studentPlaceholder: "Выберите студента",
+            purposeLabel: "Цель / контекст",
+            purposePlaceholder: "напр. Пропустил 3 сессии — поддержать и мотивировать.",
+            generate: "Создать черновик",
+            generating: "Создание...",
+            result: { title: "Черновик", copy: "Копировать", toasts: { copied: "Черновик скопирован." } },
+            empty: { course: "Выберите курс, чтобы загрузить студентов.", student: "Студентов в этом курсе не найдено." },
+            toasts: { selectStudent: "Сначала выберите курс и студента.", error: "Не удалось создать черновик сообщения." }
         },
         generateSessions: {
             eyebrow: "Создание сессий",

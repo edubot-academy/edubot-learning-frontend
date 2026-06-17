@@ -19,12 +19,18 @@ import { DashboardInsetPanel } from '../../../components/ui/dashboard';
 import { parseApiError } from '../../../shared/api/error';
 import { acceptAiGeneration, generateAiFeedbackDraft, generateAiSessionQuizDraft, getAiLmsCapabilities, rejectAiGeneration } from '../../aiLms/api';
 import AiGenerationDrawer from '../../aiLms/components/AiGenerationDrawer';
+import { INTERACTIVE_ACTIVITY_TYPES as INTERACTIVE_TYPES } from '../../student-dashboard/components/ActivityInteractiveForm';
 
 const ACTIVITY_TYPE_OPTIONS = [
     { value: 'discussion', labelKey: 'groupSessions.activities.types.discussion', icon: FiMessageSquare },
     { value: 'exercise', labelKey: 'groupSessions.activities.types.exercise', icon: FiEdit3 },
     { value: 'quiz', labelKey: 'groupSessions.activities.types.quiz', icon: FiClipboard },
     { value: 'group_work', labelKey: 'groupSessions.activities.types.groupWork', icon: FiUsers },
+    { value: 'vocabulary', labelKey: 'groupSessions.activities.types.vocabulary', icon: FiFileText },
+    { value: 'fill_blank', labelKey: 'groupSessions.activities.types.fillBlank', icon: FiEdit3 },
+    { value: 'word_match', labelKey: 'groupSessions.activities.types.wordMatch', icon: FiFileText },
+    { value: 'listening', labelKey: 'groupSessions.activities.types.listening', icon: FiMessageSquare },
+    { value: 'writing_correction', labelKey: 'groupSessions.activities.types.writingCorrection', icon: FiEdit3 },
 ];
 
 const ACTIVITY_STATUS_OPTIONS = [
@@ -55,6 +61,31 @@ const typeTone = {
         chip: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300',
         panel: 'border-emerald-200/80 bg-emerald-50/40 dark:border-emerald-500/20 dark:bg-emerald-500/5',
         helperKey: 'groupSessions.activities.typeHelp.groupWork',
+    },
+    vocabulary: {
+        chip: 'border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-500/30 dark:bg-purple-500/10 dark:text-purple-300',
+        panel: 'border-purple-200/80 bg-purple-50/40 dark:border-purple-500/20 dark:bg-purple-500/5',
+        helperKey: 'groupSessions.activities.typeHelp.vocabulary',
+    },
+    fill_blank: {
+        chip: 'border-teal-200 bg-teal-50 text-teal-700 dark:border-teal-500/30 dark:bg-teal-500/10 dark:text-teal-300',
+        panel: 'border-teal-200/80 bg-teal-50/40 dark:border-teal-500/20 dark:bg-teal-500/5',
+        helperKey: 'groupSessions.activities.typeHelp.fillBlank',
+    },
+    word_match: {
+        chip: 'border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-300',
+        panel: 'border-indigo-200/80 bg-indigo-50/40 dark:border-indigo-500/20 dark:bg-indigo-500/5',
+        helperKey: 'groupSessions.activities.typeHelp.wordMatch',
+    },
+    listening: {
+        chip: 'border-cyan-200 bg-cyan-50 text-cyan-700 dark:border-cyan-500/30 dark:bg-cyan-500/10 dark:text-cyan-300',
+        panel: 'border-cyan-200/80 bg-cyan-50/40 dark:border-cyan-500/20 dark:bg-cyan-500/5',
+        helperKey: 'groupSessions.activities.typeHelp.listening',
+    },
+    writing_correction: {
+        chip: 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300',
+        panel: 'border-rose-200/80 bg-rose-50/40 dark:border-rose-500/20 dark:bg-rose-500/5',
+        helperKey: 'groupSessions.activities.typeHelp.writingCorrection',
     },
 };
 
@@ -100,12 +131,21 @@ const createEmptyActivityQuestion = () => ({
     questionMode: 'single_choice',
     options: [createEmptyActivityOption(), createEmptyActivityOption()],
 });
+const DEFAULT_PAYLOAD = {
+    vocabulary: { words: [] },
+    fill_blank: { sentences: [] },
+    word_match: { pairs: [] },
+    listening: { audioUrl: '', prompt: '' },
+    writing_correction: { prompt: '', rubric: '' },
+};
+
 const createEmptyActivity = (type = 'discussion') => ({
     title: '',
     description: '',
     type,
     status: 'planned',
     questions: type === 'quiz' ? [createEmptyActivityQuestion()] : [],
+    payload: INTERACTIVE_TYPES.has(type) ? structuredClone(DEFAULT_PAYLOAD[type]) : null,
 });
 
 const cloneActivity = (activity = {}) => ({
@@ -127,6 +167,9 @@ const cloneActivity = (activity = {}) => ({
                   })),
               }))
             : [],
+    payload: INTERACTIVE_TYPES.has(activity.type)
+        ? (activity.payload ?? structuredClone(DEFAULT_PAYLOAD[activity.type]))
+        : null,
 });
 
 const formatSavedAt = (value, language) => {
@@ -146,6 +189,124 @@ const formatSubmissionThreadLabel = (message = {}, t) => {
         return message.authorName || t('groupSessions.activities.fallbacks.student');
     }
     return message.authorName || t('groupSessions.activities.fallbacks.instructor');
+};
+
+// ── Payload editors for interactive activity types ────────────────────────────
+const PayloadEditor = ({ type, payload, onChange, t }) => {
+    const fieldCls = 'dashboard-field';
+
+    const updatePayload = (patch) => onChange({ ...payload, ...patch });
+
+    if (type === 'vocabulary') {
+        const words = Array.isArray(payload?.words) ? payload.words : [];
+        return (
+            <div className="mt-3 rounded-2xl border border-purple-200/70 bg-purple-50/40 p-4 dark:border-purple-500/20 dark:bg-purple-500/5">
+                <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-purple-700 dark:text-purple-300">
+                    {t('groupSessions.activities.types.vocabulary')}
+                </div>
+                <div className="space-y-2">
+                    {words.map((w, i) => (
+                        <div key={i} className="flex gap-2">
+                            <input value={w.word} onChange={(e) => { const next = [...words]; next[i] = { ...next[i], word: e.target.value }; updatePayload({ words: next }); }} placeholder={t('groupSessions.activities.payload.vocabulary.wordPlaceholder')} className={`${fieldCls} flex-1`} />
+                            <input value={w.definition} onChange={(e) => { const next = [...words]; next[i] = { ...next[i], definition: e.target.value }; updatePayload({ words: next }); }} placeholder={t('groupSessions.activities.payload.vocabulary.definitionPlaceholder')} className={`${fieldCls} flex-1`} />
+                            <button type="button" onClick={() => updatePayload({ words: words.filter((_, j) => j !== i) })} className="text-rose-500 hover:text-rose-600"><FiTrash2 className="h-4 w-4" /></button>
+                        </div>
+                    ))}
+                </div>
+                <button type="button" onClick={() => updatePayload({ words: [...words, { word: '', definition: '' }] })} className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-purple-700 hover:text-purple-900 dark:text-purple-300">
+                    <FiPlus className="h-3.5 w-3.5" />{t('groupSessions.activities.payload.vocabulary.addWord')}
+                </button>
+            </div>
+        );
+    }
+
+    if (type === 'fill_blank') {
+        const sentences = Array.isArray(payload?.sentences) ? payload.sentences : [];
+        return (
+            <div className="mt-3 rounded-2xl border border-teal-200/70 bg-teal-50/40 p-4 dark:border-teal-500/20 dark:bg-teal-500/5">
+                <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-teal-700 dark:text-teal-300">
+                    {t('groupSessions.activities.types.fillBlank')}
+                </div>
+                <div className="space-y-2">
+                    {sentences.map((s, i) => (
+                        <div key={i} className="flex gap-2">
+                            <input value={s.sentence} onChange={(e) => { const next = [...sentences]; next[i] = { ...next[i], sentence: e.target.value }; updatePayload({ sentences: next }); }} placeholder={t('groupSessions.activities.payload.fillBlank.sentencePlaceholder')} className={`${fieldCls} flex-1`} />
+                            <input value={s.answer} onChange={(e) => { const next = [...sentences]; next[i] = { ...next[i], answer: e.target.value }; updatePayload({ sentences: next }); }} placeholder={t('groupSessions.activities.payload.fillBlank.blankPlaceholder')} className={`${fieldCls} w-36`} />
+                            <button type="button" onClick={() => updatePayload({ sentences: sentences.filter((_, j) => j !== i) })} className="text-rose-500 hover:text-rose-600"><FiTrash2 className="h-4 w-4" /></button>
+                        </div>
+                    ))}
+                </div>
+                <button type="button" onClick={() => updatePayload({ sentences: [...sentences, { sentence: '', answer: '' }] })} className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-teal-700 hover:text-teal-900 dark:text-teal-300">
+                    <FiPlus className="h-3.5 w-3.5" />{t('groupSessions.activities.payload.fillBlank.addSentence')}
+                </button>
+            </div>
+        );
+    }
+
+    if (type === 'word_match') {
+        const pairs = Array.isArray(payload?.pairs) ? payload.pairs : [];
+        return (
+            <div className="mt-3 rounded-2xl border border-indigo-200/70 bg-indigo-50/40 p-4 dark:border-indigo-500/20 dark:bg-indigo-500/5">
+                <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-indigo-700 dark:text-indigo-300">
+                    {t('groupSessions.activities.types.wordMatch')}
+                </div>
+                <div className="space-y-2">
+                    {pairs.map((p, i) => (
+                        <div key={i} className="flex gap-2">
+                            <input value={p.left} onChange={(e) => { const next = [...pairs]; next[i] = { ...next[i], left: e.target.value }; updatePayload({ pairs: next }); }} placeholder={t('groupSessions.activities.payload.wordMatch.leftPlaceholder')} className={`${fieldCls} flex-1`} />
+                            <input value={p.right} onChange={(e) => { const next = [...pairs]; next[i] = { ...next[i], right: e.target.value }; updatePayload({ pairs: next }); }} placeholder={t('groupSessions.activities.payload.wordMatch.rightPlaceholder')} className={`${fieldCls} flex-1`} />
+                            <button type="button" onClick={() => updatePayload({ pairs: pairs.filter((_, j) => j !== i) })} className="text-rose-500 hover:text-rose-600"><FiTrash2 className="h-4 w-4" /></button>
+                        </div>
+                    ))}
+                </div>
+                <button type="button" onClick={() => updatePayload({ pairs: [...pairs, { left: '', right: '' }] })} className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-700 hover:text-indigo-900 dark:text-indigo-300">
+                    <FiPlus className="h-3.5 w-3.5" />{t('groupSessions.activities.payload.wordMatch.addPair')}
+                </button>
+            </div>
+        );
+    }
+
+    if (type === 'listening') {
+        return (
+            <div className="mt-3 rounded-2xl border border-cyan-200/70 bg-cyan-50/40 p-4 dark:border-cyan-500/20 dark:bg-cyan-500/5">
+                <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-cyan-700 dark:text-cyan-300">
+                    {t('groupSessions.activities.types.listening')}
+                </div>
+                <div className="space-y-3">
+                    <div>
+                        <label className="mb-1 block text-xs font-medium text-edubot-muted dark:text-slate-400">{t('groupSessions.activities.payload.listening.audioUrlLabel')}</label>
+                        <input value={payload?.audioUrl || ''} onChange={(e) => updatePayload({ audioUrl: e.target.value })} placeholder={t('groupSessions.activities.payload.listening.audioUrlPlaceholder')} className={fieldCls} />
+                    </div>
+                    <div>
+                        <label className="mb-1 block text-xs font-medium text-edubot-muted dark:text-slate-400">{t('groupSessions.activities.payload.listening.promptLabel')}</label>
+                        <textarea rows={3} value={payload?.prompt || ''} onChange={(e) => updatePayload({ prompt: e.target.value })} placeholder={t('groupSessions.activities.payload.listening.promptPlaceholder')} className={fieldCls} />
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (type === 'writing_correction') {
+        return (
+            <div className="mt-3 rounded-2xl border border-rose-200/70 bg-rose-50/40 p-4 dark:border-rose-500/20 dark:bg-rose-500/5">
+                <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-rose-700 dark:text-rose-300">
+                    {t('groupSessions.activities.types.writingCorrection')}
+                </div>
+                <div className="space-y-3">
+                    <div>
+                        <label className="mb-1 block text-xs font-medium text-edubot-muted dark:text-slate-400">{t('groupSessions.activities.payload.writingCorrection.promptLabel')}</label>
+                        <textarea rows={3} value={payload?.prompt || ''} onChange={(e) => updatePayload({ prompt: e.target.value })} placeholder={t('groupSessions.activities.payload.writingCorrection.promptPlaceholder')} className={fieldCls} />
+                    </div>
+                    <div>
+                        <label className="mb-1 block text-xs font-medium text-edubot-muted dark:text-slate-400">{t('groupSessions.activities.payload.writingCorrection.rubricLabel')}</label>
+                        <textarea rows={2} value={payload?.rubric || ''} onChange={(e) => updatePayload({ rubric: e.target.value })} placeholder={t('groupSessions.activities.payload.writingCorrection.rubricPlaceholder')} className={fieldCls} />
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    return null;
 };
 
 const ActivityEditor = ({
@@ -268,7 +429,14 @@ const ActivityEditor = ({
                 </span>
             </div>
 
-            {activity.type !== 'quiz' ? (
+            {INTERACTIVE_TYPES.has(activity.type) ? (
+                <PayloadEditor
+                    type={activity.type}
+                    payload={activity.payload}
+                    onChange={(value) => onChange('payload', value)}
+                    t={t}
+                />
+            ) : activity.type !== 'quiz' ? (
                 <div className="mt-3 rounded-2xl border border-edubot-line/70 bg-edubot-surfaceAlt/60 px-4 py-3 text-xs leading-6 text-edubot-muted dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-300">
                     {t('groupSessions.activities.editor.reviewHint')}
                 </div>
@@ -610,6 +778,9 @@ const SessionActivitiesTab = ({
                                   ? prev.questions
                                   : [createEmptyActivityQuestion()]
                               : [],
+                      payload: INTERACTIVE_TYPES.has(value)
+                          ? structuredClone(DEFAULT_PAYLOAD[value])
+                          : null,
                   }
                 : {}),
         }));

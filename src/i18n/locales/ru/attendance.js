@@ -680,13 +680,54 @@ export const attendance = {
                 discussion: "Обсуждение",
                 exercise: "Упражнение",
                 quiz: "Квиз",
-                groupWork: "Групповая работа"
+                groupWork: "Групповая работа",
+                vocabulary: "Словарь",
+                fillBlank: "Заполни пропуск",
+                wordMatch: "Сопоставление слов",
+                listening: "Аудирование",
+                writingCorrection: "Исправление текста"
             },
             typeHelp: {
                 discussion: "Студент может отправить текст или короткий ответ",
                 exercise: "Выполняется текстом, файлом или ссылкой",
                 quiz: "Оценивается автоматически, результат появляется сразу",
-                groupWork: "Каждый студент отправляет отдельный результат или короткий отчет"
+                groupWork: "Каждый студент отправляет отдельный результат или короткий отчет",
+                vocabulary: "Карточки — студенты переворачивают карточки и отмечают знание слов",
+                fillBlank: "Студенты вставляют пропущенные слова в предложениях",
+                wordMatch: "Студенты сопоставляют слова слева с значениями справа",
+                listening: "Студенты слушают аудио и отвечают на вопрос",
+                writingCorrection: "Студенты пишут ответ на основе задания"
+            },
+            payload: {
+                vocabulary: {
+                    wordLabel: "Слово",
+                    definitionLabel: "Определение",
+                    addWord: "Добавить слово",
+                    wordPlaceholder: "Слово",
+                    definitionPlaceholder: "Определение"
+                },
+                fillBlank: {
+                    addSentence: "Добавить предложение",
+                    sentencePlaceholder: "Предложение (используйте ___ для пропуска)",
+                    blankPlaceholder: "Правильный ответ"
+                },
+                wordMatch: {
+                    addPair: "Добавить пару",
+                    leftPlaceholder: "Слева (слово)",
+                    rightPlaceholder: "Справа (значение)"
+                },
+                listening: {
+                    audioUrlLabel: "URL аудио",
+                    audioUrlPlaceholder: "https://...",
+                    promptLabel: "Вопрос / задание",
+                    promptPlaceholder: "О чём говорилось в аудио…?"
+                },
+                writingCorrection: {
+                    promptLabel: "Тема для написания",
+                    promptPlaceholder: "Напишите о…",
+                    rubricLabel: "Критерии оценки (необязательно)",
+                    rubricPlaceholder: "Проверьте грамматику, словарный запас…"
+                }
             },
             status: {
                 planned: "Запланировано",
@@ -958,7 +999,8 @@ export const attendance = {
                 locationAndMaterials: "Локация и материалы",
                 materialsAndRecording: "Материалы и запись",
                 materials: "Материалы",
-                context: "Контекст"
+                context: "Контекст",
+                makeup: "Замещающая сессия"
             },
             fields: {
                 sessionIndex: "Номер сессии *",
@@ -966,13 +1008,16 @@ export const attendance = {
                 groupLocation: "Локация группы",
                 recordingUrl: "Ссылка на запись",
                 materialTitle: "Название материала",
-                materialUrl: "URL материала"
+                materialUrl: "URL материала",
+                isMakeup: "Это замещающая сессия",
+                makeupForSessionId: "Номер оригинальной сессии"
             },
             help: {
                 nextSessionIndex: "Следующий доступный номер: {{index}}. Меняйте только при необходимости.",
                 uniqueSessionIndex: "Номер должен быть уникальным внутри этой группы.",
                 editMaterialsInResources: "Чтобы изменить материалы, используйте режим редактирования сессии и обновите сохраненные ссылки во вкладке ресурсов.",
-                saveChangesHere: "Сохраните все изменения здесь."
+                saveChangesHere: "Сохраните все изменения здесь.",
+                makeupSession: "Включите, если сессия заменяет пропущенную, и укажите номер оригинальной."
             },
             context: {
                 course: "Курс",

@@ -12,6 +12,9 @@ import {
     FiBell,
     FiMessageCircle,
     FiGrid,
+    FiCopy,
+    FiZap,
+    FiMail,
 } from 'react-icons/fi';
 import { INSTRUCTOR_DASHBOARD_TABS } from '@shared/constants/dashboardTabs';
 import { applyWorkspaceGroups } from '@shared/utils/workspaceGroups';
@@ -39,15 +42,25 @@ export const INSTRUCTOR_WORKSPACE_GROUPS = Object.freeze({
             INSTRUCTOR_DASHBOARD_TABS.OFFERINGS,
         ]),
     }),
-    DELIVERY_WORKBENCH: Object.freeze({
-        id: 'delivery-workbench',
-        labelKey: 'instructorDashboard.workspaceGroups.deliveryWorkbench.label',
-        descriptionKey: 'instructorDashboard.workspaceGroups.deliveryWorkbench.description',
+    TEACHING: Object.freeze({
+        id: 'teaching',
+        labelKey: 'instructorDashboard.workspaceGroups.teaching.label',
+        descriptionKey: 'instructorDashboard.workspaceGroups.teaching.description',
         tabs: Object.freeze([
             INSTRUCTOR_DASHBOARD_TABS.SESSIONS,
             INSTRUCTOR_DASHBOARD_TABS.HOMEWORK,
             INSTRUCTOR_DASHBOARD_TABS.ATTENDANCE,
             INSTRUCTOR_DASHBOARD_TABS.CHAT,
+            INSTRUCTOR_DASHBOARD_TABS.TEMPLATES,
+        ]),
+    }),
+    AI_STUDIO: Object.freeze({
+        id: 'ai-studio',
+        labelKey: 'instructorDashboard.workspaceGroups.aiStudio.label',
+        descriptionKey: 'instructorDashboard.workspaceGroups.aiStudio.description',
+        tabs: Object.freeze([
+            INSTRUCTOR_DASHBOARD_TABS.AI_GENERATOR,
+            INSTRUCTOR_DASHBOARD_TABS.MESSAGE_DRAFTS,
         ]),
     }),
     SETTINGS: Object.freeze({
@@ -77,21 +90,28 @@ const RAW_NAV_ITEMS = [
     { id: INSTRUCTOR_DASHBOARD_TABS.CERTIFICATES, labelKey: 'instructorDashboard.nav.certificates', icon: FiAward, category: 'primary', priority: 4 },
     { id: INSTRUCTOR_DASHBOARD_TABS.GROUPS, labelKey: 'instructorDashboard.nav.groups', icon: FiGrid, category: 'primary', priority: 5 },
 
-    // Secondary Navigation - Learning Management
+    // COURSE_MANAGEMENT
     { id: INSTRUCTOR_DASHBOARD_TABS.OFFERINGS, labelKey: 'instructorDashboard.nav.offerings', icon: FiLayers, category: 'secondary', priority: 1 },
+
+    // TEACHING
     { id: INSTRUCTOR_DASHBOARD_TABS.SESSIONS, labelKey: 'instructorDashboard.nav.sessions', icon: FiCalendar, category: 'secondary', priority: 2 },
     { id: INSTRUCTOR_DASHBOARD_TABS.HOMEWORK, labelKey: 'instructorDashboard.nav.homework', icon: FiBookOpen, category: 'secondary', priority: 3 },
-    { id: INSTRUCTOR_DASHBOARD_TABS.CHAT, labelKey: 'instructorDashboard.nav.chat', icon: FiMessageCircle, category: 'secondary', priority: 4 },
+    { id: INSTRUCTOR_DASHBOARD_TABS.ATTENDANCE, labelKey: 'instructorDashboard.nav.attendance', icon: FiUsers, category: 'secondary', priority: 4 },
+    { id: INSTRUCTOR_DASHBOARD_TABS.CHAT, labelKey: 'instructorDashboard.nav.chat', icon: FiMessageCircle, category: 'secondary', priority: 5 },
+    { id: INSTRUCTOR_DASHBOARD_TABS.TEMPLATES, labelKey: 'instructorDashboard.nav.templates', icon: FiCopy, category: 'secondary', priority: 6 },
 
-    // Performance & Analytics
-    { id: INSTRUCTOR_DASHBOARD_TABS.ANALYTICS, labelKey: 'instructorDashboard.nav.analytics', icon: FiGlobe, category: 'analytics', priority: 1 },
-    { id: INSTRUCTOR_DASHBOARD_TABS.LEADERBOARD, labelKey: 'instructorDashboard.nav.leaderboard', icon: FiFilter, category: 'analytics', priority: 2 },
+    // AI_STUDIO
+    { id: INSTRUCTOR_DASHBOARD_TABS.AI_GENERATOR, labelKey: 'instructorDashboard.nav.aiGenerator', icon: FiZap, category: 'analytics', priority: 1 },
+    { id: INSTRUCTOR_DASHBOARD_TABS.MESSAGE_DRAFTS, labelKey: 'instructorDashboard.nav.messageDrafts', icon: FiMail, category: 'analytics', priority: 2 },
 
-    // Administrative - Settings & Management
+    // OVERVIEW
+    { id: INSTRUCTOR_DASHBOARD_TABS.ANALYTICS, labelKey: 'instructorDashboard.nav.analytics', icon: FiGlobe, category: 'analytics', priority: 3 },
+    { id: INSTRUCTOR_DASHBOARD_TABS.LEADERBOARD, labelKey: 'instructorDashboard.nav.leaderboard', icon: FiFilter, category: 'analytics', priority: 4 },
+
+    // SETTINGS
     { id: INSTRUCTOR_DASHBOARD_TABS.PROFILE, labelKey: 'instructorDashboard.nav.profile', icon: FiUser, category: 'admin', priority: 1 },
     { id: INSTRUCTOR_DASHBOARD_TABS.AI, labelKey: 'instructorDashboard.nav.ai', icon: FiCpu, category: 'admin', priority: 2 },
-    { id: INSTRUCTOR_DASHBOARD_TABS.ATTENDANCE, labelKey: 'instructorDashboard.nav.attendance', icon: FiUsers, category: 'admin', priority: 3 },
-    { id: INSTRUCTOR_DASHBOARD_TABS.NOTIFICATIONS, labelKey: 'instructorDashboard.nav.notifications', icon: FiBell, category: 'admin', priority: 4 },
+    { id: INSTRUCTOR_DASHBOARD_TABS.NOTIFICATIONS, labelKey: 'instructorDashboard.nav.notifications', icon: FiBell, category: 'admin', priority: 3 },
 ];
 
 export const NAV_ITEMS = applyWorkspaceGroups(RAW_NAV_ITEMS, INSTRUCTOR_WORKSPACE_GROUPS);

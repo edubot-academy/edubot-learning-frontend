@@ -351,6 +351,66 @@ export const admin = {
             limitSaved: "AI LMS feature limit saved.",
             limitSaveError: "Could not save AI LMS feature limit.",
             instructorsLoadError: "Could not load instructors."
+        },
+        usage: {
+            title: "Usage stats",
+            description: "Token and request usage per scope, feature, and period.",
+            filters: {
+                feature: "Feature",
+                status: "Status",
+                allFeatures: "All features",
+                allStatuses: "All statuses"
+            },
+            table: {
+                id: "ID",
+                scope: "Scope",
+                feature: "Feature",
+                status: "Status",
+                period: "Period",
+                daily: "Daily",
+                tokens: "Tokens"
+            },
+            empty: "No usage records match the current filters.",
+            load: "Load usage",
+            toasts: { error: "Could not load usage stats." }
+        },
+        audit: {
+            title: "Audit log",
+            description: "Generation events and feature activity across all scopes.",
+            filters: {
+                feature: "Feature",
+                action: "Action",
+                allFeatures: "All features",
+                allActions: "All actions"
+            },
+            table: {
+                id: "ID",
+                action: "Action",
+                feature: "Feature",
+                generation: "Generation",
+                scope: "Scope",
+                user: "User ID",
+                date: "Date"
+            },
+            empty: "No audit log entries match the current filters.",
+            load: "Load audit log",
+            viewGeneration: "View",
+            toasts: { error: "Could not load audit logs." }
+        },
+        generation: {
+            title: "Generation detail",
+            close: "Close",
+            notFound: "Generation not found.",
+            fields: {
+                id: "ID",
+                feature: "Feature",
+                status: "Status",
+                model: "Model",
+                tokens: "Total tokens",
+                createdAt: "Created"
+            },
+            outputLabel: "Output (JSON)",
+            toasts: { error: "Could not load generation details." }
         }
     },
     adminAiPrompts: {

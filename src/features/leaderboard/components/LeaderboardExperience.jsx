@@ -2,383 +2,439 @@ import { useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import {
+    FiArrowRight,
+    FiAward,
+    FiBarChart2,
+    FiTarget,
+    FiTrendingDown,
+    FiTrendingUp,
+    FiZap,
+} from 'react-icons/fi';
 import { getDashboardPath } from '@shared/utils/navigation';
-import { FiArrowRight, FiAward, FiBarChart2, FiTarget, FiTrendingUp, FiZap } from 'react-icons/fi';
 
-const accentSets = [
-    'from-orange-500/12 via-amber-400/8 to-transparent border-orange-200/70 dark:border-orange-500/20',
-    'from-cyan-500/12 via-sky-400/8 to-transparent border-cyan-200/70 dark:border-cyan-500/20',
-    'from-emerald-500/12 via-lime-400/8 to-transparent border-emerald-200/70 dark:border-emerald-500/20',
-    'from-fuchsia-500/12 via-rose-400/8 to-transparent border-fuchsia-200/70 dark:border-fuchsia-500/20',
-];
+const asArray = (v) => (Array.isArray(v) ? v : []);
 
-const getRarityLabel = (t, rarity) =>
-    t(`public.leaderboard.rarity.${rarity}`, {
-        defaultValue: String(rarity || '').toUpperCase(),
-    });
-const asArray = (value) => (Array.isArray(value) ? value : []);
+// ─── Avatar ──────────────────────────────────────────────────────────────────
 
-export const LeaderboardAvatar = ({ src, name, size = 'md' }) => {
-    const dimensions = {
+export const LeaderboardAvatar = ({ src, name = '', size = 'md', ring = '' }) => {
+    const dims = {
         sm: 'w-10 h-10 text-sm',
         md: 'w-12 h-12 text-base',
         lg: 'w-16 h-16 text-lg',
     };
     const initials = String(name || 'ED')
         .split(' ')
-        .map((chunk) => chunk[0])
+        .map((w) => w[0] || '')
         .join('')
         .slice(0, 2)
         .toUpperCase();
 
     if (src) {
         return (
-            <img src={src} alt={name} className={`${dimensions[size]} rounded-2xl object-cover`} />
+            <img
+                src={src}
+                alt={name || 'Student'}
+                loading="lazy"
+                className={`${dims[size]} shrink-0 rounded-full object-cover ${ring}`}
+            />
         );
     }
 
     return (
         <div
-            className={`${dimensions[size]} rounded-2xl bg-gradient-to-br from-orange-500 via-amber-400 to-yellow-300 text-white flex items-center justify-center font-semibold shadow-lg shadow-orange-200/60 dark:shadow-none`}
+            className={`${dims[size]} shrink-0 rounded-full bg-gradient-to-br from-orange-500 via-amber-400 to-yellow-300 text-white flex items-center justify-center font-bold shadow-md shadow-orange-200/60 dark:shadow-none ${ring}`}
         >
             {initials}
         </div>
     );
 };
 
-export const RankBadge = ({ rank, label = null }) => {
-    const { t } = useTranslation();
-    const isTopThree = rank && rank <= 3;
+// ─── Rank Badge ───────────────────────────────────────────────────────────────
+
+const MEDAL = {
+    1: { gradient: 'from-amber-400 to-yellow-300', text: 'text-amber-900', shadow: 'shadow-amber-300/70' },
+    2: { gradient: 'from-slate-400 to-slate-300', text: 'text-slate-700', shadow: 'shadow-slate-300/70' },
+    3: { gradient: 'from-orange-500 to-amber-500', text: 'text-white', shadow: 'shadow-orange-300/70' },
+};
+
+export const RankBadge = ({ rank }) => {
+    const medal = MEDAL[rank];
+    if (medal) {
+        return (
+            <div
+                className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-b ${medal.gradient} ${medal.text} text-sm font-bold shadow-md ${medal.shadow}`}
+            >
+                {rank}
+            </div>
+        );
+    }
     return (
-        <div
-            className={[
-                'inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold',
-                isTopThree
-                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-orange-200/70 dark:shadow-none'
-                    : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200',
-            ].join(' ')}
-        >
-            <span>{rank ? `#${rank}` : t('public.leaderboard.rank.top')}</span>
-            {label ? <span className="opacity-80">{label}</span> : null}
+        <div className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+            {rank}
         </div>
     );
 };
 
-export const LeaderboardHero = ({
-    userName,
-    snapshot,
-    xp = 0,
-    streakDays = 0,
-    levelLabel = '',
-    title = '',
-    description,
-    embedded = false,
-}) => {
-    const { t } = useTranslation();
-    const detailText =
-        description ||
-        (snapshot.rank
-            ? t('public.leaderboard.hero.rankedDescription', {
-                  rank: snapshot.rank,
-                  xp: snapshot.targetGap,
-              })
-            : t('public.leaderboard.hero.unrankedDescription', { xp }));
-    const nextActionTitle = snapshot.targetGap
-        ? t('public.leaderboard.hero.nextActionWithGap', { xp: snapshot.targetGap })
-        : t('public.leaderboard.hero.nextActionReady');
-    const nextActionHint = snapshot.targetGap
-        ? t('public.leaderboard.hero.nextActionHintWithGap')
-        : t('public.leaderboard.hero.nextActionHintReady');
-    const shellClassName = embedded
-        ? 'relative overflow-hidden rounded-[28px] border border-gray-100 bg-white p-6 text-gray-900 shadow-sm dark:border-gray-800 dark:bg-[#222222] dark:text-[#E8ECF3] sm:p-8'
-        : 'relative overflow-hidden rounded-[28px] border border-slate-200 bg-[radial-gradient(circle_at_top_left,_rgba(251,146,60,0.28),_transparent_34%),linear-gradient(135deg,_#0f172a_0%,_#111827_52%,_#1d4ed8_100%)] p-6 text-white shadow-[0_24px_80px_-36px_rgba(15,23,42,0.85)] sm:p-8';
-    const glowClassName = embedded
-        ? 'absolute inset-y-0 right-0 w-56 bg-[radial-gradient(circle,_rgba(59,130,246,0.12),_transparent_62%)]'
-        : 'absolute inset-y-0 right-0 w-56 bg-[radial-gradient(circle,_rgba(255,255,255,0.22),_transparent_62%)]';
-    const eyebrowClassName = embedded
-        ? 'inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-blue-700 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-200'
-        : 'inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-orange-100';
-    const bodyTextClassName = embedded
-        ? 'max-w-xl text-sm text-gray-600 dark:text-gray-300 sm:text-base'
-        : 'max-w-xl text-sm text-slate-200 sm:text-base';
-    const statPillClassName = embedded
-        ? 'inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1.5 text-gray-700 dark:bg-gray-800 dark:text-gray-200'
-        : 'inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 backdrop-blur';
-    const actionCardClassName = embedded
-        ? 'rounded-[22px] border border-gray-100 bg-gray-50 p-4 dark:border-gray-800 dark:bg-[#1A1A1A]'
-        : 'rounded-[22px] border border-white/15 bg-white/10 p-4 backdrop-blur';
-    const actionLabelClassName = embedded
-        ? 'text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400'
-        : 'text-xs font-semibold uppercase tracking-[0.18em] text-slate-200';
-    const actionHintClassName = embedded
-        ? 'mt-1 text-sm text-gray-600 dark:text-gray-300'
-        : 'mt-1 text-sm text-slate-200';
+// ─── XP Bar ───────────────────────────────────────────────────────────────────
 
+export const XpBar = ({ xp = 0, maxXp = 1 }) => {
+    const pct = maxXp > 0 ? Math.min(100, Math.round((xp / maxXp) * 100)) : 0;
     return (
-        <section className={shellClassName}>
-            <div className={glowClassName} />
-            <div className="relative flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-                <div className="max-w-2xl space-y-4">
-                    <div className={eyebrowClassName}>
-                        <FiZap className="shrink-0" />
-                        {levelLabel || t('public.leaderboard.hero.levelLabel')}
-                    </div>
-                    <div className="space-y-2">
-                        <h1
-                            className={`text-3xl font-semibold leading-tight sm:text-4xl ${embedded ? 'text-gray-900 dark:text-[#E8ECF3]' : ''}`}
-                        >
-                            {title || t('public.leaderboard.hero.defaultTitle')}
-                        </h1>
-                        <p className={bodyTextClassName}>
-                            {userName ? `${userName}, ` : ''}
-                            {detailText}
-                        </p>
-                    </div>
-                    <div
-                        className={`flex flex-wrap gap-3 text-sm ${embedded ? '' : 'text-slate-100/90'}`}
-                    >
-                        <span className={statPillClassName}>
-                            <FiBarChart2 className="shrink-0" />
-                            {snapshot.rank
-                                ? t('public.leaderboard.rank.yourRank', { rank: snapshot.rank })
-                                : t('public.leaderboard.rank.calculating')}
-                        </span>
-                        <span className={statPillClassName}>
-                            <FiTrendingUp className="shrink-0" />
-                            {xp} XP
-                        </span>
-                        <span className={statPillClassName}>
-                            <span className="text-base">🔥</span>
-                            {t('public.leaderboard.units.dayStreak', { count: streakDays })}
-                        </span>
-                    </div>
-                </div>
-
-                <div className="grid w-full max-w-xl grid-cols-1 gap-3 sm:grid-cols-3">
-                    <HeroMetricCard
-                        label={t('public.leaderboard.hero.nextJump')}
-                        value={
-                            snapshot.targetGap
-                                ? `${snapshot.targetGap} XP`
-                                : t('public.leaderboard.hero.ready')
-                        }
-                        helper={
-                            snapshot.nextTargetEntry
-                                ? t('public.leaderboard.hero.closerToLeader', {
-                                      name:
-                                          snapshot.nextTargetEntry.fullName ||
-                                          t('public.leaderboard.rank.leader'),
-                                  })
-                                : t('public.leaderboard.hero.newWin')
-                        }
-                        embedded={embedded}
-                    />
-                    <HeroMetricCard
-                        label={t('public.leaderboard.hero.visibility')}
-                        value={
-                            snapshot.percentile
-                                ? `%${snapshot.percentile}`
-                                : t('public.leaderboard.rank.top')
-                        }
-                        helper={t('public.leaderboard.hero.weeklyMomentum')}
-                        embedded={embedded}
-                    />
-                    <div className={actionCardClassName}>
-                        <p className={actionLabelClassName}>
-                            {t('public.leaderboard.hero.nextStep')}
-                        </p>
-                        <p
-                            className={`mt-2 text-lg font-semibold leading-tight ${embedded ? 'text-gray-900 dark:text-[#E8ECF3]' : ''}`}
-                        >
-                            {nextActionTitle}
-                        </p>
-                        <p className={actionHintClassName}>{nextActionHint}</p>
-                    </div>
-                </div>
-            </div>
-        </section>
+        <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+            <div
+                className="h-full rounded-full bg-gradient-to-r from-orange-500 to-amber-400 shadow-sm shadow-orange-300/60 motion-safe:transition-all motion-safe:duration-700"
+                style={{ width: `${Math.max(3, pct)}%` }}
+            />
+        </div>
     );
 };
 
-const HeroMetricCard = ({ label, value, helper, embedded = false }) => (
-    <div
-        className={
-            embedded
-                ? 'rounded-[22px] border border-gray-100 bg-gray-50 p-4 dark:border-gray-800 dark:bg-[#1A1A1A]'
-                : 'rounded-[22px] border border-white/15 bg-white/10 p-4 backdrop-blur'
-        }
-    >
-        <p
-            className={
-                embedded
-                    ? 'text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400'
-                    : 'text-xs font-semibold uppercase tracking-[0.18em] text-slate-200'
-            }
-        >
-            {label}
-        </p>
-        <p
-            className={
-                embedded
-                    ? 'mt-2 text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3]'
-                    : 'mt-2 text-2xl font-semibold text-white'
-            }
-        >
-            {value}
-        </p>
-        <p
-            className={
-                embedded
-                    ? 'mt-1 text-sm text-gray-600 dark:text-gray-300'
-                    : 'mt-1 text-sm text-slate-200'
-            }
-        >
-            {helper}
-        </p>
-    </div>
-);
+// ─── Streak Badge ─────────────────────────────────────────────────────────────
 
-export const LeaderboardListCard = ({
-    title,
-    description,
-    items,
-    currentUserId = null,
-    footer = null,
+export const StreakBadge = ({ days = 0 }) => {
+    if (!days) return null;
+    const cls =
+        days >= 14
+            ? 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300 motion-safe:animate-pulse'
+            : days >= 7
+            ? 'bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-300'
+            : 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300';
+    return (
+        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${cls}`}>
+            <FiZap className="h-3 w-3 shrink-0" />
+            {days}d
+        </span>
+    );
+};
+
+// ─── Rank Delta ───────────────────────────────────────────────────────────────
+
+export const RankDelta = ({ delta }) => {
+    if (!delta) return null;
+    const up = delta > 0;
+    return (
+        <span
+            className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-semibold ${
+                up
+                    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300'
+                    : 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-300'
+            }`}
+        >
+            {up
+                ? <FiTrendingUp className="h-3 w-3 shrink-0" />
+                : <FiTrendingDown className="h-3 w-3 shrink-0" />
+            }
+            {up ? '+' : ''}{delta}
+        </span>
+    );
+};
+
+// ─── Podium ───────────────────────────────────────────────────────────────────
+
+// Display order left→right: 2nd | 1st | 3rd
+const PODIUM_DISPLAY_ORDER = [1, 0, 2];
+
+const PODIUM_CONFIG = {
+    0: { platformH: 'h-20 sm:h-28', avatarSize: 'lg', ringClass: 'ring-4 ring-offset-2 ring-amber-400/60 dark:ring-offset-slate-950', platformGrad: 'from-amber-400 to-amber-500', showCrown: true },
+    1: { platformH: 'h-14 sm:h-20', avatarSize: 'md', ringClass: 'ring-2 ring-offset-1 ring-slate-300/60 dark:ring-offset-slate-950', platformGrad: 'from-slate-300 to-slate-400', showCrown: false },
+    2: { platformH: 'h-10 sm:h-16', avatarSize: 'md', ringClass: 'ring-2 ring-offset-1 ring-orange-400/50 dark:ring-offset-slate-950', platformGrad: 'from-orange-400 to-orange-500', showCrown: false },
+};
+
+const PodiumSlot = ({ item, rank }) => {
+    const { t } = useTranslation();
+    const cfg = PODIUM_CONFIG[rank - 1] || PODIUM_CONFIG[2];
+    const medal = MEDAL[rank] || MEDAL[3];
+    const name = item?.fullName || t('public.leaderboard.defaultStudent');
+
+    return (
+        <div className="flex min-w-0 flex-1 flex-col items-center gap-2">
+            {cfg.showCrown && (
+                <FiAward className="h-6 w-6 text-amber-500 drop-shadow-sm" aria-hidden="true" />
+            )}
+            {!cfg.showCrown && <div className="h-6" />}
+
+            <div className="relative">
+                {rank === 1 && (
+                    <span className="pointer-events-none absolute -inset-2 rounded-full bg-amber-400/25 motion-safe:animate-ping" aria-hidden="true" />
+                )}
+                <LeaderboardAvatar src={item?.avatarUrl} name={name} size={cfg.avatarSize} ring={cfg.ringClass} />
+                <div
+                    className={`absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-b text-xs font-bold shadow-sm ${medal.gradient} ${medal.text}`}
+                >
+                    {rank}
+                </div>
+            </div>
+
+            <div className="w-full max-w-[88px] text-center">
+                <p className="truncate text-sm font-semibold text-slate-900 dark:text-white" title={name}>
+                    {name}
+                </p>
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                    {Number(item?.xp || 0).toLocaleString()} XP
+                </p>
+                {Number(item?.streakDays) > 0 && (
+                    <div className="mt-1 flex justify-center">
+                        <StreakBadge days={item.streakDays} />
+                    </div>
+                )}
+            </div>
+
+            <div className={`w-full rounded-t-xl ${cfg.platformH} bg-gradient-to-b ${cfg.platformGrad} flex items-start justify-center pt-2`}>
+                <span className="text-lg font-bold text-white/30">{rank}</span>
+            </div>
+        </div>
+    );
+};
+
+export const Podium = ({ items = [] }) => {
+    const top3 = items.slice(0, 3);
+    if (!top3.length) return null;
+
+    return (
+        <div className="flex items-end justify-center gap-2 px-2 sm:gap-4 sm:px-4">
+            {PODIUM_DISPLAY_ORDER.map((idx) => {
+                const item = top3[idx];
+                if (!item) return <div key={idx} className="flex-1 max-w-[100px]" />;
+                return <PodiumSlot key={idx} item={item} rank={idx + 1} />;
+            })}
+        </div>
+    );
+};
+
+// ─── Leader Row ───────────────────────────────────────────────────────────────
+
+export const LeaderRow = ({
+    item,
+    rank,
+    isCurrentUser = false,
+    maxXp = 1,
     embedded = false,
 }) => {
     const { t } = useTranslation();
+    const name = item?.fullName || item?.name || t('public.leaderboard.defaultStudent');
+    const xp = Number(item?.xp || 0);
+    const streak = Number(item?.streakDays || 0);
+    const quizzes = Number(item?.quizzesPassed || 0);
+
+    return (
+        <div
+            className={[
+                'flex items-center gap-3 rounded-2xl border px-4 py-3 transition-all duration-200 motion-safe:hover:-translate-y-0.5 hover:shadow-md',
+                isCurrentUser
+                    ? 'border border-l-4 border-orange-300 border-l-orange-500 bg-orange-50/80 dark:border-orange-500/40 dark:border-l-orange-500 dark:bg-orange-500/10'
+                    : embedded
+                    ? 'border-gray-100 bg-gray-50 hover:border-gray-200 dark:border-gray-800 dark:bg-[#1A1A1A] dark:hover:border-gray-700'
+                    : 'border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-slate-700',
+            ].join(' ')}
+        >
+            <RankBadge rank={rank} />
+            <LeaderboardAvatar src={item?.avatarUrl} name={name} size="sm" />
+            <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-1.5">
+                    <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">
+                        {name}
+                    </p>
+                    {isCurrentUser && (
+                        <span className="shrink-0 rounded-full bg-orange-500 px-2 py-0.5 text-[10px] font-bold text-white">
+                            {t('public.leaderboard.rank.youSuffix')}
+                        </span>
+                    )}
+                    {quizzes > 0 && (
+                        <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                            {t('public.leaderboard.quizzes', { count: quizzes })}
+                        </span>
+                    )}
+                </div>
+                <div className="mt-1.5">
+                    <XpBar xp={xp} maxXp={maxXp} />
+                </div>
+            </div>
+            <div className="shrink-0 text-right">
+                <p className="text-sm font-bold tabular-nums text-slate-900 dark:text-white">
+                    {xp.toLocaleString()}
+                    <span className="ml-0.5 text-xs font-medium text-slate-400 dark:text-slate-500"> XP</span>
+                </p>
+                {streak > 0 && (
+                    <div className="mt-0.5 flex justify-end">
+                        <StreakBadge days={streak} />
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+// ─── Leaderboard List ─────────────────────────────────────────────────────────
+
+export const LeaderboardList = ({
+    title,
+    description,
+    items = [],
+    currentUserId = null,
+    showPodium = true,
+    embedded = false,
+    footer = null,
+}) => {
+    const { t } = useTranslation();
+    const maxXp = useMemo(
+        () => Math.max(1, ...items.map((i) => Number(i?.xp || 0))),
+        [items]
+    );
+    const podiumItems = showPodium ? items.slice(0, 3) : [];
+    const rowItems = showPodium ? items.slice(3) : items;
 
     return (
         <section
             className={
                 embedded
-                    ? 'rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-[#222222] sm:p-6'
-                    : 'rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_18px_60px_-42px_rgba(15,23,42,0.45)] dark:border-slate-800 dark:bg-[#161b22] sm:p-6'
+                    ? 'rounded-3xl border border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-[#222222]'
+                    : 'rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950'
             }
         >
-            <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                    <h3
-                        className={
-                            embedded
-                                ? 'text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]'
-                                : 'text-lg font-semibold text-slate-900 dark:text-white'
-                        }
-                    >
-                        {title}
-                    </h3>
-                    {description ? (
-                        <p
-                            className={
-                                embedded
-                                    ? 'mt-1 text-sm text-gray-500 dark:text-gray-400'
-                                    : 'mt-1 text-sm text-slate-500 dark:text-slate-300'
-                            }
-                        >
-                            {description}
-                        </p>
-                    ) : null}
+            {(title || description) && (
+                <div className="px-5 pt-5">
+                    {title && (
+                        <h3 className="text-lg font-bold text-slate-900 dark:text-white">{title}</h3>
+                    )}
+                    {description && (
+                        <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">{description}</p>
+                    )}
                 </div>
-                <RankBadge
-                    rank={items?.length ? 1 : null}
-                    label={
-                        items?.length
-                            ? t('public.leaderboard.units.players', { count: items.length })
-                            : t('common.empty')
-                    }
-                />
-            </div>
-            <div className="mt-5 space-y-3">
-                {items?.length ? (
-                    items.map((item, index) => {
+            )}
+
+            {showPodium && podiumItems.length > 0 && (
+                <div className="relative mt-6 overflow-hidden border-b border-slate-100 pb-6 dark:border-slate-800">
+                    <div
+                        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(251,191,36,0.10),transparent_70%)] dark:bg-[radial-gradient(ellipse_at_50%_0%,rgba(251,191,36,0.06),transparent_70%)]"
+                        aria-hidden="true"
+                    />
+                    <p className="relative mb-4 text-center text-xs font-semibold uppercase tracking-[0.22em] text-amber-500 dark:text-amber-400">
+                        {t('public.leaderboard.podium.championsTitle', { defaultValue: "This Week's Champions" })}
+                    </p>
+                    <Podium items={podiumItems} />
+                </div>
+            )}
+
+            {rowItems.length > 0 ? (
+                <div className="space-y-2 p-4">
+                    {rowItems.map((item, idx) => {
+                        const rank = (showPodium ? 3 : 0) + idx + 1;
                         const isCurrentUser =
                             currentUserId && Number(item?.studentId) === Number(currentUserId);
                         return (
-                            <div
-                                key={item?.studentId || item?.id || `${title}-${index}`}
-                                className={[
-                                    'flex items-center gap-4 rounded-[22px] border px-4 py-3 transition-colors',
-                                    isCurrentUser
-                                        ? embedded
-                                            ? 'border-blue-100 bg-blue-50/80 dark:border-blue-500/20 dark:bg-blue-500/10'
-                                            : 'border-orange-200 bg-orange-50/80 dark:border-orange-500/30 dark:bg-orange-500/10'
-                                        : embedded
-                                          ? 'border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-[#1A1A1A]'
-                                          : 'border-slate-200 bg-slate-50/70 dark:border-slate-800 dark:bg-slate-900/50',
-                                ].join(' ')}
-                            >
-                                <RankBadge rank={index + 1} />
-                                <LeaderboardAvatar
-                                    src={item?.avatarUrl}
-                                    name={item?.fullName || item?.name}
-                                />
-                                <div className="min-w-0 flex-1">
-                                    <p
-                                        className={
-                                            embedded
-                                                ? 'truncate font-semibold text-gray-900 dark:text-[#E8ECF3]'
-                                                : 'truncate font-semibold text-slate-900 dark:text-white'
-                                        }
-                                    >
-                                        {item?.fullName ||
-                                            item?.name ||
-                                            t('public.leaderboard.defaultStudent')}
-                                        {isCurrentUser
-                                            ? t('public.leaderboard.rank.youSuffix')
-                                            : ''}
-                                    </p>
-                                    <p
-                                        className={
-                                            embedded
-                                                ? 'mt-1 flex flex-wrap gap-3 text-sm text-gray-500 dark:text-gray-400'
-                                                : 'mt-1 flex flex-wrap gap-3 text-sm text-slate-500 dark:text-slate-300'
-                                        }
-                                    >
-                                        <span>{item?.xp || 0} XP</span>
-                                        {Number(item?.progressPercent) > 0 ? (
-                                            <span>
-                                                {t('public.leaderboard.progress', {
-                                                    count: item.progressPercent,
-                                                })}
-                                            </span>
-                                        ) : null}
-                                        {Number(item?.streakDays) > 0 ? (
-                                            <span>
-                                                {t('public.leaderboard.units.dayStreak', {
-                                                    count: item.streakDays,
-                                                })}
-                                            </span>
-                                        ) : null}
-                                    </p>
-                                </div>
-                                {Number(item?.quizzesPassed) > 0 ? (
-                                    <span
-                                        className={
-                                            embedded
-                                                ? 'rounded-full bg-gray-900 px-3 py-1 text-xs font-semibold text-white dark:bg-gray-100 dark:text-gray-900'
-                                                : 'rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white dark:bg-slate-100 dark:text-slate-900'
-                                        }
-                                    >
-                                        {t('public.leaderboard.quizzes', {
-                                            count: item.quizzesPassed,
-                                        })}
-                                    </span>
-                                ) : null}
-                            </div>
+                            <LeaderRow
+                                key={item?.studentId || item?.id || idx}
+                                item={item}
+                                rank={rank}
+                                isCurrentUser={isCurrentUser}
+                                maxXp={maxXp}
+                                embedded={embedded}
+                            />
                         );
-                    })
-                ) : (
-                    <div className="rounded-[22px] border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-300">
-                        {t('public.leaderboard.emptyNotEnoughData')}
-                    </div>
-                )}
-            </div>
-            {footer ? <div className="mt-4">{footer}</div> : null}
+                    })}
+                </div>
+            ) : items.length === 0 ? (
+                <p className="px-5 py-8 text-center text-sm text-slate-400 dark:text-slate-500">
+                    {t('public.leaderboard.emptyNotEnoughData')}
+                </p>
+            ) : null}
+
+            {footer && (
+                <div className="border-t border-slate-100 px-5 py-4 dark:border-slate-800">
+                    {footer}
+                </div>
+            )}
         </section>
     );
 };
 
-export const NearYouRail = ({
+// ─── Your Position Banner ─────────────────────────────────────────────────────
+
+export const YourPositionBanner = ({
+    rank = null,
+    xp = 0,
+    streak = 0,
+    delta = null,
+    targetGap = null,
+    nextTargetName = '',
+    percentile = null,
+    embedded = false,
+}) => {
+    const { t } = useTranslation();
+    const rankValue = rank ? `#${rank}` : t('public.leaderboard.rank.notYet');
+
+    const tierText =
+        rank === 1
+            ? t('public.leaderboard.banner.leading', { defaultValue: 'Leading the board this week' })
+            : percentile != null && percentile <= 10
+            ? t('public.leaderboard.banner.top10', { defaultValue: 'Top 10% of learners' })
+            : percentile != null && percentile <= 25
+            ? t('public.leaderboard.banner.top25', { defaultValue: 'Top 25% of learners' })
+            : percentile != null && percentile <= 50
+            ? t('public.leaderboard.banner.aboveAvg', { defaultValue: 'Above average this week' })
+            : null;
+
+    return (
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-orange-500 via-orange-500 to-amber-400 p-5 text-white shadow-lg shadow-orange-300/30 dark:shadow-orange-900/30 sm:p-6">
+            <div
+                className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.22),_transparent_55%)]"
+                aria-hidden="true"
+            />
+            <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-100">
+                        {t('public.leaderboard.metrics.myRank')}
+                    </p>
+                    <div className="mt-1 flex flex-wrap items-baseline gap-2">
+                        <span className={`font-bold ${embedded ? 'text-3xl' : 'text-4xl'}`}>
+                            {rankValue}
+                        </span>
+                        {delta ? <RankDelta delta={delta} /> : null}
+                    </div>
+                    {tierText && (
+                        <p className="mt-0.5 text-sm font-semibold text-white/85">
+                            {tierText}
+                        </p>
+                    )}
+                    {targetGap && nextTargetName ? (
+                        <p className="mt-1 text-sm text-orange-100">
+                            {t('public.leaderboard.near.targetGap', {
+                                name: nextTargetName,
+                                xp: targetGap,
+                            })}
+                        </p>
+                    ) : null}
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                    <div className="rounded-2xl border border-white/20 bg-white/15 px-4 py-3 backdrop-blur-sm">
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-orange-100">
+                            {t('public.leaderboard.metrics.thisWeekXp')}
+                        </p>
+                        <p className="mt-1 text-2xl font-bold tabular-nums">
+                            {Number(xp).toLocaleString()}
+                        </p>
+                    </div>
+                    <div className="rounded-2xl border border-white/20 bg-white/15 px-4 py-3 backdrop-blur-sm">
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-orange-100">
+                            {t('public.leaderboard.metrics.streak')}
+                        </p>
+                        <div className="mt-1 flex items-center gap-1.5">
+                            <FiZap className="h-5 w-5 text-amber-300" aria-hidden="true" />
+                            <span className="text-2xl font-bold">{streak || 0}</span>
+                            <span className="text-sm font-medium text-orange-100">d</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// ─── Near You Strip ───────────────────────────────────────────────────────────
+
+export const NearYouStrip = ({
     items = [],
     currentUserId = null,
     targetGap = null,
@@ -386,166 +442,150 @@ export const NearYouRail = ({
     embedded = false,
 }) => {
     const { t } = useTranslation();
-    const normalizedItems = Array.isArray(items) ? items : [];
-    const currentUser = normalizedItems.find(
-        (item) => currentUserId && Number(item?.studentId) === Number(currentUserId)
+    const normalized = asArray(items);
+    const maxXp = useMemo(
+        () => Math.max(1, ...normalized.map((i) => Number(i?.xp || 0))),
+        [normalized]
     );
-    const currentXp = Number(currentUser?.xp || 0);
+
+    if (!normalized.length) return null;
 
     return (
         <section
             className={
                 embedded
-                    ? 'rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-[#222222] sm:p-6'
-                    : 'rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_18px_60px_-42px_rgba(15,23,42,0.45)] dark:border-slate-800 dark:bg-[#161b22] sm:p-6'
+                    ? 'rounded-3xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-[#222222]'
+                    : 'rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950'
             }
         >
-            <div className="flex items-start justify-between gap-4">
-                <div>
-                    <p
-                        className={
-                            embedded
-                                ? 'text-xs font-semibold uppercase tracking-[0.18em] text-blue-600 dark:text-blue-300'
-                                : 'text-xs font-semibold uppercase tracking-[0.18em] text-orange-500'
-                        }
-                    >
-                        {t('public.leaderboard.near.eyebrow')}
-                    </p>
-                    <h3
-                        className={
-                            embedded
-                                ? 'mt-2 text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]'
-                                : 'mt-2 text-lg font-semibold text-slate-900 dark:text-white'
-                        }
-                    >
+            <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
+                <div className="flex items-center gap-2">
+                    <FiTarget className="h-4 w-4 shrink-0 text-orange-500" aria-hidden="true" />
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">
                         {t('public.leaderboard.near.title')}
                     </h3>
-                    <p
-                        className={
-                            embedded
-                                ? 'mt-1 text-sm text-gray-500 dark:text-gray-400'
-                                : 'mt-1 text-sm text-slate-500 dark:text-slate-300'
-                        }
-                    >
-                        {t('public.leaderboard.near.description')}
-                    </p>
-                    <p
-                        className={
-                            embedded
-                                ? 'mt-3 text-sm font-medium text-gray-700 dark:text-gray-200'
-                                : 'mt-3 text-sm font-medium text-slate-700 dark:text-slate-200'
-                        }
-                    >
-                        {targetGap && nextTargetName
-                            ? t('public.leaderboard.near.targetGap', {
-                                  name: nextTargetName,
-                                  xp: targetGap,
-                              })
-                            : t('public.leaderboard.near.noGap')}
-                    </p>
                 </div>
-                <div
-                    className={
-                        embedded
-                            ? 'rounded-2xl border border-blue-100 bg-blue-50 px-3 py-2 text-right text-xs font-semibold text-blue-700 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-200'
-                            : 'rounded-2xl border border-orange-200 bg-orange-50 px-3 py-2 text-right text-xs font-semibold text-orange-700 dark:border-orange-500/30 dark:bg-orange-500/10 dark:text-orange-200'
-                    }
-                >
-                    {targetGap
-                        ? t('public.leaderboard.near.xpLeft', { xp: targetGap })
-                        : t('public.leaderboard.rank.calculating')}
-                </div>
+                {targetGap && nextTargetName ? (
+                    <span className="rounded-full border border-orange-200 bg-orange-50 px-2.5 py-1 text-xs font-semibold text-orange-700 dark:border-orange-500/30 dark:bg-orange-500/10 dark:text-orange-300">
+                        {t('public.leaderboard.near.xpLeft', { xp: targetGap })}
+                    </span>
+                ) : null}
             </div>
-            <div className="mt-5 space-y-3">
-                {normalizedItems.length ? (
-                    normalizedItems.map((item, index) => {
-                        const isCurrentUser =
-                            currentUserId && Number(item?.studentId) === Number(currentUserId);
-                        const xpGap =
-                            !isCurrentUser && currentXp
-                                ? Math.max(0, Number(item?.xp || 0) - currentXp + 1)
-                                : null;
-                        return (
-                            <div
-                                key={item?.studentId || item?.id || index}
-                                className={[
-                                    'flex items-center gap-3 rounded-[22px] border px-4 py-3',
-                                    isCurrentUser
-                                        ? embedded
-                                            ? 'border-blue-100 bg-blue-50/80 dark:border-blue-500/20 dark:bg-blue-500/10'
-                                            : 'border-orange-200 bg-[linear-gradient(135deg,_rgba(251,146,60,0.16),_rgba(255,255,255,0.96))] dark:border-orange-500/30 dark:bg-orange-500/10'
-                                        : embedded
-                                          ? 'border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-[#1A1A1A]'
-                                          : 'border-slate-200 bg-slate-50/80 dark:border-slate-800 dark:bg-slate-900/50',
-                                ].join(' ')}
-                            >
-                                <RankBadge rank={Number(item?.rank) || index + 1} />
-                                <LeaderboardAvatar
-                                    src={item?.avatarUrl}
-                                    name={item?.fullName || item?.name}
-                                    size="sm"
-                                />
-                                <div className="min-w-0 flex-1">
-                                    <p
-                                        className={
-                                            embedded
-                                                ? 'truncate font-semibold text-gray-900 dark:text-[#E8ECF3]'
-                                                : 'truncate font-semibold text-slate-900 dark:text-white'
-                                        }
-                                    >
-                                        {item?.fullName ||
-                                            item?.name ||
-                                            t('public.leaderboard.defaultStudent')}
-                                        {isCurrentUser
-                                            ? t('public.leaderboard.rank.youSuffix')
-                                            : ''}
-                                    </p>
-                                    <p
-                                        className={
-                                            embedded
-                                                ? 'mt-1 text-sm text-gray-500 dark:text-gray-400'
-                                                : 'mt-1 text-sm text-slate-500 dark:text-slate-300'
-                                        }
-                                    >
-                                        {item?.xp || 0} XP
-                                        {Number(item?.streakDays) > 0
-                                            ? ` · ${t('public.leaderboard.units.dayStreak', { count: item?.streakDays })}`
-                                            : ''}
-                                    </p>
-                                </div>
-                                {isCurrentUser ? (
-                                    <span
-                                        className={
-                                            embedded
-                                                ? 'rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white'
-                                                : 'rounded-full bg-orange-500 px-3 py-1 text-xs font-semibold text-white'
-                                        }
-                                    >
-                                        {t('public.leaderboard.near.yourPoint')}
-                                    </span>
-                                ) : xpGap ? (
-                                    <span
-                                        className={
-                                            embedded
-                                                ? 'rounded-full bg-gray-900 px-3 py-1 text-xs font-semibold text-white dark:bg-gray-100 dark:text-gray-900'
-                                                : 'rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white dark:bg-white dark:text-slate-900'
-                                        }
-                                    >
-                                        +{xpGap} XP
-                                    </span>
-                                ) : null}
-                            </div>
-                        );
-                    })
-                ) : (
-                    <div className="rounded-[22px] border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-300">
-                        {t('public.leaderboard.near.empty')}
-                    </div>
-                )}
+            <div className="space-y-2">
+                {normalized.map((item, idx) => {
+                    const isCurrentUser =
+                        currentUserId && Number(item?.studentId) === Number(currentUserId);
+                    return (
+                        <LeaderRow
+                            key={item?.studentId || item?.id || idx}
+                            item={item}
+                            rank={Number(item?.rank) || idx + 1}
+                            isCurrentUser={isCurrentUser}
+                            maxXp={maxXp}
+                            embedded={embedded}
+                        />
+                    );
+                })}
             </div>
         </section>
     );
 };
+
+// ─── Student of Week Card ─────────────────────────────────────────────────────
+
+export const StudentOfWeekCard = ({ data = null }) => {
+    const { t } = useTranslation();
+    return (
+        <div className="rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 p-5 dark:border-amber-500/30 dark:from-amber-500/10 dark:to-orange-500/10">
+            <div className="flex items-center gap-2">
+                <FiAward className="h-5 w-5 shrink-0 text-amber-500" aria-hidden="true" />
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-700 dark:text-amber-300">
+                    {t('public.leaderboard.studentOfWeek')}
+                </p>
+            </div>
+            {data?.fullName ? (
+                <div className="mt-4 flex items-center gap-3">
+                    <LeaderboardAvatar
+                        src={data.avatarUrl}
+                        name={data.fullName}
+                        size="lg"
+                        ring="ring-2 ring-offset-2 ring-amber-400/60 dark:ring-offset-transparent"
+                    />
+                    <div className="min-w-0">
+                        <p className="truncate font-bold text-slate-900 dark:text-white">
+                            {data.fullName}
+                        </p>
+                        <p className="mt-0.5 text-sm text-slate-600 dark:text-slate-300">
+                            {Number(data.xp || 0).toLocaleString()} XP
+                            {data.lessonsCompleted
+                                ? ` · ${t('public.leaderboard.lessons', { count: data.lessonsCompleted })}`
+                                : ''}
+                        </p>
+                        {Number(data.streakDays) > 0 && (
+                            <div className="mt-1">
+                                <StreakBadge days={data.streakDays} />
+                            </div>
+                        )}
+                    </div>
+                </div>
+            ) : (
+                <p className="mt-4 text-sm text-slate-400 dark:text-slate-500">
+                    {t('public.leaderboard.spotlight.waitingLeader')}
+                </p>
+            )}
+        </div>
+    );
+};
+
+// ─── Public Join Panel ────────────────────────────────────────────────────────
+
+export const PublicJoinPanel = ({ trustPoints = [] }) => {
+    const { t } = useTranslation();
+    const points = trustPoints.length
+        ? trustPoints
+        : asArray(t('public.leaderboard.publicTrustPoints', { returnObjects: true }));
+
+    return (
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-950">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-500">
+                {t('public.leaderboard.spotlight.eyebrow')}
+            </p>
+            <h3 className="mt-2 text-lg font-bold text-slate-900 dark:text-white">
+                {t('public.leaderboard.spotlight.title')}
+            </h3>
+            <p className="mt-1.5 text-sm leading-6 text-slate-500 dark:text-slate-400">
+                {t('public.leaderboard.spotlight.description')}
+            </p>
+            {points.length > 0 && (
+                <ul className="mt-4 space-y-2">
+                    {points.slice(0, 3).map((point, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-300">
+                            <FiZap className="mt-0.5 h-4 w-4 shrink-0 text-orange-500" aria-hidden="true" />
+                            {point}
+                        </li>
+                    ))}
+                </ul>
+            )}
+            <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+                <Link
+                    to="/register"
+                    className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-2xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-orange-600"
+                >
+                    {t('public.leaderboard.spotlight.startNow')}
+                    <FiArrowRight className="h-4 w-4 shrink-0" aria-hidden="true" />
+                </Link>
+                <Link
+                    to="/login"
+                    className="flex flex-1 cursor-pointer items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:hover:bg-slate-800"
+                >
+                    {t('common.login')}
+                </Link>
+            </div>
+        </div>
+    );
+};
+
+// ─── My Skill Progress Grid ───────────────────────────────────────────────────
 
 export const MySkillProgressGrid = ({ items = [], embedded = false }) => {
     const { t } = useTranslation();
@@ -554,758 +594,83 @@ export const MySkillProgressGrid = ({ items = [], embedded = false }) => {
         <section
             className={
                 embedded
-                    ? 'rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-[#222222] sm:p-6'
-                    : 'rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_18px_60px_-42px_rgba(15,23,42,0.45)] dark:border-slate-800 dark:bg-[#161b22] sm:p-6'
+                    ? 'rounded-3xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-[#222222]'
+                    : 'rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950'
             }
         >
             <div className="flex items-center gap-3">
-                <div
-                    className={
-                        embedded
-                            ? 'flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 text-white dark:bg-blue-500'
-                            : 'flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-sky-500 text-white shadow-lg shadow-cyan-200/60 dark:shadow-none'
-                    }
-                >
-                    <FiTarget />
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-sky-500 text-white shadow-sm">
+                    <FiTarget className="h-5 w-5" aria-hidden="true" />
                 </div>
                 <div>
-                    <h3
-                        className={
-                            embedded
-                                ? 'text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]'
-                                : 'text-lg font-semibold text-slate-900 dark:text-white'
-                        }
-                    >
+                    <h3 className="font-bold text-slate-900 dark:text-white">
                         {t('public.leaderboard.skills.myProgressTitle')}
                     </h3>
-                    <p
-                        className={
-                            embedded
-                                ? 'text-sm text-gray-500 dark:text-gray-400'
-                                : 'text-sm text-slate-500 dark:text-slate-300'
-                        }
-                    >
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
                         {t('public.leaderboard.skills.myProgressDescription')}
                     </p>
                 </div>
             </div>
+
             <div className="mt-5 grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
                 {items.length ? (
                     items.map((item) => (
                         <article
                             key={item.id || item.slug || item.name}
-                            className={
-                                embedded
-                                    ? 'rounded-[22px] border border-gray-100 bg-gray-50 p-4 dark:border-gray-800 dark:bg-[#1A1A1A]'
-                                    : 'rounded-[22px] border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-900/60'
-                            }
+                            className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-900/60"
                         >
                             <div className="flex items-start justify-between gap-3">
                                 <div className="min-w-0">
-                                    <p
-                                        className={
-                                            embedded
-                                                ? 'text-base font-semibold text-gray-900 dark:text-[#E8ECF3]'
-                                                : 'text-base font-semibold text-slate-900 dark:text-white'
-                                        }
-                                    >
+                                    <p className="text-sm font-semibold text-slate-900 dark:text-white">
                                         {item.name}
                                     </p>
-                                    <p
-                                        className={
-                                            embedded
-                                                ? 'mt-1 text-xs uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400'
-                                                : 'mt-1 text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400'
-                                        }
-                                    >
+                                    <p className="mt-0.5 text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                                         {t('public.leaderboard.skills.mastery', {
                                             count: item.progressPercent || 0,
                                         })}
                                     </p>
                                 </div>
-                                <span
-                                    className={
-                                        embedded
-                                            ? 'rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-700 shadow-sm dark:bg-gray-900 dark:text-gray-200'
-                                            : 'rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm dark:bg-slate-950/70 dark:text-slate-200'
-                                    }
-                                >
+                                <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 shadow-sm dark:bg-slate-950/70 dark:text-slate-200">
                                     {item.xp || 0} XP
                                 </span>
                             </div>
-                            <div
-                                className={
-                                    embedded
-                                        ? 'mt-4 h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800'
-                                        : 'mt-4 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800'
-                                }
-                            >
+                            <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
                                 <div
-                                    className={
-                                        embedded
-                                            ? 'h-full rounded-full bg-blue-500'
-                                            : 'h-full rounded-full bg-gradient-to-r from-cyan-500 to-sky-500'
-                                    }
+                                    className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-sky-500"
                                     style={{
                                         width: `${Math.min(100, Math.max(0, Number(item.progressPercent || 0)))}%`,
                                     }}
                                 />
                             </div>
-                            <div
-                                className={
-                                    embedded
-                                        ? 'mt-3 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400'
-                                        : 'mt-3 flex items-center justify-between text-sm text-slate-500 dark:text-slate-300'
-                                }
-                            >
+                            <div className="mt-2.5 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
                                 <span>
                                     {t('public.leaderboard.skills.lessonRatio', {
                                         completed: item.completedLessons || 0,
                                         total: item.totalLessons || 0,
                                     })}
                                 </span>
-                                {item.lastActivityAt ? (
-                                    <span>{t('public.leaderboard.skills.recentActivity')}</span>
-                                ) : (
-                                    <span>{t('public.leaderboard.skills.startNew')}</span>
-                                )}
+                                <span>
+                                    {item.lastActivityAt
+                                        ? t('public.leaderboard.skills.recentActivity')
+                                        : t('public.leaderboard.skills.startNew')}
+                                </span>
                             </div>
                         </article>
                     ))
                 ) : (
-                    <div className="rounded-[22px] border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-300 sm:col-span-2 xl:col-span-3">
+                    <p className="rounded-2xl border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-400 dark:border-slate-700 dark:text-slate-500 sm:col-span-2 2xl:col-span-3">
                         {t('public.leaderboard.skills.noPersonalProgress')}
-                    </div>
+                    </p>
                 )}
             </div>
         </section>
     );
 };
 
-export const AchievementCloud = ({ items = [], title = '', subtitle = '', embedded = false }) => {
-    const { t } = useTranslation();
-    const fallbackItems = asArray(
-        t('public.leaderboard.achievements.fallbackItems', { returnObjects: true })
-    );
+// ─── Skill Spotlight Grid ─────────────────────────────────────────────────────
 
-    return (
-        <section
-            className={
-                embedded
-                    ? 'rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-[#222222] sm:p-6'
-                    : 'rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_18px_60px_-42px_rgba(15,23,42,0.45)] dark:border-slate-800 dark:bg-[#161b22] sm:p-6'
-            }
-        >
-            <div className="flex items-center gap-3">
-                <div
-                    className={
-                        embedded
-                            ? 'flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 text-white dark:bg-blue-500'
-                            : 'flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-amber-400 text-white shadow-lg shadow-orange-200/60 dark:shadow-none'
-                    }
-                >
-                    <FiAward />
-                </div>
-                <div>
-                    <h3
-                        className={
-                            embedded
-                                ? 'text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]'
-                                : 'text-lg font-semibold text-slate-900 dark:text-white'
-                        }
-                    >
-                        {title || t('public.leaderboard.achievements.title')}
-                    </h3>
-                    <p
-                        className={
-                            embedded
-                                ? 'text-sm text-gray-500 dark:text-gray-400'
-                                : 'text-sm text-slate-500 dark:text-slate-300'
-                        }
-                    >
-                        {subtitle || t('public.leaderboard.achievements.subtitle')}
-                    </p>
-                </div>
-            </div>
-            <div
-                className={
-                    embedded
-                        ? 'mt-5 grid grid-cols-1 gap-3'
-                        : 'mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3'
-                }
-            >
-                {(items.length ? items : fallbackItems).map((item, index) => {
-                    const rarityKey = String(
-                        item.rarity || (index === 0 ? 'epic' : index < 3 ? 'rare' : 'common')
-                    ).toLowerCase();
-                    const rarityLabel = getRarityLabel(t, rarityKey);
-                    const achievementTitle = item.title || item.name;
-                    const achievementDescription =
-                        item.description || t('public.leaderboard.achievements.defaultDescription');
-                    return (
-                        <article
-                            key={item.id || item.title || index}
-                            className={
-                                embedded
-                                    ? 'flex w-full min-w-0 flex-col rounded-[24px] border border-gray-100 bg-gray-50 p-5 dark:border-gray-800 dark:bg-[#1A1A1A]'
-                                    : `flex h-full min-h-[320px] flex-col rounded-[24px] border bg-gradient-to-br ${accentSets[index % accentSets.length]} p-5`
-                            }
-                        >
-                            <div className="flex items-start justify-between gap-3">
-                                <span
-                                    className={
-                                        embedded
-                                            ? 'inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-gray-900 shadow-sm dark:bg-gray-900 dark:text-white'
-                                            : 'inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/85 text-slate-900 shadow-sm dark:bg-slate-900/70 dark:text-white'
-                                    }
-                                >
-                                    <FiAward />
-                                </span>
-                                <span
-                                    className={
-                                        embedded
-                                            ? 'rounded-full bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-700 shadow-sm dark:bg-gray-900 dark:text-gray-200'
-                                            : 'rounded-full bg-white/85 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-700 dark:bg-slate-950/70 dark:text-slate-200'
-                                    }
-                                >
-                                    {rarityLabel}
-                                </span>
-                            </div>
-                            <div className="mt-5 min-w-0 space-y-2">
-                                <p
-                                    className={
-                                        embedded
-                                            ? 'break-words text-xl font-semibold leading-tight text-gray-900 dark:text-[#E8ECF3]'
-                                            : 'line-clamp-2 text-xl font-semibold leading-tight text-slate-900 dark:text-white'
-                                    }
-                                >
-                                    {achievementTitle}
-                                </p>
-                                <p
-                                    className={
-                                        embedded
-                                            ? 'break-words text-sm leading-6 text-gray-500 dark:text-gray-400'
-                                            : 'line-clamp-3 text-sm leading-6 text-slate-600 dark:text-slate-300'
-                                    }
-                                >
-                                    {achievementDescription}
-                                </p>
-                            </div>
-                            <div className="mt-auto pt-5">
-                                <div
-                                    className={
-                                        embedded
-                                            ? 'mb-4 space-y-2 border-t border-gray-200 pt-4 dark:border-gray-800'
-                                            : 'mb-4 space-y-2 border-t border-white/70 pt-4 dark:border-slate-800/70'
-                                    }
-                                >
-                                    <p
-                                        className={`text-[11px] font-semibold uppercase tracking-[0.16em] ${item.unlocked === false ? 'text-slate-500 dark:text-slate-400' : 'text-emerald-600 dark:text-emerald-300'}`}
-                                    >
-                                        {item.unlocked === false
-                                            ? t('public.leaderboard.achievements.locked')
-                                            : t('public.leaderboard.achievements.unlocked')}
-                                    </p>
-                                    <p
-                                        className={
-                                            embedded
-                                                ? 'text-xs leading-5 text-gray-500 dark:text-gray-400'
-                                                : 'text-xs leading-5 text-slate-500 dark:text-slate-400'
-                                        }
-                                    >
-                                        {t('public.leaderboard.achievements.progressSignal')}
-                                    </p>
-                                </div>
-                            </div>
-                        </article>
-                    );
-                })}
-            </div>
-        </section>
-    );
-};
-
-const inferChallengeAction = (item = {}, t) => {
-    const getActionDefaults = (kind = 'open') => {
-        switch (kind) {
-            case 'progress':
-                return {
-                    to: getDashboardPath('student', 'progress'),
-                    label: t('public.leaderboard.challenge.actions.progress'),
-                };
-            case 'course':
-                return {
-                    to: getDashboardPath('student', 'my-courses'),
-                    label: t('public.leaderboard.challenge.actions.course'),
-                };
-            case 'continue':
-                return {
-                    to: getDashboardPath('student', 'my-courses'),
-                    label: t('public.leaderboard.challenge.actions.continue'),
-                };
-            case 'leaderboard':
-                return {
-                    to: getDashboardPath('student', 'leaderboard'),
-                    label: t('public.leaderboard.challenge.actions.leaderboard'),
-                };
-            default:
-                return {
-                    to: getDashboardPath('student', 'my-courses'),
-                    label: t('public.leaderboard.challenge.actions.open'),
-                };
-        }
-    };
-
-    if (item.actionPath || item.actionLabel || item.actionKind) {
-        const defaults = getActionDefaults(item.actionKind);
-        return {
-            to: item.actionPath || defaults.to,
-            label: item.actionLabel || defaults.label,
-            kind: item.actionKind || 'open',
-        };
-    }
-
-    const haystack = `${item.title || ''} ${item.detail || ''} ${item.value || ''}`.toLowerCase();
-    const hasKeyword = (key) =>
-        t(`public.leaderboard.challenge.keywords.${key}`, { returnObjects: true })
-            .some((keyword) => haystack.includes(String(keyword).toLowerCase()));
-
-    if (hasKeyword('progress')) {
-        return {
-            to: getDashboardPath('student', 'progress'),
-            label: t('public.leaderboard.challenge.actions.progress'),
-            kind: 'progress',
-        };
-    }
-    if (hasKeyword('course')) {
-        return {
-            to: getDashboardPath('student', 'my-courses'),
-            label: t('public.leaderboard.challenge.actions.course'),
-            kind: 'course',
-        };
-    }
-    if (hasKeyword('continue')) {
-        return {
-            to: getDashboardPath('student', 'my-courses'),
-            label: t('public.leaderboard.challenge.actions.continue'),
-            kind: 'continue',
-        };
-    }
-
-    return {
-        to: getDashboardPath('student', 'leaderboard'),
-        label: t('public.leaderboard.challenge.actions.leaderboard'),
-        kind: 'leaderboard',
-    };
-};
-
-const challengeActionMeta = (kind = 'open', t) => {
-    switch (kind) {
-        case 'skill':
-            return {
-                icon: FiBarChart2,
-                badge: t('public.leaderboard.challenge.badges.skill'),
-                badgeClassName:
-                    'border-cyan-200 bg-cyan-50 text-cyan-700 dark:border-cyan-500/30 dark:bg-cyan-500/10 dark:text-cyan-200',
-            };
-        case 'continue':
-            return {
-                icon: FiZap,
-                badge: t('public.leaderboard.challenge.badges.continue'),
-                badgeClassName:
-                    'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200',
-            };
-        case 'progress':
-            return {
-                icon: FiTarget,
-                badge: t('public.leaderboard.challenge.badges.progress'),
-                badgeClassName:
-                    'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200',
-            };
-        case 'course':
-            return {
-                icon: FiTrendingUp,
-                badge: t('public.leaderboard.challenge.badges.course'),
-                badgeClassName:
-                    'border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-200',
-            };
-        case 'leaderboard':
-        default:
-            return {
-                icon: FiArrowRight,
-                badge: t('public.leaderboard.challenge.badges.leaderboard'),
-                badgeClassName:
-                    'border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200',
-            };
-    }
-};
-
-export const PublicSpotlightPanel = ({ studentOfWeek = null, highlights = [], metrics = [] }) => {
-    const { t } = useTranslation();
-    const benefits = [
-        {
-            icon: FiBarChart2,
-            title: t('public.leaderboard.spotlight.benefits.growth.title'),
-            detail: t('public.leaderboard.spotlight.benefits.growth.detail'),
-            accent: 'border-cyan-200 bg-cyan-50/80 dark:border-cyan-500/20 dark:bg-cyan-500/10',
-        },
-        {
-            icon: FiZap,
-            title: t('public.leaderboard.spotlight.benefits.momentum.title'),
-            detail: t('public.leaderboard.spotlight.benefits.momentum.detail'),
-            accent: 'border-orange-200 bg-orange-50/80 dark:border-orange-500/20 dark:bg-orange-500/10',
-        },
-        {
-            icon: FiAward,
-            title: t('public.leaderboard.spotlight.benefits.wins.title'),
-            detail: t('public.leaderboard.spotlight.benefits.wins.detail'),
-            accent: 'border-fuchsia-200 bg-fuchsia-50/80 dark:border-fuchsia-500/20 dark:bg-fuchsia-500/10',
-        },
-    ];
-    const fallbackMetrics = asArray(
-        t('public.leaderboard.spotlight.fallbackMetrics', { returnObjects: true })
-    );
-    const fallbackHighlights = asArray(
-        t('public.leaderboard.spotlight.fallbackHighlights', { returnObjects: true })
-    );
-
-    return (
-        <section className="w-full max-w-full overflow-hidden rounded-[28px] border border-slate-200 bg-[linear-gradient(135deg,_#fff7ed_0%,_#ffffff_50%,_#eff6ff_100%)] p-4 shadow-[0_18px_60px_-42px_rgba(15,23,42,0.45)] dark:border-slate-800 dark:bg-[linear-gradient(135deg,_#1e293b_0%,_#334155_50%,_#1e3a8a_100%)] sm:p-6">
-            <div className="flex min-w-0 flex-col items-start justify-between gap-4 lg:flex-row lg:items-start">
-                <div className="min-w-0 max-w-xl">
-                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-orange-500">
-                        {t('public.leaderboard.spotlight.eyebrow')}
-                    </p>
-                    <h3 className="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">
-                        {t('public.leaderboard.spotlight.title')}
-                    </h3>
-                    <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
-                        {t('public.leaderboard.spotlight.description')}
-                    </p>
-                </div>
-                <div className="grid min-w-0 w-full gap-3 sm:flex sm:w-auto sm:flex-wrap">
-                    <Link
-                        to="/courses"
-                        className="inline-flex w-full items-center justify-center rounded-2xl border border-slate-900 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-900 hover:text-white dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-slate-900 sm:w-auto"
-                    >
-                        {t('public.leaderboard.spotlight.openCourses')}
-                    </Link>
-                    <Link
-                        to="/register"
-                        className="inline-flex w-full items-center justify-center rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 sm:w-auto"
-                    >
-                        {t('public.leaderboard.spotlight.startNow')}
-                    </Link>
-                </div>
-            </div>
-            <div className="mt-5 grid min-w-0 gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-                <div className="min-w-0 space-y-4">
-                    <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-3">
-                        {(metrics.length ? metrics : fallbackMetrics)
-                            .slice(0, 3)
-                            .map((metric, index) => (
-                                <div
-                                    key={`${metric.label}-${index}`}
-                                    className="min-w-0 w-full max-w-full rounded-[20px] border border-slate-200 bg-white/85 p-4 dark:border-slate-700 dark:bg-slate-900/60"
-                                >
-                                    <p className="break-words text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
-                                        {metric.label}
-                                    </p>
-                                    <p className="mt-2 break-words text-2xl font-semibold leading-tight text-slate-900 dark:text-white">
-                                        {metric.value}
-                                    </p>
-                                    <p className="mt-1 break-words text-sm text-slate-500 dark:text-slate-300">
-                                        {metric.helper}
-                                    </p>
-                                </div>
-                            ))}
-                    </div>
-                    <div className="min-w-0 rounded-[24px] border border-orange-200 bg-white/80 p-5 dark:border-orange-500/20 dark:bg-slate-900/60">
-                        <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-start sm:justify-between">
-                            <div className="min-w-0">
-                                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-600 dark:text-orange-200">
-                                    {t('public.leaderboard.studentOfWeek')}
-                                </p>
-                                <div className="mt-4 flex min-w-0 flex-col items-start gap-4 sm:flex-row sm:items-center">
-                                    <LeaderboardAvatar
-                                        src={studentOfWeek?.avatarUrl}
-                                        name={studentOfWeek?.fullName}
-                                        size="lg"
-                                    />
-                                    <div className="min-w-0 max-w-full">
-                                        <p className="break-words text-xl font-semibold leading-tight text-slate-900 dark:text-white">
-                                            {studentOfWeek?.fullName ||
-                                                t('public.leaderboard.spotlight.waitingLeader')}
-                                        </p>
-                                        <p className="mt-1 break-words text-sm text-slate-600 dark:text-slate-300">
-                                            {studentOfWeek
-                                                ? `${studentOfWeek.xp || 0} XP · ${t('public.leaderboard.metrics.lessonsClosed', { count: studentOfWeek.lessonsCompleted || 0 })}`
-                                                : t(
-                                                      'public.leaderboard.spotlight.waitingLeaderDescription'
-                                                  )}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                            <span className="self-start rounded-full bg-orange-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-orange-700 dark:bg-orange-500/10 dark:text-orange-200">
-                                {t('public.leaderboard.spotlight.growing')}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-                <div className="space-y-3">
-                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                        {(highlights.length ? highlights : fallbackHighlights)
-                            .slice(0, 3)
-                            .map((entry, index) => (
-                                <div
-                                    key={`${entry}-${index}`}
-                                    className="rounded-[20px] border border-slate-200 bg-white/80 p-4 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-200"
-                                >
-                                    <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
-                                        0{index + 1}
-                                    </span>
-                                    <p className="mt-2 font-medium leading-6">{entry}</p>
-                                </div>
-                            ))}
-                    </div>
-                    <div className="rounded-[24px] border border-slate-200 bg-white/85 p-4 dark:border-slate-700 dark:bg-slate-900/60">
-                        <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
-                            <div className="min-w-0">
-                                <p className="text-sm font-semibold text-slate-900 dark:text-white">
-                                    {t('public.leaderboard.spotlight.whyJoin')}
-                                </p>
-                                <p className="text-xs text-slate-500 dark:text-slate-300">
-                                    {t('public.leaderboard.spotlight.whyJoinDescription')}
-                                </p>
-                            </div>
-                            <span className="self-start rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-600 dark:bg-slate-800 dark:text-slate-200">
-                                {t('public.leaderboard.spotlight.benefitsCount')}
-                            </span>
-                        </div>
-                        <div className="mt-4 grid gap-3">
-                            {benefits.map((item) => {
-                                const Icon = item.icon;
-                                return (
-                                    <div
-                                        key={item.title}
-                                        className={`rounded-[20px] border p-4 ${item.accent}`}
-                                    >
-                                        <div className="flex min-w-0 items-start gap-3">
-                                            <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/85 text-slate-900 shadow-sm dark:bg-slate-950/70 dark:text-white">
-                                                <Icon className="text-lg" />
-                                            </span>
-                                            <div className="min-w-0">
-                                                <p className="font-semibold text-slate-900 dark:text-white">
-                                                    {item.title}
-                                                </p>
-                                                <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">
-                                                    {item.detail}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-    );
-};
-
-export const ChallengeRail = ({ items = [], embedded = false }) => {
-    const { t } = useTranslation();
-    const fallbackItems = asArray(
-        t('public.leaderboard.challenge.fallbackItems', { returnObjects: true })
-    );
-
-    return (
-        <section
-            className={
-                embedded
-                    ? 'rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-[#222222] sm:p-6'
-                    : 'rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_18px_60px_-42px_rgba(15,23,42,0.45)] dark:border-slate-800 dark:bg-[#161b22] sm:p-6'
-            }
-        >
-            <div className="flex items-center gap-3">
-                <div
-                    className={
-                        embedded
-                            ? 'flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 text-white dark:bg-blue-500'
-                            : 'flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900'
-                    }
-                >
-                    <FiTarget />
-                </div>
-                <div>
-                    <h3
-                        className={
-                            embedded
-                                ? 'text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]'
-                                : 'text-lg font-semibold text-slate-900 dark:text-white'
-                        }
-                    >
-                        {t('public.leaderboard.challenge.title')}
-                    </h3>
-                    <p
-                        className={
-                            embedded
-                                ? 'text-sm text-gray-500 dark:text-gray-400'
-                                : 'text-sm text-slate-500 dark:text-slate-300'
-                        }
-                    >
-                        {t('public.leaderboard.challenge.subtitle')}
-                    </p>
-                </div>
-            </div>
-            <div className="mt-5 space-y-3">
-                {(items.length ? items : fallbackItems).map((item, index) => {
-                    const progress = Number(item.progress || 0);
-                    const target = Number(item.target || 0);
-                    const percent =
-                        target > 0 ? Math.min(100, Math.round((progress / target) * 100)) : null;
-                    const highlighted = index === 0;
-                    const action = inferChallengeAction(item, t);
-                    const actionMeta = challengeActionMeta(action.kind, t);
-                    const ActionIcon = actionMeta.icon;
-
-                    return (
-                        <div
-                            key={item.id || item.title || index}
-                            className={[
-                                'rounded-[22px] border p-4',
-                                highlighted
-                                    ? embedded
-                                        ? 'border-blue-100 bg-blue-50/80 dark:border-blue-500/20 dark:bg-blue-500/10'
-                                        : 'border-orange-200 bg-[linear-gradient(135deg,_rgba(251,146,60,0.16),_rgba(255,255,255,0.96))] dark:border-orange-500/30 dark:bg-orange-500/10'
-                                    : embedded
-                                      ? 'border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-[#1A1A1A]'
-                                      : 'border-slate-200 bg-slate-50/80 dark:border-slate-800 dark:bg-slate-900/50',
-                            ].join(' ')}
-                        >
-                            <div className="flex items-start justify-between gap-3">
-                                <div className="min-w-0">
-                                    {highlighted ? (
-                                        <p
-                                            className={
-                                                embedded
-                                                    ? 'text-xs font-semibold uppercase tracking-[0.18em] text-blue-600 dark:text-blue-300'
-                                                    : 'text-xs font-semibold uppercase tracking-[0.18em] text-orange-500'
-                                            }
-                                        >
-                                            {t('public.leaderboard.challenge.bestStep')}
-                                        </p>
-                                    ) : null}
-                                    <p
-                                        className={`font-semibold ${highlighted ? 'mt-1 text-lg' : ''} ${embedded ? 'text-gray-900 dark:text-[#E8ECF3]' : 'text-slate-900 dark:text-white'}`}
-                                    >
-                                        {item.title}
-                                    </p>
-                                    <p
-                                        className={
-                                            embedded
-                                                ? 'mt-1 text-sm text-gray-500 dark:text-gray-400'
-                                                : 'mt-1 text-sm text-slate-500 dark:text-slate-300'
-                                        }
-                                    >
-                                        {item.detail || item.value}
-                                    </p>
-                                </div>
-                                <FiArrowRight
-                                    className={`mt-1 shrink-0 ${highlighted ? (embedded ? 'text-blue-600 dark:text-blue-300' : 'text-orange-500') : embedded ? 'text-gray-400 dark:text-gray-500' : 'text-slate-400'}`}
-                                />
-                            </div>
-                            {target > 0 ? (
-                                <div className="mt-4 space-y-2">
-                                    <div
-                                        className={
-                                            embedded
-                                                ? 'flex items-center justify-between text-xs font-medium text-gray-500 dark:text-gray-400'
-                                                : 'flex items-center justify-between text-xs font-medium text-slate-500 dark:text-slate-400'
-                                        }
-                                    >
-                                        <span>
-                                            {progress}/{target}
-                                        </span>
-                                        <span>{percent}%</span>
-                                    </div>
-                                    <div
-                                        className={
-                                            embedded
-                                                ? 'h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800'
-                                                : 'h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800'
-                                        }
-                                    >
-                                        <div
-                                            className={
-                                                embedded
-                                                    ? 'h-full rounded-full bg-blue-500'
-                                                    : 'h-full rounded-full bg-gradient-to-r from-orange-500 via-amber-400 to-yellow-300'
-                                            }
-                                            style={{ width: `${percent}%` }}
-                                        />
-                                    </div>
-                                </div>
-                            ) : null}
-                            <div className="mt-3 flex flex-wrap items-center gap-2">
-                                {item.reward ? (
-                                    <div
-                                        className={
-                                            embedded
-                                                ? 'inline-flex rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-200'
-                                                : 'inline-flex rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-700 dark:border-orange-500/30 dark:bg-orange-500/10 dark:text-orange-200'
-                                        }
-                                    >
-                                        {t('public.leaderboard.challenge.reward', {
-                                            reward: item.reward,
-                                        })}
-                                    </div>
-                                ) : null}
-                                <span
-                                    className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${actionMeta.badgeClassName}`}
-                                >
-                                    <ActionIcon className="shrink-0" />
-                                    {actionMeta.badge}
-                                </span>
-                                <span
-                                    className={
-                                        embedded
-                                            ? 'inline-flex rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300'
-                                            : 'inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300'
-                                    }
-                                >
-                                    {t('public.leaderboard.challenge.availableNow')}
-                                </span>
-                            </div>
-                            <div className="mt-4">
-                                <Link
-                                    to={action.to}
-                                    className={
-                                        embedded
-                                            ? 'inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:bg-[#1A1A1A] dark:text-gray-100 dark:hover:bg-gray-900'
-                                            : 'inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-100 dark:hover:bg-slate-900'
-                                    }
-                                >
-                                    <ActionIcon className="shrink-0" />
-                                    {action.label}
-                                    <FiArrowRight className="shrink-0" />
-                                </Link>
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
-        </section>
-    );
-};
-
-const normalizeSkillKey = (value = '') =>
-    String(value)
-        .trim()
-        .toLowerCase()
-        .replace(/[^\p{L}0-9]+/giu, '');
+const normalizeSkillKey = (v = '') =>
+    String(v).trim().toLowerCase().replace(/[^\p{L}0-9]+/giu, '');
 
 export const SkillSpotlightGrid = ({
     boards = [],
@@ -1318,7 +683,7 @@ export const SkillSpotlightGrid = ({
     const progressLookup = useMemo(
         () =>
             new Map(
-                (Array.isArray(personalProgress) ? personalProgress : [])
+                asArray(personalProgress)
                     .filter((item) => item?.slug || item?.name)
                     .map((item) => [normalizeSkillKey(item.slug || item.name), item])
             ),
@@ -1329,41 +694,24 @@ export const SkillSpotlightGrid = ({
         <section
             className={
                 embedded
-                    ? 'rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-[#222222] sm:p-6'
-                    : 'rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_18px_60px_-42px_rgba(15,23,42,0.45)] dark:border-slate-800 dark:bg-[#161b22] sm:p-6'
+                    ? 'rounded-3xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-[#222222]'
+                    : 'rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950'
             }
         >
             <div className="flex items-center justify-between gap-3">
                 <div>
-                    <h3
-                        className={
-                            embedded
-                                ? 'text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]'
-                                : 'text-lg font-semibold text-slate-900 dark:text-white'
-                        }
-                    >
+                    <h3 className="font-bold text-slate-900 dark:text-white">
                         {t('public.leaderboard.skillSpotlight.title')}
                     </h3>
-                    <p
-                        className={
-                            embedded
-                                ? 'text-sm text-gray-500 dark:text-gray-400'
-                                : 'text-sm text-slate-500 dark:text-slate-300'
-                        }
-                    >
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
                         {t('public.leaderboard.skillSpotlight.subtitle')}
                     </p>
                 </div>
-                <span
-                    className={
-                        embedded
-                            ? 'rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200'
-                            : 'rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200'
-                    }
-                >
+                <span className="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
                     {t('public.leaderboard.skillSpotlight.directionCount', { count: cards.length })}
                 </span>
             </div>
+
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
                 {cards.length ? (
                     cards.map((board, index) => {
@@ -1373,348 +721,394 @@ export const SkillSpotlightGrid = ({
                             progressLookup.get(normalizeSkillKey(board.label));
                         const isFeatured =
                             featuredSlug &&
-                            String(board.slug || '').toLowerCase() ===
-                                String(featuredSlug).toLowerCase();
-                        const personalPercent = Math.max(
-                            0,
-                            Math.min(100, Number(personal?.progressPercent || 0))
-                        );
+                            String(board.slug || '').toLowerCase() === String(featuredSlug).toLowerCase();
+                        const personalPercent = Math.max(0, Math.min(100, Number(personal?.progressPercent || 0)));
                         const personalXp = Number(personal?.xp || 0);
                         const leaderXp = Number(leader?.xp || 0);
-                        const xpGap =
-                            leader && personal ? Math.max(0, leaderXp - personalXp + 1) : null;
-                        const remainingProgress = Math.max(0, 100 - personalPercent);
+                        const xpGap = leader && personal ? Math.max(0, leaderXp - personalXp + 1) : null;
+
                         const nextHint = personal
                             ? personalPercent >= 100
                                 ? t('public.leaderboard.skillSpotlight.hints.complete')
                                 : xpGap && xpGap > 0
-                                  ? t('public.leaderboard.skillSpotlight.hints.xpGap', {
-                                        xp: xpGap,
-                                    })
-                                  : remainingProgress > 0
-                                    ? t(
-                                          'public.leaderboard.skillSpotlight.hints.remainingProgress',
-                                          { count: remainingProgress }
-                                      )
-                                    : t('public.leaderboard.skillSpotlight.hints.ready')
+                                ? t('public.leaderboard.skillSpotlight.hints.xpGap', { xp: xpGap })
+                                : t('public.leaderboard.skillSpotlight.hints.ready')
                             : t('public.leaderboard.skillSpotlight.hints.start');
 
                         return (
                             <article
                                 key={board.slug || board.label || index}
-                                className={
-                                    embedded
-                                        ? 'rounded-[22px] border border-gray-100 bg-gray-50 p-4 dark:border-gray-800 dark:bg-[#1A1A1A]'
-                                        : `rounded-[22px] border bg-gradient-to-br ${accentSets[index % accentSets.length]} p-4`
-                                }
+                                className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-900/60"
                             >
                                 <div className="flex items-center justify-between gap-3">
                                     <div className="min-w-0">
-                                        <div className="flex flex-wrap items-center gap-2">
-                                            <p
-                                                className={
-                                                    embedded
-                                                        ? 'text-base font-semibold text-gray-900 dark:text-[#E8ECF3]'
-                                                        : 'text-base font-semibold text-slate-900 dark:text-white'
-                                                }
-                                            >
+                                        <div className="flex flex-wrap items-center gap-1.5">
+                                            <p className="text-sm font-semibold text-slate-900 dark:text-white">
                                                 {board.label}
                                             </p>
-                                            {isFeatured ? (
-                                                <span
-                                                    className={
-                                                        embedded
-                                                            ? 'rounded-full bg-gray-900 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white dark:bg-gray-100 dark:text-gray-900'
-                                                            : 'rounded-full bg-slate-900 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white dark:bg-white dark:text-slate-900'
-                                                    }
-                                                >
-                                                    {t(
-                                                        'public.leaderboard.skillSpotlight.featured'
-                                                    )}
+                                            {isFeatured && (
+                                                <span className="rounded-full bg-orange-500 px-2 py-0.5 text-[10px] font-semibold text-white">
+                                                    {t('public.leaderboard.skillSpotlight.featured')}
                                                 </span>
-                                            ) : null}
+                                            )}
                                         </div>
-                                        <p
-                                            className={
-                                                embedded
-                                                    ? 'mt-1 text-xs uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400'
-                                                    : 'mt-1 text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400'
-                                            }
-                                        >
+                                        <p className="mt-0.5 text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                                             {personal
-                                                ? t(
-                                                      'public.leaderboard.skillSpotlight.personalPercent',
-                                                      { count: personalPercent }
-                                                  )
-                                                : t(
-                                                      'public.leaderboard.skillSpotlight.personalPending'
-                                                  )}
+                                                ? t('public.leaderboard.skillSpotlight.personalPercent', { count: personalPercent })
+                                                : t('public.leaderboard.skillSpotlight.personalPending')}
                                         </p>
                                     </div>
-                                    <span
-                                        className={
-                                            embedded
-                                                ? 'rounded-full bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-700 shadow-sm dark:bg-gray-900 dark:text-gray-200'
-                                                : 'rounded-full bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-700 dark:bg-slate-950/70 dark:text-slate-200'
-                                        }
-                                    >
+                                    <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700 shadow-sm dark:bg-slate-950/70 dark:text-slate-200">
                                         #{leader ? 1 : '-'}
                                     </span>
                                 </div>
-                                <div className="mt-4 flex items-center gap-3">
-                                    <LeaderboardAvatar
-                                        src={leader?.avatarUrl}
-                                        name={leader?.fullName}
-                                        size="sm"
-                                    />
-                                    <div className="min-w-0">
-                                        <p
-                                            className={
-                                                embedded
-                                                    ? 'truncate font-semibold text-gray-900 dark:text-[#E8ECF3]'
-                                                    : 'truncate font-semibold text-slate-900 dark:text-white'
-                                            }
-                                        >
-                                            {leader?.fullName ||
-                                                t('public.leaderboard.skillSpotlight.noLeader')}
-                                        </p>
-                                        <p
-                                            className={
-                                                embedded
-                                                    ? 'text-sm text-gray-500 dark:text-gray-400'
-                                                    : 'text-sm text-slate-600 dark:text-slate-300'
-                                            }
-                                        >
-                                            {leader
-                                                ? `${leader.xp || 0} XP · ${t('public.leaderboard.progress', { count: leader.progressPercent || 0 })}`
-                                                : t('public.leaderboard.skillSpotlight.beFirst')}
-                                        </p>
+
+                                {leader && (
+                                    <div className="mt-3 flex items-center gap-2">
+                                        <LeaderboardAvatar src={leader.avatarUrl} name={leader.fullName} size="sm" />
+                                        <div className="min-w-0">
+                                            <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">
+                                                {leader.fullName || t('public.leaderboard.skillSpotlight.noLeader')}
+                                            </p>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                                                {leader.xp || 0} XP
+                                            </p>
+                                        </div>
                                     </div>
-                                </div>
-                                <div
-                                    className={
-                                        embedded
-                                            ? 'mt-4 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800'
-                                            : 'mt-4 overflow-hidden rounded-full bg-white/70 dark:bg-slate-950/50'
-                                    }
-                                >
+                                )}
+
+                                <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
                                     <div
-                                        className={
-                                            embedded
-                                                ? 'h-2 rounded-full bg-blue-500'
-                                                : 'h-2 rounded-full bg-gradient-to-r from-cyan-500 to-sky-500'
-                                        }
+                                        className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-sky-500"
                                         style={{ width: `${personalPercent}%` }}
                                     />
                                 </div>
-                                <div
-                                    className={
-                                        embedded
-                                            ? 'mt-3 flex items-center justify-between gap-3 text-sm text-gray-500 dark:text-gray-400'
-                                            : 'mt-3 flex items-center justify-between gap-3 text-sm text-slate-600 dark:text-slate-300'
-                                    }
-                                >
-                                    <span>
-                                        {personal
-                                            ? `${personalXp} XP · ${t('public.leaderboard.skills.lessonRatio', { completed: personal?.completedLessons || 0, total: personal?.totalLessons || 0 })}`
-                                            : t(
-                                                  'public.leaderboard.skillSpotlight.noPersonalStats'
-                                              )}
-                                    </span>
-                                    {xpGap && xpGap > 0 ? (
-                                        <span
-                                            className={
-                                                embedded
-                                                    ? 'font-semibold text-blue-700 dark:text-blue-300'
-                                                    : 'font-semibold text-cyan-700 dark:text-cyan-300'
-                                            }
-                                        >
-                                            +{xpGap} XP
-                                        </span>
-                                    ) : null}
-                                </div>
-                                <p
-                                    className={
-                                        embedded
-                                            ? 'mt-3 text-sm leading-6 text-gray-700 dark:text-gray-200'
-                                            : 'mt-3 text-sm leading-6 text-slate-700 dark:text-slate-200'
-                                    }
-                                >
+
+                                <p className="mt-2 text-xs leading-5 text-slate-600 dark:text-slate-300">
                                     {nextHint}
                                 </p>
+
+                                {xpGap && xpGap > 0 ? (
+                                    <p className="mt-1 text-xs font-semibold text-cyan-700 dark:text-cyan-300">
+                                        +{xpGap} XP {t('public.leaderboard.skillSpotlight.hints.xpGap', { xp: '' }).replace(/\d+/, '').trim()}
+                                    </p>
+                                ) : null}
                             </article>
                         );
                     })
                 ) : (
-                    <div className="rounded-[22px] border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-300 sm:col-span-2">
+                    <p className="rounded-2xl border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-400 dark:border-slate-700 dark:text-slate-500 sm:col-span-2">
                         {t('public.leaderboard.skillSpotlight.empty')}
-                    </div>
+                    </p>
                 )}
             </div>
         </section>
     );
 };
 
-HeroMetricCard.propTypes = {
-    label: PropTypes.string.isRequired,
-    value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-    helper: PropTypes.string.isRequired,
+// ─── Achievement Cloud ────────────────────────────────────────────────────────
+
+const RARITY_STYLE = {
+    epic: 'border-amber-200 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-500/10',
+    rare: 'border-orange-200 bg-orange-50 dark:border-orange-500/30 dark:bg-orange-500/10',
+    common: 'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900/60',
+};
+
+const RARITY_ICON = {
+    epic: FiZap,
+    rare: FiAward,
+    common: FiTarget,
+};
+
+export const AchievementCloud = ({ items = [], title = '', subtitle = '', embedded = false }) => {
+    const { t } = useTranslation();
+    const fallback = asArray(t('public.leaderboard.achievements.fallbackItems', { returnObjects: true }));
+    const displayItems = items.length ? items : fallback;
+
+    return (
+        <section
+            className={
+                embedded
+                    ? 'rounded-3xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-[#222222]'
+                    : 'rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950'
+            }
+        >
+            <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-amber-400 text-white shadow-sm">
+                    <FiAward className="h-5 w-5" aria-hidden="true" />
+                </div>
+                <div>
+                    <h3 className="font-bold text-slate-900 dark:text-white">
+                        {title || t('public.leaderboard.achievements.title')}
+                    </h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                        {subtitle || t('public.leaderboard.achievements.subtitle')}
+                    </p>
+                </div>
+            </div>
+
+            <div className="mt-5 space-y-3">
+                {displayItems.map((item, idx) => {
+                    const rarityKey = String(
+                        item.rarity || (idx === 0 ? 'epic' : idx < 3 ? 'rare' : 'common')
+                    ).toLowerCase();
+                    const style = RARITY_STYLE[rarityKey] || RARITY_STYLE.common;
+                    const RarityIcon = RARITY_ICON[rarityKey] || FiBarChart2;
+                    return (
+                        <article
+                            key={item.id || item.title || idx}
+                            className={`flex items-start gap-3 rounded-2xl border p-4 ${style}`}
+                        >
+                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/85 text-slate-900 shadow-sm dark:bg-slate-900/70 dark:text-white">
+                                <RarityIcon className="h-5 w-5" aria-hidden="true" />
+                            </span>
+                            <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                                        {item.title || item.name}
+                                    </p>
+                                    <span className="rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600 dark:bg-slate-900/70 dark:text-slate-300">
+                                        {t(`public.leaderboard.rarity.${rarityKey}`, { defaultValue: rarityKey.toUpperCase() })}
+                                    </span>
+                                </div>
+                                <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                                    {item.description || t('public.leaderboard.achievements.defaultDescription')}
+                                </p>
+                                <p className={`mt-2 text-xs font-semibold uppercase tracking-[0.16em] ${item.unlocked === false ? 'text-slate-400 dark:text-slate-500' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                                    {item.unlocked === false
+                                        ? t('public.leaderboard.achievements.locked')
+                                        : t('public.leaderboard.achievements.unlocked')}
+                                </p>
+                            </div>
+                        </article>
+                    );
+                })}
+            </div>
+        </section>
+    );
+};
+
+// ─── Challenge Rail ───────────────────────────────────────────────────────────
+
+const inferChallengeAction = (item = {}, t) => {
+    const getDefaults = (kind = 'open') => {
+        const map = {
+            progress: { to: getDashboardPath('student', 'progress'), label: t('public.leaderboard.challenge.actions.progress') },
+            course: { to: getDashboardPath('student', 'my-courses'), label: t('public.leaderboard.challenge.actions.course') },
+            continue: { to: getDashboardPath('student', 'my-courses'), label: t('public.leaderboard.challenge.actions.continue') },
+            leaderboard: { to: getDashboardPath('student', 'leaderboard'), label: t('public.leaderboard.challenge.actions.leaderboard') },
+        };
+        return map[kind] || { to: getDashboardPath('student', 'my-courses'), label: t('public.leaderboard.challenge.actions.open') };
+    };
+
+    if (item.actionPath || item.actionLabel || item.actionKind) {
+        const d = getDefaults(item.actionKind);
+        return { to: item.actionPath || d.to, label: item.actionLabel || d.label, kind: item.actionKind || 'open' };
+    }
+
+    const haystack = `${item.title || ''} ${item.detail || ''} ${item.value || ''}`.toLowerCase();
+    const hasKw = (key) =>
+        asArray(t(`public.leaderboard.challenge.keywords.${key}`, { returnObjects: true }))
+            .some((kw) => haystack.includes(String(kw).toLowerCase()));
+
+    if (hasKw('progress')) return { ...getDefaults('progress'), kind: 'progress' };
+    if (hasKw('course')) return { ...getDefaults('course'), kind: 'course' };
+    if (hasKw('continue')) return { ...getDefaults('continue'), kind: 'continue' };
+    return { ...getDefaults('leaderboard'), kind: 'leaderboard' };
+};
+
+const CHALLENGE_META = {
+    skill: { icon: FiBarChart2, badge: 'challenge.badges.skill', badgeCls: 'border-cyan-200 bg-cyan-50 text-cyan-700 dark:border-cyan-500/30 dark:bg-cyan-500/10 dark:text-cyan-200' },
+    continue: { icon: FiZap, badge: 'challenge.badges.continue', badgeCls: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200' },
+    progress: { icon: FiTarget, badge: 'challenge.badges.progress', badgeCls: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200' },
+    course: { icon: FiTrendingUp, badge: 'challenge.badges.course', badgeCls: 'border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-200' },
+    leaderboard: { icon: FiBarChart2, badge: 'challenge.badges.leaderboard', badgeCls: 'border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200' },
+    open: { icon: FiArrowRight, badge: 'challenge.badges.leaderboard', badgeCls: 'border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200' },
+};
+
+export const ChallengeRail = ({ items = [], embedded = false }) => {
+    const { t } = useTranslation();
+    const fallback = asArray(t('public.leaderboard.challenge.fallbackItems', { returnObjects: true }));
+    const displayItems = items.length ? items : fallback;
+
+    return (
+        <section
+            className={
+                embedded
+                    ? 'rounded-3xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-[#222222]'
+                    : 'rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950'
+            }
+        >
+            <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900">
+                    <FiTarget className="h-5 w-5" aria-hidden="true" />
+                </div>
+                <div>
+                    <h3 className="font-bold text-slate-900 dark:text-white">
+                        {t('public.leaderboard.challenge.title')}
+                    </h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                        {t('public.leaderboard.challenge.subtitle')}
+                    </p>
+                </div>
+            </div>
+
+            <div className="mt-5 space-y-3">
+                {displayItems.map((item, idx) => {
+                    const progress = Number(item.progress || 0);
+                    const target = Number(item.target || 0);
+                    const percent = target > 0 ? Math.min(100, Math.round((progress / target) * 100)) : null;
+                    const highlighted = idx === 0;
+                    const action = inferChallengeAction(item, t);
+                    const meta = CHALLENGE_META[action.kind] || CHALLENGE_META.open;
+                    const MetaIcon = meta.icon;
+
+                    return (
+                        <div
+                            key={item.id || item.title || idx}
+                            className={[
+                                'rounded-2xl border p-4',
+                                highlighted
+                                    ? 'border-orange-200 bg-orange-50/80 dark:border-orange-500/30 dark:bg-orange-500/10'
+                                    : 'border-slate-200 bg-slate-50/80 dark:border-slate-800 dark:bg-slate-900/50',
+                            ].join(' ')}
+                        >
+                            {highlighted && (
+                                <p className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-orange-500">
+                                    {t('public.leaderboard.challenge.bestStep')}
+                                </p>
+                            )}
+                            <p className={`font-semibold text-slate-900 dark:text-white ${highlighted ? 'text-base' : 'text-sm'}`}>
+                                {item.title}
+                            </p>
+                            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                                {item.detail || item.value}
+                            </p>
+
+                            {target > 0 && (
+                                <div className="mt-3 space-y-1">
+                                    <div className="flex justify-between text-xs font-medium text-slate-500 dark:text-slate-400">
+                                        <span>{progress}/{target}</span>
+                                        <span>{percent}%</span>
+                                    </div>
+                                    <div className="h-1.5 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                                        <div
+                                            className="h-full rounded-full bg-gradient-to-r from-orange-500 to-amber-400"
+                                            style={{ width: `${percent}%` }}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="mt-3 flex flex-wrap items-center gap-2">
+                                {item.reward && (
+                                    <span className="rounded-full border border-orange-200 bg-orange-50 px-2.5 py-1 text-xs font-semibold text-orange-700 dark:border-orange-500/30 dark:bg-orange-500/10 dark:text-orange-200">
+                                        {t('public.leaderboard.challenge.reward', { reward: item.reward })}
+                                    </span>
+                                )}
+                                <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold ${meta.badgeCls}`}>
+                                    <MetaIcon className="h-3 w-3 shrink-0" aria-hidden="true" />
+                                    {t(`public.leaderboard.${meta.badge}`)}
+                                </span>
+                            </div>
+
+                            <div className="mt-3">
+                                <Link
+                                    to={action.to}
+                                    className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-100 dark:hover:bg-slate-900"
+                                >
+                                    {action.label}
+                                    <FiArrowRight className="h-3 w-3 shrink-0" aria-hidden="true" />
+                                </Link>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </section>
+    );
+};
+
+// ─── PropTypes ────────────────────────────────────────────────────────────────
+
+LeaderboardAvatar.propTypes = { src: PropTypes.string, name: PropTypes.string, size: PropTypes.oneOf(['sm', 'md', 'lg']), ring: PropTypes.string };
+LeaderboardAvatar.defaultProps = { src: null, name: '', size: 'md', ring: '' };
+
+RankBadge.propTypes = { rank: PropTypes.number };
+RankBadge.defaultProps = { rank: null };
+
+XpBar.propTypes = { xp: PropTypes.number, maxXp: PropTypes.number };
+XpBar.defaultProps = { xp: 0, maxXp: 1 };
+
+StreakBadge.propTypes = { days: PropTypes.number };
+StreakBadge.defaultProps = { days: 0 };
+
+RankDelta.propTypes = { delta: PropTypes.number };
+RankDelta.defaultProps = { delta: null };
+
+Podium.propTypes = { items: PropTypes.arrayOf(PropTypes.object) };
+Podium.defaultProps = { items: [] };
+
+LeaderRow.propTypes = {
+    item: PropTypes.object,
+    rank: PropTypes.number.isRequired,
+    isCurrentUser: PropTypes.bool,
+    maxXp: PropTypes.number,
     embedded: PropTypes.bool,
 };
+LeaderRow.defaultProps = { item: null, isCurrentUser: false, maxXp: 1, embedded: false };
 
-HeroMetricCard.defaultProps = {
-    embedded: false,
-};
-
-LeaderboardAvatar.propTypes = {
-    src: PropTypes.string,
-    name: PropTypes.string,
-    size: PropTypes.oneOf(['sm', 'md', 'lg']),
-};
-
-LeaderboardAvatar.defaultProps = {
-    src: null,
-    name: '',
-    size: 'md',
-};
-
-RankBadge.propTypes = {
-    rank: PropTypes.number,
-    label: PropTypes.string,
-};
-
-RankBadge.defaultProps = {
-    rank: null,
-    label: null,
-};
-
-LeaderboardHero.propTypes = {
-    userName: PropTypes.string,
-    snapshot: PropTypes.shape({
-        rank: PropTypes.number,
-        percentile: PropTypes.number,
-        targetGap: PropTypes.number,
-        nextTargetEntry: PropTypes.object,
-    }).isRequired,
-    xp: PropTypes.number,
-    streakDays: PropTypes.number,
-    levelLabel: PropTypes.string,
+LeaderboardList.propTypes = {
     title: PropTypes.string,
-    description: PropTypes.string,
-    embedded: PropTypes.bool,
-};
-
-LeaderboardHero.defaultProps = {
-    userName: '',
-    xp: 0,
-    streakDays: 0,
-    levelLabel: '',
-    title: '',
-    description: '',
-    embedded: false,
-};
-
-LeaderboardListCard.propTypes = {
-    title: PropTypes.string.isRequired,
     description: PropTypes.string,
     items: PropTypes.arrayOf(PropTypes.object),
     currentUserId: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+    showPodium: PropTypes.bool,
+    embedded: PropTypes.bool,
     footer: PropTypes.node,
+};
+LeaderboardList.defaultProps = { title: '', description: '', items: [], currentUserId: null, showPodium: true, embedded: false, footer: null };
+
+YourPositionBanner.propTypes = {
+    rank: PropTypes.number,
+    xp: PropTypes.number,
+    streak: PropTypes.number,
+    delta: PropTypes.number,
+    targetGap: PropTypes.number,
+    nextTargetName: PropTypes.string,
+    percentile: PropTypes.number,
     embedded: PropTypes.bool,
 };
+YourPositionBanner.defaultProps = { rank: null, xp: 0, streak: 0, delta: null, targetGap: null, nextTargetName: '', percentile: null, embedded: false };
 
-LeaderboardListCard.defaultProps = {
-    description: '',
-    items: [],
-    currentUserId: null,
-    footer: null,
-    embedded: false,
-};
-
-NearYouRail.propTypes = {
+NearYouStrip.propTypes = {
     items: PropTypes.arrayOf(PropTypes.object),
     currentUserId: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
     targetGap: PropTypes.number,
     nextTargetName: PropTypes.string,
     embedded: PropTypes.bool,
 };
+NearYouStrip.defaultProps = { items: [], currentUserId: null, targetGap: null, nextTargetName: '', embedded: false };
 
-NearYouRail.defaultProps = {
-    items: [],
-    currentUserId: null,
-    targetGap: null,
-    nextTargetName: '',
-    embedded: false,
-};
+StudentOfWeekCard.propTypes = { data: PropTypes.object };
+StudentOfWeekCard.defaultProps = { data: null };
 
-MySkillProgressGrid.propTypes = {
-    items: PropTypes.arrayOf(PropTypes.object),
-    embedded: PropTypes.bool,
-};
+PublicJoinPanel.propTypes = { trustPoints: PropTypes.arrayOf(PropTypes.string) };
+PublicJoinPanel.defaultProps = { trustPoints: [] };
 
-MySkillProgressGrid.defaultProps = {
-    items: [],
-    embedded: false,
-};
-
-AchievementCloud.propTypes = {
-    items: PropTypes.arrayOf(PropTypes.object),
-    title: PropTypes.string,
-    subtitle: PropTypes.string,
-    embedded: PropTypes.bool,
-};
-
-AchievementCloud.defaultProps = {
-    items: [],
-    title: '',
-    subtitle: '',
-    embedded: false,
-};
-
-PublicSpotlightPanel.propTypes = {
-    studentOfWeek: PropTypes.object,
-    highlights: PropTypes.arrayOf(PropTypes.string),
-    metrics: PropTypes.arrayOf(
-        PropTypes.shape({
-            label: PropTypes.string,
-            value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-            helper: PropTypes.string,
-        })
-    ),
-};
-
-PublicSpotlightPanel.defaultProps = {
-    studentOfWeek: null,
-    highlights: [],
-    metrics: [],
-};
-
-ChallengeRail.propTypes = {
-    items: PropTypes.arrayOf(PropTypes.object),
-    embedded: PropTypes.bool,
-};
-
-ChallengeRail.defaultProps = {
-    items: [],
-    embedded: false,
-};
+MySkillProgressGrid.propTypes = { items: PropTypes.arrayOf(PropTypes.object), embedded: PropTypes.bool };
+MySkillProgressGrid.defaultProps = { items: [], embedded: false };
 
 SkillSpotlightGrid.propTypes = {
-    boards: PropTypes.arrayOf(
-        PropTypes.shape({
-            slug: PropTypes.string,
-            label: PropTypes.string,
-            items: PropTypes.arrayOf(PropTypes.object),
-        })
-    ),
+    boards: PropTypes.arrayOf(PropTypes.shape({ slug: PropTypes.string, label: PropTypes.string, items: PropTypes.array })),
     personalProgress: PropTypes.arrayOf(PropTypes.object),
     featuredSlug: PropTypes.string,
     embedded: PropTypes.bool,
 };
+SkillSpotlightGrid.defaultProps = { boards: [], personalProgress: [], featuredSlug: '', embedded: false };
 
-SkillSpotlightGrid.defaultProps = {
-    boards: [],
-    personalProgress: [],
-    featuredSlug: '',
-    embedded: false,
-};
+AchievementCloud.propTypes = { items: PropTypes.arrayOf(PropTypes.object), title: PropTypes.string, subtitle: PropTypes.string, embedded: PropTypes.bool };
+AchievementCloud.defaultProps = { items: [], title: '', subtitle: '', embedded: false };
+
+ChallengeRail.propTypes = { items: PropTypes.arrayOf(PropTypes.object), embedded: PropTypes.bool };
+ChallengeRail.defaultProps = { items: [], embedded: false };

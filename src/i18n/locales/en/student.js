@@ -39,13 +39,21 @@ export const student = {
                 showMenu: "Show menu"
             },
             workspaceGroups: {
+                today: {
+                    label: "Today's workspace",
+                    description: "Daily overview and upcoming schedule at a glance."
+                },
                 learning: {
                     label: "Learning workspace",
-                    description: "Core actions for courses, schedule, and learning materials."
+                    description: "Access courses, resources, and free learning materials."
+                },
+                practice: {
+                    label: "Practice and review",
+                    description: "Complete tasks and reinforce vocabulary with spaced repetition."
                 },
                 progress: {
                     label: "Performance and progress",
-                    description: "Tasks, progress, certificates, and ranking monitoring."
+                    description: "Track progress, certificates, and ranking."
                 },
                 support: {
                     label: "Communication and settings",
@@ -59,6 +67,7 @@ export const student = {
                 resources: "Resources",
                 freeResources: "Free Learning",
                 tasks: "Tasks",
+                vocabularyReviews: "Vocabulary",
                 progress: "Progress",
                 certificates: "Certificates",
                 chat: "Chat",
@@ -101,6 +110,35 @@ export const student = {
                 removeConfirm: "Remove this course from your list?",
                 removeConfirmYes: "Yes, remove",
                 removeConfirmCancel: "Cancel"
+            }
+        },
+        vocabularyReviews: {
+            eyebrow: "Spaced repetition",
+            title: "Vocabulary Reviews",
+            description: "Review flashcards using the Leitner system. Cards move to higher boxes as you get them right.",
+            dueCount_one: "{{count}} card due",
+            dueCount_other: "{{count}} cards due",
+            boxLabel: "Box {{box}}",
+            word: "Word",
+            definition: "Definition",
+            tapToFlip: "Tap to flip",
+            gotIt: "Got it",
+            notYet: "Not yet",
+            card: "Card {{current}} of {{total}}",
+            empty: {
+                title: "All caught up!",
+                description: "No cards are due right now. Come back later to keep your streak going.",
+                refresh: "Check again"
+            },
+            done: {
+                title: "Session complete!",
+                subtitle: "Great work! Here’s your summary.",
+                known: "{{count}} known",
+                stillLearning: "{{count}} still learning",
+                reviewAgain: "Review again"
+            },
+            toasts: {
+                error: "Failed to load vocabulary cards. Please try again."
             }
         },
         overview: {
@@ -742,7 +780,43 @@ export const student = {
                 exercise: "Exercise",
                 quiz: "Quiz",
                 groupWork: "Group work",
+                vocabulary: "Vocabulary",
+                fillBlank: "Fill in the blanks",
+                wordMatch: "Word match",
+                listening: "Listening",
+                writingCorrection: "Writing",
                 work: "Work"
+            },
+            interactive: {
+                noContent: "No activity content available.",
+                vocab: {
+                    progress: "{{reviewed}} of {{total}} reviewed",
+                    card: "Card {{current}} / {{total}}",
+                    word: "Word",
+                    definition: "Definition",
+                    tapToFlip: "Tap to flip",
+                    gotIt: "Got it",
+                    notYet: "Not yet",
+                    allReviewed: "All done! Known: {{known}}, still learning: {{unknown}}"
+                },
+                fillBlank: {
+                    sentence: "Sentence {{n}}"
+                },
+                wordMatch: {
+                    instructions: "Select a word on the left, then its match on the right.",
+                    allMatched: "All pairs matched!"
+                },
+                listening: {
+                    audioTitle: "Audio",
+                    noAudio: "Your browser does not support the audio element.",
+                    noAudioFile: "No audio file provided.",
+                    answerPlaceholder: "Your answer…"
+                },
+                writing: {
+                    prompt: "Writing prompt",
+                    rubric: "Grading criteria",
+                    placeholder: "Write your response here…"
+                }
             },
             reviewStatuses: {
                 submitted: "In review",
@@ -776,6 +850,7 @@ export const student = {
                 activitySubmitUnavailable: "Submission is not available for this activity.",
                 homeworkSubmitUnavailable: "Submission is not available for this task.",
                 addAnswerLinkOrFile: "Add an answer, link, or file.",
+                completeInteractiveActivity: "Complete the activity before submitting.",
                 activitySubmitted: "Activity submitted.",
                 homeworkSubmitted: "Task submitted.",
                 activitySubmitError: "Could not submit the activity.",
