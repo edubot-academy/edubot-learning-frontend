@@ -128,6 +128,9 @@ export const admin = {
             read: "Read",
             new: "New"
         },
+        fields: {
+            receivedAt: "Received: {{date}}"
+        },
         actions: {
             markRead: "Mark as read",
             delete: "Delete"

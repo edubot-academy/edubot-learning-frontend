@@ -239,6 +239,13 @@ const buildSessionHomeworkPath = (item) => {
     });
 };
 
+const buildHomeworkDetailPath = (item) => {
+    const sessionId = item?.sessionId || item?.session?.id;
+    const homeworkId = item?.id;
+    if (!sessionId || !homeworkId) return null;
+    return `/instructor/sessions/${sessionId}/homework/${homeworkId}`;
+};
+
 const getQueuePriority = (item) => {
     const queue = item?.queue || {};
     if (Number(queue.needsReviewCount || 0) > 0) return 0;
@@ -613,10 +620,11 @@ const InstructorHomework = () => {
                     <div className="mt-4 grid gap-3 lg:grid-cols-3">
                         {nextActionItems.map((item) => {
                             const action = getQueueAction(item, t);
+                            const detailPath = buildHomeworkDetailPath(item);
                             return (
                                 <Link
                                     key={item.id || `${item.title}-${item.deadline || ''}-next`}
-                                    to={buildSessionHomeworkPath(item)}
+                                    to={detailPath || buildSessionHomeworkPath(item)}
                                     className="rounded-2xl border border-edubot-line bg-white p-4 transition hover:border-edubot-orange hover:shadow-edubot-soft dark:border-slate-700 dark:bg-slate-900"
                                 >
                                     <div className="text-xs font-semibold uppercase tracking-[0.16em] text-edubot-orange">
@@ -745,6 +753,14 @@ const InstructorHomework = () => {
                                 </div>
 
                                 <div className="mt-5 flex flex-wrap gap-2">
+                                    {buildHomeworkDetailPath(item) && (
+                                        <Link
+                                            to={buildHomeworkDetailPath(item)}
+                                            className="dashboard-button-primary"
+                                        >
+                                            {t('instructorHomework.actions.viewDetail')}
+                                        </Link>
+                                    )}
                                     <Link
                                         to={buildSessionHomeworkPath(item)}
                                         className="dashboard-button-secondary"

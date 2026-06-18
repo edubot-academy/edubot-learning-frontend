@@ -1,4 +1,69 @@
 export const instructor = {
+    instructorHomeworkDetail: {
+        back: "Homework queue",
+        header: {
+            live: "Live",
+            draft: "Draft",
+            dueDate: "Due {{date}}",
+            noDueDate: "No due date",
+            maxScore: "{{count}} pts max",
+            rubric: "Rubric",
+            exportCsv: "Export CSV",
+            exportError: "Export failed"
+        },
+        stats: {
+            total: "Total",
+            toReview: "To Review",
+            approved: "Approved",
+            rejected: "Rejected",
+            needsRevision: "Needs Revision",
+            missing: "Missing"
+        },
+        filters: {
+            all: "All",
+            pending_submission: "Pending",
+            missing: "Missing",
+            needs_review: "Needs Review",
+            approved: "Approved",
+            rejected: "Rejected",
+            needs_revision: "Needs Revision"
+        },
+        roster: {
+            title: "Student roster",
+            description: "Review and grade each student submission inline.",
+            noStudents: "No students match this filter.",
+            noStudentsSubtitle: "Try selecting a different status filter above.",
+            late: "Late",
+            score: "{{score}} / {{max}} pts",
+            openGrading: "Grade",
+            closeGrading: "Close"
+        },
+        grading: {
+            answerTitle: "Student Answer",
+            noAnswer: "No text answer submitted.",
+            attachment: "Download Attachment",
+            rubricTitle: "Rubric",
+            score: "Score",
+            feedback: "Feedback comment",
+            approve: "Approve",
+            revision: "Request Revision",
+            reject: "Reject",
+            commentsTitle: "Comments",
+            noComments: "No comments yet.",
+            commentPlaceholder: "Add a comment…",
+            send: "Send",
+            approveSuccess: "Submission approved.",
+            rejectedSuccess: "Submission rejected.",
+            revisionSuccess: "Revision requested.",
+            reviewError: "Review failed.",
+            attachmentError: "Could not download attachment.",
+            commentError: "Could not send comment.",
+            loading: "Loading…"
+        },
+        errors: {
+            load: "Could not load homework details."
+        }
+    },
     instructorChat: {
         courseLoading: "Course information is still loading...",
         instructorFallback: "Instructor",
@@ -112,6 +177,7 @@ export const instructor = {
             late: "Late"
         },
         actions: {
+            viewDetail: "View detail",
             openSession: "Open in session"
         },
         fallbacks: {

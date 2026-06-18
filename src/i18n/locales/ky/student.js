@@ -862,6 +862,7 @@ export const student = {
             review: {
                 currentResult: "Учурдагы жыйынтык",
                 score: "Баа: {{score}}",
+                scoreWithMax: "Баа: {{score}} / {{max}}",
                 reviewedAt: "Текшерилген: {{date}}"
             },
             submission: {
@@ -910,7 +911,8 @@ export const student = {
             fields: {
                 answerPlaceholder: "Жооп жазыңыз",
                 linkPlaceholder: "Шилтеме кошуу",
-                filePlaceholder: "PDF же Word кошуу"
+                filePlaceholder: "PDF же Word кошуу",
+                fileTypeHint: "PDF, DOC, DOCX · макс. 20 МБ"
             },
             draftStatus: {
                 uploading: "Тиркеме жүктөлүп жатат. Баракты жаппаңыз.",

@@ -1,4 +1,69 @@
 export const instructor = {
+    instructorHomeworkDetail: {
+        back: "Тапшырмалар кезеги",
+        header: {
+            live: "Активдүү",
+            draft: "Жарыялана элек",
+            dueDate: "Мөөнөт: {{date}}",
+            noDueDate: "Мөөнөт жок",
+            maxScore: "Макс. {{count}} балл",
+            rubric: "Рубрика",
+            exportCsv: "CSV экспорт",
+            exportError: "Экспорт ишке ашкан жок"
+        },
+        stats: {
+            total: "Жалпы",
+            toReview: "Текшерүүгө",
+            approved: "Кабыл алынды",
+            rejected: "Четке кагылды",
+            needsRevision: "Оңдотуу керек",
+            missing: "Жөнөткөн жок"
+        },
+        filters: {
+            all: "Баары",
+            pending_submission: "Күтүлүүдө",
+            missing: "Жөнөткөн жок",
+            needs_review: "Текшерүүгө",
+            approved: "Кабыл алынды",
+            rejected: "Четке кагылды",
+            needs_revision: "Оңдотуу керек"
+        },
+        roster: {
+            title: "Студенттер тизмеси",
+            description: "Ар бир студенттин иши тике текшерилет жана бааланат.",
+            noStudents: "Бул фильтр боюнча студент табылган жок.",
+            noStudentsSubtitle: "Башка абал фильтрин тандап көрүңүз.",
+            late: "Кеч",
+            score: "{{score}} / {{max}} балл",
+            openGrading: "Баалоо",
+            closeGrading: "Жабуу"
+        },
+        grading: {
+            answerTitle: "Студенттин жообу",
+            noAnswer: "Текст жооп берилген жок.",
+            attachment: "Тиркемени жүктөп алуу",
+            rubricTitle: "Рубрика",
+            score: "Балл",
+            feedback: "Пикир",
+            approve: "Кабыл алуу",
+            revision: "Оңдотуу жөнөтүү",
+            reject: "Четке кагуу",
+            commentsTitle: "Комментарийлер",
+            noComments: "Азырынча комментарий жок.",
+            commentPlaceholder: "Комментарий кошуу…",
+            send: "Жөнөтүү",
+            approveSuccess: "Иш кабыл алынды.",
+            rejectedSuccess: "Иш четке кагылды.",
+            revisionSuccess: "Оңдотуу жөнөтүлдү.",
+            reviewError: "Баалоодо ката чыкты.",
+            attachmentError: "Тиркеме жүктөлгөн жок.",
+            commentError: "Комментарий жөнөтүлгөн жок.",
+            loading: "Жүктөлүүдө…"
+        },
+        errors: {
+            load: "Тапшырма маалыматтары жүктөлгөн жок."
+        }
+    },
     instructorChat: {
         courseLoading: "Курс маалыматы жүктөлө элек...",
         instructorFallback: "Инструктор",
@@ -112,6 +177,7 @@ export const instructor = {
             late: "Кеч тапшырган"
         },
         actions: {
+            viewDetail: "Толук маалымат",
             openSession: "Сессияда ачуу"
         },
         fallbacks: {

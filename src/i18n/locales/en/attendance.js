@@ -1091,12 +1091,15 @@ export const attendance = {
                 title: "Task title",
                 description: "Task description",
                 deadline: "Deadline time (optional)",
-                publishNow: "Publish immediately"
+                publishNow: "Publish immediately",
+                maxScore: "Max score (optional)"
             },
             placeholders: {
                 title: "Enter the task title",
-                description: "Describe the task in detail..."
+                description: "Describe the task in detail...",
+                maxScore: "e.g. 100"
             },
+            maxScoreHelp: "Maximum possible score for this task. Leave empty for unscored tasks.",
             validation: {
                 titleRequired: "Enter the task title.",
                 descriptionRequired: "Enter the task description."
@@ -1244,6 +1247,9 @@ export const attendance = {
                 subtitle: "Leave a comment.",
                 approveHelp: "Add a comment if needed. Approval can be saved without a comment.",
                 requiredHelp: "Write a short explanation for this action so the student understands what to fix or why the answer was rejected.",
+                scoreLabel: "Score (optional)",
+                scoreMax: "out of {{max}}",
+                scorePlaceholder: "Enter score",
                 commentLabel: "Comment",
                 approvePlaceholder: "Example: The answer is clear and complete.",
                 requiredPlaceholder: "Example: The main points are missing. Please review the attachment and resubmit.",

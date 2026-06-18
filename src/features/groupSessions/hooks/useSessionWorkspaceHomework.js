@@ -317,10 +317,13 @@ export const useSessionWorkspaceHomework = ({
         }
     };
 
-    const reviewHomeworkSubmission = async (submissionId, status, reviewComment = '') => {
+    const reviewHomeworkSubmission = async (submissionId, status, reviewComment = '', score = null) => {
         if (!selectedSessionId || !selectedHomeworkId || !submissionId) return false;
         setReviewingSubmissionId(String(submissionId));
         try {
+            const scoreValue = score !== null && score !== '' && !Number.isNaN(Number(score))
+                ? Number(score)
+                : undefined;
             await reviewSessionHomeworkSubmission(
                 Number(selectedSessionId),
                 Number(selectedHomeworkId),
@@ -328,6 +331,7 @@ export const useSessionWorkspaceHomework = ({
                 {
                     status,
                     reviewComment: String(reviewComment || '').trim() || undefined,
+                    ...(scoreValue !== undefined ? { score: scoreValue } : {}),
                 }
             );
             const refreshed = await fetchSessionHomeworkReviewRoster(

@@ -2,6 +2,27 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.17.2] - 2026-06-18
+
+### Added
+
+- Instructor homework review detail page: added a dedicated `/instructor/sessions/:sessionId/homework/:homeworkId` route with per-student grading, rubric scoring controls, comments, CSV export, and direct navigation from the instructor homework queue.
+- Homework scoring UI: session homework create/edit flows now support optional `maxScore`, and student task review surfaces score-with-max formatting when a scored task is reviewed.
+
+### Fixed
+
+- External resource course cards: restored the small external-link button to open the provider URL directly while keeping the separate card/detail navigation path intact.
+- Admin contacts inbox: contact messages now show a localized received date and time in the message card.
+- Session homework review actions: instructors can reopen submitted homework reviews after the first decision instead of losing access to the approve/revision/reject controls once status changes.
+- Session homework scoring updates: clearing `maxScore` during homework edits now persists as `null` instead of silently keeping the old score ceiling.
+- Instructor homework attachments: detail-page downloads now use the shared homework API client flow instead of a hard-coded `/api` URL, preserving configured auth/base URL behavior.
+
+### Verification
+
+- `npm run build`
+
+---
+
 ## [1.17.1] - 2026-06-18
 
 ### Fixed

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { PROVIDER_COLORS, PROVIDER_LOGOS, resolveLabel } from '../data/externalResources';
 
@@ -157,6 +157,7 @@ const ExternalResourceCard = ({
     url,
 }) => {
     const { t, i18n } = useTranslation();
+    const navigate = useNavigate();
     const lang = i18n.language?.split('-')[0] ?? 'ky';
     const priceLabelText = resolveLabel(priceLabel, lang);
     const durationLabelText = resolveLabel(durationLabel, lang);
@@ -166,6 +167,21 @@ const ExternalResourceCard = ({
         /free|бесплатно/i.test(typeof priceLabel === 'object' ? priceLabel.en ?? priceLabel.ru : priceLabel ?? '')
     );
     const description = content?.shortDescription?.[lang] ?? content?.shortDescription?.ky ?? '';
+
+    const handleOfficialLink = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!url) return;
+
+        const origin = typeof window !== 'undefined' ? window.location.origin : '';
+        const isInternal = /^\/[^/]/.test(url) || (origin && url.startsWith(origin));
+        if (isInternal) {
+            navigate(url.replace(origin, ''));
+            return;
+        }
+
+        window.open(url, '_blank', 'noopener,noreferrer');
+    };
 
     return (
         <article className="relative flex flex-col rounded-2xl overflow-hidden border border-gray-100 dark:border-white/10 bg-white dark:bg-[#1a1a1a] hover:-translate-y-1 hover:shadow-xl hover:border-[#E14219]/20 dark:hover:border-[#E14219]/20 transition-all duration-300 group cursor-pointer">
@@ -234,16 +250,14 @@ const ExternalResourceCard = ({
                 <div className="flex-1 inline-flex items-center justify-center gap-1 rounded-lg font-semibold text-sm px-4 py-2.5 bg-gradient-to-b from-[#FF8C6E] to-[#E14219] text-white select-none">
                     {ctaLabel ?? t('public.externalResources.learnWithGuidance')}
                 </div>
-                <a
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
+                <button
+                    type="button"
+                    onClick={handleOfficialLink}
                     aria-label={t('public.externalResources.officialSite')}
                     className="pointer-events-auto relative z-[3] inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-white/20 text-gray-500 dark:text-gray-400 hover:border-[#E14219] hover:text-[#E14219] dark:hover:border-[#FF8C6E] dark:hover:text-[#FF8C6E] px-3 py-2.5 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-[#E14219] focus-visible:outline-none"
                 >
                     <ExternalLinkIcon />
-                </a>
+                </button>
             </div>
         </article>
     );

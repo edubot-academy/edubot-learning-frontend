@@ -1,4 +1,69 @@
 export const instructor = {
+    instructorHomeworkDetail: {
+        back: "Очередь заданий",
+        header: {
+            live: "Активно",
+            draft: "Черновик",
+            dueDate: "Срок: {{date}}",
+            noDueDate: "Без срока",
+            maxScore: "Макс. {{count}} балл",
+            rubric: "Рубрика",
+            exportCsv: "Экспорт CSV",
+            exportError: "Ошибка экспорта"
+        },
+        stats: {
+            total: "Всего",
+            toReview: "На проверку",
+            approved: "Одобрено",
+            rejected: "Отклонено",
+            needsRevision: "На доработку",
+            missing: "Не сдали"
+        },
+        filters: {
+            all: "Все",
+            pending_submission: "Ожидается",
+            missing: "Не сдали",
+            needs_review: "На проверку",
+            approved: "Одобрено",
+            rejected: "Отклонено",
+            needs_revision: "На доработку"
+        },
+        roster: {
+            title: "Список студентов",
+            description: "Проверяйте и оценивайте работы студентов прямо здесь.",
+            noStudents: "Студентов по выбранному фильтру нет.",
+            noStudentsSubtitle: "Попробуйте выбрать другой фильтр статуса.",
+            late: "Поздно",
+            score: "{{score}} / {{max}} балл",
+            openGrading: "Оценить",
+            closeGrading: "Закрыть"
+        },
+        grading: {
+            answerTitle: "Ответ студента",
+            noAnswer: "Текстовый ответ не предоставлен.",
+            attachment: "Скачать вложение",
+            rubricTitle: "Рубрика",
+            score: "Оценка",
+            feedback: "Комментарий",
+            approve: "Одобрить",
+            revision: "На доработку",
+            reject: "Отклонить",
+            commentsTitle: "Комментарии",
+            noComments: "Комментариев пока нет.",
+            commentPlaceholder: "Добавить комментарий…",
+            send: "Отправить",
+            approveSuccess: "Работа одобрена.",
+            rejectedSuccess: "Работа отклонена.",
+            revisionSuccess: "Отправлено на доработку.",
+            reviewError: "Ошибка при проверке.",
+            attachmentError: "Не удалось скачать вложение.",
+            commentError: "Не удалось отправить комментарий.",
+            loading: "Загрузка…"
+        },
+        errors: {
+            load: "Не удалось загрузить данные задания."
+        }
+    },
     instructorChat: {
         courseLoading: "Информация о курсе еще загружается...",
         instructorFallback: "Инструктор",
@@ -112,6 +177,7 @@ export const instructor = {
             late: "Сдали поздно"
         },
         actions: {
+            viewDetail: "Подробнее",
             openSession: "Открыть в сессии"
         },
         fallbacks: {

@@ -693,7 +693,9 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                                                         </span>
                                                         {reviewScore !== null && reviewScore !== undefined ? (
                                                             <span className="font-semibold text-edubot-ink dark:text-white">
-                                                                {t('studentDashboard.tasks.review.score', { score: reviewScore })}
+                                                                {item.task.maxScore != null
+                                                                    ? t('studentDashboard.tasks.review.scoreWithMax', { score: reviewScore, max: item.task.maxScore })
+                                                                    : t('studentDashboard.tasks.review.score', { score: reviewScore })}
                                                             </span>
                                                         ) : null}
                                                         {reviewedAt ? (
@@ -799,7 +801,9 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                                                                             ) : null}
                                                                             {message.score !== null && message.score !== undefined ? (
                                                                                 <span className="font-semibold text-edubot-ink dark:text-white">
-                                                                                    {t('studentDashboard.tasks.review.score', { score: message.score })}
+                                                                                    {item.task.maxScore != null
+                                                                                        ? t('studentDashboard.tasks.review.scoreWithMax', { score: message.score, max: item.task.maxScore })
+                                                                                        : t('studentDashboard.tasks.review.score', { score: message.score })}
                                                                                 </span>
                                                                             ) : null}
                                                                         </div>
@@ -1024,11 +1028,11 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                                                                             }
                                                                         />
                                                                     </label>
-                                                                    {draft.file ? (
-                                                                        <div className="text-xs text-edubot-muted dark:text-slate-400">
-                                                                            {formatBytes(draft.file.size)}
-                                                                        </div>
-                                                                    ) : null}
+                                                                    <div className="text-xs text-edubot-muted dark:text-slate-400">
+                                                                        {draft.file
+                                                                            ? formatBytes(draft.file.size)
+                                                                            : t('studentDashboard.tasks.fields.fileTypeHint')}
+                                                                    </div>
                                                                     {draft.fileError ? (
                                                                         <div className="text-xs text-red-600 dark:text-red-300">
                                                                             {draft.fileError}

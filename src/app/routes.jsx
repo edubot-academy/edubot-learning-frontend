@@ -23,6 +23,7 @@ const InstructorDashboard = lazy(() => import('../pages/InstructorDashboard'));
 const StudentDashboard = lazy(() => import('../pages/StudentDashboard'));
 const CreateCourse = lazy(() => import('../pages/CreateCourse'));
 const InstructorCourses = lazy(() => import('../pages/InstructorCourses'));
+const InstructorHomeworkDetail = lazy(() => import('../pages/InstructorHomeworkDetail'));
 const EditInstructorCourse = lazy(() => import('../pages/EditInstructorCourse'));
 const AdminPanel = lazy(() => import('../pages/Admin'));
 const PlatformTenantDetail = lazy(() => import('../features/admin/pages/PlatformTenantDetail'));
@@ -104,6 +105,10 @@ const AppRoutes = () => {
                         <Route
                             path="/instructor/homework"
                             element={<DashboardTabRedirect dashboardPath="/instructor" tab={INSTRUCTOR_DASHBOARD_TABS.HOMEWORK} />}
+                        />
+                        <Route
+                            path="/instructor/sessions/:sessionId/homework/:homeworkId"
+                            element={<InstructorHomeworkDetail />}
                         />
                         <Route path="/instructor/course/create" element={<CreateCourse />} />
                         <Route path="/instructor/courses" element={<InstructorCourses />} />

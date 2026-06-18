@@ -126,6 +126,46 @@ export const reviewSessionHomeworkSubmission = async (
     return data;
 };
 
+export const fetchSessionHomeworkDetail = async (sessionId, homeworkId) => {
+    const validSessionId = ensurePositiveInt(sessionId, 'sessionId');
+    const validHomeworkId = ensurePositiveInt(homeworkId, 'homeworkId');
+    const { data } = await api.get(
+        `/group-sessions/${validSessionId}/homework/${validHomeworkId}`
+    );
+    return data;
+};
+
+export const fetchSubmissionComments = async (sessionId, homeworkId, submissionId) => {
+    const validSessionId = ensurePositiveInt(sessionId, 'sessionId');
+    const validHomeworkId = ensurePositiveInt(homeworkId, 'homeworkId');
+    const validSubmissionId = ensurePositiveInt(submissionId, 'submissionId');
+    const { data } = await api.get(
+        `/group-sessions/${validSessionId}/homework/${validHomeworkId}/submissions/${validSubmissionId}/comments`
+    );
+    return data;
+};
+
+export const addSubmissionComment = async (sessionId, homeworkId, submissionId, body) => {
+    const validSessionId = ensurePositiveInt(sessionId, 'sessionId');
+    const validHomeworkId = ensurePositiveInt(homeworkId, 'homeworkId');
+    const validSubmissionId = ensurePositiveInt(submissionId, 'submissionId');
+    const { data } = await api.post(
+        `/group-sessions/${validSessionId}/homework/${validHomeworkId}/submissions/${validSubmissionId}/comments`,
+        { body }
+    );
+    return data;
+};
+
+export const exportSessionHomeworkGradesCsv = async (sessionId, homeworkId) => {
+    const validSessionId = ensurePositiveInt(sessionId, 'sessionId');
+    const validHomeworkId = ensurePositiveInt(homeworkId, 'homeworkId');
+    const { data, headers } = await api.get(
+        `/group-sessions/${validSessionId}/homework/${validHomeworkId}/grades/export`,
+        { responseType: 'blob' }
+    );
+    return { blob: data, contentType: headers['content-type'] || 'text/csv' };
+};
+
 export const deleteSessionHomework = async (sessionId, homeworkId) => {
     const validSessionId = ensurePositiveInt(sessionId, 'sessionId');
     const validHomeworkId = ensurePositiveInt(homeworkId, 'homeworkId');

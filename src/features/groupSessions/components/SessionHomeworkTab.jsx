@@ -122,6 +122,7 @@ const SessionHomeworkTab = ({
         submissionId: null,
         status: 'approved',
         comment: '',
+        score: '',
         studentName: '',
     });
     const [aiDraft, setAiDraft] = useState(null);
@@ -235,6 +236,7 @@ const SessionHomeworkTab = ({
             submissionId: null,
             status: 'approved',
             comment: '',
+            score: '',
             studentName: '',
         });
     }, []);
@@ -286,12 +288,19 @@ const SessionHomeworkTab = ({
                     description: formData.description,
                     deadline: formData.deadline,
                     isPublished: formData.isPublished,
+                    maxScore: formData.maxScore !== '' && formData.maxScore !== null && formData.maxScore !== undefined
+                        ? Number(formData.maxScore)
+                        : undefined,
                 });
             } else {
                 saved = await updateHomework(homeworkModal.homework.id, {
                     title: formData.title,
                     description: formData.description,
                     deadline: formData.deadline,
+                    isPublished: formData.isPublished,
+                    maxScore: formData.maxScore !== '' && formData.maxScore !== null && formData.maxScore !== undefined
+                        ? Number(formData.maxScore)
+                        : null,
                 });
             }
 
@@ -328,11 +337,13 @@ const SessionHomeworkTab = ({
 
     const openReviewModal = (submissionId, status, item) => {
         const existingComment = item?.submission?.reviewComment || '';
+        const existingScore = item?.submission?.score != null ? String(item.submission.score) : '';
         setReviewModal({
             open: true,
             submissionId,
             status,
             comment: existingComment,
+            score: existingScore,
             studentName: item?.fullName || '',
         });
         setAiDraft(null);
@@ -469,7 +480,8 @@ const SessionHomeworkTab = ({
         const saved = await reviewHomeworkSubmission(
             reviewModal.submissionId,
             reviewModal.status,
-            trimmedComment
+            trimmedComment,
+            reviewModal.score
         );
         if (saved) {
             closeReviewModalWithAiReset();
@@ -1147,6 +1159,25 @@ const SessionHomeworkTab = ({
                         {reviewModal.status === 'approved'
                             ? t('groupSessions.homeworkTab.reviewModal.approveHelp')
                             : t('groupSessions.homeworkTab.reviewModal.requiredHelp')}
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
+                            {t('groupSessions.homeworkTab.reviewModal.scoreLabel')}
+                            {selectedHomework?.maxScore
+                                ? <span className="ml-1 font-normal normal-case">
+                                    {t('groupSessions.homeworkTab.reviewModal.scoreMax', { max: selectedHomework.maxScore })}
+                                  </span>
+                                : null}
+                        </label>
+                        <input
+                            type="number"
+                            min="0"
+                            max={selectedHomework?.maxScore || 1000}
+                            value={reviewModal.score}
+                            onChange={(e) => setReviewModal((current) => ({ ...current, score: e.target.value }))}
+                            placeholder={t('groupSessions.homeworkTab.reviewModal.scorePlaceholder')}
+                            className="dashboard-field"
+                        />
                     </div>
                     <div className="space-y-2">
                         <label className="text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">

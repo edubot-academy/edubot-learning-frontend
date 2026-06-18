@@ -862,6 +862,7 @@ export const student = {
             review: {
                 currentResult: "Current result",
                 score: "Score: {{score}}",
+                scoreWithMax: "Score: {{score}} / {{max}}",
                 reviewedAt: "Reviewed: {{date}}"
             },
             submission: {
@@ -910,7 +911,8 @@ export const student = {
             fields: {
                 answerPlaceholder: "Write an answer",
                 linkPlaceholder: "Add a link",
-                filePlaceholder: "Add PDF or Word"
+                filePlaceholder: "Add PDF or Word",
+                fileTypeHint: "PDF, DOC, DOCX · max 20 MB"
             },
             draftStatus: {
                 uploading: "Attachment is uploading. Do not close the page.",

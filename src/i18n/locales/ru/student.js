@@ -862,6 +862,7 @@ export const student = {
             review: {
                 currentResult: "Текущий результат",
                 score: "Оценка: {{score}}",
+                scoreWithMax: "Оценка: {{score}} / {{max}}",
                 reviewedAt: "Проверено: {{date}}"
             },
             submission: {
@@ -910,7 +911,8 @@ export const student = {
             fields: {
                 answerPlaceholder: "Напишите ответ",
                 linkPlaceholder: "Добавить ссылку",
-                filePlaceholder: "Добавить PDF или Word"
+                filePlaceholder: "Добавить PDF или Word",
+                fileTypeHint: "PDF, DOC, DOCX · макс. 20 МБ"
             },
             draftStatus: {
                 uploading: "Вложение загружается. Не закрывайте страницу.",

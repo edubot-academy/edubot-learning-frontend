@@ -94,7 +94,8 @@ const HomeworkModal = ({
     description: homework?.description || '',
     deadline: homework?.deadline || '',
     isPublished: homework?.isPublished || false,
-  }), [homework?.title, homework?.description, homework?.deadline, homework?.isPublished]);
+    maxScore: homework?.maxScore != null ? String(homework.maxScore) : '',
+  }), [homework?.title, homework?.description, homework?.deadline, homework?.isPublished, homework?.maxScore]);
 
   const [formData, setFormData] = useState(defaultValues);
   const [errors, setErrors] = useState({});
@@ -168,6 +169,9 @@ const HomeworkModal = ({
       description: formData.description.trim(),
       deadline: formData.deadline || null,
       isPublished: formData.isPublished,
+      maxScore: formData.maxScore !== '' && formData.maxScore !== null
+        ? Number(formData.maxScore)
+        : undefined,
     };
 
     onSubmit(submitData);
@@ -193,6 +197,7 @@ const HomeworkModal = ({
       title: normalizedAiDraftOutput?.title || current.title,
       description: formatHomeworkDraftDescription(normalizedAiDraftOutput, t('ai.rubric')) || current.description,
       isPublished: false,
+      maxScore: normalizedAiDraftOutput?.maxScore != null ? String(normalizedAiDraftOutput.maxScore) : current.maxScore,
     }));
     setCreateMode('manual');
   };
@@ -339,6 +344,25 @@ const HomeworkModal = ({
                   {errors.description && (
                     <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.description}</p>
                   )}
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-edubot-ink dark:text-white">
+                    {t('groupSessions.homeworkModal.fields.maxScore')}
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="1000"
+                    value={formData.maxScore}
+                    onChange={(e) => handleInputChange('maxScore', e.target.value)}
+                    placeholder={t('groupSessions.homeworkModal.placeholders.maxScore')}
+                    className="dashboard-field"
+                    disabled={loading}
+                  />
+                  <p className="mt-1 text-xs text-edubot-muted dark:text-slate-400">
+                    {t('groupSessions.homeworkModal.maxScoreHelp')}
+                  </p>
                 </div>
               </div>
             </section>

@@ -8,8 +8,25 @@ import {
 import { FiCheck, FiClock, FiMail, FiTrash2 } from 'react-icons/fi';
 import { useTranslation } from 'react-i18next';
 
+const formatContactDateTime = (contact, language) => {
+    const rawValue =
+        contact?.createdAt || contact?.submittedAt || contact?.updatedAt || contact?.readAt || null;
+    if (!rawValue) return '';
+
+    const parsed = new Date(rawValue);
+    if (Number.isNaN(parsed.getTime())) return '';
+
+    return parsed.toLocaleString(language || undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+    });
+};
+
 const AdminContactsTab = ({ contacts, onMarkRead, onDelete }) => {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const unreadContacts = contacts.filter((contact) => !contact.isRead && !contact.readAt).length;
     const contactsWithMessage = contacts.filter((contact) => contact.message?.trim()).length;
 
@@ -49,6 +66,7 @@ const AdminContactsTab = ({ contacts, onMarkRead, onDelete }) => {
                     <div className="mt-4 space-y-4">
                         {contacts.map((contact) => {
                             const isRead = Boolean(contact.isRead || contact.readAt);
+                            const submittedAt = formatContactDateTime(contact, i18n.language);
 
                             return (
                                 <article
@@ -77,6 +95,11 @@ const AdminContactsTab = ({ contacts, onMarkRead, onDelete }) => {
                                             <p className="mt-2 text-sm text-edubot-muted dark:text-slate-400">
                                                 {contact.email}
                                             </p>
+                                            {submittedAt ? (
+                                                <p className="mt-1 text-xs text-edubot-muted dark:text-slate-500">
+                                                    {t('adminContacts.fields.receivedAt', { date: submittedAt })}
+                                                </p>
+                                            ) : null}
                                             {contact.message ? (
                                                 <p className="mt-3 text-sm text-edubot-muted dark:text-slate-400">
                                                     {contact.message}
