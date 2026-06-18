@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import { fetchInstructorCourses } from '@services/api';
 
+const toCourseList = (payload) => {
+    if (Array.isArray(payload?.courses)) return payload.courses;
+    if (Array.isArray(payload?.items)) return payload.items;
+    if (Array.isArray(payload?.data)) return payload.data;
+    if (Array.isArray(payload)) return payload;
+    return [];
+};
+
 export const useInstructorCourseListPage = (user) => {
     const [courses, setCourses] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -23,7 +31,7 @@ export const useInstructorCourseListPage = (user) => {
                 limit: 100,
                 status: 'all',
             });
-            setCourses(Array.isArray(response?.courses) ? response.courses : []);
+            setCourses(toCourseList(response));
         } catch (loadError) {
             console.error('Failed to load instructor courses', loadError);
             setCourses([]);

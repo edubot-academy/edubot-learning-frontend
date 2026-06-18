@@ -2,6 +2,19 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.17.1] - 2026-06-18
+
+### Fixed
+
+- Admin tenant course links: restored the "clear tenant" action in the companies tab to use the course-company detach flow again, so clearing the selector matches the existing Remove action instead of only clearing course ownership.
+- Instructor sessions workspace: normalized instructor course list responses to accept `courses`, `items`, `data`, or a raw array, fixing empty Sessions and instructor course list screens when the API returns a non-`courses` payload shape.
+
+### Verification
+
+- Not run
+
+---
+
 ## [1.17.0] - 2026-06-17
 
 ### Added
