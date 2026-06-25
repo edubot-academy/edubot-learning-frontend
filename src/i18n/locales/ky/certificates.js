@@ -179,7 +179,14 @@ export const certificates = {
                 searchPlaceholder: "Ат, email же телефон",
                 studentSelector: "Студент селектору",
                 progressMin: "Прогресс кеминде",
-                progressMax: "Прогресс жогору эмес"
+                progressMax: "Прогресс жогору эмес",
+                pageSize: "Барактагы студенттер",
+                pageSizeOption: "{{count}} / барак",
+                clear: "Фильтрлерди тазалоо",
+                selectedStudentOffPage: "Тандалган студент бул баракта жок",
+                summaryRange: "{{total}} студенттин ичинен {{start}}-{{end}} көрсөтүлдү",
+                summarySingle: "Тандалган студент көрсөтүлдү",
+                summaryPage: "{{page}} / {{total}} барак"
             },
             rule: {
                 title: "Сертификат эрежеси",

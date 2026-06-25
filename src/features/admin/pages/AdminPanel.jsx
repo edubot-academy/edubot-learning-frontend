@@ -123,6 +123,7 @@ const AdminPanel = () => {
 
     const {
         certificateActionStudentId,
+        certificateActionKind,
         certificateCourseMeta,
         certificateError,
         certificateProgressMax,
@@ -131,9 +132,11 @@ const AdminPanel = () => {
         certificateSettings,
         certificateStudents,
         certificateStudentsPage,
+        certificateStudentsPageSize,
         courseCertificates,
         handleCertificateAction,
         handleRegenerateCertificates,
+        handleResetCertificateFilters,
         handleSaveCertificateAsset,
         handleSaveCertificateSettings,
         handleSelectCertificateCourse,
@@ -148,6 +151,7 @@ const AdminPanel = () => {
         setCertificateProgressMin,
         setCertificateSearch,
         setCertificateStudentsPage,
+        setCertificateStudentsPageSize,
     } = useAdminCertificatesDomain({ activeTab });
 
     // Render pagination buttons
@@ -485,12 +489,15 @@ const AdminPanel = () => {
                         refreshCourses={loadCoursesAndCategories}
                         studentsPage={certificateStudentsPage}
                         onChangePage={setCertificateStudentsPage}
+                        pageSize={certificateStudentsPageSize}
+                        onPageSizeChange={setCertificateStudentsPageSize}
                         search={certificateSearch}
                         onSearchChange={setCertificateSearch}
                         progressMin={certificateProgressMin}
                         onProgressMinChange={setCertificateProgressMin}
                         progressMax={certificateProgressMax}
                         onProgressMaxChange={setCertificateProgressMax}
+                        onResetFilters={handleResetCertificateFilters}
                         certificateSettings={certificateSettings}
                         courseCertificates={courseCertificates}
                         loadingCertificateWorkspace={loadingCertificateWorkspace}
@@ -503,6 +510,7 @@ const AdminPanel = () => {
                         onSaveCertificateAsset={handleSaveCertificateAsset}
                         onCertificateAction={handleCertificateAction}
                         certificateActionStudentId={certificateActionStudentId}
+                        certificateActionKind={certificateActionKind}
                         currentUser={user}
                     />
                 );

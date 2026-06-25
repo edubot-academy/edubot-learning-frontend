@@ -2,6 +2,30 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.18.1] - 2026-06-25
+
+### Added
+
+- Admin certificates filters: added a students-per-page selector, a clear-filters action, and localized pagination-summary copy for the certificate student registry.
+- Certificates student selectors: added a localized off-page selected-student state so an active student selection remains visible when pagination or filters move that student off the current page.
+
+### Changed
+
+- Admin certificates student loading: student search is now trimmed before requests are sent, and the selected page size is passed through to the course students API instead of using a fixed 20-row limit.
+- Admin certificate actions: the page now tracks the active certificate action kind per student so issue, approve, reject, and related button labels can reflect the in-flight action more precisely.
+
+### Fixed
+
+- Admin certificates students workspace: invalidated in-flight student loads when leaving the certificates tab or clearing the selected course, preventing stale responses from repopulating the workspace with the wrong course data.
+- Certificates student selector: preserved the selected student across pagination and filter changes and restored the intended empty-state behavior when a selected student no longer matches the current page/filter set.
+- Certificates pagination summary: replaced the misleading current-page-count summary with a page-range summary so paginated results now read as ranges such as `21-40 of 73`.
+
+### Verification
+
+- `npx eslint src/features/admin/hooks/useAdminCertificatesDomain.js src/features/instructor-dashboard/components/CertificatesSection.jsx src/i18n/locales/en/certificates.js src/i18n/locales/ky/certificates.js src/i18n/locales/ru/certificates.js`
+
+---
+
 ## [1.18.0] - 2026-06-25
 
 ### Added

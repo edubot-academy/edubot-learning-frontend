@@ -179,7 +179,14 @@ export const certificates = {
                 searchPlaceholder: "Name, email, or phone",
                 studentSelector: "Student selector",
                 progressMin: "Progress at least",
-                progressMax: "Progress up to"
+                progressMax: "Progress up to",
+                pageSize: "Students per page",
+                pageSizeOption: "{{count}} / page",
+                clear: "Clear filters",
+                selectedStudentOffPage: "Selected student is not on this page",
+                summaryRange: "Showing {{start}}-{{end}} of {{total}} students",
+                summarySingle: "Showing the selected student",
+                summaryPage: "Page {{page}} of {{total}}"
             },
             rule: {
                 title: "Certificate rule",

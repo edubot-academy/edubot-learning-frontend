@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import {
@@ -18,11 +18,13 @@ import { parseApiError } from '@shared/api/error';
 
 export const useAdminCertificatesDomain = ({ activeTab }) => {
     const { t } = useTranslation();
+    const studentLoadRequestIdRef = useRef(0);
     const [selectedCertificateCourseId, setSelectedCertificateCourseId] = useState(null);
     const [certificateStudents, setCertificateStudents] = useState([]);
     const [certificateCourseMeta, setCertificateCourseMeta] = useState(null);
     const [loadingCertificateStudents, setLoadingCertificateStudents] = useState(false);
     const [certificateStudentsPage, setCertificateStudentsPage] = useState(1);
+    const [certificateStudentsPageSize, setCertificateStudentsPageSize] = useState(20);
     const [certificateSearch, setCertificateSearch] = useState('');
     const [certificateProgressMin, setCertificateProgressMin] = useState('');
     const [certificateProgressMax, setCertificateProgressMax] = useState('');
@@ -32,6 +34,7 @@ export const useAdminCertificatesDomain = ({ activeTab }) => {
     const [loadingCertificateWorkspace, setLoadingCertificateWorkspace] = useState(false);
     const [savingCertificateSettings, setSavingCertificateSettings] = useState(false);
     const [certificateActionStudentId, setCertificateActionStudentId] = useState(null);
+    const [certificateActionKind, setCertificateActionKind] = useState(null);
     const [regeneratingCertificates, setRegeneratingCertificates] = useState(false);
     const [savingCertificateAssetKind, setSavingCertificateAssetKind] = useState(null);
 
@@ -43,18 +46,20 @@ export const useAdminCertificatesDomain = ({ activeTab }) => {
                 return;
             }
 
+            const requestId = ++studentLoadRequestIdRef.current;
             setLoadingCertificateStudents(true);
             setCertificateError('');
             try {
                 const data = await fetchCourseStudents(courseId, {
                     page: certificateStudentsPage,
-                    limit: 20,
-                    q: certificateSearch || undefined,
+                    limit: certificateStudentsPageSize,
+                    q: certificateSearch.trim() || undefined,
                     progressGte:
                         certificateProgressMin === '' ? undefined : Number(certificateProgressMin),
                     progressLte:
                         certificateProgressMax === '' ? undefined : Number(certificateProgressMax),
                 });
+                if (requestId !== studentLoadRequestIdRef.current) return;
                 setCertificateStudents(data?.students || []);
                 setCertificateCourseMeta({
                     ...(data?.course || {}),
@@ -64,6 +69,7 @@ export const useAdminCertificatesDomain = ({ activeTab }) => {
                     limit: data?.limit,
                 });
             } catch (error) {
+                if (requestId !== studentLoadRequestIdRef.current) return;
                 console.error('Failed to load admin certificate students', error);
                 setCertificateStudents([]);
                 setCertificateCourseMeta(null);
@@ -71,14 +77,30 @@ export const useAdminCertificatesDomain = ({ activeTab }) => {
                     parseApiError(error, t('adminCertificates.errors.loadStudents')).message
                 );
             } finally {
-                setLoadingCertificateStudents(false);
+                if (requestId === studentLoadRequestIdRef.current) {
+                    setLoadingCertificateStudents(false);
+                }
             }
         },
-        [certificateProgressMax, certificateProgressMin, certificateSearch, certificateStudentsPage, t]
+        [
+            certificateProgressMax,
+            certificateProgressMin,
+            certificateSearch,
+            certificateStudentsPage,
+            certificateStudentsPageSize,
+            t,
+        ]
     );
 
     const handleSelectCertificateCourse = useCallback((courseId) => {
         setSelectedCertificateCourseId(courseId);
+        setCertificateStudentsPage(1);
+        setCertificateSearch('');
+        setCertificateProgressMin('');
+        setCertificateProgressMax('');
+    }, []);
+
+    const handleResetCertificateFilters = useCallback(() => {
         setCertificateStudentsPage(1);
         setCertificateSearch('');
         setCertificateProgressMin('');
@@ -205,6 +227,7 @@ export const useAdminCertificatesDomain = ({ activeTab }) => {
         async (kind, student, displayOverrides = {}) => {
             if (!selectedCertificateCourseId || !student) return;
             setCertificateActionStudentId(student.id);
+            setCertificateActionKind(kind);
             try {
                 if (kind === 'issue') {
                     await issueCourseCertificate(selectedCertificateCourseId, {
@@ -231,17 +254,24 @@ export const useAdminCertificatesDomain = ({ activeTab }) => {
                 );
             } finally {
                 setCertificateActionStudentId(null);
+                setCertificateActionKind(null);
             }
         },
         [loadCertificateStudents, selectedCertificateCourseId, t]
     );
 
     useEffect(() => {
-        if (activeTab !== 'certificates') return;
+        if (activeTab !== 'certificates') {
+            studentLoadRequestIdRef.current += 1;
+            setLoadingCertificateStudents(false);
+            return;
+        }
 
         if (selectedCertificateCourseId) {
             loadCertificateStudents(selectedCertificateCourseId);
         } else {
+            studentLoadRequestIdRef.current += 1;
+            setLoadingCertificateStudents(false);
             setCertificateStudents([]);
             setCertificateCourseMeta(null);
         }
@@ -280,6 +310,7 @@ export const useAdminCertificatesDomain = ({ activeTab }) => {
 
     return {
         certificateActionStudentId,
+        certificateActionKind,
         certificateCourseMeta,
         certificateError,
         certificateProgressMax,
@@ -288,9 +319,11 @@ export const useAdminCertificatesDomain = ({ activeTab }) => {
         certificateSettings,
         certificateStudents,
         certificateStudentsPage,
+        certificateStudentsPageSize,
         courseCertificates,
         handleCertificateAction,
         handleRegenerateCertificates,
+        handleResetCertificateFilters,
         handleSaveCertificateAsset,
         handleSaveCertificateSettings,
         handleSelectCertificateCourse,
@@ -305,5 +338,6 @@ export const useAdminCertificatesDomain = ({ activeTab }) => {
         setCertificateProgressMin,
         setCertificateSearch,
         setCertificateStudentsPage,
+        setCertificateStudentsPageSize,
     };
 };

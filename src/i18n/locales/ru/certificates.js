@@ -179,7 +179,14 @@ export const certificates = {
                 searchPlaceholder: "Имя, email или телефон",
                 studentSelector: "Селектор студента",
                 progressMin: "Прогресс не ниже",
-                progressMax: "Прогресс не выше"
+                progressMax: "Прогресс не выше",
+                pageSize: "Студентов на странице",
+                pageSizeOption: "{{count}} / стр.",
+                clear: "Сбросить фильтры",
+                selectedStudentOffPage: "Выбранный студент не на этой странице",
+                summaryRange: "Показано {{start}}-{{end}} из {{total}} студентов",
+                summarySingle: "Показан выбранный студент",
+                summaryPage: "Страница {{page}} из {{total}}"
             },
             rule: {
                 title: "Правило сертификата",

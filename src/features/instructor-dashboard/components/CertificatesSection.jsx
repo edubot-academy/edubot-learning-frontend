@@ -534,6 +534,8 @@ const CERTIFICATE_LANGUAGE_OPTIONS = [
     { value: 'ky', labelKey: 'adminCertificates.page.template.languageOptions.ky' },
 ];
 
+const STUDENT_PAGE_SIZE_OPTIONS = [20, 50, 100];
+
 const DEFAULT_CERTIFICATE_LANGUAGE = 'en';
 
 const ReadOnlyField = ({ label, value, children, className = '' }) => (
@@ -838,12 +840,15 @@ const CertificatesSection = ({
     refreshCourses,
     studentsPage,
     onChangePage,
+    pageSize = 20,
+    onPageSizeChange,
     search,
     onSearchChange,
     progressMin,
     progressMax,
     onProgressMinChange,
     onProgressMaxChange,
+    onResetFilters,
     certificateSettings,
     courseCertificates = [],
     loadingCertificateWorkspace = false,
@@ -1012,6 +1017,16 @@ const CertificatesSection = ({
     const visibleStudents = selectedStudentId
         ? sortedStudents.filter((student) => String(student.id) === selectedStudentId)
         : sortedStudents;
+    const totalStudents = Number(courseMeta?.total || 0);
+    const shownStudents = visibleStudents.length;
+    const selectedStudentExistsOnPage = selectedStudentId
+        ? sortedStudents.some((student) => String(student.id) === selectedStudentId)
+        : false;
+    const pageRangeStart = totalStudents > 0 ? (studentsPage - 1) * pageSize + 1 : 0;
+    const pageRangeEnd = shownStudents > 0 ? pageRangeStart + shownStudents - 1 : 0;
+    const hasActiveFilters = Boolean(
+        search.trim() || progressMin !== '' || progressMax !== '' || selectedStudentId
+    );
     const previewStudentName = visibleStudents[0]?.fullName || previewStudentFallback;
     const templatePayload = getTemplatePayload(settingsForm, isAdminMode, defaultCertificateTitle);
     const savedTemplatePayload = getTemplatePayload(
@@ -1241,16 +1256,23 @@ const CertificatesSection = ({
                             <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
                                 {t('adminCertificates.page.selection.studentLabel')}
                             </label>
-                            <select
-                                value={selectedStudentId}
-                                onChange={(e) => setSelectedStudentId(e.target.value)}
-                                disabled={!selectedCourseId || !sortedStudents.length}
-                                className="dashboard-field"
-                            >
-                                <option value="">{t('adminCertificates.page.selection.allStudents')}</option>
-                                {sortedStudents.map((student) => (
-                                    <option key={student.id} value={student.id}>
-                                        {student.fullName}
+                                <select
+                                    value={selectedStudentId}
+                                    onChange={(e) => setSelectedStudentId(e.target.value)}
+                                    disabled={!selectedCourseId || !sortedStudents.length}
+                                    className="dashboard-field"
+                                >
+                                    <option value="">{t('adminCertificates.page.selection.allStudents')}</option>
+                                    {selectedStudentId && !selectedStudentExistsOnPage ? (
+                                        <option value={selectedStudentId}>
+                                            {t(
+                                                'adminCertificates.page.filters.selectedStudentOffPage'
+                                            )}
+                                        </option>
+                                    ) : null}
+                                    {sortedStudents.map((student) => (
+                                        <option key={student.id} value={student.id}>
+                                            {student.fullName}
                                     </option>
                                 ))}
                             </select>
@@ -1367,6 +1389,13 @@ const CertificatesSection = ({
                                     className="dashboard-field"
                                 >
                                     <option value="">{t('adminCertificates.page.selection.allStudents')}</option>
+                                    {selectedStudentId && !selectedStudentExistsOnPage ? (
+                                        <option value={selectedStudentId}>
+                                            {t(
+                                                'adminCertificates.page.filters.selectedStudentOffPage'
+                                            )}
+                                        </option>
+                                    ) : null}
                                     {sortedStudents.map((student) => (
                                         <option key={student.id} value={student.id}>
                                             {student.fullName}
@@ -1406,6 +1435,56 @@ const CertificatesSection = ({
                                     className="dashboard-field w-28"
                                 />
                             </div>
+                            <div>
+                                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
+                                    {t('adminCertificates.page.filters.pageSize')}
+                                </label>
+                                <select
+                                    value={pageSize}
+                                    onChange={(e) => {
+                                        onChangePage(1);
+                                        onPageSizeChange?.(Number(e.target.value));
+                                    }}
+                                    className="dashboard-field w-28"
+                                >
+                                    {STUDENT_PAGE_SIZE_OPTIONS.map((option) => (
+                                        <option key={option} value={option}>
+                                            {t('adminCertificates.page.filters.pageSizeOption', {
+                                                count: option,
+                                            })}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setSelectedStudentId('');
+                                    onResetFilters?.();
+                                }}
+                                disabled={!hasActiveFilters}
+                                className="dashboard-button-secondary disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                <FiX className="h-4 w-4" />
+                                {t('adminCertificates.page.filters.clear')}
+                            </button>
+                        </div>
+                        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-edubot-line/70 bg-white/70 px-4 py-3 text-sm text-edubot-muted dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-400">
+                            <span>
+                                {selectedStudentId
+                                    ? t('adminCertificates.page.filters.summarySingle')
+                                    : t('adminCertificates.page.filters.summaryRange', {
+                                          start: pageRangeStart,
+                                          end: pageRangeEnd,
+                                          total: totalStudents,
+                                      })}
+                            </span>
+                            <span>
+                                {t('adminCertificates.page.filters.summaryPage', {
+                                    page: studentsPage,
+                                    total: courseMeta?.totalPages || 1,
+                                })}
+                            </span>
                         </div>
                     </DashboardInsetPanel>
 
