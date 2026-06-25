@@ -254,6 +254,10 @@ export const certificates = {
                 signer: {
                     title: "Кол коюучу",
                     description: "Бул маалымат сертификат берүү учурунда колдонулат. Аты-жөнү, роль жана кол сүрөтү курс эрежеси катары сакталбайт.",
+                    studentName: "Студенттин аты-жөнү",
+                    studentNamePlaceholder: "Көрсөтүлө турган атты өзгөртүү үчүн бир студентти тандаңыз",
+                    studentNameHelp: "Бул өзгөртүү сертификатты берүү же бекитүү учурунда тандалган студентке гана колдонулат.",
+                    studentNameSelectHelp: "Сертификаттагы атты көрүү же өзгөртүү үчүн жогорудан бир студентти тандаңыз.",
                     certificateLanguage: "Сертификат тили",
                     signerName: "Кол коюучу",
                     signerNamePlaceholder: "Инструктордун аты-жөнү",
@@ -326,6 +330,8 @@ export const certificates = {
                 emptyTitle: "Бул курста азырынча студент жок",
                 selectedNotFoundSubtitle: "Башка студентти тандаңыз же селекторду тазалаңыз.",
                 emptySubtitle: "Башка курсту тандап көрүңүз же катталууларды күтүңүз.",
+                eligibilityOverrideLabel: "Кол менен айланып өтүүгө уруксат берүү.",
+                eligibilityOverrideHelp: "Муну күйгүзсөңүз, учурдагы талаптар аткарылбаса да сертификатты бере аласыз.",
                 eligibility: {
                     attendance: "Катышуу:",
                     homework: "Үй тапшырма:",

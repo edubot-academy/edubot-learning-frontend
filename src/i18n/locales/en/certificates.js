@@ -254,6 +254,10 @@ export const certificates = {
                 signer: {
                     title: "Signer",
                     description: "This information is used when issuing the certificate. Name, role, and signature image are not saved as course rules.",
+                    studentName: "Student name",
+                    studentNamePlaceholder: "Select one student to override the display name",
+                    studentNameHelp: "This override is applied only to the selected student when issuing or approving the certificate.",
+                    studentNameSelectHelp: "Select one student above to preview or override the name printed on the certificate.",
                     certificateLanguage: "Certificate language",
                     signerName: "Signer",
                     signerNamePlaceholder: "Instructor name",
@@ -326,6 +330,8 @@ export const certificates = {
                 emptyTitle: "This course has no students yet",
                 selectedNotFoundSubtitle: "Choose another student or clear the selector.",
                 emptySubtitle: "Try another course or wait for enrollments.",
+                eligibilityOverrideLabel: "Allow manual override.",
+                eligibilityOverrideHelp: "Enable this to issue the certificate even though the current eligibility requirements are not met.",
                 eligibility: {
                     attendance: "Attendance:",
                     homework: "Homework:",

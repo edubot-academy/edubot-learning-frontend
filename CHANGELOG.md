@@ -2,6 +2,30 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.18.2] - 2026-06-25
+
+### Added
+
+- Instructor certificate issue override: added an explicit eligibility-override toggle so manual certificate issue for ineligible students is opt-in and sends the backend `allowEligibilityOverride` flag only when enabled.
+- Instructor certificate signer fields: added localized student-name override help and eligibility-override copy in English, Kyrgyz, and Russian.
+
+### Changed
+
+- Instructor certificate signer defaults: signer name now prefills from the current user, signer role now uses the app role label instead of the profile title, and the selected student name field now autofills from the chosen learner.
+
+### Fixed
+
+- Instructor certificate actions: restored manual issue bypass support by matching the backend `allowEligibilityOverride` contract for manual certificate issuance.
+- Instructor certificates signer identity: prevented admin-saved issuer name and role settings from pre-filling the instructor workspace with admin signer information.
+- Certificates signer form: fixed a runtime crash caused by reading `selectedStudent` before initialization inside the shared certificate display payload callback.
+
+### Verification
+
+- `./node_modules/.bin/eslint src/features/instructor-dashboard/components/CertificatesSection.jsx src/features/instructor-dashboard/hooks/useInstructorStudentWorkspace.js src/features/admin/hooks/useAdminCertificatesDomain.js src/i18n/locales/en/certificates.js src/i18n/locales/ky/certificates.js src/i18n/locales/ru/certificates.js`
+- `./node_modules/.bin/vitest run src/pages/InstructorDashboard.spec.jsx`
+
+---
+
 ## [1.18.1] - 2026-06-25
 
 ### Added

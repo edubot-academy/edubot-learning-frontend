@@ -238,13 +238,19 @@ const getCertificateBadge = (status) => {
 const getStudentCertificateStatusLabel = (status, t) =>
     getCertificateStatusLabel(status, t);
 
+const isStudentEligibleForCertificate = (student) => {
+    const progress = Math.max(0, Math.min(100, Number(student?.progressPercent || 0)));
+    return (
+        Boolean(student?.certificateEligible) ||
+        Boolean(student?.completed) ||
+        progress >= 100
+    );
+};
+
 const getStudentCertificateState = (student, canIssueManually = true, t) => {
     const progress = Math.max(0, Math.min(100, Number(student?.progressPercent || 0)));
     const eligibility = student?.certificateEligibility;
-    const isComplete =
-        Boolean(student?.certificateEligible) ||
-        Boolean(student?.completed) ||
-        progress >= 100;
+    const isComplete = isStudentEligibleForCertificate(student);
 
     if (student?.certificateStatus === 'issued') {
         return {
@@ -504,8 +510,10 @@ const getTemplatePayload = (settingsForm, isAdminMode, defaultCertificateTitle) 
         ? settingsForm.certificateTitle.trim() || defaultCertificateTitle
         : undefined,
     secondaryBrandName: isAdminMode ? settingsForm.secondaryBrandName.trim() || null : undefined,
-    certificateLanguage: isAdminMode ? settingsForm.certificateLanguage : undefined,
-    pageOrientation: isAdminMode ? settingsForm.pageOrientation : undefined,
+    certificateLanguage: settingsForm.certificateLanguage,
+    issuerDisplayName: settingsForm.issuerDisplayName.trim() || null,
+    issuerTitle: settingsForm.issuerTitle.trim() || null,
+    pageOrientation: settingsForm.pageOrientation,
     primaryColor: isAdminMode ? settingsForm.primaryColor : undefined,
     accentColor: isAdminMode ? settingsForm.accentColor : undefined,
     eligibilityAttendanceRequired: isAdminMode
@@ -872,11 +880,13 @@ const CertificatesSection = ({
     const defaultCertificateTitle = t('adminCertificates.previewCanvas.fallbackTitle', {
         lng: DEFAULT_CERTIFICATE_LANGUAGE,
     });
-    const canIssueCertificates = isAdminMode;
-    const canRevokeCertificates = isAdminMode;
+    const canIssueCertificates = true;
+    const canRevokeCertificates = true;
     const canApproveCertificates =
         isAdminMode || certificateSettings?.approvalMode === 'instructor';
     const [selectedStudentId, setSelectedStudentId] = useState('');
+    const [eligibilityOverrideByStudentId, setEligibilityOverrideByStudentId] = useState({});
+    const [studentNameOverride, setStudentNameOverride] = useState('');
     const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
     const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
     const [isTemplateEditMode, setIsTemplateEditMode] = useState(false);
@@ -920,8 +930,12 @@ const CertificatesSection = ({
             certificateLanguage: certificateSettings?.certificateLanguage || DEFAULT_CERTIFICATE_LANGUAGE,
             secondaryBrandName: certificateSettings?.secondaryBrandName || '',
             secondaryBrandLogoUrl: certificateSettings?.secondaryBrandLogoUrl || '',
-            issuerDisplayName: defaultIssuerDisplayName,
-            issuerTitle: defaultIssuerTitle,
+            issuerDisplayName: isAdminMode
+                ? certificateSettings?.issuerDisplayName || defaultIssuerDisplayName
+                : defaultIssuerDisplayName,
+            issuerTitle: isAdminMode
+                ? certificateSettings?.issuerTitle || defaultIssuerTitle
+                : defaultIssuerTitle,
             signatureAssetUrl: certificateSettings?.signatureAssetUrl || '',
             pageOrientation: certificateSettings?.pageOrientation || 'landscape',
             primaryColor: certificateSettings?.primaryColor || '#122144',
@@ -939,10 +953,18 @@ const CertificatesSection = ({
             eligibilityActivitiesPercent:
                 certificateSettings?.eligibilityActivitiesPercent ?? 100,
         });
-    }, [certificateSettings, defaultCertificateTitle, defaultIssuerDisplayName, defaultIssuerTitle]);
+    }, [
+        certificateSettings,
+        defaultCertificateTitle,
+        defaultIssuerDisplayName,
+        defaultIssuerTitle,
+        isAdminMode,
+    ]);
 
     useEffect(() => {
         setSelectedStudentId('');
+        setEligibilityOverrideByStudentId({});
+        setStudentNameOverride('');
         setIsTemplateEditMode(false);
     }, [selectedCourseId]);
 
@@ -995,28 +1017,46 @@ const CertificatesSection = ({
         t('adminCertificates.previewCanvas.sampleIssuerName');
     const previewIssuerTitle =
         settingsForm.issuerTitle.trim() || t('adminCertificates.previewCanvas.instructorIssuerTitle');
+    const visibleStudents = selectedStudentId
+        ? sortedStudents.filter((student) => String(student.id) === selectedStudentId)
+        : sortedStudents;
+    const selectedStudent = selectedStudentId
+        ? sortedStudents.find((student) => String(student.id) === selectedStudentId) || null
+        : null;
+
+    useEffect(() => {
+        setStudentNameOverride(selectedStudent?.fullName || '');
+    }, [selectedStudent]);
+
     const getCertificateDisplayPayload = useCallback(
         (student) => {
+            const allowEligibilityOverride = Boolean(
+                eligibilityOverrideByStudentId[student.id]
+            );
             return {
-                studentFullName: student.fullName || undefined,
+                studentFullName:
+                    selectedStudent && String(selectedStudent.id) === String(student.id)
+                        ? studentNameOverride.trim() || student.fullName || undefined
+                        : student.fullName || undefined,
                 issuerDisplayName: previewIssuerName || undefined,
                 issuerTitle: previewIssuerTitle || undefined,
                 certificateLanguage: settingsForm.certificateLanguage,
                 pageOrientation: settingsForm.pageOrientation,
+                allowEligibilityOverride: allowEligibilityOverride || undefined,
             };
         },
         [
+            eligibilityOverrideByStudentId,
             previewIssuerName,
             previewIssuerTitle,
+            selectedStudent,
             settingsForm.certificateLanguage,
             settingsForm.pageOrientation,
+            studentNameOverride,
         ]
     );
     const previewDate = formatPreviewDate(new Date(), settingsForm.certificateLanguage);
     const isPortraitPreview = settingsForm.pageOrientation === 'portrait';
-    const visibleStudents = selectedStudentId
-        ? sortedStudents.filter((student) => String(student.id) === selectedStudentId)
-        : sortedStudents;
     const totalStudents = Number(courseMeta?.total || 0);
     const shownStudents = visibleStudents.length;
     const selectedStudentExistsOnPage = selectedStudentId
@@ -1027,13 +1067,20 @@ const CertificatesSection = ({
     const hasActiveFilters = Boolean(
         search.trim() || progressMin !== '' || progressMax !== '' || selectedStudentId
     );
-    const previewStudentName = visibleStudents[0]?.fullName || previewStudentFallback;
+    const previewStudentName =
+        studentNameOverride.trim() ||
+        selectedStudent?.fullName ||
+        visibleStudents[0]?.fullName ||
+        previewStudentFallback;
     const templatePayload = getTemplatePayload(settingsForm, isAdminMode, defaultCertificateTitle);
     const savedTemplatePayload = getTemplatePayload(
         {
                 certificateTitle: certificateSettings?.certificateTitle || defaultCertificateTitle,
                 certificateLanguage: certificateSettings?.certificateLanguage || DEFAULT_CERTIFICATE_LANGUAGE,
                 secondaryBrandName: certificateSettings?.secondaryBrandName || '',
+                issuerDisplayName:
+                    certificateSettings?.issuerDisplayName || defaultIssuerDisplayName,
+                issuerTitle: certificateSettings?.issuerTitle || defaultIssuerTitle,
                 pageOrientation: certificateSettings?.pageOrientation || 'landscape',
                 primaryColor: certificateSettings?.primaryColor || '#122144',
                 accentColor: certificateSettings?.accentColor || '#F17E22',
@@ -1080,9 +1127,8 @@ const CertificatesSection = ({
     }, []);
 
     const handleSaveTemplateSettings = useCallback(async () => {
-        if (!isAdminMode) return false;
         const saved = await onSaveCertificateSettings(templatePayload);
-        if (saved) setIsTemplateEditMode(false);
+        if (saved && isAdminMode) setIsTemplateEditMode(false);
         return Boolean(saved);
     }, [isAdminMode, onSaveCertificateSettings, templatePayload]);
 
@@ -1488,38 +1534,36 @@ const CertificatesSection = ({
                         </div>
                     </DashboardInsetPanel>
 
-                    {isAdminMode ? (
-                        <DashboardInsetPanel
-                            title={t('adminCertificates.page.rule.title')}
-                            description={t('adminCertificates.page.rule.description')}
-                        >
-                            <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
-                                <div className="text-sm text-edubot-muted dark:text-slate-400">
-                                    {t('adminCertificates.page.rule.current')}
-                                    <span className="ml-2 font-semibold text-edubot-ink dark:text-white">
-                                        {certificateSettings?.approvalMode === 'instructor'
-                                            ? t('adminCertificates.page.rule.approvalModeInstructor')
-                                            : t('adminCertificates.page.rule.approvalModeAutomatic')}
-                                    </span>
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        onToggleCertificateApproval(
-                                            certificateSettings?.approvalMode !== 'instructor'
-                                        )
-                                    }
-                                    disabled={savingCertificateSettings}
-                                    className="dashboard-button-secondary"
-                                >
-                                    <FiAward className="h-4 w-4" />
+                    <DashboardInsetPanel
+                        title={t('adminCertificates.page.rule.title')}
+                        description={t('adminCertificates.page.rule.description')}
+                    >
+                        <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
+                            <div className="text-sm text-edubot-muted dark:text-slate-400">
+                                {t('adminCertificates.page.rule.current')}
+                                <span className="ml-2 font-semibold text-edubot-ink dark:text-white">
                                     {certificateSettings?.approvalMode === 'instructor'
-                                        ? t('adminCertificates.page.rule.switchToAutomatic')
-                                        : t('adminCertificates.page.rule.switchToInstructorApproval')}
-                                </button>
+                                        ? t('adminCertificates.page.rule.approvalModeInstructor')
+                                        : t('adminCertificates.page.rule.approvalModeAutomatic')}
+                                </span>
                             </div>
-                        </DashboardInsetPanel>
-                    ) : null}
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    onToggleCertificateApproval(
+                                        certificateSettings?.approvalMode !== 'instructor'
+                                    )
+                                }
+                                disabled={savingCertificateSettings}
+                                className="dashboard-button-secondary"
+                            >
+                                <FiAward className="h-4 w-4" />
+                                {certificateSettings?.approvalMode === 'instructor'
+                                    ? t('adminCertificates.page.rule.switchToAutomatic')
+                                    : t('adminCertificates.page.rule.switchToInstructorApproval')}
+                            </button>
+                        </div>
+                    </DashboardInsetPanel>
 
                     {isAdminMode ? (
                         <DashboardInsetPanel
@@ -1669,7 +1713,7 @@ const CertificatesSection = ({
                             </div>
                         ) : null}
                         <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1.04fr)_minmax(360px,0.96fr)]">
-                            <div className={isAdminMode ? 'space-y-4 xl:contents' : 'hidden'}>
+                            <div className={isAdminMode ? 'space-y-4 xl:contents' : 'space-y-4'}>
                                 {isAdminMode ? (
                                     <section className="rounded-[24px] border border-edubot-line/70 bg-white/55 p-5 shadow-edubot-soft dark:border-slate-700 dark:bg-slate-950/35">
                                         <div className="flex items-start justify-between gap-4">
@@ -1813,7 +1857,7 @@ const CertificatesSection = ({
                                 ) : null}
 
                                 <div
-                                    className={`grid gap-4 ${isAdminMode ? 'xl:col-span-2 xl:row-start-2 xl:grid-cols-2' : 'hidden'}`}
+                                    className={`grid gap-4 ${isAdminMode ? 'xl:col-span-2 xl:row-start-2 xl:grid-cols-2' : ''}`}
                                 >
                                     <section className="rounded-[24px] border border-edubot-line/70 bg-white/55 p-5 shadow-edubot-soft dark:border-slate-700 dark:bg-slate-950/35">
                                         <div>
@@ -1825,6 +1869,35 @@ const CertificatesSection = ({
                                             </p>
                                         </div>
                                         <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                                            <div>
+                                                <label className="mb-2 block text-sm font-medium text-edubot-ink dark:text-slate-200">
+                                                    {t('adminCertificates.page.template.signer.studentName')}
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={studentNameOverride}
+                                                    onChange={(e) =>
+                                                        setStudentNameOverride(e.target.value)
+                                                    }
+                                                    disabled={!selectedStudent}
+                                                    placeholder={
+                                                        selectedStudent?.fullName ||
+                                                        t(
+                                                            'adminCertificates.page.template.signer.studentNamePlaceholder'
+                                                        )
+                                                    }
+                                                    className="dashboard-field disabled:cursor-not-allowed disabled:opacity-60"
+                                                />
+                                                <p className="mt-2 text-xs leading-5 text-edubot-muted dark:text-slate-400">
+                                                    {selectedStudent
+                                                        ? t(
+                                                              'adminCertificates.page.template.signer.studentNameHelp'
+                                                          )
+                                                        : t(
+                                                              'adminCertificates.page.template.signer.studentNameSelectHelp'
+                                                          )}
+                                                </p>
+                                            </div>
                                             <div>
                                                 <label className="mb-2 block text-sm font-medium text-edubot-ink dark:text-slate-200">
                                                     {t('adminCertificates.page.template.signer.certificateLanguage')}
@@ -1954,6 +2027,27 @@ const CertificatesSection = ({
                                                 </p>
                                             </div>
                                         </div>
+                                        {!isAdminMode ? (
+                                            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-edubot-line/70 pt-4 dark:border-slate-700">
+                                                <p className="text-sm text-edubot-muted dark:text-slate-400">
+                                                    {t('adminCertificates.page.template.footer.saveTemplateHelp')}
+                                                </p>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleSaveTemplateSettings}
+                                                    disabled={
+                                                        savingCertificateSettings ||
+                                                        !hasTemplateChanges
+                                                    }
+                                                    className="dashboard-button-primary"
+                                                >
+                                                    <FiAward className="h-4 w-4" />
+                                                    {savingCertificateSettings
+                                                        ? t('adminCertificates.page.template.saving')
+                                                        : t('adminCertificates.page.template.footer.saveTemplate')}
+                                                </button>
+                                            </div>
+                                        ) : null}
                                     </section>
 
                                     {isAdminMode ? (
@@ -2450,6 +2544,14 @@ const CertificatesSection = ({
                                         canIssueCertificates,
                                         t
                                     );
+                                    const requiresEligibilityOverride =
+                                        canIssueCertificates &&
+                                        !isStudentEligibleForCertificate(student) &&
+                                        student.certificateStatus !== 'issued' &&
+                                        student.certificateStatus !== 'pending_approval';
+                                    const eligibilityOverrideEnabled = Boolean(
+                                        eligibilityOverrideByStudentId[student.id]
+                                    );
                                     const downloadKey = `student-${
                                         student.certificatePublicId || student.id
                                     }`;
@@ -2508,9 +2610,16 @@ const CertificatesSection = ({
                                                                 getCertificateDisplayPayload(student)
                                                             )
                                                         }
-                                                        disabled={!issueState.canIssue || isBusy}
+                                                        disabled={
+                                                            !issueState.canIssue ||
+                                                            isBusy ||
+                                                            (requiresEligibilityOverride &&
+                                                                !eligibilityOverrideEnabled)
+                                                        }
                                                         className={`${
-                                                            issueState.canIssue
+                                                            issueState.canIssue &&
+                                                            (!requiresEligibilityOverride ||
+                                                                eligibilityOverrideEnabled)
                                                                 ? 'dashboard-button-primary'
                                                                 : 'dashboard-button-secondary'
                                                         }`}
@@ -2611,6 +2720,34 @@ const CertificatesSection = ({
                                                     </>
                                                 ) : null}
                                             </div>
+                                            {requiresEligibilityOverride ? (
+                                                <label className="mt-3 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={eligibilityOverrideEnabled}
+                                                        onChange={(e) =>
+                                                            setEligibilityOverrideByStudentId(
+                                                                (prev) => ({
+                                                                    ...prev,
+                                                                    [student.id]:
+                                                                        e.target.checked,
+                                                                })
+                                                            )
+                                                        }
+                                                        className="mt-0.5 h-4 w-4 rounded border-amber-300 text-edubot-orange focus:ring-edubot-orange"
+                                                    />
+                                                    <span>
+                                                        <span className="font-semibold">
+                                                            {t(
+                                                                'adminCertificates.page.students.eligibilityOverrideLabel'
+                                                            )}
+                                                        </span>{' '}
+                                                        {t(
+                                                            'adminCertificates.page.students.eligibilityOverrideHelp'
+                                                        )}
+                                                    </span>
+                                                </label>
+                                            ) : null}
                                             <p className={`mt-3 text-sm ${issueState.helperTone}`}>
                                                 {issueState.helperText}
                                             </p>
