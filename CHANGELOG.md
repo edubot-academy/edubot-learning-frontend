@@ -2,6 +2,29 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.18.0] - 2026-06-25
+
+### Added
+
+- English placement assessment flow: added a public `/assessment` landing page plus protected student goal selection, attempt, and result routes backed by a new assessment API client for starting attempts, fetching questions, submitting answers, completing attempts, and loading results.
+- Assessment admin workspace: added `/admin/assessment` with analytics, question-bank, test, and learning-path tabs for staff visibility into placement content and outcomes.
+- Parent portal: added a protected `/parent` dashboard with guardian consent management, linked-child status cards, and localized parent-specific copy across English, Kyrgyz, and Russian.
+- Locale bundles: added new `assessment` and `parent` i18n namespaces and wired them into the main locale exports.
+- Company member suspension UI: tenant member management now separates suspended members into their own table and provides a reactivation action with localized labels and toasts.
+- Assessment and parent portal polish: the initial delivery includes attempt resume handling for placement sessions, distinct revoked-consent states in the parent dashboard, and owner-aware reactivation behavior in suspended tenant member management.
+
+### Changed
+
+- Company member removal messaging now reflects the new suspend/reactivate lifecycle by clarifying that removed tenant members can be reactivated later.
+- Dashboard navigation now recognizes the `parent` role and maps it to `/parent`.
+
+### Verification
+
+- `npx vitest run src/pages/ParentDashboard.spec.jsx src/features/assessment/pages/EnglishPlacementTestPage.spec.jsx src/shared/utils/navigation.spec.js`
+- `npx eslint src/pages/ParentDashboard.jsx src/pages/ParentDashboard.spec.jsx src/features/assessment/pages/EnglishPlacementTestPage.jsx src/features/assessment/pages/EnglishPlacementTestPage.spec.jsx src/pages/company/CompanyMembers.jsx src/i18n/locales/en/parent.js src/i18n/locales/ky/parent.js src/i18n/locales/ru/parent.js`
+
+---
+
 ## [1.17.2] - 2026-06-18
 
 ### Added

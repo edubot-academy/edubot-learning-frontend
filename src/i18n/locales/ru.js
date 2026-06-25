@@ -8,6 +8,8 @@ import { courses } from './ru/courses.js';
 import { attendance } from './ru/attendance.js';
 import { certificates } from './ru/certificates.js';
 import { integrations } from './ru/integrations.js';
+import { assessment } from './ru/assessment.js';
+import { parent } from './ru/parent.js';
 
 export const ru = {
     ...shared,
@@ -20,4 +22,6 @@ export const ru = {
     ...attendance,
     ...certificates,
     ...integrations,
+    ...assessment,
+    ...parent,
 };

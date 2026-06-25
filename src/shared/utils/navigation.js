@@ -9,6 +9,7 @@ const DASHBOARD_PATHS = {
     student: '/student',
     instructor: '/instructor',
     assistant: '/assistant',
+    parent: '/parent',
 };
 
 const getRole = (userOrRole) =>

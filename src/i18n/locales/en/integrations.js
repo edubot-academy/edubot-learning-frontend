@@ -423,6 +423,10 @@ export const integrations = {
             resendInvite: "Resend invite",
             removing: "Removing...",
             remove: "Remove",
+            suspended: "Suspended",
+            reactivate: "Reactivate",
+            reactivating: "Reactivating...",
+            suspendedSection: "Suspended members",
             empty: "No tenant members found.",
             table: {
                 user: "User",
@@ -475,7 +479,7 @@ export const integrations = {
             },
             removeModal: {
                 title: "Remove member",
-                message: "Remove {{name}} from this tenant?",
+                message: "Remove {{name}} from this tenant? They can be reactivated later.",
                 thisMember: "this member"
             },
             toasts: {
@@ -485,6 +489,8 @@ export const integrations = {
                 addError: "Could not add member.",
                 removed: "Member removed.",
                 removeError: "Could not remove member.",
+                reactivated: "Member reactivated.",
+                reactivateError: "Could not reactivate member.",
                 roleUpdated: "Role updated.",
                 roleUpdateError: "Could not update role.",
                 userCreated: "User created and added.",

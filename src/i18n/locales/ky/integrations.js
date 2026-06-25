@@ -423,6 +423,10 @@ export const integrations = {
             resendInvite: "Чакырууну кайра жөнөтүү",
             removing: "Өчүрүлүүдө...",
             remove: "Өчүрүү",
+            suspended: "Токтотулган",
+            reactivate: "Калыбына келтирүү",
+            reactivating: "Калыбына келтирилүүдө...",
+            suspendedSection: "Токтотулган мүчөлөр",
             empty: "Тенант мүчөлөрү табылган жок.",
             table: {
                 user: "Колдонуучу",
@@ -475,7 +479,7 @@ export const integrations = {
             },
             removeModal: {
                 title: "Мүчөнү өчүрүү",
-                message: "{{name}} бул тенант ичинен өчүрүлсүнбү?",
+                message: "{{name}} бул тенант ичинен өчүрүлсүнбү? Аларды кийин калыбына келтирсе болот.",
                 thisMember: "бул мүчө"
             },
             toasts: {
@@ -485,6 +489,8 @@ export const integrations = {
                 addError: "Мүчө кошуу мүмкүн болбоду.",
                 removed: "Мүчө өчүрүлдү.",
                 removeError: "Мүчөнү өчүрүү мүмкүн болбоду.",
+                reactivated: "Мүчө калыбына келтирилди.",
+                reactivateError: "Мүчөнү калыбына келтирүү мүмкүн болбоду.",
                 roleUpdated: "Роль жаңыртылды.",
                 roleUpdateError: "Ролду жаңыртуу мүмкүн болбоду.",
                 userCreated: "Колдонуучу түзүлүп кошулду.",

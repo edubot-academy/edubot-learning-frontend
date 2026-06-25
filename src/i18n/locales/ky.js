@@ -8,6 +8,8 @@ import { courses } from './ky/courses.js';
 import { attendance } from './ky/attendance.js';
 import { certificates } from './ky/certificates.js';
 import { integrations } from './ky/integrations.js';
+import { assessment } from './ky/assessment.js';
+import { parent } from './ky/parent.js';
 
 export const ky = {
     ...shared,
@@ -20,4 +22,6 @@ export const ky = {
     ...attendance,
     ...certificates,
     ...integrations,
+    ...assessment,
+    ...parent,
 };

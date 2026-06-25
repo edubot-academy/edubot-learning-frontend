@@ -8,6 +8,8 @@ import { courses } from './en/courses.js';
 import { attendance } from './en/attendance.js';
 import { certificates } from './en/certificates.js';
 import { integrations } from './en/integrations.js';
+import { assessment } from './en/assessment.js';
+import { parent } from './en/parent.js';
 
 export const en = {
     ...shared,
@@ -20,4 +22,6 @@ export const en = {
     ...attendance,
     ...certificates,
     ...integrations,
+    ...assessment,
+    ...parent,
 };

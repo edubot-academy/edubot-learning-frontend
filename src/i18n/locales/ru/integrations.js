@@ -423,6 +423,10 @@ export const integrations = {
             resendInvite: "Отправить приглашение снова",
             removing: "Удаление...",
             remove: "Удалить",
+            suspended: "Приостановлен",
+            reactivate: "Восстановить",
+            reactivating: "Восстановление...",
+            suspendedSection: "Приостановленные участники",
             empty: "Участники тенанта не найдены.",
             table: {
                 user: "Пользователь",
@@ -475,7 +479,7 @@ export const integrations = {
             },
             removeModal: {
                 title: "Удалить участника",
-                message: "Удалить {{name}} из этого тенанта?",
+                message: "Удалить {{name}} из этого тенанта? Их можно восстановить позже.",
                 thisMember: "этого участника"
             },
             toasts: {
@@ -485,6 +489,8 @@ export const integrations = {
                 addError: "Не удалось добавить участника.",
                 removed: "Участник удален.",
                 removeError: "Не удалось удалить участника.",
+                reactivated: "Участник восстановлен.",
+                reactivateError: "Не удалось восстановить участника.",
                 roleUpdated: "Роль обновлена.",
                 roleUpdateError: "Не удалось обновить роль.",
                 userCreated: "Пользователь создан и добавлен.",

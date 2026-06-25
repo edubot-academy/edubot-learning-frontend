@@ -44,6 +44,12 @@ const CertificateDownloadPage = lazy(() => import('../pages/CertificateDownload'
 const CertificateVerificationPage = lazy(() => import('../pages/CertificateVerification'));
 const ExternalResourcesPage = lazy(() => import('../features/externalResources/pages/ExternalResourcesPage'));
 const ExternalResourceDetails = lazy(() => import('../features/externalResources/pages/ExternalResourceDetails'));
+const ParentDashboard = lazy(() => import('../pages/ParentDashboard'));
+const EnglishPlacementIntroPage = lazy(() => import('../features/assessment/pages/EnglishPlacementIntroPage'));
+const EnglishGoalSelectionPage = lazy(() => import('../features/assessment/pages/EnglishGoalSelectionPage'));
+const EnglishPlacementTestPage = lazy(() => import('../features/assessment/pages/EnglishPlacementTestPage'));
+const EnglishPlacementResultPage = lazy(() => import('../features/assessment/pages/EnglishPlacementResultPage'));
+const AdminAssessmentPage = lazy(() => import('../features/assessment/pages/AdminAssessmentPage'));
 
 export const DashboardTabRedirect = ({ dashboardPath, tab }) => {
     const { search } = useLocation();
@@ -136,6 +142,7 @@ const AppRoutes = () => {
                             path="/admin/analytics"
                             element={<DashboardTabRedirect dashboardPath="/admin" tab={ADMIN_DASHBOARD_TABS.ANALYTICS} />}
                         />
+                        <Route path="/admin/assessment" element={<AdminAssessmentPage />} />
                     </Route>
 
                     <Route path="/about" element={<AboutPage />} />
@@ -157,12 +164,23 @@ const AppRoutes = () => {
                     <Route path="/resources" element={<ExternalResourcesPage />} />
                     <Route path="/resources/:slug" element={<ExternalResourceDetails />} />
 
+                    <Route path="/assessment" element={<EnglishPlacementIntroPage />} />
+                    <Route element={<PrivateRoute allowedRoles={['student']} requireStudentAccess />}>
+                        <Route path="/assessment/start" element={<EnglishGoalSelectionPage />} />
+                        <Route path="/assessment/attempt/:attemptId" element={<EnglishPlacementTestPage />} />
+                        <Route path="/assessment/attempt/:attemptId/result" element={<EnglishPlacementResultPage />} />
+                    </Route>
+
                     <Route element={<PrivateRoute allowedRoles={['student', 'admin', 'instructor']} />}>
                         <Route path="/certificates/:publicId/download" element={<CertificateDownloadPage />} />
                     </Route>
 
                     <Route element={<PrivateRoute allowedRoles={['admin', 'instructor', 'assistant']} />}>
                         <Route path="/leaderboard/internal" element={<InternalLeaderboardPage />} />
+                    </Route>
+
+                    <Route element={<PrivateRoute allowedRoles={['parent']} />}>
+                        <Route path="/parent" element={<ParentDashboard />} />
                     </Route>
                 </Routes>
             </Suspense>

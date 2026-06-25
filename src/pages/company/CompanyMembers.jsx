@@ -53,6 +53,14 @@ export default function CompanyMembers({
         () => (allowedRoleSet ? items.filter((item) => allowedRoleSet.has(item.role)) : items),
         [allowedRoleSet, items]
     );
+    const activeItems = React.useMemo(
+        () => visibleItems.filter((m) => m.status !== 'suspended'),
+        [visibleItems]
+    );
+    const suspendedItems = React.useMemo(
+        () => visibleItems.filter((m) => m.status === 'suspended'),
+        [visibleItems]
+    );
     const memberSearchListId = React.useId();
     const memberSearchHelpId = React.useId();
 
@@ -68,6 +76,7 @@ export default function CompanyMembers({
     const [inviteOpen, setInviteOpen] = React.useState(false);
     const [inviteSaving, setInviteSaving] = React.useState(false);
     const [resendingKey, setResendingKey] = React.useState(null);
+    const [reactivatingKey, setReactivatingKey] = React.useState(null);
     const [inviteResult, setInviteResult] = React.useState(null);
     const [inviteLinkOpen, setInviteLinkOpen] = React.useState(false);
     const [inviteForm, setInviteForm] = React.useState({
@@ -263,6 +272,24 @@ export default function CompanyMembers({
             toast.success(t('company.members.toasts.linkCopied'));
         } catch {
             toast.error(t('company.members.toasts.copyError'));
+        }
+    };
+
+    const onReactivate = async (member) => {
+        const key = member.id || `${member.userId}-${member.role}`;
+        try {
+            setReactivatingKey(key);
+            if (member.role === 'owner') {
+                await addCompanyOwner(companyId, member.userId);
+            } else {
+                await addCompanyMember(companyId, { userId: member.userId, role: member.role });
+            }
+            toast.success(t('company.members.toasts.reactivated'));
+            await load();
+        } catch (error) {
+            toast.error(parseApiError(error, t('company.members.toasts.reactivateError')).message);
+        } finally {
+            setReactivatingKey(null);
         }
     };
 
@@ -485,7 +512,7 @@ export default function CompanyMembers({
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-edubot-line/70 bg-white dark:divide-slate-700 dark:bg-slate-950">
-                            {visibleItems.map((m) => {
+                            {activeItems.map((m) => {
                                 const rowKey = m.id || `${m.userId}-${m.role}`;
                                 const canEditRole = m.role !== 'owner' || canManageOwner;
                                 const canResendInvite = m.role === 'student';
@@ -576,7 +603,7 @@ export default function CompanyMembers({
                                     </tr>
                                 );
                             })}
-                            {visibleItems.length === 0 && (
+                            {activeItems.length === 0 && (
                                 <tr>
                                     <td colSpan="4" className="p-4 text-center text-gray-500">
                                         {t('company.members.empty')}
@@ -586,6 +613,74 @@ export default function CompanyMembers({
                         </tbody>
                     </table>
                 </div>
+
+                {suspendedItems.length > 0 && (
+                    <div className="space-y-2">
+                        <p className="text-sm font-semibold text-edubot-muted dark:text-slate-400">
+                            {t('company.members.suspendedSection')} ({suspendedItems.length})
+                        </p>
+                        <div className="overflow-x-auto rounded-2xl border border-edubot-line/50 dark:border-slate-700/50">
+                            <table className="min-w-[42rem] w-full text-left text-sm">
+                                <thead className="bg-edubot-surfaceAlt/40 text-xs uppercase tracking-wide text-edubot-muted dark:bg-slate-900/60 dark:text-slate-500">
+                                    <tr>
+                                        <th className="px-4 py-3 font-semibold">{t('company.members.table.user')}</th>
+                                        <th className="px-4 py-3 font-semibold">{t('company.members.table.email')}</th>
+                                        <th className="px-4 py-3 font-semibold">{t('company.members.table.role')}</th>
+                                        <th className="px-4 py-3 font-semibold">{t('company.members.table.actions')}</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-edubot-line/50 bg-white/60 dark:divide-slate-700/50 dark:bg-slate-950/60">
+                                    {suspendedItems.map((m) => {
+                                        const rowKey = m.id || `${m.userId}-${m.role}`;
+                                        const canReactivate = m.role !== 'owner' || canManageOwner;
+                                        return (
+                                            <tr
+                                                key={rowKey}
+                                                className="opacity-70 transition hover:opacity-100"
+                                            >
+                                                <td className="px-4 py-3">
+                                                    <div className="flex items-center gap-2">
+                                                        {m.avatarUrl ? (
+                                                            <img
+                                                                src={m.avatarUrl}
+                                                                alt=""
+                                                                className="h-6 w-6 rounded-full object-cover grayscale"
+                                                            />
+                                                        ) : (
+                                                            <div className="h-6 w-6 rounded-full bg-gray-200" />
+                                                        )}
+                                                        <div>{m.fullName || `#${m.userId}`}</div>
+                                                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
+                                                            {t('company.members.suspended')}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-3 text-edubot-muted dark:text-slate-400">
+                                                    {m.email || '-'}
+                                                </td>
+                                                <td className="px-4 py-3 text-edubot-muted dark:text-slate-400">
+                                                    {getRoleLabel(m.role, t)}
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => onReactivate(m)}
+                                                        className="dashboard-button-secondary disabled:opacity-50"
+                                                        disabled={!canReactivate || reactivatingKey === rowKey}
+                                                    >
+                                                        {reactivatingKey === rowKey
+                                                            ? t('company.members.reactivating')
+                                                            : t('company.members.reactivate')}
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
             </div>
             <BasicModal
                 isOpen={inviteOpen}
@@ -752,6 +847,7 @@ export default function CompanyMembers({
                         pendingRemoveMember?.fullName ||
                         pendingRemoveMember?.email ||
                         t('company.members.removeModal.thisMember'),
+                    role: pendingRemoveMember?.role,
                 })}
                 confirmLabel={t('company.members.remove')}
                 cancelLabel={t('company.settings.cancel')}
