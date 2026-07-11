@@ -1,21 +1,21 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { fetchUserProfile, logoutUser } from '@services/api';
 import { normalizeUserAvatar } from '@shared/utils/avatar';
+import {
+    clearStoredSession,
+    getStoredAuthToken,
+    hasCachedUser,
+    loadCachedUser,
+    saveCachedUser,
+} from '@shared/auth/sessionStorage';
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(() => {
-        try {
-            const stored = localStorage.getItem('user');
-            if (!stored || stored === 'undefined') return null;
-            return normalizeUserAvatar(JSON.parse(stored));
-        } catch {
-            // Remove bad data so it does not break subsequent renders
-            localStorage.removeItem('user');
-            return null;
-        }
+        const storedUser = loadCachedUser();
+        return storedUser ? normalizeUserAvatar(storedUser) : null;
     });
 
     const logout = useCallback(async (redirect = true) => {
@@ -26,9 +26,7 @@ export const AuthProvider = ({ children }) => {
         }
 
         setUser(null);
-        localStorage.removeItem('user');
-        localStorage.removeItem('pendingAction');
-        localStorage.removeItem('auth_token'); // Clear stored token
+        clearStoredSession();
         if (redirect) {
             window.location.href = '/login';
         }
@@ -39,7 +37,7 @@ export const AuthProvider = ({ children }) => {
             const profile = await fetchUserProfile({ skipAuthRedirect: true });
             const normalizedProfile = normalizeUserAvatar(profile);
             setUser(normalizedProfile);
-            localStorage.setItem('user', JSON.stringify(normalizedProfile));
+            saveCachedUser(normalizedProfile);
         } catch (error) {
             // Silently handle 401 errors and suppressed errors (user not logged in)
             if (error?.response?.status !== 401 && !error?.suppressed) {
@@ -50,27 +48,29 @@ export const AuthProvider = ({ children }) => {
     }, [logout]);
 
     useEffect(() => {
-        // Only try to fetch profile if we have a user in localStorage, session cookie, or stored token
-        const hasStoredUser =
-            localStorage.getItem('user') && localStorage.getItem('user') !== 'undefined';
+        // Only try to fetch profile if we have a cached user, session cookie, or stored token.
         const hasSessionCookie =
             document.cookie.includes('edubot_access_token=') ||
             document.cookie.includes('edubot_session=');
-        const hasStoredToken = localStorage.getItem('auth_token');
 
-        if (hasStoredUser || hasSessionCookie || hasStoredToken) {
+        if (hasCachedUser() || hasSessionCookie || getStoredAuthToken()) {
             loadUserProfile();
         }
     }, [loadUserProfile]);
 
-    const login = (userData) => {
+    const login = useCallback((userData) => {
         const normalizedUser = normalizeUserAvatar(userData);
         setUser(normalizedUser);
-        localStorage.setItem('user', JSON.stringify(normalizedUser));
-    };
+        saveCachedUser(normalizedUser);
+    }, []);
+
+    const value = useMemo(
+        () => ({ user, login, logout, setUser }),
+        [user, login, logout]
+    );
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, setUser }}>
+        <AuthContext.Provider value={value}>
             {children}
         </AuthContext.Provider>
     );

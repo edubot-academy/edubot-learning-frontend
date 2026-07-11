@@ -1,8 +1,27 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-hot-toast';
-import api from '@shared/api/client';
 import { parseApiError } from '@shared/api/error';
+import {
+  fetchLegacyAttendanceOverview,
+  updateLegacyAttendance,
+} from '../api/legacyAttendanceApi';
+import {
+  addPendingAttendanceUpdates,
+  applyAttendanceUpdates,
+  calculateAttendanceStatistics,
+  createAttendanceDataFilters,
+  createAttendanceTableFilters,
+  createEmptyAttendanceState,
+  filterAttendanceData,
+  getAttendanceUpdateKey,
+  getAttendanceUpdateKeys,
+  hasActiveAttendanceFilters,
+  normalizeAttendanceData,
+  removePendingAttendanceUpdate,
+  setAttendanceFilter,
+  setAttendanceRecord,
+} from '../utils/attendanceData';
 
 /**
  * Hook for managing attendance data fetching and state
@@ -17,42 +36,9 @@ export const useAttendanceData = ({
 }) => {
   const { t } = useTranslation();
   // State
-  const [data, setData] = useState({
-    students: [],
-    sessions: [],
-    attendanceData: {},
-    loading: false,
-    error: null,
-    lastUpdated: null,
-  });
+  const [data, setData] = useState(createEmptyAttendanceState);
 
-  const [filters, setFilters] = useState({
-    statusFilter: 'all',
-    searchQuery: '',
-    dateRange: null,
-  });
-
-  // API endpoints based on mode
-  const getApiEndpoint = useCallback(() => {
-    if (adminMode) {
-      return `/api/admin/groups/${groupId}/attendance-overview`;
-    }
-    return `/api/groups/${groupId}/attendance-overview`;
-  }, [groupId, adminMode]);
-
-  // Normalize attendance data from API response
-  const normalizeAttendanceData = useCallback((rawData) => {
-    const normalized = {};
-
-    Object.keys(rawData).forEach(studentId => {
-      normalized[studentId] = {};
-      Object.keys(rawData[studentId]).forEach(sessionId => {
-        normalized[studentId][sessionId] = rawData[studentId][sessionId];
-      });
-    });
-
-    return normalized;
-  }, []);
+  const [filters, setFilters] = useState(createAttendanceDataFilters);
 
   // Fetch attendance data
   const fetchAttendanceData = useCallback(async (signal) => {
@@ -61,22 +47,13 @@ export const useAttendanceData = ({
     setData(prev => ({ ...prev, loading: true, error: null }));
 
     try {
-      const endpoint = getApiEndpoint();
-      const params = new URLSearchParams({
-        includeUnscheduled: includeUnscheduled.toString(),
-        ...(filters.dateRange && {
-          startDate: filters.dateRange.start,
-          endDate: filters.dateRange.end,
-        }),
+      const result = await fetchLegacyAttendanceOverview({
+        groupId,
+        adminMode,
+        includeUnscheduled,
+        dateRange: filters.dateRange,
+        signal,
       });
-
-      const response = await fetch(`${endpoint}?${params}`, { signal });
-      
-      if (!response.ok) {
-        throw new Error(t('attendance.legacy.loadFailed'));
-      }
-
-      const result = await response.json();
       
       // Normalize data structure
       const normalizedData = {
@@ -92,8 +69,8 @@ export const useAttendanceData = ({
       return normalizedData;
 
     } catch (error) {
-      if (error.name !== 'AbortError') {
-        const errorMessage = error.message || t('attendance.legacy.loadFailed');
+      if (error.name !== 'AbortError' && error.code !== 'ERR_CANCELED') {
+        const errorMessage = parseApiError(error, t('attendance.legacy.loadFailed')).message;
         console.error('Attendance data fetch error:', error);
         setData(prev => ({
           ...prev,
@@ -103,22 +80,14 @@ export const useAttendanceData = ({
         toast.error(errorMessage);
       }
     }
-  }, [groupId, includeUnscheduled, filters.dateRange, getApiEndpoint, normalizeAttendanceData, t]);
+  }, [groupId, adminMode, includeUnscheduled, filters.dateRange, t]);
 
   // Update single attendance record
   const updateAttendanceRecord = useCallback((studentId, sessionId, status) => {
     setData(prev => {
-      const newAttendanceData = { ...prev.attendanceData };
-      
-      if (!newAttendanceData[studentId]) {
-        newAttendanceData[studentId] = {};
-      }
-      
-      newAttendanceData[studentId][sessionId] = status;
-      
       return {
         ...prev,
-        attendanceData: newAttendanceData,
+        attendanceData: setAttendanceRecord(prev.attendanceData, studentId, sessionId, status),
         lastUpdated: new Date(),
       };
     });
@@ -127,18 +96,9 @@ export const useAttendanceData = ({
   // Bulk update attendance records
   const bulkUpdateAttendance = useCallback((updates) => {
     setData(prev => {
-      const newAttendanceData = { ...prev.attendanceData };
-      
-      updates.forEach(({ studentId, sessionId, status }) => {
-        if (!newAttendanceData[studentId]) {
-          newAttendanceData[studentId] = {};
-        }
-        newAttendanceData[studentId][sessionId] = status;
-      });
-      
       return {
         ...prev,
-        attendanceData: newAttendanceData,
+        attendanceData: applyAttendanceUpdates(prev.attendanceData, updates),
         lastUpdated: new Date(),
       };
     });
@@ -146,113 +106,17 @@ export const useAttendanceData = ({
 
   // Reset data
   const resetData = useCallback(() => {
-    setData({
-      students: [],
-      sessions: [],
-      attendanceData: {},
-      loading: false,
-      error: null,
-      lastUpdated: null,
-    });
+    setData(createEmptyAttendanceState());
   }, []);
 
   // Computed values
   const statistics = useMemo(() => {
-    const { students, sessions, attendanceData } = data;
-    
-    if (!students.length || !sessions.length) {
-      return {
-        totals: { present: 0, late: 0, absent: 0, not_scheduled: 0, excused: 0, total: 0 },
-        percentages: { present: 0, late: 0, absent: 0, not_scheduled: 0, excused: 0 },
-        studentStats: {},
-        sessionStats: {},
-      };
-    }
-
-    const totals = { present: 0, late: 0, absent: 0, not_scheduled: 0, excused: 0, total: 0 };
-    const studentStats = {};
-    const sessionStats = {};
-
-    // Calculate totals and student stats
-    students.forEach(student => {
-      const studentTotal = { present: 0, late: 0, absent: 0, not_scheduled: 0, excused: 0 };
-      
-      sessions.forEach(session => {
-        const status = attendanceData[student.id]?.[session.id] || 'not_scheduled';
-        
-        // Update totals
-        totals[status]++;
-        totals.total++;
-        
-        // Update student stats
-        studentTotal[status]++;
-        
-        // Update session stats
-        if (!sessionStats[session.id]) {
-          sessionStats[session.id] = { present: 0, late: 0, absent: 0, not_scheduled: 0, excused: 0 };
-        }
-        sessionStats[session.id][status]++;
-      });
-      
-      // Calculate student attendance rate
-      const attendedCount = studentTotal.present + studentTotal.late;
-      studentStats[student.id] = {
-        ...studentTotal,
-        attendanceRate: sessions.length > 0 ? (attendedCount / sessions.length) * 100 : 0,
-      };
-    });
-
-    // Calculate percentages
-    const percentages = {};
-    Object.keys(totals).forEach(key => {
-      if (key !== 'total') {
-        percentages[key] = totals.total > 0 ? (totals[key] / totals.total) * 100 : 0;
-      }
-    });
-
-    // Calculate session attendance rates
-    Object.keys(sessionStats).forEach(sessionId => {
-      const sessionTotal = sessionStats[sessionId];
-      const attendedCount = sessionTotal.present + sessionTotal.late;
-      sessionStats[sessionId].attendanceRate = students.length > 0 
-        ? (attendedCount / students.length) * 100 
-        : 0;
-    });
-
-    return { totals, percentages, studentStats, sessionStats };
+    return calculateAttendanceStatistics(data);
   }, [data]);
 
   // Filtered data based on current filters
   const filteredData = useMemo(() => {
-    const { students, attendanceData } = data;
-    
-    let filteredStudents = students.filter(student => {
-      // Search filter
-      if (filters.searchQuery) {
-        const searchLower = filters.searchQuery.toLowerCase();
-        if (!student.name.toLowerCase().includes(searchLower) && 
-            !student.email?.toLowerCase().includes(searchLower)) {
-          return false;
-        }
-      }
-      
-      // Status filter
-      if (filters.statusFilter !== 'all') {
-        const studentStatuses = data.sessions.map(session => 
-          attendanceData[student.id]?.[session.id] || 'not_scheduled'
-        );
-        if (!studentStatuses.includes(filters.statusFilter)) {
-          return false;
-        }
-      }
-      
-      return true;
-    });
-
-    return {
-      ...data,
-      students: filteredStudents,
-    };
+    return filterAttendanceData(data, filters);
   }, [data, filters]);
 
   // Initial fetch
@@ -309,16 +173,13 @@ export const useAttendanceUpdates = ({ groupId, onSuccess, onError }) => {
 
   // Single attendance update
   const updateAttendance = useCallback(async (studentId, sessionId, status) => {
-    const updateKey = `${studentId}-${sessionId}`;
+    const updateKey = getAttendanceUpdateKey(studentId, sessionId);
     
     try {
       setUpdating(true);
-      setPendingUpdates(prev => new Set(prev).add(updateKey));
+      setPendingUpdates(prev => addPendingAttendanceUpdates(prev, [updateKey]));
 
-      const response = await api.patch(`/groups/${groupId}/attendance`, {
-        updates: [{ studentId, sessionId, status }],
-      });
-      const result = response.data;
+      const result = await updateLegacyAttendance(groupId, [{ studentId, sessionId, status }]);
       
       if (onSuccess) {
         onSuccess(result);
@@ -339,11 +200,7 @@ export const useAttendanceUpdates = ({ groupId, onSuccess, onError }) => {
       throw error;
     } finally {
       setUpdating(false);
-      setPendingUpdates(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(updateKey);
-        return newSet;
-      });
+      setPendingUpdates(prev => removePendingAttendanceUpdate(prev, updateKey));
     }
   }, [groupId, onSuccess, onError, t]);
 
@@ -355,15 +212,10 @@ export const useAttendanceUpdates = ({ groupId, onSuccess, onError }) => {
       setUpdating(true);
       
       // Add all updates to pending set
-      const updateKeys = updates.map(({ studentId, sessionId }) => `${studentId}-${sessionId}`);
-      setPendingUpdates(prev => {
-        const newSet = new Set(prev);
-        updateKeys.forEach(key => newSet.add(key));
-        return newSet;
-      });
+      const updateKeys = getAttendanceUpdateKeys(updates);
+      setPendingUpdates(prev => addPendingAttendanceUpdates(prev, updateKeys));
 
-      const response = await api.patch(`/groups/${groupId}/attendance`, { updates });
-      const result = response.data;
+      const result = await updateLegacyAttendance(groupId, updates);
       
       if (onSuccess) {
         onSuccess(result);
@@ -390,8 +242,7 @@ export const useAttendanceUpdates = ({ groupId, onSuccess, onError }) => {
 
   // Check if specific cell is updating
   const isCellUpdating = useCallback((studentId, sessionId) => {
-    const updateKey = `${studentId}-${sessionId}`;
-    return pendingUpdates.has(updateKey);
+    return pendingUpdates.has(getAttendanceUpdateKey(studentId, sessionId));
   }, [pendingUpdates]);
 
   return {
@@ -407,31 +258,18 @@ export const useAttendanceUpdates = ({ groupId, onSuccess, onError }) => {
  * Hook for attendance filters and search
  */
 export const useAttendanceFilters = () => {
-  const [filters, setFilters] = useState({
-    statusFilter: 'all',
-    searchQuery: '',
-    dateRange: null,
-    sessionFilter: 'all',
-  });
+  const [filters, setFilters] = useState(createAttendanceTableFilters);
 
   const updateFilter = useCallback((key, value) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+    setFilters(prev => setAttendanceFilter(prev, key, value));
   }, []);
 
   const clearFilters = useCallback(() => {
-    setFilters({
-      statusFilter: 'all',
-      searchQuery: '',
-      dateRange: null,
-      sessionFilter: 'all',
-    });
+    setFilters(createAttendanceTableFilters());
   }, []);
 
   const hasActiveFilters = useMemo(() => {
-    return filters.statusFilter !== 'all' || 
-           filters.searchQuery !== '' || 
-           filters.dateRange !== null ||
-           filters.sessionFilter !== 'all';
+    return hasActiveAttendanceFilters(filters);
   }, [filters]);
 
   return {

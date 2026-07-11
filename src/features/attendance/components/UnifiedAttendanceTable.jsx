@@ -31,17 +31,15 @@ import {
   AttendanceErrorState,
 } from './AttendanceLoadingStates';
 import { useAccessibility } from '../hooks/useAccessibility';
-
-const cloneAttendanceData = (data = {}) =>
-  Object.fromEntries(
-    Object.entries(data).map(([studentId, sessionsById]) => [
-      studentId,
-      { ...(sessionsById || {}) },
-    ])
-  );
+import { formatAttendanceSessionDate } from '../utils/attendanceDateData';
+import { getAttendanceSessionTitle } from '../utils/attendanceDisplayData';
+import { getAttendanceStatusLabel } from '../utils/attendanceStatusData';
+import {
+  cloneAttendanceData,
+  createAttendanceMatrixFromSessionResponses,
+} from '../utils/attendanceTableLoadData';
 
 const getDayStart = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
-const getStatusTranslationKey = (status) => (status === 'not_scheduled' ? 'notScheduled' : status);
 
 const isSessionInDateRange = (session, filters) => {
   const range = filters.dateRange || 'all';
@@ -178,21 +176,20 @@ const UnifiedAttendanceTable = ({
   });
   const language = i18n.resolvedLanguage || i18n.language || undefined;
 
-  const getSessionTitle = useCallback((session = {}) => (
-    session.title || t('attendance.fallbacks.sessionWithId', { id: session.sessionIndex || session.id })
-  ), [t]);
+  const getSessionTitle = useCallback(
+    (session = {}) => getAttendanceSessionTitle(t, session),
+    [t]
+  );
 
-  const formatSessionDate = useCallback((value, fallback = '-') => {
-    if (!value) return fallback;
-
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return t('attendance.fallbacks.unknownDate');
-
-    return date.toLocaleDateString(language, {
-      month: 'short',
-      day: 'numeric',
-    });
-  }, [language, t]);
+  const formatSessionDate = useCallback(
+    (value, fallback = '-') =>
+      formatAttendanceSessionDate(value, {
+        language,
+        missingFallback: fallback,
+        invalidFallback: t('attendance.fallbacks.unknownDate'),
+      }),
+    [language, t]
+  );
 
   // Data loading
   const loadData = useCallback(async () => {
@@ -221,22 +218,10 @@ const UnifiedAttendanceTable = ({
         );
 
         const attendanceResults = await Promise.all(attendancePromises);
-        const consolidatedAttendance = {};
-
-        attendanceResults.forEach((sessionAttendance, index) => {
-          const sessionId = sessionsList[index]?.id;
-          const attendanceItems = validateAndNormalizeResponse(sessionAttendance);
-
-          attendanceItems.forEach((record) => {
-            const studentId = record.studentId || record.userId;
-            if (!studentId || !sessionId) return;
-
-            if (!consolidatedAttendance[studentId]) {
-              consolidatedAttendance[studentId] = {};
-            }
-
-            consolidatedAttendance[studentId][sessionId] = record.status;
-          });
+        const consolidatedAttendance = createAttendanceMatrixFromSessionResponses({
+          sessions: sessionsList,
+          attendanceResults,
+          normalizeAttendanceItems: validateAndNormalizeResponse,
         });
 
         setAttendanceData(cloneAttendanceData(consolidatedAttendance));
@@ -807,7 +792,7 @@ const UnifiedAttendanceTable = ({
                         >
                           <Icon className={`mb-1 h-6 w-6 ${config.textColor}`} />
                           <span className="text-xs font-medium text-gray-900 dark:text-white">
-	                            {t(`attendance.status.${getStatusTranslationKey(status)}`)}
+	                            {getAttendanceStatusLabel(t, status)}
 	                          </span>
                         </button>
                       );

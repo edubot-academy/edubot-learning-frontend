@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { getAuthAcquisitionPath } from '@shared/auth-config';
+import { savePendingAuthAction } from '@features/auth/storage';
 
 const ExternalResourceAuthPrompt = ({ resourceSlug, resourceTitle }) => {
     const { t } = useTranslation();
@@ -8,19 +9,12 @@ const ExternalResourceAuthPrompt = ({ resourceSlug, resourceTitle }) => {
 
     const handleSave = () => {
         if (resourceSlug) {
-            try {
-                localStorage.setItem(
-                    'pendingAction',
-                    JSON.stringify({
-                        type: 'save-resource',
-                        slug: resourceSlug,
-                        resourceTitle: resourceTitle ?? resourceSlug,
-                        timestamp: Date.now(),
-                    })
-                );
-            } catch {
-                // storage not available
-            }
+            savePendingAuthAction({
+                type: 'save-resource',
+                slug: resourceSlug,
+                resourceTitle: resourceTitle ?? resourceSlug,
+                timestamp: Date.now(),
+            });
         }
         navigate(getAuthAcquisitionPath(), {
             state: { from: `/resources/${resourceSlug}` },

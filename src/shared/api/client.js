@@ -2,27 +2,14 @@ import axios from 'axios';
 import { API_BASE_URL } from '../../config';
 import { getResolvedLocale } from '../../i18n/locale';
 import { API_ERROR_CODES, getApiErrorCode } from './error';
+import {
+    clearStoredSession,
+    getStoredAuthToken,
+    setStoredAuthToken,
+} from '@shared/auth/sessionStorage';
 
 // Token management for cross-domain authentication
-const getStoredToken = () => {
-    try {
-        return localStorage.getItem('auth_token');
-    } catch {
-        return null;
-    }
-};
-
-const setStoredToken = (token) => {
-    try {
-        if (token) {
-            localStorage.setItem('auth_token', token);
-        } else {
-            localStorage.removeItem('auth_token');
-        }
-    } catch {
-        // Ignore localStorage errors
-    }
-};
+const setStoredToken = setStoredAuthToken;
 
 const api = axios.create({
     baseURL: API_BASE_URL,
@@ -64,7 +51,7 @@ api.interceptors.request.use(
         }
 
         // Add Authorization header as fallback for cross-domain requests
-        const token = getStoredToken();
+        const token = getStoredAuthToken();
         if (token && !config.headers.Authorization) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -122,10 +109,7 @@ api.interceptors.response.use(
         }
 
         if (error?.response?.status === 401) {
-            // Clear stored token on 401
-            setStoredToken(null);
-            localStorage.removeItem('user');
-            localStorage.removeItem('pendingAction');
+            clearStoredSession();
 
             if (!shouldSkipAuthRedirect && window.location.pathname !== '/login') {
                 window.location.href = '/login';

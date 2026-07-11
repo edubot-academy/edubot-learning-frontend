@@ -2,6 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
+import {
+    getSessionStorageItem,
+    removeSessionStorageItem,
+    setSessionStorageItem,
+} from '@shared/utils/storage';
 import { getNextQuestion, submitAnswer, completeAttempt } from '../api';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -156,7 +161,9 @@ const EnglishPlacementTestPage = () => {
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [expired, setExpired] = useState(false);
-    const [expiresAt, setExpiresAt] = useState(() => location.state?.expiresAt ?? sessionStorage.getItem(expiresAtStorageKey));
+    const [expiresAt, setExpiresAt] = useState(
+        () => location.state?.expiresAt ?? getSessionStorageItem(expiresAtStorageKey)
+    );
     const [timeLeft, setTimeLeft] = useState(null);
 
     const questionStartedAt = useRef(Date.now());
@@ -167,7 +174,7 @@ const EnglishPlacementTestPage = () => {
     useEffect(() => {
         if (!location.state?.expiresAt) return;
         setExpiresAt(location.state.expiresAt);
-        sessionStorage.setItem(expiresAtStorageKey, location.state.expiresAt);
+        setSessionStorageItem(expiresAtStorageKey, location.state.expiresAt);
     }, [expiresAtStorageKey, location.state]);
 
     useEffect(() => {
@@ -209,7 +216,7 @@ const EnglishPlacementTestPage = () => {
         try {
             const data = await getNextQuestion(attemptId);
             if (data.completed || !data.question) {
-                sessionStorage.removeItem(expiresAtStorageKey);
+                removeSessionStorageItem(expiresAtStorageKey);
                 navigate(`/assessment/attempt/${attemptId}/result`, { replace: true });
                 return;
             }
@@ -217,7 +224,7 @@ const EnglishPlacementTestPage = () => {
             const nextExpiresAt = getAttemptExpiry(data);
             if (nextExpiresAt) {
                 setExpiresAt(nextExpiresAt);
-                sessionStorage.setItem(expiresAtStorageKey, nextExpiresAt);
+                setSessionStorageItem(expiresAtStorageKey, nextExpiresAt);
             }
 
             if (data.total) setTotalQuestions(data.total);

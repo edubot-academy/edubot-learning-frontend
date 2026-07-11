@@ -4,47 +4,16 @@ import VideoPlayerUI from './ui/Play.jsx';
 import VideoErrorBoundary from './VideoErrorBoundary.jsx';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
-
-const MAX_HLS_NETWORK_RECOVERIES = 2;
-const MAX_HLS_MEDIA_RECOVERIES = 2;
-
-const isHlsUrl = (url) => {
-    if (!url) return false;
-
-    try {
-        return new URL(url, window.location.href).pathname.toLowerCase().endsWith('.m3u8');
-    } catch {
-        return String(url).toLowerCase().split(/[?#]/)[0].endsWith('.m3u8');
-    }
-};
-
-const getAutoQualityOption = (t) => ({ id: 'auto', label: t('videoPlayer.autoQuality') });
-
-const buildQualityOptions = (levels = [], t) => {
-    const seenLabels = new Map();
-
-    return [
-        getAutoQualityOption(t),
-        ...levels.map((level, index) => {
-            const baseLabel = level.height ? `${level.height}p` : `Level ${index + 1}`;
-            const count = seenLabels.get(baseLabel) || 0;
-            seenLabels.set(baseLabel, count + 1);
-
-            return {
-                id: `${index}`,
-                label: count > 0 ? `${baseLabel} (${count + 1})` : baseLabel,
-            };
-        }),
-    ];
-};
-
-const getStoredAuthToken = () => {
-    try {
-        return localStorage.getItem('auth_token');
-    } catch {
-        return null;
-    }
-};
+import { getStoredAuthToken } from '@shared/auth/sessionStorage';
+import {
+    buildQualityOptions,
+    canRecoverHlsError,
+    createHlsRecoveryState,
+    getAutoQualityOption,
+    incrementHlsRecovery,
+    isHlsUrl,
+    resolveVideoFitMode,
+} from './utils/videoPlayer';
 
 const VideoPlayerInner = ({
     videoUrl,
@@ -66,11 +35,9 @@ const VideoPlayerInner = ({
     const [isLoading, setIsLoading] = useState(true);
     const [qualityOptions, setQualityOptions] = useState(() => [getAutoQualityOption(t)]);
     const [currentQuality, setCurrentQuality] = useState('auto');
-    const fitMode = ['contain', 'cover', 'crop'].includes(defaultFitMode)
-        ? defaultFitMode
-        : 'contain';
+    const fitMode = resolveVideoFitMode(defaultFitMode);
     const [reloadToken, setReloadToken] = useState(0);
-    const hlsRecoveryRef = useRef({ network: 0, media: 0 });
+    const hlsRecoveryRef = useRef(createHlsRecoveryState());
     const lastAppliedResumeTimeRef = useRef(null);
 
     const setVideoRef = useCallback(
@@ -135,10 +102,10 @@ const VideoPlayerInner = ({
         setIsLoading(true);
         setCurrentQuality('auto');
         setQualityOptions([getAutoQualityOption(t)]);
-        hlsRecoveryRef.current = { network: 0, media: 0 };
+        hlsRecoveryRef.current = createHlsRecoveryState();
         lastAppliedResumeTimeRef.current = null;
 
-        const isHlsSource = isHlsUrl(videoUrl);
+        const isHlsSource = isHlsUrl(videoUrl, window.location.href);
         const tryAutoPlay = () => {
             if (!autoPlay || !allowPlay || signal.aborted) return;
             videoEl.play().catch(() => undefined);
@@ -187,21 +154,33 @@ const VideoPlayerInner = ({
 
                     if (data.fatal) {
                         if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-                            if (hlsRecoveryRef.current.network >= MAX_HLS_NETWORK_RECOVERIES) {
+                            if (
+                                !canRecoverHlsError(
+                                    hlsRecoveryRef.current,
+                                    data.type,
+                                    Hls.ErrorTypes
+                                )
+                            ) {
                                 failPlayback();
                                 return;
                             }
-                            hlsRecoveryRef.current.network += 1;
+                            incrementHlsRecovery(hlsRecoveryRef.current, data.type, Hls.ErrorTypes);
                             hls.startLoad();
                             return;
                         }
 
                         if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
-                            if (hlsRecoveryRef.current.media >= MAX_HLS_MEDIA_RECOVERIES) {
+                            if (
+                                !canRecoverHlsError(
+                                    hlsRecoveryRef.current,
+                                    data.type,
+                                    Hls.ErrorTypes
+                                )
+                            ) {
                                 failPlayback();
                                 return;
                             }
-                            hlsRecoveryRef.current.media += 1;
+                            incrementHlsRecovery(hlsRecoveryRef.current, data.type, Hls.ErrorTypes);
                             hls.recoverMediaError();
                             return;
                         }

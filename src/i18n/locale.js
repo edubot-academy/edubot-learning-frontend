@@ -1,3 +1,5 @@
+import { getStorageItem, setStorageItem } from '@shared/utils/storage';
+
 export const SUPPORTED_LOCALES = ['ky', 'ru', 'en'];
 
 export const DEFAULT_LOCALE = 'ky';
@@ -33,21 +35,13 @@ export const getBrowserLocale = () => {
     return navigator.languages?.[0] ?? navigator.language ?? null;
 };
 
-export const getStoredLocale = (storage = globalThis.localStorage) => {
-    try {
-        return normalizeLocale(storage?.getItem(LOCALE_STORAGE_KEY));
-    } catch {
-        return DEFAULT_LOCALE;
-    }
+export const getStoredLocale = (storage) => {
+    return normalizeLocale(getStorageItem(LOCALE_STORAGE_KEY, DEFAULT_LOCALE, storage));
 };
 
-export const setStoredLocale = (locale, storage = globalThis.localStorage) => {
+export const setStoredLocale = (locale, storage) => {
     const normalizedLocale = normalizeLocale(locale);
-    try {
-        storage?.setItem(LOCALE_STORAGE_KEY, normalizedLocale);
-    } catch {
-        // Ignore storage errors so locale selection never breaks core app flows.
-    }
+    setStorageItem(LOCALE_STORAGE_KEY, normalizedLocale, storage);
     return normalizedLocale;
 };
 
@@ -63,14 +57,9 @@ export const resolveLocale = ({
 
 export const getResolvedLocale = ({ browserLocale, storage } = {}) =>
     (() => {
-        let storedLocale = null;
-        try {
-            storedLocale =
-                storage?.getItem(LOCALE_STORAGE_KEY) ??
-                globalThis.localStorage?.getItem(LOCALE_STORAGE_KEY);
-        } catch {
-            storedLocale = null;
-        }
+        const storedLocale =
+            getStorageItem(LOCALE_STORAGE_KEY, null, storage) ??
+            getStorageItem(LOCALE_STORAGE_KEY, null);
 
         if (storedLocale !== null && storedLocale !== undefined) {
             return normalizeLocale(storedLocale);

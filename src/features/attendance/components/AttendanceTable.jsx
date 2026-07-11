@@ -8,8 +8,18 @@ import {
   EmptyState,
   LoadingState
 } from '../../../components/ui/dashboard';
-
-const STATUS_CYCLE = ['present', 'late', 'absent', 'not_scheduled'];
+import { createBulkAttendanceUpdates } from '../utils/attendanceSelectionData';
+import {
+  calculateAttendanceTableStatistics,
+  filterAndSortAttendanceTableStudents,
+  getAttendanceTableStudentStats,
+  getNextLegacyAttendanceStatus,
+  getPaginatedAttendanceTableStudents,
+} from '../utils/attendanceTableData';
+import {
+  getAttendanceSessionTitle,
+  getAttendanceStudentInitials,
+} from '../utils/attendanceDisplayData';
 
 /**
  * Main Attendance Table Component
@@ -65,79 +75,46 @@ const AttendanceTable = ({
     excused: t('attendance.status.excused'),
   };
 
-  // Filter and sort students
-  const filteredStudents = useMemo(() => {
-    let filtered = students.filter(student =>
-      (student.fullName || student.name || '').toLowerCase().includes(filterQuery.toLowerCase())
-    );
-
-    // Apply status filter
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(student => {
-        const studentStatuses = sessions.map(session =>
-          attendanceData[student.id]?.[session.id] || 'not_scheduled'
-        );
-        return studentStatuses.some(status => status === statusFilter);
-      });
-    }
-
-    // Sort students
-    filtered.sort((a, b) => {
-      const aValue = a[sortConfig.key] || '';
-      const bValue = b[sortConfig.key] || '';
-
-      if (sortConfig.direction === 'asc') {
-        return aValue.localeCompare(bValue);
-      }
-      return bValue.localeCompare(aValue);
-    });
-
-    return filtered;
-  }, [students, filterQuery, statusFilter, sortConfig, sessions, attendanceData]);
+  const filteredStudents = useMemo(
+    () =>
+      filterAndSortAttendanceTableStudents({
+        students,
+        sessions,
+        attendanceData,
+        filterQuery,
+        statusFilter,
+        sortConfig,
+      }),
+    [students, filterQuery, statusFilter, sortConfig, sessions, attendanceData]
+  );
 
   // Pagination
   const itemsPerPage = adminMode ? 50 : 25;
   const totalPages = Math.ceil(filteredStudents.length / itemsPerPage);
-  const paginatedStudents = useMemo(() => {
-    const start = currentPage * itemsPerPage;
-    return filteredStudents.slice(start, start + itemsPerPage);
-  }, [filteredStudents, currentPage, itemsPerPage]);
+  const paginatedStudents = useMemo(
+    () =>
+      getPaginatedAttendanceTableStudents({
+        students: filteredStudents,
+        currentPage,
+        itemsPerPage,
+      }),
+    [filteredStudents, currentPage, itemsPerPage]
+  );
 
-  // Calculate attendance statistics
-  const statistics = useMemo(() => {
-    const totals = {
-      present: 0,
-      late: 0,
-      absent: 0,
-      not_scheduled: 0,
-      excused: 0,
-      total: 0
-    };
-
-    students.forEach(student => {
-      sessions.forEach(session => {
-        const status = attendanceData[student.id]?.[session.id] || 'not_scheduled';
-        totals[status]++;
-        totals.total++;
-      });
-    });
-
-    // Calculate percentages
-    const percentages = {};
-    Object.keys(totals).forEach(key => {
-      if (key !== 'total') {
-        percentages[key] = totals.total > 0 ? (totals[key] / totals.total) * 100 : 0;
-      }
-    });
-
-    return { totals, percentages };
-  }, [students, sessions, attendanceData]);
+  const statistics = useMemo(
+    () =>
+      calculateAttendanceTableStatistics({
+        students,
+        sessions,
+        attendanceData,
+      }),
+    [students, sessions, attendanceData]
+  );
 
   // Handle cell click - cycle through status
   const handleCellClick = useCallback((studentId, sessionId) => {
     const currentStatus = attendanceData[studentId]?.[sessionId] || 'not_scheduled';
-    const currentIndex = STATUS_CYCLE.indexOf(currentStatus);
-    const nextStatus = STATUS_CYCLE[(currentIndex + 1) % STATUS_CYCLE.length];
+    const nextStatus = getNextLegacyAttendanceStatus(currentStatus);
 
     // Create unique cell key
     const cellKey = `${studentId}-${sessionId}`;
@@ -161,10 +138,7 @@ const AttendanceTable = ({
   const handleBulkUpdate = useCallback((status) => {
     if (selectedCells.size === 0 || !onBulkUpdate) return;
 
-    const updates = Array.from(selectedCells).map(cellKey => {
-      const [studentId, sessionId] = cellKey.split('-').map(Number);
-      return { studentId, sessionId, status };
-    });
+    const updates = createBulkAttendanceUpdates(selectedCells, status);
 
     onBulkUpdate(updates);
     setSelectedCells(new Set());
@@ -342,15 +316,11 @@ const AttendanceTable = ({
           </thead>
           <tbody>
             {paginatedStudents.map(student => {
-              const studentStats = sessions.reduce((stats, session) => {
-                const status = attendanceData[student.id]?.[session.id] || 'not_scheduled';
-                stats[status] = (stats[status] || 0) + 1;
-                return stats;
-              }, {});
-
-              const attendanceRate = sessions.length > 0
-                ? ((studentStats.present || 0) / sessions.length) * 100
-                : 0;
+              const { studentStats, attendanceRate } = getAttendanceTableStudentStats({
+                student,
+                sessions,
+                attendanceData,
+              });
 
               return (
                 <tr key={student.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
@@ -358,11 +328,10 @@ const AttendanceTable = ({
                     <div className="flex items-center gap-3">
                       {showStudentAvatars && (
                         <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs font-medium text-gray-600 dark:text-gray-300">
-                          {(student.fullName || student.name || t('common.userFallback'))
-                            .split(' ')
-                            .map(n => n[0])
-                            .join('')
-                            .toUpperCase()}
+                          {getAttendanceStudentInitials(
+                            student.fullName || student.name,
+                            t('common.userFallback')
+                          )}
                         </div>
                       )}
                       <div className="min-w-0">
@@ -394,9 +363,8 @@ const AttendanceTable = ({
                         aria-label={t('attendance.legacy.changeAttendanceAria', {
                           student: student.name || student.fullName || t('common.userFallback'),
                           session:
-                            session.title ||
-                            t('attendance.fallbacks.sessionWithId', {
-                              id: session.sessionIndex,
+                            getAttendanceSessionTitle(t, session, {
+                              fallbackId: session.sessionIndex,
                             }),
                         })}
                       >

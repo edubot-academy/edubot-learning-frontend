@@ -22,6 +22,12 @@ import {
   AttendanceErrorState,
 } from './AttendanceLoadingStates';
 import { useAccessibility } from '../hooks/useAccessibility';
+import { formatAttendanceSessionDate } from '../utils/attendanceDateData';
+import { getAttendanceSessionTitle } from '../utils/attendanceDisplayData';
+import {
+  createAttendanceMatrixFromSessionResponses,
+  normalizeLegacyAttendanceTableList,
+} from '../utils/attendanceTableLoadData';
 
 /**
  * Refactored Attendance Table View
@@ -54,21 +60,20 @@ const RefactoredAttendanceTableView = ({
   });
   const language = i18n.resolvedLanguage || i18n.language || undefined;
 
-  const getSessionTitle = useCallback((session = {}) => (
-    session.title || t('attendance.fallbacks.sessionWithId', { id: session.sessionIndex || session.id })
-  ), [t]);
+  const getSessionTitle = useCallback(
+    (session = {}) => getAttendanceSessionTitle(t, session),
+    [t]
+  );
 
-  const formatSessionDate = useCallback((value, fallback = '-') => {
-    if (!value) return fallback;
-
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return t('attendance.fallbacks.unknownDate');
-
-    return date.toLocaleDateString(language, {
-      month: 'short',
-      day: 'numeric',
-    });
-  }, [language, t]);
+  const formatSessionDate = useCallback(
+    (value, fallback = '-') =>
+      formatAttendanceSessionDate(value, {
+        language,
+        missingFallback: fallback,
+        invalidFallback: t('attendance.fallbacks.unknownDate'),
+      }),
+    [language, t]
+  );
 
   const loadData = useCallback(async () => {
     if (!groupId) return;
@@ -82,13 +87,8 @@ const RefactoredAttendanceTableView = ({
         fetchCourseSessions({ groupId }),
       ]);
 
-      const studentsList = Array.isArray(studentsRes)
-        ? studentsRes
-        : studentsRes?.items || studentsRes?.data || [];
-
-      const sessionsList = Array.isArray(sessionsRes)
-        ? sessionsRes
-        : sessionsRes?.items || sessionsRes?.data || [];
+      const studentsList = normalizeLegacyAttendanceTableList(studentsRes);
+      const sessionsList = normalizeLegacyAttendanceTableList(sessionsRes);
 
       setStudents(studentsList);
       setSessions(sessionsList);
@@ -99,27 +99,12 @@ const RefactoredAttendanceTableView = ({
         );
 
         const attendanceResults = await Promise.all(attendancePromises);
-        const consolidatedAttendance = {};
-
-        attendanceResults.forEach((sessionAttendance, index) => {
-          const sessionId = sessionsList[index]?.id;
-          const attendanceItems = Array.isArray(sessionAttendance)
-            ? sessionAttendance
-            : sessionAttendance?.items || sessionAttendance?.rows || sessionAttendance?.data || [];
-
-          attendanceItems.forEach((record) => {
-            const studentId = record.studentId || record.userId;
-            if (!studentId || !sessionId) return;
-
-            if (!consolidatedAttendance[studentId]) {
-              consolidatedAttendance[studentId] = {};
-            }
-
-            consolidatedAttendance[studentId][sessionId] = record.status;
-          });
-        });
-
-        setAttendanceData(consolidatedAttendance);
+        setAttendanceData(
+          createAttendanceMatrixFromSessionResponses({
+            sessions: sessionsList,
+            attendanceResults,
+          })
+        );
       } else {
         setAttendanceData({});
       }

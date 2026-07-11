@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
-import { SESSION_ATTENDANCE_STATUS } from '@shared/contracts';
 import {
     fetchSessionAttendance,
     markSessionAttendanceBulk,
@@ -16,51 +15,19 @@ import {
     TENANT_FEATURES,
 } from '@shared/utils/tenantFeatures';
 import { parseApiError } from '@shared/api/error';
-
-const toCourseList = (payload) => {
-    if (Array.isArray(payload?.items)) return payload.items;
-    if (Array.isArray(payload?.courses)) return payload.courses;
-    if (Array.isArray(payload?.data)) return payload.data;
-    if (Array.isArray(payload)) return payload;
-    return [];
-};
-
-const toGroupList = (payload) => {
-    if (Array.isArray(payload?.items)) return payload.items;
-    if (Array.isArray(payload?.groups)) return payload.groups;
-    if (Array.isArray(payload?.data)) return payload.data;
-    if (Array.isArray(payload)) return payload;
-    return [];
-};
-
-const toSessionList = (payload) => {
-    if (Array.isArray(payload?.items)) return payload.items;
-    if (Array.isArray(payload?.sessions)) return payload.sessions;
-    if (Array.isArray(payload?.data)) return payload.data;
-    if (Array.isArray(payload)) return payload;
-    return [];
-};
-
-const toAttendanceItems = (payload) => {
-    if (Array.isArray(payload?.items)) return payload.items;
-    if (Array.isArray(payload?.rows)) return payload.rows;
-    if (Array.isArray(payload?.data)) return payload.data;
-    if (Array.isArray(payload)) return payload;
-    return [];
-};
-
-const toRosterList = (payload) => {
-    if (Array.isArray(payload?.items)) return payload.items;
-    if (Array.isArray(payload?.students)) return payload.students;
-    if (Array.isArray(payload?.data)) return payload.data;
-    if (Array.isArray(payload)) return payload;
-    return [];
-};
-
-const isAttendanceCourseType = (course = {}) => {
-    const type = String(course?.courseType || course?.type || '').toLowerCase();
-    return type === 'offline' || type === 'online_live';
-};
+import {
+    calculateSessionAttendanceStats,
+    cloneRowsMap,
+    createSessionAttendanceRowsMap,
+    filterSessionAttendanceReportItems,
+    hasSessionAttendanceChanges,
+    isAttendanceCourseType,
+    setSessionAttendanceRowNotes,
+    setSessionAttendanceRowStatus,
+    toCourseList,
+    toGroupList,
+    toSessionList,
+} from '../utils/attendanceWorkspaceData';
 
 const getAttendanceErrorMessage = (error, t) => {
     const status = error?.response?.status;
@@ -73,11 +40,6 @@ const getAttendanceErrorMessage = (error, t) => {
 
     return parseApiError(error, t('attendance.errors.server')).message;
 };
-
-const cloneRowsMap = (map) =>
-    Object.fromEntries(
-        Object.entries(map || {}).map(([key, value]) => [key, { ...value }])
-    );
 
 export const useAttendanceWorkspace = (user) => {
     const { t } = useTranslation();
@@ -269,35 +231,9 @@ export const useAttendanceWorkspace = (user) => {
                     : Promise.resolve([]),
             ]);
 
-            const rosterItems = toRosterList(studentsRes);
-            const attendanceRows = toAttendanceItems(attendanceRes);
-
-            const attendanceByStudentId = new Map(
-                attendanceRows.map((item) => [
-                    Number(item.studentId || item.userId),
-                    {
-                        status: item.status,
-                        notes: item.notes || '',
-                        joinedAt: item.joinedAt || undefined,
-                        leftAt: item.leftAt || undefined,
-                    },
-                ])
-            );
-
-            const nextRows = {};
-            rosterItems.forEach((student) => {
-                const studentId = Number(student.userId || student.id);
-                if (!studentId) return;
-
-                const existing = attendanceByStudentId.get(studentId);
-                nextRows[studentId] = {
-                    studentId,
-                    fullName: student.fullName || student.user?.fullName || `#${studentId}`,
-                    status: existing?.status || SESSION_ATTENDANCE_STATUS.PRESENT,
-                    notes: existing?.notes || '',
-                    joinedAt: existing?.joinedAt,
-                    leftAt: existing?.leftAt,
-                };
+            const nextRows = createSessionAttendanceRowsMap({
+                rosterPayload: studentsRes,
+                attendancePayload: attendanceRes,
             });
 
             setRowsMap(nextRows);
@@ -340,50 +276,20 @@ export const useAttendanceWorkspace = (user) => {
         : false;
     const students = useMemo(() => Object.values(rowsMap), [rowsMap]);
 
-    const hasAttendanceChanges = useMemo(() => {
-        const currentIds = Object.keys(rowsMap);
-        const initialIds = Object.keys(initialRowsMap);
+    const hasAttendanceChanges = useMemo(
+        () => hasSessionAttendanceChanges(rowsMap, initialRowsMap),
+        [rowsMap, initialRowsMap]
+    );
 
-        if (currentIds.length !== initialIds.length) return currentIds.length > 0;
+    const attendanceStats = useMemo(
+        () => calculateSessionAttendanceStats(students),
+        [students]
+    );
 
-        return currentIds.some((studentId) => {
-            const current = rowsMap[studentId];
-            const initial = initialRowsMap[studentId];
-            if (!current || !initial) return true;
-
-            return (
-                current.status !== initial.status ||
-                (current.notes || '').trim() !== (initial.notes || '').trim() ||
-                (current.joinedAt || '') !== (initial.joinedAt || '') ||
-                (current.leftAt || '') !== (initial.leftAt || '')
-            );
-        });
-    }, [rowsMap, initialRowsMap]);
-
-    const attendanceStats = useMemo(() => {
-        const present = students.filter(
-            (student) => student.status === SESSION_ATTENDANCE_STATUS.PRESENT
-        ).length;
-        const late = students.filter(
-            (student) => student.status === SESSION_ATTENDANCE_STATUS.LATE
-        ).length;
-        const absent = students.filter(
-            (student) => student.status === SESSION_ATTENDANCE_STATUS.ABSENT
-        ).length;
-        const excused = students.filter(
-            (student) => student.status === SESSION_ATTENDANCE_STATUS.EXCUSED
-        ).length;
-
-        const total = students.length;
-        const rate = total ? Math.round(((present + late + excused) / total) * 100) : 0;
-
-        return { present, late, absent, excused, total, rate };
-    }, [students]);
-
-    const filteredReportItems = useMemo(() => {
-        if (reportFilter === 'all') return students;
-        return students.filter((item) => String(item.status) === reportFilter);
-    }, [reportFilter, students]);
+    const filteredReportItems = useMemo(
+        () => filterSessionAttendanceReportItems(students, reportFilter),
+        [reportFilter, students]
+    );
 
     const handleStatusChange = (studentId, status) => {
         setWorkspaceNotice({
@@ -391,10 +297,7 @@ export const useAttendanceWorkspace = (user) => {
             title: t('attendance.notices.unsavedTitle'),
             message: t('attendance.notices.statusChanged'),
         });
-        setRowsMap((prev) => ({
-            ...prev,
-            [studentId]: { ...prev[studentId], status },
-        }));
+        setRowsMap((prev) => setSessionAttendanceRowStatus(prev, studentId, status));
     };
 
     const handleNotesChange = (studentId, notes) => {
@@ -403,10 +306,7 @@ export const useAttendanceWorkspace = (user) => {
             title: t('attendance.notices.unsavedTitle'),
             message: t('attendance.notices.notesChanged'),
         });
-        setRowsMap((prev) => ({
-            ...prev,
-            [studentId]: { ...prev[studentId], notes },
-        }));
+        setRowsMap((prev) => setSessionAttendanceRowNotes(prev, studentId, notes));
     };
 
     const handleSubmitAttendance = async () => {

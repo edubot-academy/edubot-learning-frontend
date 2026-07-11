@@ -2,6 +2,13 @@ import { useState, useContext, useCallback, useMemo, useEffect } from 'react';
 import { AuthContext } from './AuthContext';
 import { FavouritesContext } from './FavouritesContext';
 import { fetchFavorites, addFavorite, removeFavorite } from '../features/favorites/api';
+import {
+    loadStoredFavourites,
+    mergeFavoriteImages,
+    normalizeFavoriteCourse,
+    normalizeFavoriteItems,
+    saveStoredFavourites,
+} from '../features/favorites/storage';
 
 export const FavouritesProvider = ({ children }) => {
     const { user } = useContext(AuthContext);
@@ -10,53 +17,13 @@ export const FavouritesProvider = ({ children }) => {
     const [loading, setLoading] = useState(false);
     const [initialized, setInitialized] = useState(false);
 
-    const normalizeFavorites = useCallback((data = []) => {
-        const itemsArray = Array.isArray(data?.items)
-            ? data.items
-            : Array.isArray(data)
-              ? data
-              : [];
-
-        return itemsArray.map((item) => {
-            const course = item.course || item;
-
-            const coverImageUrl =
-                course.coverImageUrl ||
-                course.coverImage ||
-                course.image ||
-                course.thumbnail ||
-                course.thumbnailUrl ||
-                null;
-
-            return {
-                ...course,
-                coverImageUrl,
-                favoriteId: item.id || course.id,
-                addedAt: item.addedAt || new Date().toISOString(),
-            };
-        });
-    }, []);
-
-    const mergeWithExistingImages = useCallback((serverItems, existingItems) => {
-        const existingMap = new Map(existingItems.map((item) => [item.id, item]));
-
-        return serverItems.map((item) => {
-            const existing = existingMap.get(item.id);
-
-            return {
-                ...item,
-                coverImageUrl: item.coverImageUrl || existing?.coverImageUrl || null,
-            };
-        });
-    }, []);
-
     const mergeGuestFavoritesIntoBackend = useCallback(
         async (guestFavorites) => {
             if (!user || !guestFavorites?.length) return [];
 
             try {
                 const serverData = await fetchFavorites();
-                const serverNormalized = normalizeFavorites(serverData);
+                const serverNormalized = normalizeFavoriteItems(serverData);
 
                 const serverIds = new Set(serverNormalized.map((item) => item.id));
 
@@ -65,15 +32,15 @@ export const FavouritesProvider = ({ children }) => {
                 await Promise.allSettled(toAdd.map((item) => addFavorite(item.id)));
 
                 const refreshed = await fetchFavorites();
-                const normalized = normalizeFavorites(refreshed);
+                const normalized = normalizeFavoriteItems(refreshed);
 
-                return mergeWithExistingImages(normalized, guestFavorites);
+                return mergeFavoriteImages(normalized, guestFavorites);
             } catch (error) {
                 console.error('Failed to merge favorites', error);
                 return guestFavorites;
             }
         },
-        [user, normalizeFavorites, mergeWithExistingImages]
+        [user]
     );
 
     useEffect(() => {
@@ -81,8 +48,7 @@ export const FavouritesProvider = ({ children }) => {
             setLoading(true);
 
             try {
-                const saved = localStorage.getItem('favourites');
-                const guestFavorites = saved ? JSON.parse(saved) : [];
+                const guestFavorites = loadStoredFavourites();
 
                 if (user) {
                     if (guestFavorites.length > 0) {
@@ -90,7 +56,7 @@ export const FavouritesProvider = ({ children }) => {
                         setFavourites(merged);
                     } else {
                         const serverData = await fetchFavorites();
-                        const normalized = normalizeFavorites(serverData);
+                        const normalized = normalizeFavoriteItems(serverData);
                         setFavourites(normalized);
                     }
                 } else {
@@ -105,31 +71,16 @@ export const FavouritesProvider = ({ children }) => {
         };
 
         loadFavorites();
-    }, [user, normalizeFavorites, mergeGuestFavoritesIntoBackend]);
+    }, [user, mergeGuestFavoritesIntoBackend]);
 
     useEffect(() => {
         if (!initialized) return;
-
-        if (favourites.length > 0) {
-            localStorage.setItem('favourites', JSON.stringify(favourites));
-        } else {
-            localStorage.removeItem('favourites');
-        }
+        saveStoredFavourites(favourites);
     }, [favourites, initialized]);
 
     const toggleFavourite = useCallback(
         async (course) => {
-            const normalizedCourse = {
-                ...course,
-                coverImageUrl:
-                    course.coverImageUrl ||
-                    course.coverImage ||
-                    course.image ||
-                    course.thumbnail ||
-                    course.thumbnailUrl ||
-                    null,
-                addedAt: new Date().toISOString(),
-            };
+            const normalizedCourse = normalizeFavoriteCourse(course);
 
             const isFav = favourites.some((item) => item.id === course.id);
 
@@ -189,15 +140,15 @@ export const FavouritesProvider = ({ children }) => {
         try {
             setLoading(true);
             const data = await fetchFavorites();
-            const normalized = normalizeFavorites(data);
+            const normalized = normalizeFavoriteItems(data);
 
-            setFavourites((prev) => mergeWithExistingImages(normalized, prev));
+            setFavourites((prev) => mergeFavoriteImages(normalized, prev));
         } catch (error) {
             console.error('Failed to refresh favourites', error);
         } finally {
             setLoading(false);
         }
-    }, [user, normalizeFavorites, mergeWithExistingImages]);
+    }, [user]);
 
     const value = useMemo(
         () => ({

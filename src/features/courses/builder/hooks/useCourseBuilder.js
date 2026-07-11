@@ -40,6 +40,11 @@ import {
     loadEditCourseBuilderData,
     mapSkillsToOptions,
 } from '../utils/courseBuilderDataLoaders';
+import {
+    clearDraftCourse,
+    loadDraftCourse,
+    saveDraftCourse,
+} from '../storage';
 
 const getOptionalSkillLabel = (t) =>
     t('instructorDashboard.courseBuilder.placeholders.optionalSkill');
@@ -180,44 +185,33 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
                 setSkillOptions(localizeSkillOptions(loadedSkillOptions, translate));
 
                 // Load saved draft if exists
-                const saved = localStorage.getItem('draftCourse');
-                if (saved) {
-                    let parsed = null;
+                const parsed = loadDraftCourse();
+                if (parsed) {
+                    const sanitizedDraftInfo = {
+                        ...(parsed.courseInfo || {}),
+                    };
 
-                    try {
-                        parsed = JSON.parse(saved);
-                    } catch (error) {
-                        console.warn('Invalid course draft ignored', error);
-                        localStorage.removeItem('draftCourse');
+                    if (typeof sanitizedDraftInfo.coverImageUrl === 'string' && sanitizedDraftInfo.coverImageUrl.startsWith('blob:')) {
+                        sanitizedDraftInfo.coverImageUrl = '';
                     }
 
-                    if (parsed) {
-                        const sanitizedDraftInfo = {
-                            ...(parsed.courseInfo || {}),
-                        };
-
-                        if (typeof sanitizedDraftInfo.coverImageUrl === 'string' && sanitizedDraftInfo.coverImageUrl.startsWith('blob:')) {
-                            sanitizedDraftInfo.coverImageUrl = '';
-                        }
-
-                        if (sanitizedDraftInfo.cover && typeof sanitizedDraftInfo.cover === 'object') {
-                            sanitizedDraftInfo.cover = null;
-                        }
-
-                        pendingCoverNameRef.current =
-                            typeof sanitizedDraftInfo.pendingCoverName === 'string'
-                                ? sanitizedDraftInfo.pendingCoverName
-                                : '';
-
-                        setCourseInfo((prev) => ({
-                            ...prev,
-                            ...sanitizedDraftInfo,
-                        }));
-                        setCourseId(parsed.courseId || null);
-                        setStep(parsed.step || 1);
-                        setDraftLoadedAt(parsed.savedAt || '');
-                        setLastDraftSavedAt(parsed.savedAt || '');
+                    if (sanitizedDraftInfo.cover && typeof sanitizedDraftInfo.cover === 'object') {
+                        sanitizedDraftInfo.cover = null;
                     }
+
+                    pendingCoverNameRef.current =
+                        typeof sanitizedDraftInfo.pendingCoverName === 'string'
+                            ? sanitizedDraftInfo.pendingCoverName
+                            : '';
+
+                    setCourseInfo((prev) => ({
+                        ...prev,
+                        ...sanitizedDraftInfo,
+                    }));
+                    setCourseId(parsed.courseId || null);
+                    setStep(parsed.step || 1);
+                    setDraftLoadedAt(parsed.savedAt || '');
+                    setLastDraftSavedAt(parsed.savedAt || '');
                 }
             } catch (error) {
                 console.error('Failed to load categories', error);
@@ -236,7 +230,7 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
             }
         } else {
             // Edit mode must always hydrate from the API for the current course.
-            // The previous localStorage gate could skip fetchSections entirely and leave
+            // The previous draft-cache gate could skip fetchSections entirely and leave
             // the builder rendering stale default state.
             try {
                 const {
@@ -316,7 +310,12 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
                         : courseInfo.coverImageUrl,
             };
             const savedAt = new Date().toISOString();
-            localStorage.setItem('draftCourse', JSON.stringify({ courseInfo: draftCourseInfo, courseId, step, savedAt }));
+            saveDraftCourse({
+                courseInfo: draftCourseInfo,
+                courseId,
+                step,
+                savedAt,
+            });
             setLastDraftSavedAt(savedAt);
         }
     }, [mode, courseInfo, courseId, step]);
@@ -325,7 +324,7 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
         if (mode !== 'create') return { cleared: false };
 
         if (courseId) {
-            localStorage.removeItem('draftCourse');
+            clearDraftCourse();
             setDraftLoadedAt('');
             setLastDraftSavedAt('');
             return { cleared: true, preservedServerDraft: true };
@@ -333,7 +332,7 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
 
         draftDiscardedRef.current = true;
         defaultCurriculumRef.current = createDefaultCurriculum(DEFAULT_COURSE_INFO.languageCode);
-        localStorage.removeItem('draftCourse');
+        clearDraftCourse();
         setCourseInfo(DEFAULT_COURSE_INFO);
         setCurriculum(defaultCurriculumRef.current);
         setStep(1);

@@ -2,6 +2,27 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.18.3] - 2026-07-11
+
+### Added
+
+- Attendance refactor coverage: added focused unit tests for attendance API parameter building, validation, caching, downloads, legacy API compatibility, table/card/summary data helpers, selection logic, and workspace data normalization.
+- Shared persistence helpers: added reusable storage utilities for localStorage/sessionStorage access plus focused tests for storage failure handling and JSON parsing cleanup.
+- Auth and course-builder storage modules: added dedicated helpers and tests for pending auth actions, cart/favourites persistence, course builder drafts, cached sessions, and video-player utility behavior.
+
+### Changed
+
+- Attendance workspace and table logic now use extracted data helpers for normalization, filtering, statistics, status labels, date formatting, selected-cell updates, and session attendance matrix construction.
+- Auth, cart, favourites, resource progress, dark mode, locale, profile, assessment, course builder, and video-player flows now route storage access through shared helper APIs for consistent error handling.
+- Video HLS detection, quality labels, fit-mode resolution, and recovery counters were moved into testable shared utilities while preserving player behavior.
+
+### Verification
+
+- `npm test -- src/shared/utils/storage.spec.js src/shared/auth/sessionStorage.spec.js src/shared/utils/videoPlayer.spec.js src/features/auth/storage.spec.js src/features/auth/utils/postLogin.spec.js src/features/cart/storage.spec.js src/features/favorites/storage.spec.js src/features/courses/builder/storage.spec.js src/features/attendance/api/attendanceApi.spec.js src/features/attendance/api/attendanceCache.spec.js src/features/attendance/api/attendanceDownload.spec.js src/features/attendance/api/attendanceParams.spec.js src/features/attendance/api/attendanceValidation.spec.js src/features/attendance/api/legacyAttendanceApi.spec.js src/features/attendance/utils/attendanceData.spec.js src/features/attendance/utils/attendanceWorkspaceData.spec.js src/features/attendance/utils/attendanceTableLoadData.spec.js src/features/attendance/utils/attendanceSummaryData.spec.js src/features/attendance/utils/attendanceSelectionData.spec.js`
+- `npm run build`
+
+---
+
 ## [1.18.2] - 2026-06-25
 
 ### Added

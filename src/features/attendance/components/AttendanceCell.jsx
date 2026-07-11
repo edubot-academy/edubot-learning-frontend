@@ -9,6 +9,7 @@ import {
   ACCESSIBILITY,
   ATTENDANCE_DESIGN_SYSTEM 
 } from '../constants/attendanceConfig';
+import { getAttendanceSessionTitle } from '../utils/attendanceDisplayData';
 
 /**
  * Individual Attendance Cell Component
@@ -94,7 +95,7 @@ const AttendanceCell = memo(({
 
 	  const ariaLabel = t(ACCESSIBILITY.labels.attendanceCell, {
 	    studentName,
-	    sessionTitle: sessionTitle || t('attendance.fallbacks.sessionWithId', { id: sessionId }),
+	    sessionTitle: getAttendanceSessionTitle(t, { title: sessionTitle, id: sessionId }),
 	  });
 
   return (

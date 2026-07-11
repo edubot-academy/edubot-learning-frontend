@@ -9,6 +9,7 @@ import {
 } from '@services/api';
 import { parseApiError } from '@shared/api/error';
 import { normalizeUserAvatar } from '@shared/utils/avatar';
+import { loadCachedUser, saveCachedUser } from '@shared/auth/sessionStorage';
 import { DEFAULT_NOTIFICATION_SETTINGS } from '../utils/studentDashboard.constants.js';
 
 export const useStudentProfileSettings = ({ studentId }) => {
@@ -125,22 +126,14 @@ export const useStudentProfileSettings = ({ studentId }) => {
                     phoneNumber: nextUser.phoneNumber || phoneNumber,
                 }));
 
-                try {
-                    const storedRaw = localStorage.getItem('user');
-                    const stored = storedRaw ? JSON.parse(storedRaw) : {};
-                    const normalizedUser = normalizeUserAvatar({
-                        ...stored,
-                        ...nextUser,
-                        fullName: nextUser.fullName || fullName,
-                        phoneNumber: nextUser.phoneNumber || phoneNumber,
-                    });
-                    localStorage.setItem(
-                        'user',
-                        JSON.stringify(normalizedUser)
-                    );
-                } catch {
-                    // Profile is already persisted on the backend; local cache sync is best effort.
-                }
+                const stored = loadCachedUser() || {};
+                const normalizedUser = normalizeUserAvatar({
+                    ...stored,
+                    ...nextUser,
+                    fullName: nextUser.fullName || fullName,
+                    phoneNumber: nextUser.phoneNumber || phoneNumber,
+                });
+                saveCachedUser(normalizedUser);
 
                 toast.success(t('studentDashboard.profile.toasts.profileSaved'));
                 return true;

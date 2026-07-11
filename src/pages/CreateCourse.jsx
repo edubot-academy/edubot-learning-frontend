@@ -16,6 +16,7 @@ import { getFirstInvalidLessonTarget } from '../features/courses/builder/validat
 // API imports (same as original)
 import { markCoursePending } from '../features/courses/api';
 import { isForbiddenError, parseApiError } from '../shared/api/error';
+import { clearDraftCourse } from '../features/courses/builder/storage';
 
 const formatDraftTime = (isoValue, language) => {
     if (!isoValue) return '';
@@ -131,7 +132,7 @@ const CreateCourse = () => {
     // Handle save draft (create mode specific)
     const handleSaveDraft = () => {
         toast.success(t('instructorDashboard.createCoursePage.toasts.savedForReview'));
-        localStorage.removeItem('draftCourse');
+        clearDraftCourse();
         navigate('/instructor/courses');
     };
 
@@ -145,7 +146,7 @@ const CreateCourse = () => {
         try {
             await markCoursePending(courseId);
             toast.success(t('instructorDashboard.createCoursePage.toasts.submittedForApproval'));
-            localStorage.removeItem('draftCourse');
+            clearDraftCourse();
             navigate('/instructor/courses');
         } catch (error) {
             console.error('Failed to submit for approval', error);

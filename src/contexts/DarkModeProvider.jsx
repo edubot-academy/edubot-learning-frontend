@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { DarkModeContext } from './DarkModeContext';
+import { getStorageItem, setStorageItem } from '@shared/utils/storage';
 
 export const DarkModeProvider = ({ children }) => {
     const [darkMode, setDarkMode] = useState(() => {
         if (typeof window !== 'undefined') {
-            const stored = localStorage.getItem('darkMode');
+            const stored = getStorageItem('darkMode');
             if (stored) {
                 return stored === 'dark';
             }
@@ -18,13 +19,11 @@ export const DarkModeProvider = ({ children }) => {
         root.classList.toggle('dark', darkMode);
 
         if (typeof window !== 'undefined') {
-            localStorage.setItem('darkMode', darkMode ? 'dark' : 'light');
+            setStorageItem('darkMode', darkMode ? 'dark' : 'light');
         }
     }, [darkMode]);
 
-    return (
-        <DarkModeContext.Provider value={{ darkMode, setDarkMode }}>
-            {children}
-        </DarkModeContext.Provider>
-    );
+    const value = useMemo(() => ({ darkMode, setDarkMode }), [darkMode]);
+
+    return <DarkModeContext.Provider value={value}>{children}</DarkModeContext.Provider>;
 };

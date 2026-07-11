@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import Button from '@shared-ui/Button';
 import BasicModal from '@shared-ui/BasicModal';
 import { getAuthAcquisitionPath } from '@shared/auth-config';
+import { savePendingAuthAction } from '@features/auth/storage';
 
 const UnauthModal = ({
     isOpen,
@@ -19,14 +20,13 @@ const UnauthModal = ({
     const storePendingAction = () => {
         if (!courseId) return;
 
-        const pendingAction = {
+        savePendingAuthAction({
             type: actionType,
             courseId,
             courseTitle,
             course,
             timestamp: Date.now(),
-        };
-        localStorage.setItem('pendingAction', JSON.stringify(pendingAction));
+        });
     };
 
     const handleRegister = () => {

@@ -2,7 +2,14 @@ import { useState, useContext, useCallback, useMemo, useEffect, useRef } from 'r
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from './AuthContext';
 import { CartContext } from './CartContext';
-import { fetchCart as fetchCartApi, addCourseToCart, removeCourseFromCart } from '@services/api';
+import { fetchCart as fetchCartApi, addCourseToCart, removeCourseFromCart } from '../features/cart/api';
+import {
+    clearStoredCart,
+    createOptimisticCartItem,
+    loadStoredCart,
+    normalizeCartItems,
+    saveStoredCart,
+} from '../features/cart/storage';
 
 export const CartProvider = ({ children }) => {
     const { t } = useTranslation();
@@ -11,41 +18,6 @@ export const CartProvider = ({ children }) => {
     const [initialized, setInitialized] = useState(false);
     const { user } = useContext(AuthContext);
     const previousUserRef = useRef(user);
-
-    const normalizeCartItems = useCallback((data = []) => {
-        const itemsArray = Array.isArray(data?.items)
-            ? data.items
-            : Array.isArray(data)
-              ? data
-              : [];
-        return itemsArray.map((item) => {
-            const course = item.course || item;
-            return {
-                ...course,
-                cartItemId: item.id || item.cartItemId || course.id,
-                addedAt: item.addedAt || new Date().toISOString(),
-                quantity: item.quantity || 1,
-            };
-        });
-    }, []);
-
-    const parseSavedCart = useCallback(() => {
-        try {
-            const saved = localStorage.getItem('cart');
-            const parsed = saved ? JSON.parse(saved) : [];
-            if (!Array.isArray(parsed)) return [];
-
-            return parsed
-                .filter((item) => item && typeof item === 'object')
-                .map((item) => ({
-                    ...item,
-                    cartItemId: item.cartItemId || item.id,
-                }));
-        } catch (error) {
-            console.error('Failed to parse saved cart', error);
-            return [];
-        }
-    }, []);
 
     const mergeGuestCartIntoBackend = useCallback(
         async (guestCart) => {
@@ -68,19 +40,19 @@ export const CartProvider = ({ children }) => {
                 const refreshed = await fetchCartApi();
                 const normalized = normalizeCartItems(refreshed);
                 setCartItems(normalized);
-                localStorage.setItem('cart', JSON.stringify(normalized));
+                saveStoredCart(normalized);
             } catch (error) {
                 console.error('Failed to merge cart', error);
             }
         },
-        [normalizeCartItems, user]
+        [user]
     );
 
     useEffect(() => {
         const loadCart = async () => {
             setLoading(true);
             try {
-                const savedCart = parseSavedCart();
+                const savedCart = loadStoredCart();
 
                 if (user) {
                     const serverData = await fetchCartApi();
@@ -90,7 +62,7 @@ export const CartProvider = ({ children }) => {
                         await mergeGuestCartIntoBackend(savedCart);
                     } else {
                         setCartItems(serverNormalized);
-                        localStorage.setItem('cart', JSON.stringify(serverNormalized));
+                        saveStoredCart(serverNormalized);
                     }
                 } else {
                     setCartItems(savedCart);
@@ -98,7 +70,7 @@ export const CartProvider = ({ children }) => {
             } catch (error) {
                 console.error('Failed to load cart:', error);
                 if (error.response?.status === 401 || error.response?.status === 403) {
-                    const savedCart = parseSavedCart();
+                    const savedCart = loadStoredCart();
                     setCartItems(savedCart);
                 }
             } finally {
@@ -108,21 +80,17 @@ export const CartProvider = ({ children }) => {
         };
 
         loadCart();
-    }, [user, normalizeCartItems, parseSavedCart, mergeGuestCartIntoBackend]);
+    }, [user, mergeGuestCartIntoBackend]);
 
     useEffect(() => {
         if (!initialized) return;
-        if (cartItems.length > 0) {
-            localStorage.setItem('cart', JSON.stringify(cartItems));
-        } else {
-            localStorage.removeItem('cart');
-        }
+        saveStoredCart(cartItems);
     }, [cartItems, initialized]);
 
     useEffect(() => {
         if (previousUserRef.current && !user) {
             setCartItems([]);
-            localStorage.removeItem('cart');
+            clearStoredCart();
         }
         previousUserRef.current = user;
     }, [user]);
@@ -141,16 +109,11 @@ export const CartProvider = ({ children }) => {
                 return { success: false, message: t('cartProvider.messages.alreadyInCart') };
             }
 
-            const cartItem = {
-                ...course,
-                cartItemId: `${course.id}_${Date.now()}`,
-                addedAt: new Date().toISOString(),
-                quantity: 1,
-            };
+            const cartItem = createOptimisticCartItem(course);
 
             setCartItems((prev) => {
                 const newCart = [...prev, cartItem];
-                localStorage.setItem('cart', JSON.stringify(newCart));
+                saveStoredCart(newCart);
                 return newCart;
             });
 
@@ -160,12 +123,12 @@ export const CartProvider = ({ children }) => {
                     const data = await fetchCartApi();
                     const normalized = normalizeCartItems(data);
                     setCartItems(normalized);
-                    localStorage.setItem('cart', JSON.stringify(normalized));
+                    saveStoredCart(normalized);
                 } catch (error) {
                     console.error('Failed to add to cart via API', error);
                     setCartItems((prev) => {
                         const updated = prev.filter((item) => item.id !== course.id);
-                        localStorage.setItem('cart', JSON.stringify(updated));
+                        saveStoredCart(updated);
                         return updated;
                     });
                     return { success: false, message: t('cartProvider.messages.addFailed') };
@@ -177,14 +140,14 @@ export const CartProvider = ({ children }) => {
                 message: t('cartProvider.messages.added'),
             };
         },
-        [user, normalizeCartItems, cartItems, t]
+        [user, cartItems, t]
     );
 
     const removeFromCart = useCallback(
         async (courseId) => {
             setCartItems((prev) => {
                 const updated = prev.filter((item) => item.id !== courseId);
-                localStorage.setItem('cart', JSON.stringify(updated));
+                saveStoredCart(updated);
                 return updated;
             });
 
@@ -214,7 +177,7 @@ export const CartProvider = ({ children }) => {
                 }
 
                 const updated = prev.filter((i) => i.cartItemId !== cartItemId);
-                localStorage.setItem('cart', JSON.stringify(updated));
+                saveStoredCart(updated);
                 return updated;
             });
 
@@ -241,7 +204,7 @@ export const CartProvider = ({ children }) => {
         }
 
         setCartItems([]);
-        localStorage.removeItem('cart');
+        clearStoredCart();
         return { success: true };
     }, [user, cartItems]);
 

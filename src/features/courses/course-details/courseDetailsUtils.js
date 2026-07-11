@@ -1,3 +1,5 @@
+import { getJsonStorageItem, getStorageItem, setJsonStorageItem, setStorageItem } from '@shared/utils/storage';
+
 const CHALLENGE_STORAGE_PREFIX = 'lessonChallengeState';
 
 export const getChallengeStorageKey = (courseId, lessonId) =>
@@ -5,24 +7,14 @@ export const getChallengeStorageKey = (courseId, lessonId) =>
 
 export const loadChallengeStateFromStorage = (courseId, lessonId) => {
     if (typeof window === 'undefined') return null;
-    try {
-        const raw = localStorage.getItem(getChallengeStorageKey(courseId, lessonId));
-        return raw ? JSON.parse(raw) : null;
-    } catch (error) {
-        console.warn('Failed to read challenge state', error);
-        return null;
-    }
+    return getJsonStorageItem(getChallengeStorageKey(courseId, lessonId), null);
 };
 
 export const saveChallengeStateToStorage = (courseId, lessonId, updates) => {
     if (typeof window === 'undefined') return;
-    try {
-        const existing = loadChallengeStateFromStorage(courseId, lessonId) || {};
-        const next = { ...existing, ...updates };
-        localStorage.setItem(getChallengeStorageKey(courseId, lessonId), JSON.stringify(next));
-    } catch (error) {
-        console.warn('Failed to persist challenge state', error);
-    }
+    const existing = loadChallengeStateFromStorage(courseId, lessonId) || {};
+    const next = { ...existing, ...updates };
+    setJsonStorageItem(getChallengeStorageKey(courseId, lessonId), next);
 };
 
 export const getActiveSectionStorageKey = (courseId) => `active_section_${courseId}`;
@@ -30,13 +22,13 @@ export const getActiveSectionStorageKey = (courseId) => `active_section_${course
 export const getStoredActiveSectionId = (courseId) => {
     if (typeof window === 'undefined') return null;
 
-    const storedSection = localStorage.getItem(getActiveSectionStorageKey(courseId));
+    const storedSection = getStorageItem(getActiveSectionStorageKey(courseId));
     return storedSection ? Number(storedSection) : null;
 };
 
 export const saveActiveSectionId = (courseId, sectionId) => {
     if (typeof window === 'undefined' || !sectionId) return;
-    localStorage.setItem(getActiveSectionStorageKey(courseId), String(sectionId));
+    setStorageItem(getActiveSectionStorageKey(courseId), String(sectionId));
 };
 
 export const parseResumeParams = (searchParams) => {

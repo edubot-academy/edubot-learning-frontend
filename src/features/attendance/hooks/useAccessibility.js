@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ACCESSIBILITY, ATTENDANCE_STATUS_CONFIG, getNextStatus } from '../constants/attendanceConfig';
+import { getAttendanceSessionTitle } from '../utils/attendanceDisplayData';
 
 /**
  * Accessibility Hook for Attendance Components
@@ -188,7 +189,7 @@ export const useAccessibility = ({
       tabIndex: isFocused ? 0 : -1,
       'aria-label': t(ACCESSIBILITY.labels.attendanceCell, {
         studentName: student?.fullName || t('attendance.cardView.unknownStudent'),
-        sessionTitle: session?.title || t('attendance.fallbacks.sessionWithId', { id: sessionId }),
+        sessionTitle: getAttendanceSessionTitle(t, session, { fallbackId: sessionId }),
       }),
       'aria-pressed': currentStatus !== 'not_scheduled',
       'aria-describedby': `status-${studentId}-${sessionId}`,

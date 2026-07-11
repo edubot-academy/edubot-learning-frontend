@@ -1,6 +1,7 @@
 import { useState, useContext } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { loginUser } from '@services/api';
+import { setStoredToken } from '@shared/api/client';
 import { AuthContext } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useFavourites } from '../context/FavouritesContext';
@@ -69,7 +70,7 @@ const LoginPage = () => {
             // Token is automatically stored by the API client interceptor
             // but we can ensure it's stored here as well
             if (access_token) {
-                localStorage.setItem('auth_token', access_token);
+                setStoredToken(access_token);
             }
 
             const handledPendingAction = await executePendingAuthAction({

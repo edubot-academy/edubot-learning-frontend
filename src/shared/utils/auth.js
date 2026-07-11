@@ -1,3 +1,5 @@
+import { getStoredAuthToken } from '@shared/auth/sessionStorage';
+
 // Utility to detect if we're in cross-domain development mode
 export const isCrossDomainDevelopment = () => {
     // Check if we're accessing staging API from localhost
@@ -18,7 +20,7 @@ export const getAuthDebugInfo = () => {
         isLocalhost: window.location.hostname === 'localhost',
         isCrossDomain: isCrossDomainDevelopment(),
         hasCookie: document.cookie.includes('edubot_access_token'),
-        hasStoredToken: localStorage.getItem('auth_token'),
+        hasStoredToken: getStoredAuthToken(),
         apiBaseUrl: import.meta.env?.VITE_API_BASE_URL
     };
 };

@@ -3,10 +3,18 @@ import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import { FiDownload, FiMail } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
-import { SESSION_ATTENDANCE_STATUS } from '@shared/contracts';
 import {
   ATTENDANCE_STATUS_CONFIG,
 } from '../constants/attendanceConfig';
+import { getAttendanceStatusLabel } from '../utils/attendanceStatusData';
+import {
+  createBulkAttendanceUpdates,
+  createBulkAttendanceUpdatesForStatus,
+  getSelectedAttendanceStatusCounts,
+  getSelectedSessions,
+  getSelectedStudents,
+  getSelectedStudentsToNotify,
+} from '../utils/attendanceSelectionData';
 
 /**
  * Attendance Bulk Actions Component
@@ -26,63 +34,29 @@ const AttendanceBulkActions = ({
   const { t } = useTranslation();
 
   const getStatusLabel = useCallback((status) => {
-    const key = status === 'not_scheduled' ? 'notScheduled' : status;
-    return t(`attendance.status.${key}`, { defaultValue: status });
+    return getAttendanceStatusLabel(t, status, { defaultValue: status });
   }, [t]);
 
-  // Count selected cells by status
-  const selectedByStatus = useMemo(() => {
-    const counts = {
-      present: 0,
-      late: 0,
-      absent: 0,
-      excused: 0,
-      not_scheduled: 0,
-      total: 0,
-    };
+  const selectedByStatus = useMemo(
+    () => getSelectedAttendanceStatusCounts({ selectedCells, attendanceData }),
+    [selectedCells, attendanceData]
+  );
 
-    selectedCells.forEach(cellKey => {
-      const [studentId, sessionId] = cellKey.split('-').map(Number);
-      const status = attendanceData[studentId]?.[sessionId] || 'not_scheduled';
+  const selectedStudents = useMemo(
+    () => getSelectedStudents(students, selectedCells),
+    [selectedCells, students]
+  );
 
-      if (status in counts) {
-        counts[status]++;
-        counts.total++;
-      }
-    });
-
-    return counts;
-  }, [selectedCells, attendanceData]);
-
-  // Get unique students and sessions from selection
-  const selectedStudents = useMemo(() => {
-    const studentIds = new Set();
-    selectedCells.forEach(cellKey => {
-      const [studentId] = cellKey.split('-').map(Number);
-      studentIds.add(studentId);
-    });
-
-    return students.filter(student => studentIds.has(student.id));
-  }, [selectedCells, students]);
-
-  const selectedSessions = useMemo(() => {
-    const sessionIds = new Set();
-    selectedCells.forEach(cellKey => {
-      const [, sessionId] = cellKey.split('-').map(Number);
-      sessionIds.add(sessionId);
-    });
-
-    return sessions.filter(session => sessionIds.has(session.id));
-  }, [selectedCells, sessions]);
+  const selectedSessions = useMemo(
+    () => getSelectedSessions(sessions, selectedCells),
+    [selectedCells, sessions]
+  );
 
   // Handle bulk status update
   const handleBulkStatusUpdate = useCallback(async (status) => {
     if (selectedCells.size === 0) return;
 
-    const updates = Array.from(selectedCells).map(cellKey => {
-      const [studentId, sessionId] = cellKey.split('-').map(Number);
-      return { studentId, sessionId, status };
-    });
+    const updates = createBulkAttendanceUpdates(selectedCells, status);
 
     try {
       await onBulkUpdate(updates);
@@ -126,15 +100,10 @@ const AttendanceBulkActions = ({
       return;
     }
 
-    // Count absent/late students for notification
-    const absentOrLateStudents = selectedStudents.filter(student => {
-      return Array.from(selectedCells).some(cellKey => {
-        const [studentId, sessionId] = cellKey.split('-').map(Number);
-        if (studentId !== student.id) return false;
-
-        const status = attendanceData[studentId]?.[sessionId] || 'not_scheduled';
-        return status === SESSION_ATTENDANCE_STATUS.ABSENT || status === SESSION_ATTENDANCE_STATUS.LATE;
-      });
+    const absentOrLateStudents = getSelectedStudentsToNotify({
+      selectedStudents,
+      selectedCells,
+      attendanceData,
     });
 
     if (absentOrLateStudents.length === 0) {
@@ -180,16 +149,12 @@ const AttendanceBulkActions = ({
       label: t('attendance.bulk.quickActions.clearAbsent'),
       icon: ATTENDANCE_STATUS_CONFIG.present.icon,
       action: () => {
-        const absentUpdates = Array.from(selectedCells)
-          .filter(cellKey => {
-            const [studentId, sessionId] = cellKey.split('-').map(Number);
-            const status = attendanceData[studentId]?.[sessionId] || 'not_scheduled';
-            return status === 'absent';
-          })
-          .map(cellKey => {
-            const [studentId, sessionId] = cellKey.split('-').map(Number);
-            return { studentId, sessionId, status: 'present' };
-          });
+        const absentUpdates = createBulkAttendanceUpdatesForStatus({
+          selectedCells,
+          attendanceData,
+          fromStatus: 'absent',
+          toStatus: 'present',
+        });
 
         if (absentUpdates.length > 0) {
           onBulkUpdate(absentUpdates);

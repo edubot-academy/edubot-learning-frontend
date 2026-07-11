@@ -4,8 +4,17 @@ import PropTypes from 'prop-types';
 import { FiFilter, FiSearch, FiX } from 'react-icons/fi';
 import { SESSION_ATTENDANCE_STATUS } from '@shared/contracts';
 import { DashboardFilterBar } from '../../../components/ui/dashboard';
-
-const getStatusTranslationKey = (status) => (status === 'not_scheduled' ? 'notScheduled' : status);
+import {
+  createAttendanceRateRanges,
+  createAttendanceStatusOptions,
+  createEmptyAttendanceFilters,
+  getActiveAttendanceDashboardFilterCount,
+  getAttendanceQuickFilterClasses,
+  hasActiveAttendanceDashboardFilters,
+  setAttendanceFiltersValue,
+} from '../utils/attendanceFilterData';
+import { formatAttendanceSessionDate } from '../utils/attendanceDateData';
+import { getAttendanceSessionTitle } from '../utils/attendanceDisplayData';
 
 /**
  * Advanced Attendance Filters Component
@@ -21,130 +30,45 @@ const AttendanceFilters = ({
   const { t, i18n } = useTranslation();
   const language = i18n.resolvedLanguage || i18n.language || undefined;
 
-  const statusOptions = useMemo(() => [
-    { value: 'all', label: t('attendance.filters.all'), color: 'gray' },
-    ...[
-      SESSION_ATTENDANCE_STATUS.PRESENT,
-      SESSION_ATTENDANCE_STATUS.LATE,
-      SESSION_ATTENDANCE_STATUS.ABSENT,
-      SESSION_ATTENDANCE_STATUS.EXCUSED,
-      'not_scheduled',
-    ].map((value) => ({
-      value,
-      label: t(`attendance.status.${getStatusTranslationKey(value)}`),
-      color: value === SESSION_ATTENDANCE_STATUS.PRESENT
-        ? 'green'
-        : value === SESSION_ATTENDANCE_STATUS.LATE
-          ? 'amber'
-          : value === SESSION_ATTENDANCE_STATUS.ABSENT
-            ? 'red'
-            : value === SESSION_ATTENDANCE_STATUS.EXCUSED
-              ? 'blue'
-              : 'gray',
-    })),
-  ], [t]);
+  const statusOptions = useMemo(() => createAttendanceStatusOptions(t), [t]);
 
-  const attendanceRateRanges = useMemo(() => {
-    return [
-      { value: 'all', label: t('attendance.filters.all') },
-      { value: 'perfect', label: '100%', min: 100, max: 100 },
-      { value: 'excellent', label: '90-100%', min: 90, max: 100 },
-      { value: 'good', label: '75-90%', min: 75, max: 90 },
-      { value: 'fair', label: '50-75%', min: 50, max: 75 },
-      { value: 'poor', label: t('attendance.filters.rateBelow50'), min: 0, max: 50 },
-    ];
-  }, [t]);
+  const attendanceRateRanges = useMemo(() => createAttendanceRateRanges(t), [t]);
 
   const handleFilterChange = useCallback(
     (key, value) => {
-      const newFilters = { ...filters, [key]: value };
-
-      if (key === 'statusFilter' && value === 'all') {
-        newFilters.statusFilter = 'all';
-      }
-
-      if (key === 'dateRange' && value !== 'custom') {
-        newFilters.customStartDate = '';
-        newFilters.customEndDate = '';
-      }
-
-      onFiltersChange(newFilters);
+      onFiltersChange(setAttendanceFiltersValue(filters, key, value));
     },
     [filters, onFiltersChange]
   );
 
   const clearAllFilters = useCallback(() => {
-    onFiltersChange({
-      searchQuery: '',
-      statusFilter: 'all',
-      dateRange: 'all',
-      attendanceRateFilter: 'all',
-      sessionFilter: 'all',
-      customStartDate: '',
-      customEndDate: '',
-    });
+    onFiltersChange(createEmptyAttendanceFilters());
   }, [onFiltersChange]);
 
-  const hasActiveFilters = useMemo(() => {
-    return (
-      (filters.searchQuery || '') !== '' ||
-      (filters.statusFilter || 'all') !== 'all' ||
-      (filters.dateRange || 'all') !== 'all' ||
-      (filters.attendanceRateFilter || 'all') !== 'all' ||
-      (filters.sessionFilter || 'all') !== 'all' ||
-      ((filters.dateRange || 'all') === 'custom' &&
-        ((filters.customStartDate || '') !== '' || (filters.customEndDate || '') !== ''))
-    );
-  }, [filters]);
+  const hasActiveFilters = useMemo(
+    () => hasActiveAttendanceDashboardFilters(filters),
+    [filters]
+  );
 
-  const activeFilterCount = useMemo(() => {
-    let count = 0;
+  const activeFilterCount = useMemo(
+    () => getActiveAttendanceDashboardFilterCount(filters),
+    [filters]
+  );
 
-    if ((filters.searchQuery || '') !== '') count++;
-    if ((filters.statusFilter || 'all') !== 'all') count++;
-    if ((filters.dateRange || 'all') !== 'all') count++;
-    if ((filters.attendanceRateFilter || 'all') !== 'all') count++;
-    if ((filters.sessionFilter || 'all') !== 'all') count++;
-    if (
-      (filters.dateRange || 'all') === 'custom' &&
-      ((filters.customStartDate || '') !== '' || (filters.customEndDate || '') !== '')
-    ) {
-      count++;
-    }
+  const formatSessionDate = useCallback(
+    (startsAt) =>
+      formatAttendanceSessionDate(startsAt, {
+        language,
+        missingFallback: t('attendance.fallbacks.noDate'),
+        invalidFallback: t('attendance.fallbacks.unknownDate'),
+      }),
+    [language, t]
+  );
 
-    return count;
-  }, [filters]);
-
-  const formatSessionDate = useCallback((startsAt) => {
-    if (!startsAt) return t('attendance.fallbacks.noDate');
-
-    const date = new Date(startsAt);
-    if (Number.isNaN(date.getTime())) return t('attendance.fallbacks.unknownDate');
-
-    return date.toLocaleDateString(language, {
-      month: 'short',
-      day: 'numeric',
-    });
-  }, [language, t]);
-
-  const quickFilterClasses = {
-    absent:
-      (filters.statusFilter || 'all') === SESSION_ATTENDANCE_STATUS.ABSENT
-        ? 'border-red-600 bg-red-50 text-red-700 shadow-edubot-soft dark:bg-red-900/30 dark:text-red-200'
-        : 'border-red-600 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20',
-    poor:
-      (filters.attendanceRateFilter || 'all') === 'poor'
-        ? 'border-amber-600 bg-amber-50 text-amber-700 shadow-edubot-soft dark:bg-amber-900/30 dark:text-amber-200'
-        : 'border-amber-600 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20',
-    thisWeek:
-      (filters.dateRange || 'all') === 'this_week'
-        ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-edubot-soft dark:bg-blue-900/30 dark:text-blue-200'
-        : 'border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20',
-    present:
-      (filters.statusFilter || 'all') === SESSION_ATTENDANCE_STATUS.PRESENT
-        ? 'border-green-600 bg-green-50 text-green-700 shadow-edubot-soft dark:bg-green-900/30 dark:text-green-200'
-        : 'border-green-600 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20',
-  };
+  const quickFilterClasses = useMemo(
+    () => getAttendanceQuickFilterClasses(filters),
+    [filters]
+  );
 
   return (
     <div className={`space-y-4 ${className}`}>
@@ -250,7 +174,9 @@ const AttendanceFilters = ({
 	                  <option value="all">{t('attendance.filters.allSessions')}</option>
 	                  {sessions.map((session) => (
 	                    <option key={session.id} value={session.id}>
-	                      {session.title || t('attendance.fallbacks.sessionWithId', { id: session.sessionIndex })}
+	                      {getAttendanceSessionTitle(t, session, {
+	                        fallbackId: session.sessionIndex,
+	                      })}
 	                      {' - '}
 	                      {formatSessionDate(session.startsAt)}
                     </option>

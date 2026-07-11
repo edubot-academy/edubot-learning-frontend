@@ -3,9 +3,17 @@ import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import { FiChevronDown, FiChevronUp, FiSearch } from 'react-icons/fi';
 import { ATTENDANCE_STATUS_CONFIG } from '../constants/attendanceConfig';
+import {
+  filterAttendanceCardStudents,
+  getAttendanceCardStudentStats,
+} from '../utils/attendanceCardData';
+import { formatAttendanceSessionDate } from '../utils/attendanceDateData';
+import {
+  getAttendanceSessionTitle,
+  getAttendanceStudentInitials,
+} from '../utils/attendanceDisplayData';
+import { getAttendanceStatusLabel } from '../utils/attendanceStatusData';
 import AttendanceCell from './AttendanceCell';
-
-const getStatusTranslationKey = (status) => (status === 'not_scheduled' ? 'notScheduled' : status);
 
 /**
  * Mobile-Responsive Card View for Attendance
@@ -26,30 +34,17 @@ const AttendanceCardView = ({
 
   const language = i18n.resolvedLanguage || i18n.language || undefined;
 
-  // Filter students based on search and status
-  const filteredStudents = useMemo(() => {
-    return students.filter(student => {
-      // Search filter
-      if (searchQuery) {
-        const searchLower = searchQuery.toLowerCase();
-        const fullName = (student.fullName || '').toLowerCase();
-        const email = (student.email || '').toLowerCase();
-        if (!fullName.includes(searchLower) && !email.includes(searchLower)) {
-          return false;
-        }
-      }
-
-      // Status filter
-      if (statusFilter !== 'all') {
-        const studentStatuses = sessions.map(session => 
-          attendanceData[student.id]?.[session.id] || 'not_scheduled'
-        );
-        return studentStatuses.some(status => status === statusFilter);
-      }
-
-      return true;
-    });
-  }, [students, sessions, attendanceData, searchQuery, statusFilter]);
+  const filteredStudents = useMemo(
+    () =>
+      filterAttendanceCardStudents({
+        students,
+        sessions,
+        attendanceData,
+        searchQuery,
+        statusFilter,
+      }),
+    [students, sessions, attendanceData, searchQuery, statusFilter]
+  );
 
   // Toggle student card expansion
   const toggleStudentExpansion = useCallback((studentId) => {
@@ -64,41 +59,25 @@ const AttendanceCardView = ({
     });
   }, []);
 
-  // Calculate student statistics
-	  const getStudentStats = useCallback((student) => {
-    const stats = {
-      present: 0,
-      late: 0,
-      absent: 0,
-      excused: 0,
-      not_scheduled: 0,
-      total: 0,
-    };
+  const getStudentStats = useCallback(
+    (student) =>
+      getAttendanceCardStudentStats({
+        student,
+        sessions,
+        attendanceData,
+      }),
+    [sessions, attendanceData]
+  );
 
-    sessions.forEach(session => {
-      const status = attendanceData[student.id]?.[session.id] || 'not_scheduled';
-      stats[status] = (stats[status] || 0) + 1;
-      stats.total++;
-    });
-
-    const attendedCount = stats.present + stats.late;
-    const scheduledCount = stats.present + stats.late + stats.absent + stats.excused;
-    const attendanceRate = scheduledCount > 0 ? (attendedCount / scheduledCount) * 100 : 0;
-
-    return { ...stats, attendanceRate };
-	  }, [sessions, attendanceData]);
-
-  const formatSessionDate = useCallback((value) => {
-    if (!value) return t('attendance.fallbacks.noDate');
-
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return t('attendance.fallbacks.unknownDate');
-
-    return date.toLocaleDateString(language, {
-      month: 'short',
-      day: 'numeric',
-    });
-  }, [language, t]);
+  const formatSessionDate = useCallback(
+    (value) =>
+      formatAttendanceSessionDate(value, {
+        language,
+        missingFallback: t('attendance.fallbacks.noDate'),
+        invalidFallback: t('attendance.fallbacks.unknownDate'),
+      }),
+    [language, t]
+  );
 
   if (loading) {
     return (
@@ -140,7 +119,7 @@ const AttendanceCardView = ({
 	            <option value="all">{t('attendance.filters.allStatuses')}</option>
 	            {Object.keys(ATTENDANCE_STATUS_CONFIG).map((key) => (
 	              <option key={key} value={key}>
-	                {t(`attendance.status.${getStatusTranslationKey(key)}`)}
+	                {getAttendanceStatusLabel(t, key)}
 	              </option>
 	            ))}
           </select>
@@ -180,12 +159,10 @@ const AttendanceCardView = ({
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
                       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 text-sm font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
-	                        {(student.fullName || t('attendance.cardView.unknownStudent'))
-                          .split(' ')
-                          .filter(Boolean)
-                          .map((n) => n[0])
-                          .join('')
-                          .toUpperCase()}
+                        {getAttendanceStudentInitials(
+                          student.fullName,
+                          t('attendance.cardView.unknownStudent')
+                        )}
                       </div>
 
                       <div className="min-w-0 flex-1">
@@ -261,7 +238,9 @@ const AttendanceCardView = ({
                           <div key={session.id} className="flex items-center justify-between">
                             <div className="min-w-0 flex-1">
                               <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
-	                                {session.title || t('attendance.fallbacks.sessionWithId', { id: session.sessionIndex })}
+                                {getAttendanceSessionTitle(t, session, {
+                                  fallbackId: session.sessionIndex,
+                                })}
                               </div>
                               <div className="text-xs text-gray-500 dark:text-gray-400">
 	                                {formatSessionDate(session.startsAt)}

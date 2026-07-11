@@ -10,6 +10,16 @@ import {
   FiPercent,
 } from 'react-icons/fi';
 import { DashboardMetricCard } from '../../../components/ui/dashboard';
+import {
+  calculateAttendanceSummaryStatistics,
+  categorizeStudentPerformance,
+  getSessionPerformanceAnalysis,
+} from '../utils/attendanceSummaryData';
+import {
+  formatAttendanceSessionDate,
+  SUMMARY_ATTENDANCE_DATE_FORMAT,
+} from '../utils/attendanceDateData';
+import { getAttendanceSessionTitle } from '../utils/attendanceDisplayData';
 
 /**
  * Attendance Summary Statistics Component
@@ -28,199 +38,36 @@ const AttendanceSummary = ({
   const { t, i18n } = useTranslation();
   const language = i18n.resolvedLanguage || i18n.language || undefined;
 
-  const getSessionTitle = (session = {}) =>
-    session.title || t('attendance.fallbacks.sessionWithId', { id: session.sessionIndex || session.id });
+  const getSessionTitle = (session = {}) => getAttendanceSessionTitle(t, session);
 
-  const formatSessionDate = (value) => {
-    if (!value) return t('attendance.fallbacks.unknownDate');
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return t('attendance.fallbacks.unknownDate');
-    return date.toLocaleDateString(language, { month: 'short', day: 'numeric', year: 'numeric' });
-  };
-  const statistics = useMemo(() => {
-    if (!students.length || !sessions.length) {
-      return {
-        totals: { present: 0, late: 0, absent: 0, excused: 0, not_scheduled: 0, total: 0 },
-        percentages: { present: 0, late: 0, absent: 0, excused: 0, not_scheduled: 0 },
-        attendanceRate: 0,
-        scheduledTotal: 0,
-        studentStats: {},
-        sessionStats: {},
-        trends: null,
-      };
-    }
-
-    const totals = {
-      present: 0,
-      late: 0,
-      absent: 0,
-      excused: 0,
-      not_scheduled: 0,
-      total: 0,
-    };
-
-    const studentStats = {};
-    const sessionStats = {};
-
-    students.forEach((student) => {
-      const studentTotal = {
-        present: 0,
-        late: 0,
-        absent: 0,
-        excused: 0,
-        not_scheduled: 0,
-      };
-
-      sessions.forEach((session) => {
-        const rawStatus = attendanceData?.[student.id]?.[session.id];
-        const status = rawStatus || 'not_scheduled';
-
-        if (!totals[status] && totals[status] !== 0) return;
-
-        totals[status] += 1;
-        totals.total += 1;
-
-        studentTotal[status] += 1;
-
-        if (!sessionStats[session.id]) {
-          sessionStats[session.id] = {
-            present: 0,
-            late: 0,
-            absent: 0,
-            excused: 0,
-            not_scheduled: 0,
-          };
-        }
-
-        sessionStats[session.id][status] += 1;
-      });
-
-      const attendedCount = studentTotal.present + studentTotal.late;
-      const scheduledCount =
-        studentTotal.present +
-        studentTotal.late +
-        studentTotal.absent +
-        studentTotal.excused;
-
-      studentStats[student.id] = {
-        ...studentTotal,
-        attendanceRate: scheduledCount > 0 ? (attendedCount / scheduledCount) * 100 : 0,
-        scheduledCount,
-      };
+  const formatSessionDate = (value) =>
+    formatAttendanceSessionDate(value, {
+      language,
+      missingFallback: t('attendance.fallbacks.unknownDate'),
+      invalidFallback: t('attendance.fallbacks.unknownDate'),
+      formatOptions: SUMMARY_ATTENDANCE_DATE_FORMAT,
     });
+  const statistics = useMemo(
+    () =>
+      calculateAttendanceSummaryStatistics({
+        students,
+        sessions,
+        attendanceData,
+        previousPeriodData,
+        showTrends,
+      }),
+    [students, sessions, attendanceData, previousPeriodData, showTrends]
+  );
 
-    const scheduledTotal =
-      totals.present + totals.late + totals.absent + totals.excused;
+  const studentPerformanceCategories = useMemo(
+    () => categorizeStudentPerformance(students, statistics.studentStats),
+    [students, statistics.studentStats]
+  );
 
-    const percentages = {
-      present: scheduledTotal > 0 ? (totals.present / scheduledTotal) * 100 : 0,
-      late: scheduledTotal > 0 ? (totals.late / scheduledTotal) * 100 : 0,
-      absent: scheduledTotal > 0 ? (totals.absent / scheduledTotal) * 100 : 0,
-      excused: scheduledTotal > 0 ? (totals.excused / scheduledTotal) * 100 : 0,
-      not_scheduled: totals.total > 0 ? (totals.not_scheduled / totals.total) * 100 : 0,
-    };
-
-    const attendanceRate =
-      scheduledTotal > 0
-        ? ((totals.present + totals.late) / scheduledTotal) * 100
-        : 0;
-
-    Object.keys(sessionStats).forEach((sessionId) => {
-      const sessionTotal = sessionStats[sessionId];
-      const attendedCount = sessionTotal.present + sessionTotal.late;
-      const scheduledCount =
-        sessionTotal.present +
-        sessionTotal.late +
-        sessionTotal.absent +
-        sessionTotal.excused;
-
-      sessionStats[sessionId].attendanceRate =
-        scheduledCount > 0 ? (attendedCount / scheduledCount) * 100 : 0;
-      sessionStats[sessionId].scheduledCount = scheduledCount;
-    });
-
-    let trends = null;
-    if (showTrends && previousPeriodData) {
-      const prevAttendanceRate = previousPeriodData.attendanceRate || 0;
-      const currentAttendanceRate = attendanceRate;
-
-      trends = {
-        attendanceRate: {
-          current: currentAttendanceRate,
-          previous: prevAttendanceRate,
-          change: currentAttendanceRate - prevAttendanceRate,
-          direction:
-            currentAttendanceRate > prevAttendanceRate
-              ? 'up'
-              : currentAttendanceRate < prevAttendanceRate
-                ? 'down'
-                : 'stable',
-        },
-      };
-    }
-
-    return {
-      totals,
-      percentages,
-      attendanceRate,
-      scheduledTotal,
-      studentStats,
-      sessionStats,
-      trends,
-    };
-  }, [students, sessions, attendanceData, previousPeriodData, showTrends]);
-
-  const studentPerformanceCategories = useMemo(() => {
-    const categories = {
-      excellent: { count: 0, students: [] },
-      good: { count: 0, students: [] },
-      fair: { count: 0, students: [] },
-      poor: { count: 0, students: [] },
-      noData: { count: 0, students: [] },
-    };
-
-    students.forEach((student) => {
-      const stats = statistics.studentStats[student.id];
-
-      if (!stats || stats.scheduledCount === 0) {
-        categories.noData.count += 1;
-        categories.noData.students.push(student);
-      } else if (stats.attendanceRate >= 90) {
-        categories.excellent.count += 1;
-        categories.excellent.students.push(student);
-      } else if (stats.attendanceRate >= 75) {
-        categories.good.count += 1;
-        categories.good.students.push(student);
-      } else if (stats.attendanceRate >= 50) {
-        categories.fair.count += 1;
-        categories.fair.students.push(student);
-      } else {
-        categories.poor.count += 1;
-        categories.poor.students.push(student);
-      }
-    });
-
-    return categories;
-  }, [students, statistics.studentStats]);
-
-  const sessionPerformanceAnalysis = useMemo(() => {
-    if (!sessions.length) return [];
-
-    return sessions
-      .map((session) => ({
-        ...session,
-        ...(statistics.sessionStats[session.id] || {
-          present: 0,
-          late: 0,
-          absent: 0,
-          excused: 0,
-          not_scheduled: 0,
-          attendanceRate: 0,
-          scheduledCount: 0,
-        }),
-      }))
-      .sort((a, b) => (b.attendanceRate || 0) - (a.attendanceRate || 0));
-  }, [sessions, statistics.sessionStats]);
+  const sessionPerformanceAnalysis = useMemo(
+    () => getSessionPerformanceAnalysis(sessions, statistics.sessionStats),
+    [sessions, statistics.sessionStats]
+  );
 
   const getTrendMeta = (direction) => {
     switch (direction) {

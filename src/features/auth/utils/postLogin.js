@@ -1,6 +1,7 @@
 import toast from 'react-hot-toast';
 import i18n from '../../../i18n';
 import { getDashboardPath } from '@shared/utils/navigation';
+import { clearPendingAuthAction, loadPendingAuthAction } from '../storage';
 
 const MAX_PENDING_ACTION_AGE = 24 * 60 * 60 * 1000;
 
@@ -17,14 +18,12 @@ export const getPostLoginPath = (user, location) => {
 };
 
 export const executePendingAuthAction = async ({ addToCart, toggleFavourite, saveResource, navigate }) => {
-    const pendingActionStr = localStorage.getItem('pendingAction');
-    if (!pendingActionStr) return false;
+    const pendingAction = loadPendingAuthAction();
+    if (!pendingAction) return false;
 
     try {
-        const pendingAction = JSON.parse(pendingActionStr);
-
         if (Date.now() - pendingAction.timestamp > MAX_PENDING_ACTION_AGE) {
-            localStorage.removeItem('pendingAction');
+            clearPendingAuthAction();
             return false;
         }
 
@@ -39,7 +38,7 @@ export const executePendingAuthAction = async ({ addToCart, toggleFavourite, sav
             const result = await toggleFavourite(course);
 
             if (result.success) {
-                localStorage.removeItem('pendingAction');
+                clearPendingAuthAction();
                 toast.success(i18n.t('public.auth.postLogin.favouriteAdded'));
                 navigate('/favourites');
                 return true;
@@ -57,7 +56,7 @@ export const executePendingAuthAction = async ({ addToCart, toggleFavourite, sav
             const result = await addToCart(course);
 
             if (result.success) {
-                localStorage.removeItem('pendingAction');
+                clearPendingAuthAction();
                 toast.success(i18n.t('public.auth.postLogin.cartAdded'));
                 navigate('/cart');
                 return true;
@@ -65,7 +64,7 @@ export const executePendingAuthAction = async ({ addToCart, toggleFavourite, sav
         }
 
         if (pendingAction.type === 'save-resource' && pendingAction.slug) {
-            localStorage.removeItem('pendingAction');
+            clearPendingAuthAction();
             if (saveResource) {
                 saveResource(pendingAction.slug, {
                     title: pendingAction.resourceTitle || pendingAction.slug,
@@ -80,11 +79,11 @@ export const executePendingAuthAction = async ({ addToCart, toggleFavourite, sav
             return true;
         }
 
-        localStorage.removeItem('pendingAction');
+        clearPendingAuthAction();
         return false;
     } catch (error) {
         console.error('Failed to execute pending action:', error);
-        localStorage.removeItem('pendingAction');
+        clearPendingAuthAction();
         return false;
     }
 };

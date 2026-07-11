@@ -1,6 +1,7 @@
 import { toast } from 'react-hot-toast';
 import i18n from '../../../i18n';
 import { parseApiError } from '@shared/api/error';
+import { getAttendanceSessionTitle } from './attendanceDisplayData';
 
 /**
  * Standardized error handling utilities for attendance features
@@ -203,8 +204,8 @@ export const formatStudentName = (student) => {
  * @returns {string} Formatted session title
  */
 export const formatSessionTitle = (session) => {
-  return session?.title || i18n.t('attendance.fallbacks.sessionWithId', {
-    id: session?.sessionIndex || session?.id || '',
+  return getAttendanceSessionTitle((key, values) => i18n.t(key, values), session, {
+    fallbackId: session?.sessionIndex || session?.id || '',
   });
 };
 

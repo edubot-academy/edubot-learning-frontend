@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AuthContext } from './AuthContext';
 import ResourceProgressContext from './ResourceProgressContext';
 import { debounce } from '../lib/utils';
@@ -8,22 +8,18 @@ import {
     upsertExternalResourceProgress,
 } from '../features/externalResources/api';
 import { resolveLabel } from '../features/externalResources/data/externalResources';
+import { getJsonStorageItem, removeStorageItem, setJsonStorageItem } from '@shared/utils/storage';
 
 const ANON_KEY = 'ext_res_v1_anon';
 
-const readLocalStore = () => {
-    try {
-        const raw = localStorage.getItem(ANON_KEY);
-        return raw ? JSON.parse(raw) : {};
-    } catch {
-        return {};
-    }
-};
+const readLocalStore = () => getJsonStorageItem(ANON_KEY, {});
 
 const writeLocalStore = (data) => {
-    try {
-        localStorage.setItem(ANON_KEY, JSON.stringify(data));
-    } catch {}
+    setJsonStorageItem(ANON_KEY, data);
+};
+
+const clearLocalStore = () => {
+    removeStorageItem(ANON_KEY);
 };
 
 const normalizeApiEntry = (row) => ({
@@ -75,7 +71,7 @@ export const ResourceProgressProvider = ({ children }) => {
         const anonEntries = Object.entries(anonData);
 
         // Collect sync promises so we can wait for all of them before clearing
-        // localStorage — fire-and-forget via syncToApi would clear too early.
+        // cached anonymous progress. Fire-and-forget sync would clear too early.
         const syncSettled = anonEntries.length > 0
             ? Promise.allSettled(
                 anonEntries.map(([slug, entry]) =>
@@ -102,15 +98,15 @@ export const ResourceProgressProvider = ({ children }) => {
                     });
                     return merged;
                 });
-                // Clear localStorage only after all sync POSTs have settled so a
+                // Clear cached anonymous progress only after all sync POSTs have settled so a
                 // page reload between launch and settlement doesn't lose anon entries.
                 if (anonEntries.length > 0) {
-                    syncSettled.then(() => writeLocalStore({}));
+                    syncSettled.then(clearLocalStore);
                 }
             })
             .catch(() => {
-                // API unreachable — keep anon entries visible so the user doesn't lose
-                // their in-session progress. localStorage is intentionally not cleared.
+                // API unreachable: keep anon entries visible so the user doesn't lose
+                // their in-session progress. The local cache is intentionally not cleared.
                 const fallbackMap = {};
                 anonEntries.forEach(([slug, entry]) => { fallbackMap[slug] = entry; });
                 if (Object.keys(fallbackMap).length > 0) setStore(fallbackMap);
@@ -284,22 +280,37 @@ export const ResourceProgressProvider = ({ children }) => {
         [mutate],
     );
 
+    const value = useMemo(
+        () => ({
+            progressLoading,
+            getEntry,
+            getAllEntries,
+            saveResource,
+            startResource,
+            completeResource,
+            toggleWeek,
+            updateNotes,
+            removeResource,
+            setCertificateUrl,
+            saveAiContent,
+        }),
+        [
+            progressLoading,
+            getEntry,
+            getAllEntries,
+            saveResource,
+            startResource,
+            completeResource,
+            toggleWeek,
+            updateNotes,
+            removeResource,
+            setCertificateUrl,
+            saveAiContent,
+        ]
+    );
+
     return (
-        <ResourceProgressContext.Provider
-            value={{
-                progressLoading,
-                getEntry,
-                getAllEntries,
-                saveResource,
-                startResource,
-                completeResource,
-                toggleWeek,
-                updateNotes,
-                removeResource,
-                setCertificateUrl,
-                saveAiContent,
-            }}
-        >
+        <ResourceProgressContext.Provider value={value}>
             {children}
         </ResourceProgressContext.Provider>
     );
