@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { fetchCatalogCourses } from '@services/api';
+import { fetchCatalogCourses } from '@features/courses/api';
 import CardCourse from '@features/courses/components/CardCourse';
 import EmptyState from '@components/ui/dashboard/EmptyState';
 import { FiAlertTriangle, FiBookOpen, FiRefreshCw, FiSliders } from 'react-icons/fi';

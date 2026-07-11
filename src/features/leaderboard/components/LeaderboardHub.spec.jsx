@@ -19,7 +19,21 @@ const apiMocks = vi.hoisted(() => ({
     fetchWeeklyLeaderboard: vi.fn(),
 }));
 
-vi.mock('@services/api', () => apiMocks);
+vi.mock('@features/leaderboard/api', () => ({
+    fetchFastProgressLeaderboard: apiMocks.fetchFastProgressLeaderboard,
+    fetchLeaderboardAchievements: apiMocks.fetchLeaderboardAchievements,
+    fetchLeaderboardChallenges: apiMocks.fetchLeaderboardChallenges,
+    fetchMyLeaderboardSummary: apiMocks.fetchMyLeaderboardSummary,
+    fetchNearMeLeaderboard: apiMocks.fetchNearMeLeaderboard,
+    fetchSkillLeaderboard: apiMocks.fetchSkillLeaderboard,
+    fetchStudentOfWeek: apiMocks.fetchStudentOfWeek,
+    fetchWeeklyLeaderboard: apiMocks.fetchWeeklyLeaderboard,
+}));
+
+vi.mock('@features/skills/api', () => ({
+    fetchMySkillProgress: apiMocks.fetchMySkillProgress,
+    fetchSkills: apiMocks.fetchSkills,
+}));
 
 vi.mock('react-ga4', () => ({
     default: {
@@ -81,7 +95,6 @@ describe('LeaderboardHub', () => {
     });
 
     it('locks public leaderboard to video track', async () => {
-        const user = userEvent.setup();
         renderHub({ initialTrack: 'video', lockTrack: true, publicMode: true }, null);
 
         await screen.findByText(/Рейтинг эскертүүсү/i);
@@ -93,9 +106,8 @@ describe('LeaderboardHub', () => {
         });
         expect(screen.queryByRole('button', { name: /бардыгы/i })).not.toBeInTheDocument();
         expect(screen.getByText(/Бул ачык бетте аптанын лидерлери, күчтүү өсүш жана окуудагы негизги жеңиштер көрүнөт/i)).toBeInTheDocument();
-
-        await user.click(screen.getByRole('tab', { name: /апталык рейтинг/i }));
-        expect(await screen.findByRole('heading', { name: /Аптанын лидерлери/i })).toBeInTheDocument();
+        expect(screen.queryByRole('tab', { name: /апталык рейтинг/i })).not.toBeInTheDocument();
+        expect(await screen.findByRole('heading', { name: /Бул жуманын алдыңкылары/i })).toBeInTheDocument();
     });
 
     it('does not call authenticated leaderboard endpoints in public mode', async () => {

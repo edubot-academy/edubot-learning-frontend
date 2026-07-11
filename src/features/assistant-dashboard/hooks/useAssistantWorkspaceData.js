@@ -3,9 +3,13 @@ import { useTranslation } from "react-i18next";
 import toast from "react-hot-toast";
 import {
     checkEnrollments,
+} from "@features/enrollments/api";
+import {
     fetchCourses,
+} from "@features/courses/api";
+import {
     fetchUsers,
-} from "@services/api";
+} from "@features/users/api";
 import {
     buildCourseCounts,
     buildEnrolledStudentSet,

@@ -12,8 +12,6 @@ import {
     rejectCertificate,
     revokeCertificate,
     updateCourseCertificateSettings,
-} from '@services/api';
-import {
     saveCourseCertificateSignatureAsset,
     uploadCourseCertificateSecondaryLogo,
 } from '@features/courses/api';

@@ -30,7 +30,8 @@ import {
     fetchStudentActivitySubmissionAttachmentPreview,
     fetchStudentHomeworkSubmissionAttachmentPreview,
 } from '../../../student/api.js';
-import { ActivityInteractiveForm, INTERACTIVE_ACTIVITY_TYPES } from '../ActivityInteractiveForm.jsx';
+import { ActivityInteractiveForm } from '../ActivityInteractiveForm.jsx';
+import { INTERACTIVE_ACTIVITY_TYPES } from '../../utils/interactiveActivityTypes';
 import { parseApiError } from '@shared/api/error';
 
 const MAX_HOMEWORK_FILE_SIZE_BYTES = 20 * 1024 * 1024;

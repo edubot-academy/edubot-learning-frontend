@@ -5,8 +5,6 @@ import { getAttemptResult } from '../api';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const cl = (obj, lang) => obj?.[lang] ?? obj?.ky ?? obj?.en ?? '';
-
 const pct = (value) => `${Math.round(value ?? 0)}%`;
 
 // ─── CEFR level config ────────────────────────────────────────────────────────

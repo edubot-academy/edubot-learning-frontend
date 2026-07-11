@@ -11,7 +11,8 @@ import { BsCart2 } from 'react-icons/bs';
 import { FaRegUser } from 'react-icons/fa';
 
 import { AuthContext } from '@app/providers';
-import { fetchUnreadNotificationsCount, searchCourses } from '@services/api';
+import { fetchUnreadNotificationsCount } from '@features/notifications/api';
+import { searchCourses } from '@features/search/api';
 import { getUserAvatarUrl } from '@shared/utils/avatar';
 import { isPlatformAdmin } from '@shared/utils/roles';
 import { useFavourites } from '../context/FavouritesContext';

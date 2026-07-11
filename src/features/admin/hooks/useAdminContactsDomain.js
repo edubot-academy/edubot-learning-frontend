@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import toast from 'react-hot-toast';
-import { fetchContactMessages } from '@services/api';
+import { fetchContactMessages } from '@features/contact/api';
 import { isForbiddenError, parseApiError } from '@shared/api/error';
 import { useTranslation } from 'react-i18next';
 

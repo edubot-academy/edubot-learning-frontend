@@ -2,6 +2,34 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.18.4] - 2026-07-11
+
+### Added
+
+- Student dashboard activity constants: added a shared interactive activity type utility for reuse across task, activity form, and session activity flows.
+
+### Changed
+
+- App provider wiring: centralized auth, resource progress, favourites, cart, and dark-mode providers under the app provider composition instead of splitting ownership across `main.jsx` and `App.jsx`.
+- Feature data boundaries: replaced remaining `@services/api` usage in app code with direct feature API imports and updated affected tests to mock the owning feature modules.
+- Course video upload: moved lesson video upload transport into the courses API module so the upload component only owns validation, progress state, and callbacks.
+- Code health cleanup: removed unused imports and dead constants across admin, instructor, student dashboard, group session, leaderboard, company, and public page modules.
+
+### Fixed
+
+- Admin AI prompts: update and delete actions now pass the selected course id to the course AI prompt API and guard against missing course selection.
+- Quiz imports: answer hints in plain-text quiz imports now match rich-text-wrapped option text, preserving TipTap-compatible output without selecting the wrong default answer.
+- Leaderboard tests: refreshed leaderboard assertions for the current public/internal rendering behavior after feature API mock cleanup.
+
+### Verification
+
+- `git diff --check`
+- `npm run lint`
+- `npx vitest run src/pages/InstructorDashboard.spec.jsx src/pages/InternalLeaderboard.spec.jsx src/features/leaderboard/components/LeaderboardHub.spec.jsx src/utils/quizUtils.spec.js`
+- `npm run build`
+
+---
+
 ## [1.18.3] - 2026-07-11
 
 ### Added

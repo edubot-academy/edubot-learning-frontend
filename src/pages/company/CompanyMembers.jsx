@@ -10,8 +10,8 @@ import {
     setCompanyMemberRole,
     inviteCompanyMember,
     resendCompanyInvitation,
-    fetchUsers,
-} from '@services/api';
+} from '@features/companies/api';
+import { fetchUsers } from '@features/users/api';
 import { isPlatformAdmin } from '@shared/utils/roles';
 import { DashboardInsetPanel } from '@components/ui/dashboard';
 import BasicModal from '@shared/ui/BasicModal';

@@ -4,10 +4,22 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthContext } from '../context/AuthContext';
 import InstructorDashboard from './InstructorDashboard';
 
-vi.mock('@services/api', () => ({
+vi.mock('@features/auth/api', () => ({
     fetchInstructorProfile: vi.fn().mockResolvedValue({ id: 10, fullName: 'Instructor' }),
     updateInstructorProfile: vi.fn().mockResolvedValue({ id: 10, fullName: 'Instructor' }),
+    fetchUserProfile: vi.fn().mockResolvedValue({}),
+    logoutUser: vi.fn().mockResolvedValue({}),
+}));
+
+vi.mock('@features/offerings/api', () => ({
     listOfferingsForCourse: vi.fn().mockResolvedValue([]),
+}));
+
+vi.mock('@features/categories/api', () => ({
+    fetchCategories: vi.fn().mockResolvedValue([]),
+}));
+
+vi.mock('@features/courses/api', () => ({
     fetchInstructorStudentCourses: vi.fn().mockResolvedValue({ courses: [] }),
     fetchCourseStudents: vi.fn().mockResolvedValue({ students: [], total: 0, totalPages: 1 }),
     fetchCourseCertificateSettings: vi.fn().mockResolvedValue({}),
@@ -19,14 +31,8 @@ vi.mock('@services/api', () => ({
     revokeCertificate: vi.fn().mockResolvedValue({}),
     regenerateCourseCertificates: vi.fn().mockResolvedValue({ regeneratedCount: 0 }),
     createCourse: vi.fn().mockResolvedValue({ id: 1 }),
-    fetchCategories: vi.fn().mockResolvedValue([]),
     fetchInstructorCourses: vi.fn().mockResolvedValue({ courses: [] }),
     updateCourse: vi.fn().mockResolvedValue({}),
-    fetchUserProfile: vi.fn().mockResolvedValue({}),
-    logoutUser: vi.fn().mockResolvedValue({}),
-}));
-
-vi.mock('@features/courses/api', () => ({
     markCoursePending: vi.fn().mockResolvedValue({}),
     uploadCourseCertificateSecondaryLogo: vi.fn().mockResolvedValue({}),
     saveCourseCertificateSignatureAsset: vi.fn().mockResolvedValue({}),

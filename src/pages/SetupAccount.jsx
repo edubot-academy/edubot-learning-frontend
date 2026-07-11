@@ -2,7 +2,7 @@ import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
-import { completeAccountSetup } from '@services/api';
+import { completeAccountSetup } from '@features/auth/api';
 import { setStoredToken } from '@shared/api/client';
 import { parseApiError } from '@shared/api/error';
 import { AuthContext } from '../context/AuthContext';

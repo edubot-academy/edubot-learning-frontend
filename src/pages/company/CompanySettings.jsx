@@ -1,7 +1,7 @@
 
 import React from 'react';
 import toast from 'react-hot-toast';
-import { updateCompany, deleteCompany, uploadCompanyLogo } from '@services/api';
+import { updateCompany, deleteCompany, uploadCompanyLogo } from '@features/companies/api';
 import ConfirmationModal from '@shared/ui/ConfirmationModal';
 import { useTranslation } from 'react-i18next';
 import { parseApiError } from '@shared/api/error';

@@ -472,6 +472,26 @@ export async function uploadLessonFile(courseId, sectionId, type, file, lessonOr
     return key;
 }
 
+export const uploadLessonVideo = async (courseId, sectionId, file, onProgress) => {
+    const formData = new FormData();
+    formData.append('video', file);
+    formData.append('title', file.name);
+
+    const response = await api.post(`/courses/${courseId}/sections/${sectionId}/lessons`, formData, {
+        preserveContentType: true,
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+        onUploadProgress: (progressEvent) => {
+            if (!onProgress || !progressEvent.total) return;
+            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            onProgress(percentCompleted);
+        },
+    });
+
+    return response.data;
+};
+
 export const updateLessonDuration = async (courseId, sectionId, lessonId, duration) => {
     try {
         const response = await api.patch(

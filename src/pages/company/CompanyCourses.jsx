@@ -7,11 +7,11 @@ import ConfirmationModal from '@shared/ui/ConfirmationModal';
 import { AuthContext } from '../../context/AuthContext';
 import {
     listCompanyCourses,
-    fetchCourses,
     assignCourseToCompany,
     unassignCourseFromCompany,
     getCompany,
-} from '@services/api';
+} from '@features/companies/api';
+import { fetchCourses } from '@features/courses/api';
 import { DashboardInsetPanel, EmptyState } from '@components/ui/dashboard';
 import { isCourseTypeAllowedForTenant } from '@shared/utils/tenantFeatures';
 import { isPlatformAdmin } from '@shared/utils/roles';

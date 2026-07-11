@@ -1,6 +1,6 @@
 import { useState, useContext } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { loginUser } from '@services/api';
+import { loginUser } from '@features/auth/api';
 import { setStoredToken } from '@shared/api/client';
 import { AuthContext } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';

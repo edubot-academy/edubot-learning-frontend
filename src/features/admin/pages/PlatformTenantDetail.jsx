@@ -28,18 +28,18 @@ import {
     EmptyState,
 } from '@components/ui/dashboard';
 import {
-    getCompany,
-    fetchCourses,
-    listCompanyCourses,
-    listCompanyActivity,
-    listCompanyMembers,
     assignCourseToCompany,
+    getCompany,
+    linkCompanyCrmTenant,
+    listCompanyActivity,
+    listCompanyCourses,
+    listCompanyMembers,
     unassignCourseFromCompany,
     updateCompany,
-    linkCompanyCrmTenant,
     unlinkCompanyCrmTenant,
     uploadCompanyLogo,
-} from '@services/api';
+} from '@features/companies/api';
+import { fetchCourses } from '@features/courses/api';
 import CompanyMembers from '../../../pages/company/CompanyMembers';
 import Loader from '@shared/ui/Loader';
 import { AuthContext } from '../../../context/AuthContext';

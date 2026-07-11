@@ -762,7 +762,6 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
 
                     // Save lessons
                     for (const [lIdx, lesson] of section.lessons.entries()) {
-                        const isArticle = lesson.kind === 'article';
                         const isQuiz = lesson.kind === 'quiz';
                         const isCode = lesson.kind === 'code';
                         const lessonPayload = buildLessonPayload(lesson, lIdx);

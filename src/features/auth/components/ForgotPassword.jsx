@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { sendOtp, resetPassword } from '@services/api';
+import { sendOtp, resetPassword } from '@features/auth/api';
 import { IoClose } from 'react-icons/io5';
 import { parseApiError } from '@shared/api/error';
 

@@ -1,7 +1,6 @@
-
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import api from '@shared/api/client';
+import { uploadLessonVideo } from '@features/courses/api';
 import { parseApiError } from '@shared/api/error';
 
 const VideoUpload = ({ courseId, sectionId, onUploadSuccess }) => {
@@ -37,30 +36,11 @@ const VideoUpload = ({ courseId, sectionId, onUploadSuccess }) => {
         setUploading(true);
         setError(null);
 
-        const formData = new FormData();
-        formData.append('video', file);
-        formData.append('title', file.name); // You might want to add a separate title input
-
         try {
-            const response = await api.post(
-                `/courses/${courseId}/sections/${sectionId}/lessons`,
-                formData,
-                {
-                    preserveContentType: true,
-                    headers: {
-                        'Content-Type': 'multipart/form-data',
-                    },
-                    onUploadProgress: (progressEvent) => {
-                        const percentCompleted = Math.round(
-                            (progressEvent.loaded * 100) / progressEvent.total
-                        );
-                        setProgress(percentCompleted);
-                    },
-                }
-            );
+            const lesson = await uploadLessonVideo(courseId, sectionId, file, setProgress);
 
             if (onUploadSuccess) {
-                onUploadSuccess(response.data);
+                onUploadSuccess(lesson);
             }
         } catch (err) {
             setError(parseApiError(err, t('videoUpload.errors.uploadFailed')).message);

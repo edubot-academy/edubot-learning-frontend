@@ -7,7 +7,7 @@ import {
     fetchSessionActivityResponses,
     reviewSessionActivitySubmission,
     updateSessionActivity,
-} from '@services/api';
+} from '@features/groupSessions/api';
 import {
     getWorkspaceErrorMessage,
     getWorkspaceErrorStatusMessages,

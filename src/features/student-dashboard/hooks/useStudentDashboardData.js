@@ -11,7 +11,7 @@ import {
     fetchStudentResources,
     fetchStudentTasks,
     fetchStudentUpcomingSessions,
-} from '@services/api';
+} from '@features/student/api';
 import { parseApiError } from '@shared/api/error';
 import { toItems } from '../utils/studentDashboard.helpers.js';
 

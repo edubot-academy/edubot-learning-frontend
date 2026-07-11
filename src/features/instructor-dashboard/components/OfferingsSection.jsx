@@ -23,10 +23,10 @@ import {
 import {
     createOffering,
     updateOffering,
-    enrollUserInCourse,
-    fetchUsers,
-    fetchCourseStudents,
-} from '@services/api';
+} from '@features/offerings/api';
+import { fetchCourseStudents } from '@features/courses/api';
+import { enrollUserInCourse } from '@features/enrollments/api';
+import { fetchUsers } from '@features/users/api';
 import OfferingCard from './OfferingCard.jsx';
 import CreateOfferingModal from './modals/CreateOfferingModal.jsx';
 import EnrollStudentModal from './modals/EnrollStudentModal.jsx';

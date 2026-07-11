@@ -6,7 +6,7 @@ import {
     fetchCourseAttendance,
     fetchSessionAttendance,
     markSessionAttendanceBulk,
-} from '@services/api';
+} from '@features/attendance/api';
 import { fetchGroupRoster } from '@features/courseGroups/roster';
 import {
     getWorkspaceErrorMessage,

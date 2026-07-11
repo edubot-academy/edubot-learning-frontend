@@ -1,6 +1,6 @@
 import { useState, useContext } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { registerUser } from '@services/api';
+import { registerUser } from '@features/auth/api';
 import PhoneInput from '@shared/ui/forms/PhoneInput';
 import SignUpImg from '../assets/images/edubot-signup.png';
 import DefaultLabel from '@shared-ui/forms/DefaultLabel';

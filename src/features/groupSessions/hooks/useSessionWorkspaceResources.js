@@ -3,19 +3,23 @@ import { toast } from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { COURSE_TYPE, MEETING_PROVIDER } from '@shared/contracts';
 import {
+    fetchCourseAttendance,
+    fetchSessionAttendance,
+} from '@features/attendance/api';
+import {
     createSessionMeeting,
     deleteSessionMeeting,
-    fetchCourseAttendance,
-    fetchCourseSessions,
-    fetchSessionAttendance,
     fetchSessionMeeting,
-    fetchSections,
     importSessionAttendance,
     syncSessionRecordings,
+    updateSessionMeeting,
+} from '@features/liveIntegration/api';
+import { fetchSections } from '@features/courses/api';
+import {
+    fetchCourseSessions,
     uploadSessionMaterial,
     updateCourseSession,
-    updateSessionMeeting,
-} from '@services/api';
+} from '@features/groupSessions/api';
 import {
     getWorkspaceErrorMessage,
     getWorkspaceErrorStatusMessages,

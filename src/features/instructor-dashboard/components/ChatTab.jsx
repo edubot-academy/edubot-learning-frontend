@@ -7,7 +7,7 @@ import {
     fetchInstructorChatMessages,
     replyInstructorChatMessage,
     sendInstructorChatMessage,
-} from '@services/api';
+} from '@features/instructorChat/api';
 import Loader from '@shared/ui/Loader';
 import { AuthContext } from '../../../context/AuthContext';
 import { API_ERROR_CODES, getApiErrorCode, parseApiError } from '@shared/api/error';

@@ -2,11 +2,13 @@ import { useCallback, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import {
-    fetchStudentNotificationSettings,
     fetchUserProfile,
-    updateStudentNotificationSettings,
     updateUserProfile,
-} from '@services/api';
+} from '@features/auth/api';
+import {
+    fetchStudentNotificationSettings,
+    updateStudentNotificationSettings,
+} from '@features/student/api';
 import { parseApiError } from '@shared/api/error';
 import { normalizeUserAvatar } from '@shared/utils/avatar';
 import { loadCachedUser, saveCachedUser } from '@shared/auth/sessionStorage';

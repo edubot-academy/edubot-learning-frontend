@@ -7,9 +7,9 @@ import {
     fetchInstructorChatMessages,
     sendInstructorChatMessage,
     replyInstructorChatMessage,
-    fetchStudentCourses,
-    fetchCourseDetails,
-} from '@services/api';
+} from '@features/instructorChat/api';
+import { fetchCourseDetails } from '@features/courses/api';
+import { fetchStudentCourses } from '@features/student/api';
 import Loader from '@shared/ui/Loader';
 import { API_ERROR_CODES, getApiErrorCode, parseApiError } from '@shared/api/error';
 import { AuthContext } from '../../../context/AuthContext';

@@ -278,6 +278,8 @@ const LessonCard = memo(({
     );
 });
 
+LessonCard.displayName = 'LessonCard';
+
 /**
  * Curriculum Step component
  * Renders the curriculum building interface (Step 2)

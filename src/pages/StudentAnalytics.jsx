@@ -2,7 +2,7 @@ import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { fetchStudentOverviewAnalytics } from '@services/api';
+import { fetchStudentOverviewAnalytics } from '@features/analytics/api';
 import { AuthContext } from '../context/AuthContext';
 import { toast } from 'react-hot-toast';
 import { parseApiError } from '@shared/api/error';

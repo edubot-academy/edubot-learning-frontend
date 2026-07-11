@@ -48,7 +48,7 @@ const formatDate = (value, fallback, language) => {
 
 // ─── Header ──────────────────────────────────────────────────────────────────
 
-function HomeworkDetailHeader({ homework, sessionId, homeworkId, onExport, exporting }) {
+function HomeworkDetailHeader({ homework, onExport, exporting }) {
     const { t, i18n } = useTranslation();
     const statusKey = homework.isPublished ? 'live' : 'draft';
 

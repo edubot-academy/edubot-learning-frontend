@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
-import { createCourse, fetchCategories } from '@services/api';
+import { fetchCategories } from '@features/categories/api';
+import { createCourse } from '@features/courses/api';
 import { parseApiError } from '@shared/api/error';
 
 const toArray = (value) => {

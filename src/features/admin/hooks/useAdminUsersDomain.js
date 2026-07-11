@@ -1,12 +1,8 @@
 import { useCallback, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
-import {
-    deleteUser,
-    enrollUserInCourse,
-    fetchUsers,
-    updateUserRole,
-} from '@services/api';
+import { enrollUserInCourse } from '@features/enrollments/api';
+import { deleteUser, fetchUsers, updateUserRole } from '@features/users/api';
 import { normalizeEnrollmentCourseType } from '@features/enrollments/policy';
 import { isForbiddenError, parseApiError } from '@shared/api/error';
 

@@ -5,7 +5,7 @@ import {
     bulkTranscodeLessonHls,
     getTranscodeStatus,
     transcodeLessonHls,
-} from '@services/api';
+} from '@features/courses/api';
 import { parseApiError } from '@shared/api/error';
 
 export const useAdminTranscodeDomain = ({ loadCoursesAndCategories }) => {

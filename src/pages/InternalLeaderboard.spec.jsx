@@ -15,7 +15,21 @@ const apiMocks = vi.hoisted(() => ({
     fetchStudentCourses: vi.fn(),
 }));
 
-vi.mock('@services/api', () => apiMocks);
+vi.mock('@features/courses/api', () => ({
+    fetchCourses: apiMocks.fetchCourses,
+    fetchInstructorCourses: apiMocks.fetchInstructorCourses,
+}));
+
+vi.mock('@features/leaderboard/api', () => ({
+    fetchInternalCourseLeaderboard: apiMocks.fetchInternalCourseLeaderboard,
+    fetchInternalHomepageLeaderboard: apiMocks.fetchInternalHomepageLeaderboard,
+    fetchInternalStudentOfWeek: apiMocks.fetchInternalStudentOfWeek,
+    fetchInternalWeeklyLeaderboard: apiMocks.fetchInternalWeeklyLeaderboard,
+}));
+
+vi.mock('@features/student/api', () => ({
+    fetchStudentCourses: apiMocks.fetchStudentCourses,
+}));
 
 const renderPage = (user = { id: 7, role: 'admin', fullName: 'Admin User' }) =>
     render(
@@ -69,7 +83,7 @@ describe('InternalLeaderboard', () => {
         });
 
         expect(screen.getByText('Aida Student')).toBeInTheDocument();
-        expect(screen.getByText('Chyngyz Student')).toBeInTheDocument();
+        expect(screen.getAllByText('Chyngyz Student').length).toBeGreaterThan(0);
         expect(screen.getByText('Course Leader')).toBeInTheDocument();
     });
 

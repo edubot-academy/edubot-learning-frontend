@@ -3,13 +3,15 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import {
     fetchCourses,
+    fetchInstructorCourses,
+} from '@features/courses/api';
+import {
     fetchInternalCourseLeaderboard,
     fetchInternalHomepageLeaderboard,
-    fetchInstructorCourses,
     fetchInternalStudentOfWeek,
     fetchInternalWeeklyLeaderboard,
-    fetchStudentCourses,
-} from '@services/api';
+} from '@features/leaderboard/api';
+import { fetchStudentCourses } from '@features/student/api';
 import Loader from '@shared/ui/Loader';
 import { AuthContext } from '../context/AuthContext';
 import {

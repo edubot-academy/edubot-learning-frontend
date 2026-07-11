@@ -6,7 +6,7 @@ import {
     createCourseSession,
     fetchCourseSessions,
     updateCourseSession,
-} from '@services/api';
+} from '@features/groupSessions/api';
 import {
     EDIT_SESSION_DEFAULT,
     QUICK_SESSION_DEFAULT,

@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import {
     fetchInstructorOverviewAnalytics,
-} from '@services/api';
+} from '@features/analytics/api';
 import { AuthContext } from '../context/AuthContext';
 import { isPlatformAdmin } from '@shared/utils/roles';
 import { toast } from 'react-hot-toast';

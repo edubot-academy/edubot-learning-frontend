@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import {
     fetchInstructorStudentCourses,
     fetchCourseStudents,
-} from '@services/api';
+} from '@features/courses/api';
 import { parseApiError } from '@shared/api/error';
 
 const toArray = (value) => {

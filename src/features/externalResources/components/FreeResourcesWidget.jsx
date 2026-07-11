@@ -9,7 +9,7 @@ const STATUS_STYLE = {
     completed: 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800',
 };
 
-const FreeResourcesWidget = ({ userId }) => {
+const FreeResourcesWidget = () => {
     const { t } = useTranslation();
     const { getAllEntries } = useResourceProgress();
 

@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import toast from 'react-hot-toast';
-import { createSkill, deleteSkill, fetchSkills, updateSkill } from '@services/api';
+import { createSkill, deleteSkill, fetchSkills, updateSkill } from '@features/skills/api';
 import { isForbiddenError, parseApiError } from '@shared/api/error';
 import { useTranslation } from 'react-i18next';
 

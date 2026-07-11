@@ -1,5 +1,5 @@
 import React from 'react';
-import { listCompanies, createCompany } from '@services/api';
+import { listCompanies, createCompany } from '@features/companies/api';
 import { Link, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import Loader from '@shared/ui/Loader';

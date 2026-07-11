@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import FeedbackSlider from './FeedbackSlider';
-import { getTopRatings } from '@services/api';
+import { getTopRatings } from '@features/ratings/api';
 
 const FeedbackSection = ({ title, subtitle, rightContent = null }) => {
     const { t } = useTranslation();

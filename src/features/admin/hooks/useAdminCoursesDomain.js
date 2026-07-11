@@ -4,12 +4,14 @@ import { useTranslation } from 'react-i18next';
 import {
     createCategory,
     deleteCategory,
-    deleteCourse,
     fetchCategories,
-    fetchCourseGroups,
-    fetchCourses,
     updateCategory,
-} from '@services/api';
+} from '@features/categories/api';
+import { fetchCourseGroups } from '@features/courseGroups/api';
+import {
+    deleteCourse,
+    fetchCourses,
+} from '@features/courses/api';
 import { normalizeEnrollmentCourseType } from '@features/enrollments/policy';
 import { isForbiddenError, parseApiError } from '@shared/api/error';
 

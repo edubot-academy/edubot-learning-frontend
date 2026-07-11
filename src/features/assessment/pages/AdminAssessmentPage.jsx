@@ -163,7 +163,7 @@ const QuestionsTab = ({ t, lang }) => {
             .then(data => setItems(Array.isArray(data) ? data : (data?.data ?? [])))
             .catch(() => toast.error(t('assessment.admin.questions.loadError')))
             .finally(() => setLoading(false));
-    }, [levelFilter, skillFilter]);
+    }, [levelFilter, skillFilter, t]);
 
     useEffect(() => { load(); }, [load]);
 

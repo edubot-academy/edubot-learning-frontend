@@ -19,7 +19,7 @@ import { DashboardInsetPanel } from '../../../components/ui/dashboard';
 import { parseApiError } from '../../../shared/api/error';
 import { acceptAiGeneration, generateAiFeedbackDraft, generateAiSessionQuizDraft, getAiLmsCapabilities, rejectAiGeneration } from '../../aiLms/api';
 import AiGenerationDrawer from '../../aiLms/components/AiGenerationDrawer';
-import { INTERACTIVE_ACTIVITY_TYPES as INTERACTIVE_TYPES } from '../../student-dashboard/components/ActivityInteractiveForm';
+import { INTERACTIVE_ACTIVITY_TYPES as INTERACTIVE_TYPES } from '../../student-dashboard/utils/interactiveActivityTypes';
 
 const ACTIVITY_TYPE_OPTIONS = [
     { value: 'discussion', labelKey: 'groupSessions.activities.types.discussion', icon: FiMessageSquare },

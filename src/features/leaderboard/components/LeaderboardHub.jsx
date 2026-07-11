@@ -8,13 +8,12 @@ import {
     fetchLeaderboardAchievements,
     fetchLeaderboardChallenges,
     fetchMyLeaderboardSummary,
-    fetchMySkillProgress,
     fetchNearMeLeaderboard,
     fetchSkillLeaderboard,
-    fetchSkills,
     fetchStudentOfWeek,
     fetchWeeklyLeaderboard,
-} from '@services/api';
+} from '@features/leaderboard/api';
+import { fetchMySkillProgress, fetchSkills } from '@features/skills/api';
 import { AuthContext } from '../../../context/AuthContext';
 import {
     AchievementCloud,

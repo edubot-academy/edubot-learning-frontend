@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
-import { getPendingCourses, markCourseApproved, markCourseRejected } from '@services/api';
+import { getPendingCourses, markCourseApproved, markCourseRejected } from '@features/courses/api';
 import { isForbiddenError, parseApiError } from '@shared/api/error';
 
 export const useAdminPendingCoursesDomain = ({ requestConfirmation } = {}) => {

@@ -7,7 +7,7 @@ import {
     deleteAiChat,
     fetchAiChatMessages,
     sendAiChatMessage,
-} from '@services/api';
+} from '@features/ai/api';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { FiMoreHorizontal, FiPaperclip, FiMic } from 'react-icons/fi';

@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import {
     listOfferingsForCourse,
-} from '@services/api';
+} from '@features/offerings/api';
 
 export const useOfferingsManagement = (courses) => {
     const [offeringsByCourse, setOfferingsByCourse] = useState({});

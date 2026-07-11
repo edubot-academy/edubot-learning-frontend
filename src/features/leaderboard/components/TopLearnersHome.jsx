@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { FiArrowRight, FiAward, FiBarChart2, FiStar, FiTrendingUp, FiZap } from 'react-icons/fi';
-import { fetchHomepageLeaderboard } from '@services/api';
+import { fetchHomepageLeaderboard } from '@features/leaderboard/api';
 import Loader from '@shared/ui/Loader';
 
 const MEDAL_STYLE = {

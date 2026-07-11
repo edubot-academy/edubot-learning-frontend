@@ -3,12 +3,12 @@ import { Navigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../context/AuthContext';
 import useDashboardSwipeGestures from '../hooks/useDashboardSwipeGestures';
+import { fetchCategories } from '@features/categories/api';
 import {
     createCourse,
-    fetchCategories,
+    markCoursePending,
     updateCourse,
-} from '@services/api';
-import { markCoursePending } from '@features/courses/api';
+} from '@features/courses/api';
 import toast from 'react-hot-toast';
 import Loader from '../shared/ui/Loader';
 import FloatingActionButton from '../components/ui/FloatingActionButton';

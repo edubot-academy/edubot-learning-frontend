@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import {
     enrollUserInCourse,
     unenrollUserFromCourse,
-} from '@services/api';
+} from '@features/enrollments/api';
 import { normalizeEnrollmentCourseType } from '@features/enrollments/policy';
 
 const confirmToast = (message, onConfirm, labels, confirmClass = 'bg-blue-600 hover:bg-blue-700') => {

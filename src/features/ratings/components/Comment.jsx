@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Button from '@shared-ui/Button';
 import { IoStar, IoStarOutline } from 'react-icons/io5';
-import { rateCourse, getCourseRating } from '@services/api';
+import { rateCourse, getCourseRating } from '@features/ratings/api';
 import toast from 'react-hot-toast';
 import { parseApiError } from '@shared/api/error';
 

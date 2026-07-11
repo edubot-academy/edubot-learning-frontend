@@ -3,13 +3,15 @@ import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import {
     submitSessionHomework,
+    uploadSessionHomeworkAttachment,
+} from '@features/homework/api';
+import {
     submitStudentActivity,
     submitStudentActivityQuiz,
-    uploadSessionHomeworkAttachment,
     uploadStudentActivityAttachment,
-} from '@services/api';
-import { seedVocabularyCards } from '../../student/api';
-import { INTERACTIVE_ACTIVITY_TYPES } from '../components/ActivityInteractiveForm';
+    seedVocabularyCards,
+} from '../../student/api';
+import { INTERACTIVE_ACTIVITY_TYPES } from '../utils/interactiveActivityTypes';
 import {
     getTaskKey,
     resolveSessionHomeworkIds,

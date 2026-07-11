@@ -4,7 +4,7 @@ import { FiAlertTriangle, FiUsers } from 'react-icons/fi';
 import SectionContainer from '@features/marketing/components/SectionContainer';
 import Button from '@shared/ui/Button';
 import CardInstructor from './CardInstrictor';
-import { fetchTopInstructors } from '@services/api';
+import { fetchTopInstructors } from '@features/ratings/api';
 import { useTranslation } from 'react-i18next';
 
 const TopInstructors = () => {

@@ -335,7 +335,8 @@ const ResourceModal = ({ resource, categoryOptions = [], onClose, onSave, t }) =
             if (!isEdit) {
                 await onSave('create', payload);
             } else {
-                const { slug: _slug, ...patch } = payload;
+                const patch = { ...payload };
+                delete patch.slug;
                 await onSave('update', resource.id, patch);
             }
         } finally {

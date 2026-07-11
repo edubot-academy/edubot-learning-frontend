@@ -1,7 +1,7 @@
 
 import React, { useContext } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
-import { getCompany } from '@services/api';
+import { getCompany } from '@features/companies/api';
 import toast from 'react-hot-toast';
 import CompanyMembers from './CompanyMembers';
 import CompanySettings from './CompanySettings';

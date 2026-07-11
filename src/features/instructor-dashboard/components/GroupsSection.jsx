@@ -17,14 +17,14 @@ import { COURSE_GROUP_STATUS } from '@shared/contracts';
 import {
     createCourseGroup,
     createIndividualCourseGroup,
-    enrollUserInCourse,
     fetchCourseDeliveryContext,
     fetchCourseGroups,
     fetchCourseGroupSessionGenerationPreview,
-    fetchUsers,
     generateCourseGroupSessions,
     updateCourseGroup,
-} from '@services/api';
+} from '@features/courseGroups/api';
+import { enrollUserInCourse } from '@features/enrollments/api';
+import { fetchUsers } from '@features/users/api';
 import {
     FiBookOpen,
     FiCalendar,

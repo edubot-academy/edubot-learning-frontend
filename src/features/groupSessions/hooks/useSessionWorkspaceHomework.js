@@ -8,7 +8,7 @@ import {
     fetchSessionHomeworkReviewRoster,
     reviewSessionHomeworkSubmission,
     updateSessionHomework,
-} from '@services/api';
+} from '@features/homework/api';
 import {
     getWorkspaceErrorMessage,
     getWorkspaceErrorStatusMessages,

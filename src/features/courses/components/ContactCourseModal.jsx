@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import toast from 'react-hot-toast';
 import BasicModal from '@shared/ui/BasicModal';
 import { SUPPORT_CONTACT } from '@shared/config/support';
-import { submitContactMessage } from '@services/api';
+import { submitContactMessage } from '@features/contact/api';
 import { useTranslation } from 'react-i18next';
 import { parseApiError } from '@shared/api/error';
 

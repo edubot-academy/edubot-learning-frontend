@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { toast } from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
-import { fetchInstructorCourses } from '@services/api';
+import { fetchInstructorCourses } from '@features/courses/api';
 import {
     isCourseFeatureEnabled,
     TENANT_FEATURES,

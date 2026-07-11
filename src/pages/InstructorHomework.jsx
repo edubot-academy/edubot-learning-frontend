@@ -3,7 +3,9 @@ import { toast } from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { FiAlertCircle, FiBookOpen, FiCalendar, FiCheckCircle, FiClock, FiLayers, FiSearch } from 'react-icons/fi';
-import { fetchInstructorCourses, fetchCourseGroups, fetchHomework, fetchHomeworkSummary } from '@services/api';
+import { fetchCourseGroups } from '@features/courseGroups/api';
+import { fetchInstructorCourses } from '@features/courses/api';
+import { fetchHomework, fetchHomeworkSummary } from '@features/homework/api';
 import Loader from '@shared/ui/Loader';
 import {
     DashboardInsetPanel,

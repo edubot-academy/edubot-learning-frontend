@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useContext } from 'react';
 import FloatingActionButton from '../../../components/ui/FloatingActionButton';
 import { AuthContext } from '../../../context/AuthContext';
-import { markNotificationRead as markNotificationReadApi } from '@services/api';
+import { markNotificationRead as markNotificationReadApi } from '@features/notifications/api';
 import toast from 'react-hot-toast';
 import NotificationsWidget from '@features/notifications/components/NotificationsWidget';
 import NotificationsTab from '@features/notifications/components/NotificationsTab';

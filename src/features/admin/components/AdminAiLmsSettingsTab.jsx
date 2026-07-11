@@ -9,7 +9,7 @@ import {
 } from '@components/ui/dashboard';
 import Loader from '@shared/ui/Loader';
 import { parseApiError } from '@shared/api/error';
-import { fetchUsers } from '@services/api';
+import { fetchUsers } from '@features/users/api';
 import {
     listAiLmsAdminFeatureLimits,
     listAiLmsAdminSettings,

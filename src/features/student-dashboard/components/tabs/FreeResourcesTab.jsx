@@ -17,12 +17,6 @@ import {
 import { resolveLabel } from '@features/externalResources/data/externalResources';
 import { FiBookmark, FiBookOpen, FiCheckCircle, FiGlobe } from 'react-icons/fi';
 
-const STATUS_COLOR = {
-    saved: 'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-300',
-    started: 'bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-300 border border-orange-200 dark:border-orange-800/40',
-    completed: 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800',
-};
-
 const Spinner = ({ size = 'w-4 h-4' }) => (
     <svg className={`animate-spin ${size}`} fill="none" viewBox="0 0 24 24">
         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -638,11 +632,6 @@ const FreeResourcesTab = () => {
     const savedCount = allEntries.filter((e) => e.status === 'saved').length;
     const startedCount = allEntries.filter((e) => e.status === 'started').length;
     const completedCount = allEntries.filter((e) => e.status === 'completed').length;
-
-    const statusLabel = (status) => {
-        const map = { saved: t('public.externalResources.statusSaved'), started: t('public.externalResources.statusStarted'), completed: t('public.externalResources.statusCompleted') };
-        return map[status] ?? status;
-    };
 
     if (progressLoading) {
         return (

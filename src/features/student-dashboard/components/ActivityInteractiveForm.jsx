@@ -299,5 +299,3 @@ export function ActivityInteractiveForm({ task, answers, onChange }) {
     if (activityType === 'writing_correction') return <WritingCorrectionForm payload={payload} answers={answers} onChange={onChange} />;
     return null;
 }
-
-export const INTERACTIVE_ACTIVITY_TYPES = new Set(['vocabulary', 'fill_blank', 'word_match', 'listening', 'writing_correction']);

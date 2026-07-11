@@ -6,8 +6,6 @@ import '@fontsource/inter';
 import './i18n';
 import App from './app/App.jsx';
 import AppProviders from './app/providers';
-import { FavouritesProvider } from './context/FavouritesProvider';
-import { CartProvider } from './context/CartProvider';
 import ScrollToTop from '@shared/ScrollToTop';
 
 createRoot(document.getElementById('root')).render(
@@ -15,11 +13,7 @@ createRoot(document.getElementById('root')).render(
         <BrowserRouter>
             <ScrollToTop />
             <AppProviders>
-                <FavouritesProvider>
-                    <CartProvider>
-                        <App />
-                    </CartProvider>
-                </FavouritesProvider>
+                <App />
             </AppProviders>
         </BrowserRouter>
     </StrictMode>

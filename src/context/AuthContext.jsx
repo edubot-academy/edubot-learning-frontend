@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useState, useEffect, useCallback, useMemo } from 'react';
-import { fetchUserProfile, logoutUser } from '@services/api';
+import { fetchUserProfile, logoutUser } from '@features/auth/api';
 import { normalizeUserAvatar } from '@shared/utils/avatar';
 import {
     clearStoredSession,

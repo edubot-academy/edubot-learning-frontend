@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import {
     fetchInstructorProfile,
     updateInstructorProfile,
-} from '@services/api';
+} from '@features/auth/api';
 import { parseApiError } from '@shared/api/error';
 
 export const useInstructorProfile = (user) => {

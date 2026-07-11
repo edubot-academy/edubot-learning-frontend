@@ -5,20 +5,24 @@ import i18n from '../../../i18n';
 import {
     fetchCourseDetails,
     fetchSections,
+    fetchLessonQuiz,
+    fetchLessonQuizResult,
+    submitLessonQuiz,
+    fetchLessonChallenge,
+    submitLessonChallenge,
+} from '@features/courses/api';
+import { fetchEnrollment } from '@features/enrollments/api';
+import {
     markLessonComplete,
     updateLastViewedLesson,
     fetchUserProgress,
     getLastViewedLesson,
     getVideoTime,
     updateVideoTime,
-    fetchEnrollment,
-    fetchLessonQuiz,
-    fetchLessonQuizResult,
-    submitLessonQuiz,
-    fetchLessonChallenge,
-    submitLessonChallenge,
+} from '@features/progress/api';
+import {
     fetchStudentCourses,
-} from '@services/api';
+} from '@features/student/api';
 import { isForbiddenError, parseApiError } from '@shared/api/error';
 import { isPlatformAdmin } from '@shared/utils/roles';
 import { isCourseFeatureEnabled, TENANT_FEATURES } from '@shared/utils/tenantFeatures';

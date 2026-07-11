@@ -11,7 +11,7 @@ import {
     unlinkCompanyCrmTenant,
     updateCompany,
     uploadCompanyLogo,
-} from '@services/api';
+} from '@features/companies/api';
 import { isForbiddenError, parseApiError } from '@shared/api/error';
 import { useTranslation } from 'react-i18next';
 

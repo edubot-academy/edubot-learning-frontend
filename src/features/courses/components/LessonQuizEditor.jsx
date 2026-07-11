@@ -5,7 +5,6 @@ import { FiTrash2, FiChevronUp, FiChevronDown, FiPlus } from 'react-icons/fi';
 import { createEmptyQuestion, createEmptyQuiz, cloneQuiz, parseImportedQuiz } from '@utils/quizUtils';
 import AiGenerationDrawer from '../../aiLms/components/AiGenerationDrawer';
 import QuizRichInput from './QuizRichInput';
-import InlineRichText from '@shared/ui/InlineRichText';
 
 const LessonQuizEditor = ({
     quiz,

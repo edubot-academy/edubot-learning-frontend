@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { fetchAdminOverviewAnalytics } from '@services/api';
+import { fetchAdminOverviewAnalytics } from '@features/analytics/api';
 import { toast } from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { FiAlertCircle, FiBarChart2, FiBookOpen, FiCheckCircle, FiRefreshCw, FiTrendingUp, FiUsers } from 'react-icons/fi';

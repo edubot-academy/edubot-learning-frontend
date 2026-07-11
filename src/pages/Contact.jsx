@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { submitContactMessage } from '@services/api';
+import { submitContactMessage } from '@features/contact/api';
 import toast from 'react-hot-toast';
 import PhoneInput from '@shared/ui/forms/PhoneInput';
 import LeftLittleMan from '../assets/images/LeftLittleMan.png';

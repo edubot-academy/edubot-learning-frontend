@@ -32,6 +32,8 @@ const stripCodeFences = (value) => value
 const escHtml = (str) =>
     str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
+const stripHtml = (html = '') => html.replace(/<[^>]*>/g, '').trim();
+
 // Matches backtick code spans OR bare HTML tags. Must stay in sync with QuizRichInput.jsx.
 const INLINE_CODE_RE = /(`[^`\n]+`)|(<\/?[a-zA-Z][a-zA-Z0-9]*(?:\s[^<>]*)?\/?>)/g;
 
@@ -110,7 +112,7 @@ const findOptionIndexByAnswerHint = (hint, options) => {
     }
 
     const directTextIndex = options.findIndex(
-        (option) => option.text.localeCompare(normalizedHint, undefined, { sensitivity: 'accent' }) === 0
+        (option) => stripHtml(option.text).localeCompare(normalizedHint, undefined, { sensitivity: 'accent' }) === 0
     );
     if (directTextIndex >= 0) {
         return directTextIndex;
@@ -444,8 +446,6 @@ export const normalizeQuizForApi = (quiz) => {
         questions,
     };
 };
-
-const stripHtml = (html = '') => html.replace(/<[^>]*>/g, '').trim();
 
 export const validateQuiz = (quiz) => {
     if (!quiz) {

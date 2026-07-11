@@ -2,11 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { COURSE_TYPE } from '@shared/contracts';
-import {
-    fetchCourseGroups,
-    fetchCourseSessions,
-    fetchInstructorCourses,
-} from '@services/api';
+import { fetchCourseGroups } from '@features/courseGroups/api';
+import { fetchInstructorCourses } from '@features/courses/api';
+import { fetchCourseSessions } from '@features/groupSessions/api';
 import {
     getWorkspaceErrorMessage,
     getWorkspaceErrorStatusMessages,

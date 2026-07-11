@@ -12,7 +12,7 @@ import {
     fetchSessionInsights,
     fetchCourseSessions,
     updateCourseSession,
-} from '@services/api';
+} from '@features/groupSessions/api';
 import {
     FiAlertCircle,
     FiActivity,

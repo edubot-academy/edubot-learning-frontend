@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { publicCatalog } from '@services/api';
+import { publicCatalog } from '@features/offerings/catalog';
 
 const DEFAULT_CATALOG_DATA = {
     items: [],

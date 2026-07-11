@@ -6,7 +6,7 @@ import {
     deleteCourseAiPrompt,
     fetchCourseAiPrompts,
     updateCourseAiPrompt,
-} from '@services/api';
+} from '@features/ai/api';
 import { isForbiddenError, parseApiError } from '@shared/api/error';
 
 export const useAdminAiPromptsDomain = ({ requestConfirmation }) => {
@@ -71,40 +71,50 @@ export const useAdminAiPromptsDomain = ({ requestConfirmation }) => {
         t,
     ]);
 
-    const handleUpdatePrompt = useCallback(async (promptId, updates) => {
-        try {
-            await updateCourseAiPrompt(promptId, updates);
-            setAiPrompts((prev) =>
-                prev.map((prompt) => (prompt.id === promptId ? { ...prompt, ...updates } : prompt))
-            );
-            toast.success(t('adminAiPrompts.toasts.updated'));
-        } catch (error) {
-            toast.error(parseApiError(error, t('adminAiPrompts.toasts.updateError')).message);
-        }
-    }, [t]);
+        const handleUpdatePrompt = useCallback(async (promptId, updates) => {
+            if (!aiPromptCourseId) {
+                toast.error(t('adminAiPrompts.toasts.selectCourse'));
+                return;
+            }
 
-    const handleDeletePrompt = useCallback(
-        async (promptId) => {
-            requestConfirmation({
-                title: t('adminAiPrompts.confirm.deleteTitle'),
-                message: t('adminAiPrompts.confirm.deleteMessage'),
-                confirmLabel: t('adminAiPrompts.actions.delete'),
-                confirmVariant: 'danger',
-                onConfirm: async () => {
-                    try {
-                        await deleteCourseAiPrompt(promptId);
-                        setAiPrompts((prev) => prev.filter((prompt) => prompt.id !== promptId));
-                        toast.success(t('adminAiPrompts.toasts.deleted'));
-                    } catch (error) {
+            try {
+                await updateCourseAiPrompt(aiPromptCourseId, promptId, updates);
+                setAiPrompts((prev) =>
+                    prev.map((prompt) => (prompt.id === promptId ? { ...prompt, ...updates } : prompt))
+                );
+                toast.success(t('adminAiPrompts.toasts.updated'));
+            } catch (error) {
+                toast.error(parseApiError(error, t('adminAiPrompts.toasts.updateError')).message);
+            }
+        }, [aiPromptCourseId, t]);
+
+        const handleDeletePrompt = useCallback(
+            async (promptId) => {
+                if (!aiPromptCourseId) {
+                    toast.error(t('adminAiPrompts.toasts.selectCourse'));
+                    return;
+                }
+
+                requestConfirmation({
+                    title: t('adminAiPrompts.confirm.deleteTitle'),
+                    message: t('adminAiPrompts.confirm.deleteMessage'),
+                    confirmLabel: t('adminAiPrompts.actions.delete'),
+                    confirmVariant: 'danger',
+                    onConfirm: async () => {
+                        try {
+                            await deleteCourseAiPrompt(aiPromptCourseId, promptId);
+                            setAiPrompts((prev) => prev.filter((prompt) => prompt.id !== promptId));
+                            toast.success(t('adminAiPrompts.toasts.deleted'));
+                        } catch (error) {
                         toast.error(
                             parseApiError(error, t('adminAiPrompts.toasts.deleteError')).message
                         );
                     }
-                },
-            });
-        },
-        [requestConfirmation, t]
-    );
+                    },
+                });
+            },
+            [aiPromptCourseId, requestConfirmation, t]
+        );
 
     return {
         aiPromptCourseId,

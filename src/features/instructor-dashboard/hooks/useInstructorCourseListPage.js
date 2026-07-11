@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { fetchInstructorCourses } from '@services/api';
+import { fetchInstructorCourses } from '@features/courses/api';
 
 const toCourseList = (payload) => {
     if (Array.isArray(payload?.courses)) return payload.courses;

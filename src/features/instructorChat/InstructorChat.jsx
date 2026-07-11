@@ -5,7 +5,7 @@ import {
     fetchInstructorChats,
     fetchInstructorChatMessages,
     sendInstructorChatMessage,
-} from '@services/api';
+} from '@features/instructorChat/api';
 import { FaPlus } from 'react-icons/fa6';
 import { SlPicture } from 'react-icons/sl';
 import { CgFileDocument } from 'react-icons/cg';

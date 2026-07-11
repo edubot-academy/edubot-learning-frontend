@@ -19,7 +19,7 @@ import {
     FiTrash2,
     FiX,
 } from 'react-icons/fi';
-import { fetchUsers } from '@services/api';
+import { fetchUsers } from '@features/users/api';
 import { LOCALE_OPTIONS, normalizeLocale } from '../../../i18n/locale';
 import { useTranslation } from 'react-i18next';
 
