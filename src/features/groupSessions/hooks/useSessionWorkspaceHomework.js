@@ -176,7 +176,7 @@ export const useSessionWorkspaceHomework = ({
                     Number(selectedHomework.id)
                 );
                 if (cancelled) return;
-                setHomeworkSubmissions(toArray(response?.items));
+                setHomeworkSubmissions(toArray(response));
             } catch (error) {
                 if (cancelled) return;
                 console.error(error);

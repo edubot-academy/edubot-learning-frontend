@@ -13,7 +13,7 @@ import {
     fetchStudentUpcomingSessions,
 } from '@features/student/api';
 import { parseApiError } from '@shared/api/error';
-import { toItems } from '../utils/studentDashboard.helpers.js';
+import { toArray } from '@shared/api/response';
 
 const INITIAL_LOADED_TABS = {
     overview: false,
@@ -108,7 +108,7 @@ export const useStudentDashboardData = ({
         setTabLoading('my-courses');
         try {
             const coursesRes = await fetchStudentCourses(studentId);
-            setCourses(Array.isArray(coursesRes?.items) ? coursesRes.items : coursesRes || []);
+            setCourses(toArray(coursesRes));
         } catch (error) {
             console.error('Failed to load courses', error);
             toast.error(parseApiError(error, t('studentDashboard.data.toasts.coursesLoadError')).message);
@@ -126,12 +126,8 @@ export const useStudentDashboardData = ({
                 fetchStudentUpcomingSessions(studentFilters),
                 fetchStudentRecordings(studentFilters),
             ]);
-            setOfferings(
-                Array.isArray(offeringsRes?.items) ? offeringsRes.items : offeringsRes || []
-            );
-            setRecordings(
-                Array.isArray(recordingsRes?.items) ? recordingsRes.items : recordingsRes || []
-            );
+            setOfferings(toArray(offeringsRes));
+            setRecordings(toArray(recordingsRes));
         } catch (error) {
             console.error('Failed to load schedule', error);
             toast.error(parseApiError(error, t('studentDashboard.data.toasts.scheduleLoadError')).message);
@@ -148,7 +144,7 @@ export const useStudentDashboardData = ({
         }
         try {
             const tasksRes = await fetchStudentTasks(studentFilters);
-            setTasks(toItems(tasksRes));
+            setTasks(toArray(tasksRes));
         } catch (error) {
             console.error('Failed to load tasks', error);
             if (!silent) {
@@ -167,7 +163,7 @@ export const useStudentDashboardData = ({
         setTabLoading('resources');
         try {
             const resourcesRes = await fetchStudentResources(studentFilters);
-            setResources(Array.isArray(resourcesRes?.items) ? resourcesRes.items : resourcesRes || []);
+            setResources(toArray(resourcesRes));
         } catch (error) {
             console.error('Failed to load student resources', error);
             toast.error(parseApiError(error, t('studentDashboard.data.toasts.resourcesLoadError')).message);
@@ -185,12 +181,8 @@ export const useStudentDashboardData = ({
                 fetchStudentProgress(studentId),
                 fetchStudentCertificates(studentId),
             ]);
-            setProgress(Array.isArray(progressRes?.items) ? progressRes.items : progressRes || []);
-            setCertificates(
-                Array.isArray(certificatesRes?.items)
-                    ? certificatesRes.items
-                    : certificatesRes || []
-            );
+            setProgress(toArray(progressRes));
+            setCertificates(toArray(certificatesRes));
         } catch (error) {
             console.error('Failed to load progress', error);
             toast.error(parseApiError(error, t('studentDashboard.data.toasts.progressLoadError')).message);
@@ -205,11 +197,7 @@ export const useStudentDashboardData = ({
         setTabLoading('certificates');
         try {
             const certificatesRes = await fetchStudentCertificates(studentId);
-            setCertificates(
-                Array.isArray(certificatesRes?.items)
-                    ? certificatesRes.items
-                    : certificatesRes || []
-            );
+            setCertificates(toArray(certificatesRes));
         } catch (error) {
             console.error('Failed to load certificates', error);
             toast.error(parseApiError(error, t('studentDashboard.data.toasts.certificatesLoadError')).message);

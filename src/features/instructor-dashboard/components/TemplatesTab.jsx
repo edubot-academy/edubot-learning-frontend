@@ -19,9 +19,7 @@ import {
     updateLessonPlanTemplate,
     deleteLessonPlanTemplate,
 } from '@features/lessonPlanTemplates/api';
-
-const toArray = (v) =>
-    Array.isArray(v) ? v : Array.isArray(v?.items) ? v.items : Array.isArray(v?.data) ? v.data : [];
+import { toArray } from '@shared/api/response';
 
 const TemplatesTab = () => {
     const { t } = useTranslation();

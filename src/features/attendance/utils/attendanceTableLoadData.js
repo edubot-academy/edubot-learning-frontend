@@ -1,11 +1,12 @@
+import { toArray } from '@shared/api/response';
+
 export const normalizeLegacyAttendanceTableList = (payload) => {
-  if (Array.isArray(payload)) return payload;
-  return payload?.items || payload?.data || [];
+  return toArray(payload);
 };
 
 export const normalizeLegacySessionAttendanceItems = (payload) => {
-  if (Array.isArray(payload)) return payload;
-  return payload?.items || payload?.rows || payload?.data || [];
+  if (Array.isArray(payload?.rows)) return payload.rows;
+  return toArray(payload);
 };
 
 export const cloneAttendanceData = (data = {}) =>

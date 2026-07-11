@@ -2,6 +2,33 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.18.5] - 2026-07-11
+
+### Added
+
+- Header refactor coverage: added focused tests for course search debounce/error handling, header interaction state resets, mobile search outside-click behavior, and public catalog response normalization.
+- Shared utility coverage: added tests for shared API response list normalization, bounded async mapping, and delivery-course workflow orchestration.
+
+### Changed
+
+- Header architecture: split the large shared header into focused logo, navigation, search, action, notification, and interaction-state modules while preserving the existing desktop/mobile behavior.
+- Instructor delivery-course workflow: moved create/edit/submit orchestration out of the dashboard page and into `useDeliveryCourse`, including category loading, payload normalization, pending-review transitions, and caller callbacks.
+- API response handling: centralized repeated `items`/`data` list parsing through `@shared/api/response` across instructor, admin, attendance, group session, student dashboard, public catalog, notifications, and public page loaders.
+- Admin course group loading: replaced unbounded group fetch fan-out with bounded concurrent mapping to reduce backend pressure on large course lists.
+
+### Fixed
+
+- Mobile header search: prevented the hidden desktop search outside-click listener from closing shared mobile search results before result selection can run.
+- Public catalog data normalization: ensured normalized `items` and clamped `totalPages` cannot be overwritten by malformed backend payload fields.
+
+### Verification
+
+- `npm run lint`
+- `npm run build`
+- `npm test`
+
+---
+
 ## [1.18.4] - 2026-07-11
 
 ### Added

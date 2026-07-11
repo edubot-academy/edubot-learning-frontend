@@ -3,6 +3,7 @@ import {
     COURSE_TYPE,
 } from '@shared/contracts';
 import { parseApiError } from '@shared/api/error';
+import { toArray as toResponseArray } from '@shared/api/response';
 import { getCourseTypeLabel as getSharedCourseTypeLabel } from '@shared/i18n/enumLabels';
 
 export const JOIN_WINDOW_MS = 10 * 60 * 1000;
@@ -47,11 +48,8 @@ export const toLocalDateKey = (value) => {
 };
 
 export const toArray = (payload) => {
-    if (Array.isArray(payload)) return payload;
-    if (Array.isArray(payload?.items)) return payload.items;
-    if (Array.isArray(payload?.data)) return payload.data;
     if (Array.isArray(payload?.courses)) return payload.courses;
-    return [];
+    return toResponseArray(payload);
 };
 
 export const getNextSessionIndex = (sessionList = []) => {

@@ -16,6 +16,7 @@ import {
 } from 'react-icons/fi';
 import { COURSE_GROUP_STATUS, COURSE_TYPE, MEETING_PROVIDER } from '@shared/contracts';
 import Loader from '@shared/ui/Loader';
+import { toArray } from '@shared/api/response';
 
 const WEEKDAY_OPTIONS = [
     { value: 'mon', labelKey: 'instructorDashboard.groupForm.weekdays.mon' },
@@ -34,13 +35,6 @@ const getInitials = (value = '') =>
         .slice(0, 2)
         .map((part) => part[0]?.toUpperCase())
         .join('') || 'S';
-
-const toArray = (value) => {
-    if (Array.isArray(value)) return value;
-    if (Array.isArray(value?.items)) return value.items;
-    if (Array.isArray(value?.data)) return value.data;
-    return [];
-};
 
 const GroupFormModal = ({
     mode,

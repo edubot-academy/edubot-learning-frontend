@@ -14,6 +14,10 @@ import {
 } from '@features/courses/api';
 import { normalizeEnrollmentCourseType } from '@features/enrollments/policy';
 import { isForbiddenError, parseApiError } from '@shared/api/error';
+import { toArray } from '@shared/api/response';
+import { mapWithConcurrency } from '@shared/utils/async';
+
+const COURSE_GROUPS_FETCH_CONCURRENCY = 4;
 
 export const useAdminCoursesDomain = ({ requestConfirmation }) => {
     const { t } = useTranslation();
@@ -46,23 +50,18 @@ export const useAdminCoursesDomain = ({ requestConfirmation }) => {
                 return;
             }
 
-            const groupEntries = await Promise.all(
-                deliveryCourses.map(async (course) => {
+            const groupEntries = await mapWithConcurrency(
+                deliveryCourses,
+                COURSE_GROUPS_FETCH_CONCURRENCY,
+                async (course) => {
                     try {
                         const response = await fetchCourseGroups({ courseId: Number(course.id) });
-                        const items = Array.isArray(response)
-                            ? response
-                            : Array.isArray(response?.items)
-                              ? response.items
-                              : Array.isArray(response?.data)
-                                ? response.data
-                                : [];
-                        return [String(course.id), items];
+                        return [String(course.id), toArray(response)];
                     } catch (error) {
                         console.error('Failed to load groups for admin course', course.id, error);
                         return [String(course.id), []];
                     }
-                })
+                }
             );
 
             setCourseGroupsByCourseId(Object.fromEntries(groupEntries));

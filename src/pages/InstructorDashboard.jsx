@@ -3,13 +3,6 @@ import { Navigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../context/AuthContext';
 import useDashboardSwipeGestures from '../hooks/useDashboardSwipeGestures';
-import { fetchCategories } from '@features/categories/api';
-import {
-    createCourse,
-    markCoursePending,
-    updateCourse,
-} from '@features/courses/api';
-import toast from 'react-hot-toast';
 import Loader from '../shared/ui/Loader';
 import FloatingActionButton from '../components/ui/FloatingActionButton';
 import {
@@ -26,6 +19,7 @@ import {
 } from '@features/instructor-dashboard';
 import { useInstructorDashboardRouteState } from '@features/instructor-dashboard/hooks/useInstructorDashboardRouteState.js';
 import { useInstructorCourses } from '@features/instructor-dashboard/hooks/useInstructorCourses.js';
+import { useDeliveryCourse } from '@features/instructor-dashboard/hooks/useDeliveryCourse.js';
 import { useInstructorProfile } from '@features/instructor-dashboard/hooks/useInstructorProfile.js';
 import { useInstructorStudentWorkspace } from '@features/instructor-dashboard/hooks/useInstructorStudentWorkspace.js';
 import { useOfferingsManagement } from '@features/instructor-dashboard/hooks/useOfferingsManagement.js';
@@ -36,7 +30,6 @@ import {
 } from '../components/ui/dashboard';
 import { useDashboardKeyboardNavigation } from '../components/ui/dashboard/useDashboardKeyboardNavigation';
 import { getDashboardPath } from '@shared/utils/navigation';
-import { parseApiError } from '@shared/api/error';
 
 const AttendancePage = lazy(() => import('./Attendance'));
 const SessionWorkspacePage = lazy(() => import('./SessionWorkspace'));
@@ -61,14 +54,6 @@ const InstructorDashboard = () => {
         navItems: NAV_ITEMS,
     });
     useDashboardKeyboardNavigation();
-
-    const [showDeliveryModal, setShowDeliveryModal] = useState(false);
-    const [creatingDeliveryCourse, setCreatingDeliveryCourse] = useState(false);
-    const [showEditDeliveryModal, setShowEditDeliveryModal] = useState(false);
-    const [editingDeliveryCourse, setEditingDeliveryCourse] = useState(null);
-    const [updatingDeliveryCourse, setUpdatingDeliveryCourse] = useState(false);
-    const [submittingCourseId, setSubmittingCourseId] = useState(null);
-    const [deliveryCategories, setDeliveryCategories] = useState([]);
 
     const analyticsLink = useMemo(() => {
         const to = new Date();
@@ -100,6 +85,62 @@ const InstructorDashboard = () => {
         upsertCourse,
         markCoursePendingLocally,
     } = useInstructorCourses(user, profile);
+    const handleDeliveryCourseCreated = useCallback(async (createdCourse) => {
+        handleTabSelect('courses');
+
+        if (!upsertCourse(createdCourse)) {
+            await loadCourses();
+        }
+    }, [handleTabSelect, loadCourses, upsertCourse]);
+
+    const handleDeliveryCourseUpdated = useCallback(async ({
+        courseId,
+        requiresReview,
+        reviewCourse,
+        updatedCourse,
+    }) => {
+        const appliedCourseUpdate = upsertCourse(reviewCourse || updatedCourse);
+
+        if (requiresReview) {
+            if (!appliedCourseUpdate) upsertCourse(updatedCourse);
+            markCoursePendingLocally(courseId);
+            return;
+        }
+
+        if (!appliedCourseUpdate) {
+            await loadCourses();
+        }
+    }, [loadCourses, markCoursePendingLocally, upsertCourse]);
+
+    const handleCourseSubmittedForApproval = useCallback(({
+        courseId,
+        pendingCourse,
+    }) => {
+        if (!upsertCourse(pendingCourse)) {
+            markCoursePendingLocally(courseId);
+        }
+    }, [markCoursePendingLocally, upsertCourse]);
+
+    const {
+        closeDeliveryModal,
+        closeEditDeliveryModal,
+        creatingDeliveryCourse,
+        deliveryCategories,
+        editingDeliveryCourse,
+        handleCreateDeliveryCourse,
+        handleSubmitCourseForApproval,
+        handleUpdateDeliveryCourse,
+        openDeliveryEditModal,
+        openDeliveryModal,
+        showDeliveryModal,
+        showEditDeliveryModal,
+        submittingCourseId,
+        updatingDeliveryCourse,
+    } = useDeliveryCourse({
+        onCreated: handleDeliveryCourseCreated,
+        onUpdated: handleDeliveryCourseUpdated,
+        onSubmittedForApproval: handleCourseSubmittedForApproval,
+    });
     const {
         certificateActionKind,
         certificateActionStudentId,
@@ -173,169 +214,6 @@ const InstructorDashboard = () => {
     useEffect(() => {
         loadProfile();
     }, [loadProfile]);
-
-    const closeDeliveryModal = () => {
-        setShowDeliveryModal(false);
-    };
-
-    const closeEditDeliveryModal = () => {
-        setShowEditDeliveryModal(false);
-        setEditingDeliveryCourse(null);
-    };
-
-    const openDeliveryModal = async () => {
-        if (!deliveryCategories.length) {
-            try {
-                const categories = await fetchCategories();
-                setDeliveryCategories(Array.isArray(categories) ? categories : []);
-            } catch (error) {
-                console.error('Failed to load categories', error);
-                toast.error(t('instructorDashboard.shell.toasts.categoriesLoadError'));
-            }
-        }
-
-        setShowDeliveryModal(true);
-    };
-
-    const openDeliveryEditModal = async (course) => {
-        if (!course) return;
-
-        if (!deliveryCategories.length) {
-            try {
-                const categories = await fetchCategories();
-                setDeliveryCategories(Array.isArray(categories) ? categories : []);
-            } catch (error) {
-                console.error('Failed to load categories', error);
-                toast.error(t('instructorDashboard.shell.toasts.categoriesLoadError'));
-                return;
-            }
-        }
-
-        setEditingDeliveryCourse({
-            id: course.id,
-            courseType: course.courseType || 'offline',
-            title: course.title || '',
-            description: course.description || '',
-            categoryId: course.category?.id || course.categoryId || '',
-            price: course.price || 0,
-            languageCode: course.languageCode || 'ky',
-            status: course.status || '',
-            isPublished: Boolean(course.isPublished),
-        });
-        setShowEditDeliveryModal(true);
-    };
-
-    const handleCreateDeliveryCourse = async (payload) => {
-        if (!payload?.title || !payload?.description || !payload?.categoryId) {
-            toast.error(t('instructorDashboard.shell.toasts.requiredFields'));
-            return false;
-        }
-
-        setCreatingDeliveryCourse(true);
-        try {
-            const createdCourse = await createCourse({
-                title: payload.title,
-                description: payload.description,
-                categoryId: parseInt(payload.categoryId, 10),
-                price: Number(payload.price || 0),
-                languageCode: payload.languageCode || 'ky',
-                courseType: payload.courseType,
-                isPaid: Number(payload.price || 0) > 0,
-            });
-
-            toast.success(t('instructorDashboard.shell.toasts.deliveryCourseCreated'));
-            closeDeliveryModal();
-            handleTabSelect('courses');
-
-            if (!upsertCourse(createdCourse)) {
-                await loadCourses();
-            }
-            return true;
-        } catch (error) {
-            console.error('Failed to create delivery course', error);
-            toast.error(
-                parseApiError(error, t('instructorDashboard.shell.toasts.deliveryCourseCreateError')).message
-            );
-            return false;
-        } finally {
-            setCreatingDeliveryCourse(false);
-        }
-    };
-
-    const handleUpdateDeliveryCourse = async (payload) => {
-        if (!editingDeliveryCourse?.id) return false;
-
-        if (!payload?.title || !payload?.description || !payload?.categoryId) {
-            toast.error(t('instructorDashboard.shell.toasts.requiredFields'));
-            return false;
-        }
-
-        setUpdatingDeliveryCourse(true);
-        try {
-            const updatedCourse = await updateCourse(editingDeliveryCourse.id, {
-                title: payload.title,
-                description: payload.description,
-                categoryId: parseInt(payload.categoryId, 10),
-                price: Number(payload.price || 0),
-                languageCode: payload.languageCode || 'ky',
-                courseType: payload.courseType,
-                isPaid: Number(payload.price || 0) > 0,
-            });
-
-            const requiresReview =
-                editingDeliveryCourse.status === 'approved' || editingDeliveryCourse.isPublished;
-
-            let reviewCourse = null;
-            if (requiresReview) {
-                reviewCourse = await markCoursePending(editingDeliveryCourse.id);
-            }
-
-            const appliedCourseUpdate = upsertCourse(reviewCourse || updatedCourse);
-            if (requiresReview) {
-                if (!appliedCourseUpdate) upsertCourse(updatedCourse);
-                markCoursePendingLocally(editingDeliveryCourse.id);
-            } else if (!appliedCourseUpdate) {
-                await loadCourses();
-            }
-            toast.success(
-                requiresReview
-                    ? t('instructorDashboard.shell.toasts.deliveryCourseUpdatedForReview')
-                    : t('instructorDashboard.shell.toasts.deliveryCourseUpdated')
-            );
-            closeEditDeliveryModal();
-            return true;
-        } catch (error) {
-            console.error('Failed to update delivery course', error);
-            toast.error(
-                parseApiError(error, t('instructorDashboard.shell.toasts.deliveryCourseUpdateError')).message
-            );
-            return false;
-        } finally {
-            setUpdatingDeliveryCourse(false);
-        }
-    };
-
-    const handleSubmitCourseForApproval = useCallback(async (courseId) => {
-        if (!courseId) return false;
-
-        setSubmittingCourseId(courseId);
-        try {
-            const pendingCourse = await markCoursePending(courseId);
-            if (!upsertCourse(pendingCourse)) {
-                markCoursePendingLocally(courseId);
-            }
-            toast.success(t('instructorDashboard.shell.toasts.courseSubmittedForApproval'));
-            return true;
-        } catch (error) {
-            console.error('Failed to submit course for approval', error);
-            toast.error(
-                parseApiError(error, t('instructorDashboard.shell.toasts.courseSubmitError')).message
-            );
-            return false;
-        } finally {
-            setSubmittingCourseId(null);
-        }
-    }, [markCoursePendingLocally, t, upsertCourse]);
 
     const isTabLoading =
         loadingStudentCourses || loadingCourseStudents || loadingOfferings;

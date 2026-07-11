@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { FiChevronDown, FiChevronUp, FiRefreshCw } from 'react-icons/fi';
 import { DashboardInsetPanel } from '@components/ui/dashboard';
 import { getAdminAiUsage, getAdminAiAuditLogs, getAdminAiGeneration } from '@features/aiLms/api';
+import { toArray } from '@shared/api/response';
 
 const FEATURES = [
     'feedback_draft', 'lesson_quiz_draft', 'homework_draft',
@@ -11,9 +12,6 @@ const FEATURES = [
 ];
 
 const USAGE_STATUSES = ['reserved', 'succeeded', 'failed'];
-
-const toArray = (v) =>
-    Array.isArray(v) ? v : Array.isArray(v?.items) ? v.items : Array.isArray(v?.data) ? v.data : [];
 
 const fmtDate = (raw) => {
     if (!raw) return '—';

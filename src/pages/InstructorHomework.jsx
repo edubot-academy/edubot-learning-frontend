@@ -19,13 +19,7 @@ import {
 } from '@shared/utils/tenantFeatures';
 import { getDashboardPath } from '@shared/utils/navigation';
 import { parseApiError } from '@shared/api/error';
-
-const toArray = (payload) => {
-    if (Array.isArray(payload)) return payload;
-    if (Array.isArray(payload?.items)) return payload.items;
-    if (Array.isArray(payload?.data)) return payload.data;
-    return [];
-};
+import { toArray } from '@shared/api/response';
 
 const HOMEWORK_QUEUE_FILTERS = [
     'all',

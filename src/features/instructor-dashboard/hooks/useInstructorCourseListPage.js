@@ -1,13 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { fetchInstructorCourses } from '@features/courses/api';
+import { toArray } from '@shared/api/response';
 
-const toCourseList = (payload) => {
-    if (Array.isArray(payload?.courses)) return payload.courses;
-    if (Array.isArray(payload?.items)) return payload.items;
-    if (Array.isArray(payload?.data)) return payload.data;
-    if (Array.isArray(payload)) return payload;
-    return [];
-};
+const toCourseList = (payload) => toArray(payload?.courses || payload);
 
 export const useInstructorCourseListPage = (user) => {
     const [courses, setCourses] = useState([]);

@@ -116,13 +116,6 @@ const readArray = (obj, paths = []) => {
     return [];
 };
 
-const toItems = (payload) => {
-    if (Array.isArray(payload)) return payload;
-    if (Array.isArray(payload?.items)) return payload.items;
-    if (Array.isArray(payload?.data)) return payload.data;
-    return [];
-};
-
 const getTaskKey = (task = {}) =>
     String(
         task.id ||
@@ -157,7 +150,6 @@ export {
     resolveRecordings,
     readNumber,
     readArray,
-    toItems,
     getTaskKey,
     resolveSessionHomeworkIds,
 };

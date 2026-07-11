@@ -15,6 +15,7 @@ import {
 } from '@components/ui/dashboard';
 import { FiBell, FiCheckCircle, FiInbox, FiLink2 } from 'react-icons/fi';
 import { useTranslation } from 'react-i18next';
+import { toArray } from '@shared/api/response';
 
 const NotificationsTab = () => {
     const { i18n, t } = useTranslation();
@@ -42,7 +43,7 @@ const NotificationsTab = () => {
                 fetchNotifications({ page: nextPage, limit: 10 }),
                 fetchUnreadNotificationsCount(),
             ]);
-            const nextItems = Array.isArray(listRes?.items) ? listRes.items : [];
+            const nextItems = toArray(listRes);
             setItems((prev) => (nextPage === 1 ? nextItems : [...prev, ...nextItems]));
             setPage(nextPage);
             setHasMore(nextPage < (listRes.totalPages || 1));

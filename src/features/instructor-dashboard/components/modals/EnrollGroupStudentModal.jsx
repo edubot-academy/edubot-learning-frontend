@@ -10,6 +10,7 @@ import {
     FiX,
 } from 'react-icons/fi';
 import Loader from '@shared/ui/Loader';
+import { toArray } from '@shared/api/response';
 
 const getInitials = (value = '') =>
     value
@@ -18,13 +19,6 @@ const getInitials = (value = '') =>
         .slice(0, 2)
         .map((part) => part[0]?.toUpperCase())
         .join('') || 'S';
-
-const toArray = (value) => {
-    if (Array.isArray(value)) return value;
-    if (Array.isArray(value?.items)) return value.items;
-    if (Array.isArray(value?.data)) return value.data;
-    return [];
-};
 
 const studentShape = PropTypes.shape({
     id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,

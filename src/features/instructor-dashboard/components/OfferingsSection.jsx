@@ -33,13 +33,7 @@ import EnrollStudentModal from './modals/EnrollStudentModal.jsx';
 import { formatDateTimeForInput } from '../utils/instructorDashboard.constants.js';
 import { normalizeEnrollmentCourseType } from '@features/enrollments/policy';
 import { parseApiError } from '@shared/api/error';
-
-const toArray = (value) => {
-    if (Array.isArray(value)) return value;
-    if (Array.isArray(value?.items)) return value.items;
-    if (Array.isArray(value?.data)) return value.data;
-    return [];
-};
+import { toArray } from '@shared/api/response';
 
 const OfferingsSection = ({ courses = [], offerings = [], loading, refreshOfferings }) => {
     const { t } = useTranslation();

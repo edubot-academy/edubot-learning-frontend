@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { FiCalendar, FiClock, FiRefreshCw, FiX } from 'react-icons/fi';
+import { toArray } from '@shared/api/response';
 
 const formatDateTime = (value, timeZone, language) => {
     if (!value) return '—';
@@ -41,7 +42,7 @@ const GenerateGroupSessionsModal = ({
     generating,
 }) => {
     const { i18n, t } = useTranslation();
-    const previewItems = Array.isArray(preview?.items) ? preview.items : [];
+    const previewItems = toArray(preview);
     const hasPreview = Boolean(preview);
     const canGenerate = previewItems.some((item) => item.kind === 'new');
     const groupedPreviewItems = previewItems.reduce((acc, item) => {

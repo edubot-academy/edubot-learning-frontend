@@ -10,9 +10,7 @@ import {
 } from '@components/ui/dashboard';
 import { generateAiMessageDraft } from '@features/aiLms/api';
 import { fetchCourseStudents } from '@features/courses/api';
-
-const toArray = (v) =>
-    Array.isArray(v) ? v : Array.isArray(v?.items) ? v.items : Array.isArray(v?.data) ? v.data : [];
+import { toArray } from '@shared/api/response';
 
 const MessageDraftsTab = ({ courses = [] }) => {
     const { t } = useTranslation();

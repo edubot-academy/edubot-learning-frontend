@@ -2,13 +2,7 @@ import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import AdvancedModal from '@shared/ui/AdvancedModal';
-
-const toArray = (value) => {
-    if (Array.isArray(value)) return value;
-    if (Array.isArray(value?.items)) return value.items;
-    if (Array.isArray(value?.data)) return value.data;
-    return [];
-};
+import { toArray } from '@shared/api/response';
 
 const WEEKDAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 const MODALITY_OPTIONS = ['ONLINE', 'OFFLINE', 'HYBRID'];

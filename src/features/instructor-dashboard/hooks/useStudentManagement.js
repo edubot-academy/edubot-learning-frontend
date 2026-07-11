@@ -6,13 +6,7 @@ import {
     fetchCourseStudents,
 } from '@features/courses/api';
 import { parseApiError } from '@shared/api/error';
-
-const toArray = (value) => {
-    if (Array.isArray(value)) return value;
-    if (Array.isArray(value?.items)) return value.items;
-    if (Array.isArray(value?.data)) return value.data;
-    return [];
-};
+import { toArray } from '@shared/api/response';
 
 export const useStudentManagement = (user) => {
     const { t } = useTranslation();

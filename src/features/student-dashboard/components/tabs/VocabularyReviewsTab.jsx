@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { FiCheck, FiChevronLeft, FiChevronRight, FiRefreshCw, FiX } from 'react-icons/fi';
 import { DashboardSectionHeader } from '@components/ui/dashboard';
 import { getDueVocabularyCards, recordVocabularyReview } from '@features/student/api';
+import { toArray } from '@shared/api/response';
 
 // ── Leitner box colour tokens ─────────────────────────────────────────────────
 const BOX_COLORS = [
@@ -196,7 +197,7 @@ const VocabularyReviewsTab = () => {
         setKnownIds([]);
         try {
             const data = await getDueVocabularyCards();
-            setCards(Array.isArray(data) ? data : data?.items ?? data?.data ?? []);
+            setCards(toArray(data));
         } catch {
             toast.error(t('studentDashboard.vocabularyReviews.toasts.error'));
         } finally {

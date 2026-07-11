@@ -6,6 +6,7 @@ import Button from '@shared/ui/Button';
 import CardInstructor from './CardInstrictor';
 import { fetchTopInstructors } from '@features/ratings/api';
 import { useTranslation } from 'react-i18next';
+import { toArray } from '@shared/api/response';
 
 const TopInstructors = () => {
     const { t } = useTranslation();
@@ -18,7 +19,7 @@ const TopInstructors = () => {
             try {
                 setLoading(true);
                 const res = await fetchTopInstructors(3);
-                setInstructors(Array.isArray(res?.items) ? res.items : []);
+                setInstructors(toArray(res));
                 setError(null);
             } catch {
                 setError(t('public.home.instructors.loadError'));

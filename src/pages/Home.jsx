@@ -11,6 +11,7 @@ import TopCourses from '@features/courses/components/TopCourses';
 import TopLearnersHome from '@features/leaderboard/components/TopLearnersHome';
 import { useTranslation } from 'react-i18next';
 import ExternalResourcesHomeSection from '@features/externalResources/components/ExternalResourcesHomeSection';
+import { toArray } from '@shared/api/response';
 
 const HomePage = () => {
     const { t } = useTranslation();
@@ -24,7 +25,7 @@ const HomePage = () => {
             setCoursesError('');
             try {
                 const data = await fetchTopCourses();
-                setCoursesData(Array.isArray(data?.items) ? data.items : []);
+                setCoursesData(toArray(data));
             } catch (err) {
                 console.error('Failed to fetch courses', err);
                 setCoursesError(t('public.home.topCoursesLoadError'));

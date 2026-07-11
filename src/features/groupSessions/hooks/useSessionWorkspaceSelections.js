@@ -11,14 +11,6 @@ import {
     toArray,
 } from '@features/groupSessions/utils/sessionWorkspace.helpers';
 
-const toCourseList = (payload) => {
-    if (Array.isArray(payload?.courses)) return payload.courses;
-    if (Array.isArray(payload?.items)) return payload.items;
-    if (Array.isArray(payload?.data)) return payload.data;
-    if (Array.isArray(payload)) return payload;
-    return [];
-};
-
 export const useSessionWorkspaceSelections = ({ user, pendingRouteSelectionRef, onNotice }) => {
     const { t } = useTranslation();
     const workspaceErrorStatusMessages = useMemo(() => getWorkspaceErrorStatusMessages(t), [t]);
@@ -56,8 +48,8 @@ export const useSessionWorkspaceSelections = ({ user, pendingRouteSelectionRef, 
                 ]);
                 if (cancelled) return;
 
-                const allInstructorCourses = toCourseList(deliveryData);
-                const allSourceVideoCourses = toCourseList(sourceVideoData);
+                const allInstructorCourses = toArray(deliveryData);
+                const allSourceVideoCourses = toArray(sourceVideoData);
                 const teachingCourses = allInstructorCourses.filter((course) => {
                     const type = course?.courseType || course?.type;
                     return type === COURSE_TYPE.OFFLINE || type === COURSE_TYPE.ONLINE_LIVE;

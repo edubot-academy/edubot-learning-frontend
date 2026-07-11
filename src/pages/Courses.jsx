@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import SectionContainer from '@features/marketing/components/SectionContainer';
 import ExternalResourceCard from '@features/externalResources/components/ExternalResourceCard';
 import { fetchExternalResources } from '@features/externalResources/api';
+import { toArray } from '@shared/api/response';
 
 const getCourseType = (course) =>
     String(course?.courseType || course?.type || 'video').toLowerCase();
@@ -31,7 +32,7 @@ const CoursesPage = () => {
         setError('');
         try {
             const data = await fetchCatalogCourses();
-            setCourses(Array.isArray(data?.items) ? data.items : []);
+            setCourses(toArray(data));
         } catch (err) {
             console.error('Failed to load courses', err);
             setError(t('public.courses.loadError'));

@@ -1,11 +1,9 @@
 import { SESSION_ATTENDANCE_STATUS } from '@shared/contracts';
+import { toArray } from '@shared/api/response';
 
 const toList = (payload, keyedCollectionName) => {
-  if (Array.isArray(payload?.items)) return payload.items;
   if (Array.isArray(payload?.[keyedCollectionName])) return payload[keyedCollectionName];
-  if (Array.isArray(payload?.data)) return payload.data;
-  if (Array.isArray(payload)) return payload;
-  return [];
+  return toArray(payload);
 };
 
 export const toCourseList = (payload) => toList(payload, 'courses');

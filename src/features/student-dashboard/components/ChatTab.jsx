@@ -12,6 +12,7 @@ import { fetchCourseDetails } from '@features/courses/api';
 import { fetchStudentCourses } from '@features/student/api';
 import Loader from '@shared/ui/Loader';
 import { API_ERROR_CODES, getApiErrorCode, parseApiError } from '@shared/api/error';
+import { toArray as toResponseArray } from '@shared/api/response';
 import { AuthContext } from '../../../context/AuthContext';
 
 const ChatWorkspace = lazy(() => import('@components/ui/ChatWorkspace'));
@@ -25,11 +26,8 @@ const isChatNotFoundError = (error) => {
 };
 
 const toArray = (value) => {
-    if (Array.isArray(value)) return value;
-    if (Array.isArray(value?.items)) return value.items;
     if (Array.isArray(value?.chats)) return value.chats;
-    if (Array.isArray(value?.data)) return value.data;
-    return [];
+    return toResponseArray(value);
 };
 
 const ChatTab = () => {

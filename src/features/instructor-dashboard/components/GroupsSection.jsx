@@ -4,6 +4,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-hot-toast';
 import { parseApiError } from '@shared/api/error';
+import { toArray } from '@shared/api/response';
 import { getDeliveryModeLabel } from '@shared/i18n/enumLabels';
 import {
     DashboardCardSkeleton,
@@ -297,14 +298,7 @@ const GroupsSection = ({ courses = [] }) => {
                 fetchCourseGroups({ courseId: Number(courseId) }),
                 fetchCourseDeliveryContext(Number(courseId)).catch(() => null),
             ]);
-            const items = Array.isArray(response)
-                ? response
-                : Array.isArray(response?.items)
-                    ? response.items
-                    : Array.isArray(response?.data)
-                        ? response.data
-                        : [];
-            setGroups(items);
+            setGroups(toArray(response));
             setDeliveryContext(context);
         } catch (error) {
             console.error('Failed to load course groups', error);

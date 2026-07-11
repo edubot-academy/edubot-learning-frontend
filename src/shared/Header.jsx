@@ -1,97 +1,28 @@
-import { lazy, Suspense, useState, useContext, useEffect, useRef } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { lazy, Suspense, useContext } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { FaBars } from 'react-icons/fa';
 import { IoSearch } from 'react-icons/io5';
 import { useTranslation } from 'react-i18next';
 import { useDarkMode } from '../contexts/DarkModeContext';
-import EduBotLogo from '@assets/images/edubot-signup.png';
-
-import { IoHeartOutline, IoHeart } from 'react-icons/io5';
-import { BsCart2 } from 'react-icons/bs';
-import { FaRegUser } from 'react-icons/fa';
 
 import { AuthContext } from '@app/providers';
-import { fetchUnreadNotificationsCount } from '@features/notifications/api';
-import { searchCourses } from '@features/search/api';
 import { getUserAvatarUrl } from '@shared/utils/avatar';
-import { isPlatformAdmin } from '@shared/utils/roles';
 import { useFavourites } from '../context/FavouritesContext';
 import { useCart } from '../context/CartContext';
+import BrandLogo from './header/BrandLogo';
+import CourseSearchBox from './header/CourseSearchBox';
+import HeaderActions, { HeaderUserMenu } from './header/HeaderActions';
+import HeaderNavLinks from './header/HeaderNavLinks';
+import { useCourseSearch } from './header/useCourseSearch';
+import { useHeaderInteractionState } from './header/useHeaderInteractionState';
+import { useUnreadNotifications } from './header/useUnreadNotifications';
 
 const ThemeToggle = lazy(() => import('@shared-ui/ThemeToggle'));
 const LanguageSwitcher = lazy(() => import('@shared-ui/LanguageSwitcher'));
 const SideBar = lazy(() => import('@shared-ui/SideBar'));
 const SidebarOverlay = lazy(() => import('@shared-ui/SidebarOverlay'));
-const UserMenuDropdown = lazy(() => import('@shared-ui/UserMenuDropdown'));
 
 const headerControlFallback = <div className="h-10 w-10" aria-hidden="true" />;
-
-const NavLinks = ({ isMobile, user }) => {
-    const { t } = useTranslation();
-    const location = useLocation();
-    const active = (path) =>
-        location.pathname === path ? 'text-orange-500 dark:text-orange-400' : '';
-
-    const linkClass =
-        'relative inline-block cursor-pointer dark:text-[#E8ECF3] dark:hover:text-white ' +
-        "after:content-[''] after:absolute after:-bottom-1 after:left-1/2 after:h-[2px] after:w-0 " +
-        'after:bg-black dark:after:bg-[#E8ECF3] after:transition-all after:duration-300 ' +
-        'hover:after:left-0 hover:after:w-full';
-
-    return (
-        <nav
-            aria-label={t(
-                isMobile ? 'nav.mobilePrimaryNavigation' : 'nav.primaryNavigation'
-            )}
-            className={
-                isMobile
-                    ? 'flex flex-col space-y-4 mt-4'
-                    : 'flex justify-around  w-full  items-center gap-3'
-            }
-        >
-            <Link
-                to={'/courses'}
-                className={`${active('/courses')} ${linkClass}  lg:text-sm xl:text-base 2xl:text-lg `}
-            >
-                {t('nav.courses')}
-            </Link>
-
-            <Link
-                to="/about"
-                className={`${active('/about')} ${linkClass}   lg:text-sm xl:text-base 2xl:text-lg`}
-            >
-                {t('nav.about')}
-            </Link>
-            <Link
-                to="/contact"
-                className={`${active('/contact')} ${linkClass} lg:text-sm xl:text-base 2xl:text-lg`}
-            >
-                {t('nav.contact')}
-            </Link>
-
-            {user && user.role === 'instructor' && (
-                <Link to="/instructor" className={`${active('/instructor')} ${linkClass}`}>
-                    {t('nav.dashboard')}
-                </Link>
-            )}
-            {user && isPlatformAdmin(user) && (
-                <Link to="/admin" className={`${active('/admin')} ${linkClass}`}>
-                    {t('nav.dashboard')}
-                </Link>
-            )}
-            {user && user.role === 'assistant' && (
-                <Link to="/assistant" className={`${active('/assistant')} ${linkClass}`}>
-                    {t('nav.dashboard')}
-                </Link>
-            )}
-            {user && user.role === 'student' && (
-                <Link to="/student" className={`${active('/student')} ${linkClass}`}>
-                    {t('nav.dashboard')}
-                </Link>
-            )}
-        </nav>
-    );
-};
 
 const Header = () => {
     const { t } = useTranslation();
@@ -104,153 +35,43 @@ const Header = () => {
     const navigate = useNavigate();
     const { darkMode, setDarkMode } = useDarkMode();
     const { favourites } = useFavourites();
-    const [menuOpen, setMenuOpen] = useState(false);
-    const [positionBar, setPositionBar] = useState(false);
-    const [search, setSearch] = useState('');
-    const [searchOpen, setSearchOpen] = useState(false);
-    const [userMenuOpen, setUserMenuOpen] = useState(false);
-    const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
-    const [activeIcon, setActiveIcon] = useState(null);
-    const [unreadNotifications, setUnreadNotifications] = useState(0);
-    const [searchLoading, setSearchLoading] = useState(false);
-    const [searchError, setSearchError] = useState('');
+    const unreadNotifications = useUnreadNotifications(user);
+    const courseSearch = useCourseSearch();
+    const { setShowDropdown: setCourseSearchDropdown } = courseSearch;
+    const {
+        activeIcon,
+        avatarLoadFailed,
+        closeUserMenu,
+        handleAvatarError,
+        handleIconClick,
+        menuOpen,
+        openMenu,
+        positionBar,
+        searchOpen,
+        setMenuOpen,
+        setPositionBar,
+        setSearchOpen,
+        setUserMenuOpen,
+        toggleSearch,
+        toggleUserMenu,
+        userMenuOpen,
+    } = useHeaderInteractionState({
+        avatarUrl,
+        pathname: location.pathname,
+        setCourseSearchDropdown,
+    });
 
-    const [results, setResults] = useState([]);
-    const [showDropdown, setShowDropdown] = useState(false);
-    const searchContainerRef = useRef(null);
-    const searchRequestIdRef = useRef(0);
-
-    useEffect(() => {
-        if (location.pathname === '/cart') {
-            setActiveIcon('cart');
-        } else if (location.pathname === '/favourites') {
-            setActiveIcon('heart');
-        } else {
-            setActiveIcon(null);
-        }
-    }, [location.pathname]);
-
-    useEffect(() => {
-        const handleClickOutside = (e) => {
-            if (searchContainerRef.current && !searchContainerRef.current.contains(e.target)) {
-                setShowDropdown(false);
-            }
-
-            if (!e.target.closest?.('[data-user-menu]')) {
-                setUserMenuOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    useEffect(() => {
-        setMenuOpen(false);
-        setPositionBar(false);
-        setSearchOpen(false);
-        setShowDropdown(false);
-        setUserMenuOpen(false);
-    }, [location.pathname]);
-
-    useEffect(() => {
-        setAvatarLoadFailed(false);
-    }, [avatarUrl]);
-
-    useEffect(() => {
-        const handleKeyDown = (e) => {
-            if (e.key !== 'Escape') return;
-
-            setMenuOpen(false);
-            setPositionBar(false);
-            setSearchOpen(false);
-            setShowDropdown(false);
-            setUserMenuOpen(false);
-        };
-
-        document.addEventListener('keydown', handleKeyDown);
-        return () => document.removeEventListener('keydown', handleKeyDown);
-    }, []);
-
-    useEffect(() => {
-        if (!user) return;
-
-        const loadUnreadNotifications = async () => {
-            try {
-                const unreadRes = await fetchUnreadNotificationsCount();
-                setUnreadNotifications(unreadRes?.count ?? 0);
-            } catch (error) {
-                console.error('Failed to load unread notifications:', error);
-            }
-        };
-
-        loadUnreadNotifications();
-    }, [user]);
-
-    useEffect(() => {
-        const query = search.trim();
-        const requestId = searchRequestIdRef.current + 1;
-        searchRequestIdRef.current = requestId;
-
-        if (query.length < 2) {
-            setResults([]);
-            setShowDropdown(false);
-            setSearchLoading(false);
-            setSearchError('');
-            return undefined;
-        }
-
-        setSearchLoading(true);
-        setSearchError('');
-        const timeoutId = setTimeout(async () => {
-            try {
-                const data = await searchCourses(query);
-                if (searchRequestIdRef.current !== requestId) return;
-                setResults(Array.isArray(data) ? data : []);
-                setShowDropdown(true);
-            } catch {
-                if (searchRequestIdRef.current !== requestId) return;
-                setResults([]);
-                setSearchError(t('common.searchUnavailable'));
-                setShowDropdown(true);
-            } finally {
-                if (searchRequestIdRef.current === requestId) {
-                    setSearchLoading(false);
-                }
-            }
-        }, 300);
-
-        return () => clearTimeout(timeoutId);
-    }, [search, t]);
-
-    const handleSearch = (value) => {
-        setSearch(value);
-    };
-
-    const handleIconClick = (iconName, callback) => {
-        setActiveIcon(iconName);
-        if (callback) callback();
+    const handleCartClick = () => {
+        handleIconClick('cart', () => navigate('/cart'));
     };
 
     const handleFavouriteClick = () => {
         navigate('/favourites');
-        setActiveIcon('heart');
+        handleIconClick('heart');
     };
 
+    const isCartPage = location.pathname === '/cart';
     const isFavouritesPage = location.pathname === '/favourites';
-    const renderUserAvatar = (imageClassName, iconClassName) => {
-        if (avatarUrl && !avatarLoadFailed) {
-            return (
-                <img
-                    src={avatarUrl}
-                    alt={user?.fullName ? `${user.fullName} avatar` : 'User avatar'}
-                    className={imageClassName}
-                    onError={() => setAvatarLoadFailed(true)}
-                />
-            );
-        }
-
-        return <FaRegUser className={iconClassName} />;
-    };
 
     return (
         <header className="sticky top-0 w-full bg-white dark:bg-[#1A1A1A] text-black dark:text-[#E8ECF3] shadow dark:shadow-gray-900 z-[80]">
@@ -259,101 +80,16 @@ const Header = () => {
                 <div className="hidden lg:flex items-center justify-between">
                     {/* Logo + Search */}
                     <div className="flex items-center  flex-1">
-                        <Link to="/" className="flex items-center max-w-[191px] w-full">
-                            <div className="h-16 w-16 md:h-20 md:w-20 ">
-                                <img
-                                    src={EduBotLogo}
-                                    alt={t('common.appName')}
-                                    className="w-full h-full object-contain"
-                                />
-                            </div>
-                            <div className="flex flex-col ml-3">
-                                <span className="text-2xl font-bold text-orange-500 dark:text-orange-400">
-                                    EDUBOT
-                                </span>
-                                <span className="text-base -mt-2 text-gray-700 dark:text-gray-300 tracking-[0.14em]">
-                                    LEARNING
-                                </span>
-                            </div>
-                        </Link>
+                        <BrandLogo />
 
-                        {/* Search Bar - Desktop */}
-                        <div
-                            className="relative flex items-center border rounded hover:border-[#F06743] flex-1 max-w-xs ml-6 border-[#7B818C] dark:border-[#2A2E35] bg-white dark:bg-[#1A1A1A] overflow-visible min-w-48"
-                            ref={searchContainerRef}
-                        >
-                            <IoSearch className="w-5 h-5 ml-2 text-[#7B818C] dark:text-gray-300" />
-                            <input
-                                type="text"
-                                placeholder={t('common.search')}
-                                value={search}
-                                onChange={(e) => handleSearch(e.target.value)}
-                                onFocus={() => search.length >= 2 && setShowDropdown(true)}
-                                onKeyDown={(event) => {
-                                    if (event.key === 'Escape') {
-                                        setShowDropdown(false);
-                                    }
-                                }}
-                                aria-label={t('common.searchCourses')}
-                                aria-expanded={showDropdown}
-                                aria-controls="desktop-course-search-results"
-                                className="px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#EA580C] dark:focus:ring-[#F97316] bg-transparent w-full text-base text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
-                            />
-
-                            {/* Search Dropdown */}
-                            {showDropdown && (
-                                <div
-                                    id="desktop-course-search-results"
-                                    className="absolute top-full left-0 right-0 mt-2 max-w-xs w-full bg-white dark:bg-[#141619] border border-gray-200 dark:border-gray-700 shadow-xl dark:shadow-gray-900 z-50 max-h-64 overflow-y-auto"
-                                >
-                                    {searchLoading ? (
-                                        <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
-                                            {t('common.searching')}
-                                        </div>
-                                    ) : searchError ? (
-                                        <div className="px-4 py-3 text-sm text-red-600 dark:text-red-300">
-                                            {searchError}
-                                        </div>
-                                    ) : results.length > 0 ? (
-                                        results.map((item) => (
-                                            <button
-                                                key={item.type === 'external' ? `ext-${item.slug}` : item.id}
-                                                onClick={() => {
-                                                    navigate(item.type === 'external' ? `/resources/${item.slug}` : `/courses/${item.id}`);
-                                                    setShowDropdown(false);
-                                                    setSearch('');
-                                                }}
-                                                className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 border-b border-gray-200 dark:border-gray-700 last:border-b-0"
-                                            >
-                                                <div className="flex items-center gap-2">
-                                                    <span className="font-semibold text-sm text-gray-900 dark:text-white">
-                                                        {item.title}
-                                                    </span>
-                                                    {item.type === 'external' && (
-                                                        <span className="shrink-0 text-[10px] bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 px-1.5 py-0.5 rounded">
-                                                            {item.provider}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                {item.description && (
-                                                    <div className="text-xs text-gray-500 dark:text-gray-300 mt-1 line-clamp-1">
-                                                        {item.description}
-                                                    </div>
-                                                )}
-                                            </button>
-                                        ))
-                                    ) : (
-                                        <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
-                                            {t('common.noResults')}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
+                        <CourseSearchBox
+                            id="desktop-course-search-results"
+                            searchState={courseSearch}
+                        />
 
                         {/* Navigation Links - Desktop */}
                         <div className="flex items-center  ml-11 max-w-[419px] w-full">
-                            <NavLinks isMobile={false} user={user} />
+                            <HeaderNavLinks isMobile={false} user={user} />
                         </div>
                     </div>
 
@@ -368,170 +104,30 @@ const Header = () => {
                             </Suspense>
                         </div>
 
-                        {user ? (
-                            <div className="flex items-center gap-3">
-                                <button
-                                    className={`relative w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
-                                        isFavouritesPage || activeIcon === 'heart'
-                                            ? 'bg-orange-500 border-orange-500'
-                                            : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
-                                    }`}
-                                    onClick={handleFavouriteClick}
-                                    aria-label={t('common.favourites')}
-                                    aria-current={isFavouritesPage ? 'page' : undefined}
-                                >
-                                    {favourites.length > 0 && (
-                                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                                            {Math.min(favourites.length, 99)}
-                                        </span>
-                                    )}
-                                    {isFavouritesPage || activeIcon === 'heart' ? (
-                                        <IoHeart className="w-5 h-5 text-white" />
-                                    ) : (
-                                        <IoHeartOutline className="w-5 h-5 text-black dark:text-gray-300" />
-                                    )}
-                                </button>
-                                <div className="relative">
-                                    <button
-                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
-                                            activeIcon === 'cart' || location.pathname === '/cart'
-                                                ? 'bg-orange-500 border-orange-500'
-                                                : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
-                                        }`}
-                                        onClick={() =>
-                                            handleIconClick('cart', () => navigate('/cart'))
-                                        }
-                                        aria-label={t('common.cart')}
-                                        aria-current={
-                                            location.pathname === '/cart' ? 'page' : undefined
-                                        }
-                                    >
-                                        <BsCart2
-                                            className={`w-5 h-5 transition-colors duration-300 ${
-                                                activeIcon === 'cart' ||
-                                                location.pathname === '/cart'
-                                                    ? 'text-white'
-                                                    : 'text-black dark:text-gray-300'
-                                            }`}
-                                        />
-                                        {cartItemsCount > 0 && (
-                                            <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
-                                                {cartItemsCount}
-                                            </span>
-                                        )}
-                                    </button>
-                                </div>
-                                <div className="relative group" data-user-menu>
-                                    <button
-                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
-                                            activeIcon === 'user' || userMenuOpen
-                                                ? 'bg-orange-500 border-orange-500'
-                                                : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
-                                        }`}
-                                        onClick={() => {
-                                            handleIconClick('user');
-                                            setUserMenuOpen(!userMenuOpen);
-                                        }}
-                                        aria-label={t('common.userMenu')}
-                                        aria-expanded={userMenuOpen}
-                                    >
-                                        {renderUserAvatar(
-                                            'w-10 h-10 rounded-full object-cover',
-                                            `w-5 h-5 transition-colors duration-300 ${
-                                                activeIcon === 'user' || userMenuOpen
-                                                    ? 'text-white'
-                                                    : 'text-black dark:text-gray-300'
-                                            }`
-                                        )}
-
-                                        {unreadNotifications > 0 && (
-                                            <span className="absolute -top-0.5 right-0 bg-[#FF2C2C] text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-medium"></span>
-                                        )}
-                                    </button>
-
-                                    <div
-                                        className={`absolute top-full right-0 pt-2 transform transition-all duration-300 ease-out z-60 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 ${
-                                            userMenuOpen
-                                                ? 'visible translate-y-0 opacity-100'
-                                                : 'invisible translate-y-2 opacity-0'
-                                        }`}
-                                    >
-                                        <div className="relative">
-                                            <div className="absolute -top-2 left-0 right-0 h-2 bg-transparent"></div>
-                                            <Suspense fallback={null}>
-                                                <UserMenuDropdown
-                                                    user={user}
-                                                    onClose={() => setUserMenuOpen(false)}
-                                                />
-                                            </Suspense>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="flex items-center gap-3">
-                                <button
-                                    className={`relative w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
-                                        isFavouritesPage || activeIcon === 'heart'
-                                            ? 'border-orange-500'
-                                            : 'border-black dark:border-[#E8ECF3] hover:border-gray-600 dark:hover:border-[#E8ECF3]/70'
-                                    }`}
-                                    onClick={handleFavouriteClick}
-                                    aria-label={t('common.favourites')}
-                                >
-                                    <IoHeartOutline className="w-5 h-5 text-black dark:text-[#E8ECF3]" />
-                                </button>
-
-                                <div className="relative">
-                                    <button
-                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
-                                            activeIcon === 'cart' || location.pathname === '/cart'
-                                                ? 'bg-orange-500 border-orange-500'
-                                                : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
-                                        }`}
-                                        onClick={() =>
-                                            handleIconClick('cart', () => navigate('/cart'))
-                                        }
-                                        aria-label={t('common.cart')}
-                                        aria-current={
-                                            location.pathname === '/cart' ? 'page' : undefined
-                                        }
-                                    >
-                                        <BsCart2
-                                            className={`w-5 h-5 transition-colors duration-300 ${
-                                                activeIcon === 'cart' ||
-                                                location.pathname === '/cart'
-                                                    ? 'text-white'
-                                                    : 'text-black dark:text-gray-300'
-                                            }`}
-                                        />
-
-                                        {cartItemsCount > 0 && (
-                                            <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
-                                                {cartItemsCount}
-                                            </span>
-                                        )}
-                                    </button>
-                                </div>
-
-                                <Link
-                                    to="/login"
-                                    className="inline-flex items-center justify-center rounded bg-orange-500 px-4 py-2 text-white transition-colors hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-500"
-                                >
-                                    {t('common.login')}
-                                </Link>
-                            </div>
-                        )}
+                        <HeaderActions
+                            activeIcon={activeIcon}
+                            avatarLoadFailed={avatarLoadFailed}
+                            avatarUrl={avatarUrl}
+                            cartItemsCount={cartItemsCount}
+                            favouritesCount={favourites.length}
+                            isCartPage={isCartPage}
+                            isFavouritesPage={isFavouritesPage}
+                            onAvatarError={handleAvatarError}
+                            onCartClick={handleCartClick}
+                            onFavouriteClick={handleFavouriteClick}
+                            onUserMenuClose={closeUserMenu}
+                            onUserMenuToggle={toggleUserMenu}
+                            unreadNotifications={unreadNotifications}
+                            user={user}
+                            userMenuOpen={userMenuOpen}
+                        />
                     </div>
                 </div>
 
                 <div className="lg:hidden">
                     <div className="flex items-center justify-between">
                         <button
-                            onClick={() => {
-                                setMenuOpen(true);
-                                setPositionBar(false);
-                            }}
+                            onClick={openMenu}
                             className="text-gray-700 dark:text-gray-300 text-2xl p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
                             aria-label={t('common.openMenu')}
                             aria-expanded={menuOpen}
@@ -539,27 +135,11 @@ const Header = () => {
                             <FaBars />
                         </button>
 
-                        <Link to="/" className="flex flex-col items-center">
-                            <div className="h-12 w-12">
-                                <img
-                                    src={EduBotLogo}
-                                    alt={t('common.appName')}
-                                    className="w-full h-full object-contain"
-                                />
-                            </div>
-                            <div className="flex flex-col items-center mt-1">
-                                <span className="text-lg font-bold text-orange-500 dark:text-orange-400">
-                                    EDUBOT
-                                </span>
-                                <span className="text-xs -mt-1 text-gray-700 dark:text-gray-300 tracking-[0.14em]">
-                                    LEARNING
-                                </span>
-                            </div>
-                        </Link>
+                        <BrandLogo compact />
 
                         <div className="flex items-center gap-3">
                             <button
-                                onClick={() => setSearchOpen(!searchOpen)}
+                                onClick={toggleSearch}
                                 className="text-gray-700 dark:text-gray-300 text-2xl p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
                                 aria-label={t('common.openSearch')}
                                 aria-expanded={searchOpen}
@@ -568,114 +148,34 @@ const Header = () => {
                             </button>
 
                             {user && (
-                                <div className="relative hidden md:block" data-user-menu>
-                                    <button
-                                        className={`w-9 h-9 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
-                                            userMenuOpen
-                                                ? 'bg-orange-500 border-orange-500'
-                                                : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
-                                        }`}
-                                        onClick={() => setUserMenuOpen(!userMenuOpen)}
-                                        aria-label={t('common.userMenu')}
-                                        aria-expanded={userMenuOpen}
-                                    >
-                                        {renderUserAvatar(
-                                            'w-9 h-9 rounded-full object-cover',
-                                            `w-4 h-4 transition-colors duration-300 ${userMenuOpen ? 'text-white' : 'text-black dark:text-gray-300'}`
-                                        )}
-                                    </button>
-
-                                    {userMenuOpen && (
-                                        <div className="absolute right-0 top-full mt-2 z-50">
-                                            <Suspense fallback={null}>
-                                                <UserMenuDropdown
-                                                    user={user}
-                                                    onClose={() => setUserMenuOpen(false)}
-                                                />
-                                            </Suspense>
-                                        </div>
-                                    )}
-                                </div>
+                                <HeaderUserMenu
+                                    avatarLoadFailed={avatarLoadFailed}
+                                    avatarUrl={avatarUrl}
+                                    buttonClassName="w-9 h-9 rounded-full border-2 flex items-center justify-center transition-all duration-300"
+                                    iconClassName={(isActive) =>
+                                        `w-4 h-4 transition-colors duration-300 ${
+                                            isActive ? 'text-white' : 'text-black dark:text-gray-300'
+                                        }`
+                                    }
+                                    imageClassName="w-9 h-9 rounded-full object-cover"
+                                    mobile
+                                    onAvatarError={handleAvatarError}
+                                    onClose={closeUserMenu}
+                                    onToggle={() => setUserMenuOpen((prev) => !prev)}
+                                    user={user}
+                                    userMenuOpen={userMenuOpen}
+                                />
                             )}
                         </div>
                     </div>
 
-                    {/* Mobile Search Input */}
                     {searchOpen && (
-                        <div className="mt-3" ref={searchContainerRef}>
-                            <div className="relative flex items-center border rounded border-[#7B818C] dark:border-gray-600 bg-white dark:bg-gray-800 overflow-visible">
-                                <IoSearch className="w-5 h-5 ml-2 text-[#7B818C] dark:text-gray-300" />
-                                <input
-                                    type="text"
-                                    placeholder={t('common.search')}
-                                    value={search}
-                                    onChange={(e) => handleSearch(e.target.value)}
-                                    onFocus={() => search.length >= 2 && setShowDropdown(true)}
-                                    onKeyDown={(event) => {
-                                        if (event.key === 'Escape') {
-                                            setShowDropdown(false);
-                                        }
-                                    }}
-                                    aria-label={t('common.searchCourses')}
-                                    aria-expanded={showDropdown}
-                                    aria-controls="mobile-course-search-results"
-                                    className="px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#EA580C] dark:focus:ring-[#F97316] bg-transparent w-full text-base text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
-                                />
-                            </div>
-
-                            {/* Mobile Search Dropdown */}
-                            {showDropdown && (
-                                <div
-                                    id="mobile-course-search-results"
-                                    className="absolute left-0 right-0 mt-1 mx-4 z-50"
-                                >
-                                    {searchLoading ? (
-                                        <div className="bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 rounded p-4 text-sm text-gray-500 dark:text-gray-400">
-                                            {t('common.searching')}
-                                        </div>
-                                    ) : searchError ? (
-                                        <div className="bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 rounded p-4 text-sm text-red-600 dark:text-red-300">
-                                            {searchError}
-                                        </div>
-                                    ) : results.length > 0 ? (
-                                        <div className="bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 rounded max-h-64 overflow-y-auto">
-                                            {results.map((item) => (
-                                                <button
-                                                    key={item.type === 'external' ? `ext-${item.slug}` : item.id}
-                                                    onClick={() => {
-                                                        navigate(item.type === 'external' ? `/resources/${item.slug}` : `/courses/${item.id}`);
-                                                        setShowDropdown(false);
-                                                        setSearch('');
-                                                        setSearchOpen(false);
-                                                    }}
-                                                    className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-b-0"
-                                                >
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="font-semibold text-sm text-gray-900 dark:text-white">
-                                                            {item.title}
-                                                        </span>
-                                                        {item.type === 'external' && (
-                                                            <span className="shrink-0 text-[10px] bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 px-1.5 py-0.5 rounded">
-                                                                {item.provider}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                    {item.description && (
-                                                        <div className="text-xs text-gray-500 dark:text-gray-300 mt-1 line-clamp-1">
-                                                            {item.description}
-                                                        </div>
-                                                    )}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className="bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 rounded p-4 text-sm text-gray-500 dark:text-gray-400">
-                                            {t('common.noResults')}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
+                        <CourseSearchBox
+                            id="mobile-course-search-results"
+                            mode="mobile"
+                            searchState={courseSearch}
+                            onResultSelect={() => setSearchOpen(false)}
+                        />
                     )}
                 </div>
             </div>

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { publicCatalog } from '@features/offerings/catalog';
+import { toArray } from '@shared/api/response';
 
 const DEFAULT_CATALOG_DATA = {
     items: [],
@@ -38,9 +39,9 @@ export const usePublicCatalog = ({ page, q, limit = 20 }) => {
                 if (requestIdRef.current !== requestId) return;
 
                 setData({
-                    items: Array.isArray(nextData?.items) ? nextData.items : [],
-                    totalPages: Math.max(1, Number(nextData?.totalPages || 1)),
                     ...nextData,
+                    items: toArray(nextData),
+                    totalPages: Math.max(1, Number(nextData?.totalPages || 1)),
                 });
             } catch (loadError) {
                 if (isAbortError(loadError) || requestIdRef.current !== requestId) return;
