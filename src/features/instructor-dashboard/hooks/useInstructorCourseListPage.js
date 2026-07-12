@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { fetchInstructorCourses } from '@features/courses/api';
-import { toArray } from '@shared/api/response';
-
-const toCourseList = (payload) => toArray(payload?.courses || payload);
+import { toInstructorCourseList } from '@features/instructor-dashboard/utils/instructorCourses';
 
 export const useInstructorCourseListPage = (user) => {
     const [courses, setCourses] = useState([]);
@@ -26,7 +24,7 @@ export const useInstructorCourseListPage = (user) => {
                 limit: 100,
                 status: 'all',
             });
-            setCourses(toCourseList(response));
+            setCourses(toInstructorCourseList(response));
         } catch (loadError) {
             console.error('Failed to load instructor courses', loadError);
             setCourses([]);

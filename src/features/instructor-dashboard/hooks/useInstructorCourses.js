@@ -2,19 +2,17 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import { toast } from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { fetchInstructorCourses } from '@features/courses/api';
-import {
-    isCourseFeatureEnabled,
-    TENANT_FEATURES,
-} from '@shared/utils/tenantFeatures';
 import { parseApiError } from '@shared/api/error';
-import { toArray } from '@shared/api/response';
-
-const getCourseFromResponse = (response) => {
-    if (!response) return null;
-    if (response.course) return response.course;
-    if (response.id) return response;
-    return null;
-};
+import {
+    getCourseFromMutationResponse,
+    getPublishedCourseCount,
+    getUnpublishedCourseCount,
+    markInstructorCoursePending,
+    selectAiEnabledCourses,
+    selectApprovedPublishedCourses,
+    toInstructorCourseList,
+    upsertInstructorCourse,
+} from '@features/instructor-dashboard/utils/instructorCourses';
 
 export const useInstructorCourses = (user, profile) => {
     const { t } = useTranslation();
@@ -27,7 +25,7 @@ export const useInstructorCourses = (user, profile) => {
         setLoadingCourses(true);
         try {
             const data = await fetchInstructorCourses({ status: 'all' });
-            setCourseList(toArray(data?.courses || data));
+            setCourseList(toInstructorCourseList(data));
         } catch (error) {
             console.error('Failed to load instructor courses', error);
             toast.error(parseApiError(error, t('instructorDashboard.data.toasts.coursesLoadError')).message);
@@ -41,19 +39,12 @@ export const useInstructorCourses = (user, profile) => {
     }, [loadCourses]);
 
     const upsertCourse = useCallback((response) => {
-        const nextCourse = getCourseFromResponse(response);
+        const nextCourse = getCourseFromMutationResponse(response);
         if (!nextCourse?.id) return false;
 
         setCourseList((prev) => {
-            const existingIndex = prev.findIndex(
-                (course) => String(course.id) === String(nextCourse.id)
-            );
-
-            if (existingIndex === -1) return [nextCourse, ...prev];
-
-            return prev.map((course, index) =>
-                index === existingIndex ? { ...course, ...nextCourse } : course
-            );
+            const result = upsertInstructorCourse(prev, response);
+            return result.courses;
         });
 
         return true;
@@ -62,13 +53,7 @@ export const useInstructorCourses = (user, profile) => {
     const markCoursePendingLocally = useCallback((courseId) => {
         if (!courseId) return;
 
-        setCourseList((prev) =>
-            prev.map((course) =>
-                String(course.id) === String(courseId)
-                    ? { ...course, status: 'pending', isPublished: false }
-                    : course
-            )
-        );
+        setCourseList((prev) => markInstructorCoursePending(prev, courseId));
     }, []);
 
     const courses = useMemo(
@@ -77,27 +62,22 @@ export const useInstructorCourses = (user, profile) => {
     );
 
     const aiCourses = useMemo(
-        () =>
-            courses.filter(
-                (course) =>
-                    course.aiAssistantEnabled &&
-                    isCourseFeatureEnabled(course, TENANT_FEATURES.AI_ASSISTANT)
-            ),
+        () => selectAiEnabledCourses(courses),
         [courses]
     );
 
     const approvedCourses = useMemo(
-        () => courses.filter((course) => course?.status === 'approved' && course?.isPublished),
+        () => selectApprovedPublishedCourses(courses),
         [courses]
     );
 
     const publishedCount = useMemo(
-        () => courses.filter((course) => course.isPublished).length,
+        () => getPublishedCourseCount(courses),
         [courses]
     );
 
     const pendingCount = useMemo(
-        () => courses.filter((course) => !course.isPublished).length,
+        () => getUnpublishedCourseCount(courses),
         [courses]
     );
 

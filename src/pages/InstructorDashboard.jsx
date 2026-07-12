@@ -141,6 +141,29 @@ const InstructorDashboard = () => {
         onUpdated: handleDeliveryCourseUpdated,
         onSubmittedForApproval: handleCourseSubmittedForApproval,
     });
+    const deliveryCourseModals = useMemo(() => ({
+        showDeliveryModal,
+        onCloseDeliveryModal: closeDeliveryModal,
+        onCreateDeliveryCourse: handleCreateDeliveryCourse,
+        creatingDeliveryCourse,
+        showEditDeliveryModal,
+        onCloseEditDeliveryModal: closeEditDeliveryModal,
+        onUpdateDeliveryCourse: handleUpdateDeliveryCourse,
+        updatingDeliveryCourse,
+        editingDeliveryCourse,
+        deliveryCategories,
+    }), [
+        closeDeliveryModal,
+        closeEditDeliveryModal,
+        creatingDeliveryCourse,
+        deliveryCategories,
+        editingDeliveryCourse,
+        handleCreateDeliveryCourse,
+        handleUpdateDeliveryCourse,
+        showDeliveryModal,
+        showEditDeliveryModal,
+        updatingDeliveryCourse,
+    ]);
     const {
         certificateActionKind,
         certificateActionStudentId,
@@ -270,17 +293,8 @@ const InstructorDashboard = () => {
                         submittingCourseId={submittingCourseId}
                         onOpenDeliveryModal={openDeliveryModal}
                         onOpenDeliveryEditModal={openDeliveryEditModal}
-                        showDeliveryModal={showDeliveryModal}
-                        onCloseDeliveryModal={closeDeliveryModal}
-                        onCreateDeliveryCourse={handleCreateDeliveryCourse}
-                        showEditDeliveryModal={showEditDeliveryModal}
-                        onCloseEditDeliveryModal={closeEditDeliveryModal}
-                        editingDeliveryCourse={editingDeliveryCourse}
-                        onUpdateDeliveryCourse={handleUpdateDeliveryCourse}
-                        updatingDeliveryCourse={updatingDeliveryCourse}
                         onSubmitCourseForApproval={handleSubmitCourseForApproval}
-                        creatingDeliveryCourse={creatingDeliveryCourse}
-                        deliveryCategories={deliveryCategories}
+                        deliveryCourseModals={deliveryCourseModals}
                     />
                 );
             case 'students':

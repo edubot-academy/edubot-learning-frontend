@@ -2,6 +2,32 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.18.6] - 2026-07-13
+
+### Added
+
+- Instructor dashboard refactor coverage: added focused tests for delivery-course helpers, instructor course display/model logic, group course selection/data/modal/mutation/session/student-option hooks, course cards, and group cards.
+
+### Changed
+
+- Instructor dashboard course architecture: extracted dashboard course cards, instructor course page model logic, page-local course sections, delivery-course normalization helpers, and course lifecycle display metadata.
+- Instructor dashboard group architecture: split group course selection, data loading, modal/form state, mutation orchestration, session generation, student search, display helpers, and payload/validation helpers into focused modules while keeping `GroupsSection` as page composition.
+- Group course utilities: replaced the mixed `groupCourses` utility bucket with selection, form/payload, and display modules behind a compatibility barrel export.
+
+### Fixed
+
+- Instructor group loading: ignored stale group-load responses when switching selected delivery courses quickly.
+- Instructor group enrollment roster: invalidated stale roster requests when switching enrollment groups, closing the enroll modal, or completing enrollment so late responses cannot repopulate the wrong modal state.
+- Instructor dashboard component boundaries: removed earlier over-split modal/section wrapper references and kept only extractions with clear ownership.
+
+### Verification
+
+- `npm run test -- src/features/instructor-dashboard/utils/deliveryCourse.spec.js src/features/instructor-dashboard/utils/groupCourses.spec.js src/features/instructor-dashboard/utils/instructorCourseDisplay.spec.js src/features/instructor-dashboard/utils/instructorCourses.spec.js src/features/instructor-dashboard/hooks/useInstructorCoursePageModel.spec.js src/features/instructor-dashboard/hooks/useInstructorGroupCourseSelection.spec.js src/features/instructor-dashboard/hooks/useInstructorGroupData.spec.js src/features/instructor-dashboard/hooks/useInstructorGroupModals.spec.js src/features/instructor-dashboard/hooks/useInstructorGroupMutations.spec.js src/features/instructor-dashboard/hooks/useInstructorGroupSessionGeneration.spec.js src/features/instructor-dashboard/hooks/useInstructorGroupStudentOptions.spec.js src/features/instructor-dashboard/components/CoursesSection.spec.jsx src/features/instructor-dashboard/components/InstructorDashboardGroupCard.spec.jsx src/features/instructor-dashboard/utils/courseLifecycle.spec.js`
+- `npm run lint`
+- `npm run build`
+
+---
+
 ## [1.18.5] - 2026-07-11
 
 ### Added

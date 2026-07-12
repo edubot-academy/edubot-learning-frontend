@@ -9,28 +9,12 @@ import {
 } from '@features/courses/api';
 import { parseApiError } from '@shared/api/error';
 import { toArray } from '@shared/api/response';
-
-const DEFAULT_DELIVERY_COURSE = {
-    courseType: 'offline',
-    title: '',
-    description: '',
-    categoryId: '',
-    price: '',
-    languageCode: 'ky',
-};
-
-const buildDeliveryCoursePayload = (payload) => ({
-    title: payload.title,
-    description: payload.description,
-    categoryId: parseInt(payload.categoryId, 10),
-    price: Number(payload.price || 0),
-    languageCode: payload.languageCode || 'ky',
-    courseType: payload.courseType,
-    isPaid: Number(payload.price || 0) > 0,
-});
-
-const isMissingRequiredFields = (payload) =>
-    !payload?.title || !payload?.description || !payload?.categoryId;
+import {
+    buildDeliveryCoursePayload,
+    DEFAULT_DELIVERY_COURSE,
+    isMissingRequiredDeliveryCourseFields,
+    normalizeDeliveryCourseEditState,
+} from '@features/instructor-dashboard/utils/deliveryCourse';
 
 export const useDeliveryCourse = ({
     onCreated,
@@ -92,17 +76,7 @@ export const useDeliveryCourse = ({
         const categoriesLoaded = await ensureDeliveryCategories();
         if (!categoriesLoaded) return;
 
-        setEditingDeliveryCourse({
-            id: course.id,
-            courseType: course.courseType || 'offline',
-            title: course.title || '',
-            description: course.description || '',
-            categoryId: course.category?.id || course.categoryId || '',
-            price: course.price || 0,
-            languageCode: course.languageCode || 'ky',
-            status: course.status || '',
-            isPublished: Boolean(course.isPublished),
-        });
+        setEditingDeliveryCourse(normalizeDeliveryCourseEditState(course));
         setShowEditDeliveryModal(true);
     }, [ensureDeliveryCategories]);
 
@@ -112,7 +86,7 @@ export const useDeliveryCourse = ({
                 ? deliveryCourse
                 : payloadOrSuccessCallback;
 
-        if (isMissingRequiredFields(payload)) {
+        if (isMissingRequiredDeliveryCourseFields(payload)) {
             toast.error(t('instructorDashboard.shell.toasts.requiredFields'));
             return false;
         }
@@ -148,7 +122,7 @@ export const useDeliveryCourse = ({
     const handleUpdateDeliveryCourse = useCallback(async (payload) => {
         if (!editingDeliveryCourse?.id) return false;
 
-        if (isMissingRequiredFields(payload)) {
+        if (isMissingRequiredDeliveryCourseFields(payload)) {
             toast.error(t('instructorDashboard.shell.toasts.requiredFields'));
             return false;
         }

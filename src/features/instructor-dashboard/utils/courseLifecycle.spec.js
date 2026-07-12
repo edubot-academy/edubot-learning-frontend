@@ -32,4 +32,18 @@ describe('courseLifecycle', () => {
             primaryActionLabel: 'Текшерүү',
         });
     });
+
+    it('supports badge class overrides without changing lifecycle state', () => {
+        expect(
+            getCourseLifecycleMeta(
+                { status: 'rejected' },
+                { rejected: 'Rejected' },
+                { [COURSE_LIFECYCLE_STATES.REJECTED]: 'custom-rejected' }
+            )
+        ).toMatchObject({
+            state: COURSE_LIFECYCLE_STATES.REJECTED,
+            label: 'Rejected',
+            badgeClass: 'custom-rejected',
+        });
+    });
 });

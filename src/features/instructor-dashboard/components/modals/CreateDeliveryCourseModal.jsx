@@ -3,15 +3,10 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import AdvancedModal from '@shared/ui/AdvancedModal';
 import { LOCALE_OPTIONS } from '../../../../i18n/locale';
-
-const DEFAULT_FORM_DATA = {
-    courseType: 'offline',
-    title: '',
-    description: '',
-    categoryId: '',
-    price: '',
-    languageCode: 'ky',
-};
+import {
+    DEFAULT_DELIVERY_COURSE,
+    normalizeDeliveryCourseFormValues,
+} from '@features/instructor-dashboard/utils/deliveryCourse';
 
 const CreateDeliveryCourseModal = ({
     isOpen,
@@ -25,7 +20,7 @@ const CreateDeliveryCourseModal = ({
     submitLabel = null,
 }) => {
     const { t } = useTranslation();
-    const [formData, setFormData] = useState(DEFAULT_FORM_DATA);
+    const [formData, setFormData] = useState(DEFAULT_DELIVERY_COURSE);
     const [errors, setErrors] = useState({});
     const isEditMode = Boolean(initialValues);
     const courseTypeDescriptions = {
@@ -36,22 +31,7 @@ const CreateDeliveryCourseModal = ({
     // Reset form when modal opens
     useEffect(() => {
         if (isOpen) {
-            const normalizedValues = initialValues
-                ? {
-                    courseType: initialValues.courseType || 'offline',
-                    title: initialValues.title || '',
-                    description: initialValues.description || '',
-                    categoryId: initialValues.categoryId ? String(initialValues.categoryId) : '',
-                    price:
-                        initialValues.price === 0 || initialValues.price
-                            ? String(initialValues.price)
-                            : '',
-                    languageCode: initialValues.languageCode || 'ky',
-                }
-                : DEFAULT_FORM_DATA;
-            setFormData({
-                ...normalizedValues,
-            });
+            setFormData(normalizeDeliveryCourseFormValues(initialValues));
             setErrors({});
         }
     }, [initialValues, isOpen]);
