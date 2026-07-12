@@ -11,7 +11,7 @@ import {
     FiShield,
     FiXCircle,
 } from 'react-icons/fi';
-import { fetchCertificateVerification } from '@features/courses/api';
+import { fetchCertificateVerification } from '@features/courses/api/courseCertificates';
 
 const getStatusMeta = (t) => ({
     issued: {

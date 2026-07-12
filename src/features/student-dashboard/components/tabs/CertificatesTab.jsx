@@ -8,7 +8,7 @@ import {
     DashboardSectionHeader,
 } from '../../../../components/ui/dashboard';
 import StudentPanelEmpty from '../shared/StudentPanelEmpty.jsx';
-import { downloadCourseCertificatePdf } from '../../../courses/api.js';
+import { downloadCourseCertificatePdf } from '../../../courses/api/courseCertificates.js';
 
 const formatDate = (value, language) => {
     if (!value) return '—';

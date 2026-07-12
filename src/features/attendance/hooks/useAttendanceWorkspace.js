@@ -5,7 +5,8 @@ import {
     fetchSessionAttendance,
     markSessionAttendanceBulk,
 } from '../api';
-import { fetchCourses, fetchInstructorCourses } from '../../courses/api';
+import { fetchCourses } from '../../courses/api';
+import { fetchInstructorCourses } from '../../courses/api/instructorCourses';
 import { fetchCourseGroups } from '../../courseGroups/api';
 import { fetchGroupRoster } from '../../courseGroups/roster';
 import { fetchCourseSessions } from '../../groupSessions/api';

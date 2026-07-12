@@ -20,7 +20,7 @@ import {
     DashboardTableSkeleton,
     EmptyState,
 } from '@components/ui/dashboard';
-import { downloadCourseCertificatePdf } from '@features/courses/api';
+import { downloadCourseCertificatePdf } from '@features/courses/api/courseCertificates';
 
 const formatDate = (value, language = 'ky') => {
     if (!value) return '—';

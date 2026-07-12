@@ -1,7 +1,6 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { toast } from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
-import { fetchInstructorCourses } from '@features/courses/api';
 import { parseApiError } from '@shared/api/error';
 import {
     getCourseFromMutationResponse,
@@ -10,33 +9,29 @@ import {
     markInstructorCoursePending,
     selectAiEnabledCourses,
     selectApprovedPublishedCourses,
-    toInstructorCourseList,
     upsertInstructorCourse,
 } from '@features/instructor-dashboard/utils/instructorCourses';
+import { useInstructorCourseQuery } from './useInstructorCourseQuery';
 
 export const useInstructorCourses = (user, profile) => {
     const { t } = useTranslation();
-    const [courseList, setCourseList] = useState([]);
-    const [loadingCourses, setLoadingCourses] = useState(false);
-
-    const loadCourses = useCallback(async () => {
-        if (!user?.id || user.role !== 'instructor') return;
-
-        setLoadingCourses(true);
-        try {
-            const data = await fetchInstructorCourses({ status: 'all' });
-            setCourseList(toInstructorCourseList(data));
-        } catch (error) {
-            console.error('Failed to load instructor courses', error);
+    const params = useMemo(() => ({ status: 'all' }), []);
+    const handleLoadError = useCallback(
+        (error) => {
             toast.error(parseApiError(error, t('instructorDashboard.data.toasts.coursesLoadError')).message);
-        } finally {
-            setLoadingCourses(false);
-        }
-    }, [t, user]);
-
-    useEffect(() => {
-        loadCourses();
-    }, [loadCourses]);
+        },
+        [t]
+    );
+    const {
+        courses: courseList,
+        loading: loadingCourses,
+        refresh: loadCourses,
+        setCourses: setCourseList,
+    } = useInstructorCourseQuery({
+        enabled: Boolean(user?.id && user.role === 'instructor'),
+        onError: handleLoadError,
+        params,
+    });
 
     const upsertCourse = useCallback((response) => {
         const nextCourse = getCourseFromMutationResponse(response);
@@ -48,13 +43,13 @@ export const useInstructorCourses = (user, profile) => {
         });
 
         return true;
-    }, []);
+    }, [setCourseList]);
 
     const markCoursePendingLocally = useCallback((courseId) => {
         if (!courseId) return;
 
         setCourseList((prev) => markInstructorCoursePending(prev, courseId));
-    }, []);
+    }, [setCourseList]);
 
     const courses = useMemo(
         () => (courseList.length ? courseList : profile?.courses || []),

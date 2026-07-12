@@ -9,7 +9,7 @@ import {
     EmptyState,
 } from '@components/ui/dashboard';
 import { generateAiMessageDraft } from '@features/aiLms/api';
-import { fetchCourseStudents } from '@features/courses/api';
+import { fetchCourseStudents } from '@features/courses/api/courseStudents';
 import { toArray } from '@shared/api/response';
 
 const MessageDraftsTab = ({ courses = [] }) => {

@@ -17,6 +17,9 @@ const apiMocks = vi.hoisted(() => ({
 
 vi.mock('@features/courses/api', () => ({
     fetchCourses: apiMocks.fetchCourses,
+}));
+
+vi.mock('@features/courses/api/instructorCourses', () => ({
     fetchInstructorCourses: apiMocks.fetchInstructorCourses,
 }));
 

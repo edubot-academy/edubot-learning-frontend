@@ -1,10 +1,8 @@
 import { useState, useCallback, useMemo } from 'react';
 import { toast } from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
-import {
-    fetchInstructorStudentCourses,
-    fetchCourseStudents,
-} from '@features/courses/api';
+import { fetchCourseStudents } from '@features/courses/api/courseStudents';
+import { fetchInstructorStudentCourses } from '@features/courses/api/instructorCourses';
 import { parseApiError } from '@shared/api/error';
 import { toArray } from '@shared/api/response';
 

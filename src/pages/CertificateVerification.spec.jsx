@@ -9,7 +9,7 @@ const apiMocks = vi.hoisted(() => ({
     fetchCertificateVerification: vi.fn(),
 }));
 
-vi.mock('@features/courses/api', () => apiMocks);
+vi.mock('@features/courses/api/courseCertificates', () => apiMocks);
 
 const renderPage = (initialEntry = '/certificates/cert-123/verify', routePath = '/certificates/:publicId/verify') =>
     render(

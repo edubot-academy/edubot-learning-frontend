@@ -20,8 +20,12 @@ vi.mock('@features/categories/api', () => ({
 }));
 
 vi.mock('@features/courses/api', () => ({
-    fetchInstructorStudentCourses: vi.fn().mockResolvedValue({ courses: [] }),
-    fetchCourseStudents: vi.fn().mockResolvedValue({ students: [], total: 0, totalPages: 1 }),
+    createCourse: vi.fn().mockResolvedValue({ id: 1 }),
+    updateCourse: vi.fn().mockResolvedValue({}),
+    markCoursePending: vi.fn().mockResolvedValue({}),
+}));
+
+vi.mock('@features/courses/api/courseCertificates', () => ({
     fetchCourseCertificateSettings: vi.fn().mockResolvedValue({}),
     fetchCourseCertificates: vi.fn().mockResolvedValue([]),
     updateCourseCertificateSettings: vi.fn().mockResolvedValue({}),
@@ -30,12 +34,17 @@ vi.mock('@features/courses/api', () => ({
     rejectCertificate: vi.fn().mockResolvedValue({}),
     revokeCertificate: vi.fn().mockResolvedValue({}),
     regenerateCourseCertificates: vi.fn().mockResolvedValue({ regeneratedCount: 0 }),
-    createCourse: vi.fn().mockResolvedValue({ id: 1 }),
-    fetchInstructorCourses: vi.fn().mockResolvedValue({ courses: [] }),
-    updateCourse: vi.fn().mockResolvedValue({}),
-    markCoursePending: vi.fn().mockResolvedValue({}),
     uploadCourseCertificateSecondaryLogo: vi.fn().mockResolvedValue({}),
     saveCourseCertificateSignatureAsset: vi.fn().mockResolvedValue({}),
+}));
+
+vi.mock('@features/courses/api/instructorCourses', () => ({
+    fetchInstructorStudentCourses: vi.fn().mockResolvedValue({ courses: [] }),
+    fetchInstructorCourses: vi.fn().mockResolvedValue({ courses: [] }),
+}));
+
+vi.mock('@features/courses/api/courseStudents', () => ({
+    fetchCourseStudents: vi.fn().mockResolvedValue({ students: [], total: 0, totalPages: 1 }),
 }));
 
 vi.mock('../hooks/useDashboardSwipeGestures', () => ({

@@ -21,7 +21,7 @@ import {
 import StudentHeroPill from '../shared/StudentHeroPill.jsx';
 import StudentMiniStat from '../shared/StudentMiniStat.jsx';
 import StudentPanelEmpty from '../shared/StudentPanelEmpty.jsx';
-import { downloadCourseCertificatePdf } from '../../../courses/api.js';
+import { downloadCourseCertificatePdf } from '../../../courses/api/courseCertificates.js';
 import {
     resolveCourseType,
 } from '../../utils/studentDashboard.helpers.js';

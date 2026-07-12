@@ -5,6 +5,7 @@ import {
     getInstructorCourseLifecycleCounts,
     getInstructorCourseWorkflowCounts,
     getInstructorCourseWorkflowFilters,
+    INSTRUCTOR_COURSE_FILTER_ALL,
     toInstructorCourseDisplayItems,
 } from '@features/instructor-dashboard/utils/instructorCourseDisplay';
 
@@ -17,8 +18,8 @@ export const useInstructorCoursePageModel = ({
     user,
 }) => {
     const [query, setQuery] = useState('');
-    const [statusFilter, setStatusFilter] = useState('all');
-    const [typeFilter, setTypeFilter] = useState('all');
+    const [statusFilter, setStatusFilter] = useState(INSTRUCTOR_COURSE_FILTER_ALL);
+    const [typeFilter, setTypeFilter] = useState(INSTRUCTOR_COURSE_FILTER_ALL);
     const [lastLoadedAt, setLastLoadedAt] = useState(null);
 
     useEffect(() => {
@@ -52,11 +53,17 @@ export const useInstructorCoursePageModel = ({
         [courseDisplayItems, query, statusFilter, typeFilter]
     );
 
+    const timeFormatter = useMemo(
+        () =>
+            new Intl.DateTimeFormat(i18nLanguage || undefined, {
+                hour: '2-digit',
+                minute: '2-digit',
+            }),
+        [i18nLanguage]
+    );
+
     const lastLoadedLabel = lastLoadedAt
-        ? lastLoadedAt.toLocaleTimeString(i18nLanguage || undefined, {
-            hour: '2-digit',
-            minute: '2-digit',
-        })
+        ? timeFormatter.format(lastLoadedAt)
         : '-';
 
     const courseFilters = useMemo(() => getInstructorCourseFilters(t), [t]);

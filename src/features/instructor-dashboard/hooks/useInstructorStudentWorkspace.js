@@ -5,8 +5,6 @@ import {
     approveCertificate,
     fetchCourseCertificateSettings,
     fetchCourseCertificates,
-    fetchCourseStudents,
-    fetchInstructorStudentCourses,
     issueCourseCertificate,
     regenerateCourseCertificates,
     rejectCertificate,
@@ -14,7 +12,11 @@ import {
     updateCourseCertificateSettings,
     saveCourseCertificateSignatureAsset,
     uploadCourseCertificateSecondaryLogo,
-} from '@features/courses/api';
+} from '@features/courses/api/courseCertificates';
+import {
+    fetchInstructorStudentCourses,
+} from '@features/courses/api/instructorCourses';
+import { fetchCourseStudents } from '@features/courses/api/courseStudents';
 import {
     isCourseFeatureEnabled,
     TENANT_FEATURES,

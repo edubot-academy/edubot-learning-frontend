@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -27,14 +27,39 @@ import { BasicModal } from '@shared/ui';
 import {
     downloadCourseCertificatePdf,
     fetchCourseCertificatePreviewHtml,
-} from '@features/courses/api';
+} from '@features/courses/api/courseCertificates';
 import {
     PreviewCornerOrnament,
     PreviewOrnamentBand,
     PreviewTundukSeal,
 } from './CertificatePreviewArt';
 import { isPlatformAdmin } from '@shared/utils/roles';
-import { getCertificateStatusLabel, getPageOrientationLabel } from '@shared/i18n/enumLabels';
+import { getPageOrientationLabel } from '@shared/i18n/enumLabels';
+import {
+    fitExactPreviewFrame,
+    normalizeExactPreviewHtml,
+} from '../utils/certificatePreview';
+import {
+    getCertificateBadge,
+    getCertificateStats,
+    getStudentCertificateState,
+    getStudentCertificateStatusLabel,
+    isStudentEligibleForCertificate,
+} from '../utils/certificateStudentDisplay';
+import {
+    buildCertificateSettingsForm,
+    CERTIFICATE_COLOR_PRESETS,
+    CERTIFICATE_LANGUAGE_OPTIONS,
+    DEFAULT_CERTIFICATE_LANGUAGE,
+    getExactPreviewPayload,
+    getTemplatePayload,
+    hasTemplatePayloadChanges,
+    STUDENT_PAGE_SIZE_OPTIONS,
+} from '../utils/certificateTemplate';
+import {
+    buildCertificateDisplayPayload,
+    buildCertificateWorkspaceViewModel,
+} from '../utils/certificateWorkspaceViewModel';
 
 const formatDate = (value, language = 'ky') => {
     if (!value) return '—';
@@ -47,296 +72,6 @@ const formatDate = (value, language = 'ky') => {
               month: 'short',
               year: 'numeric',
           });
-};
-
-const getCertificatePreviewLocale = (language) =>
-    language === 'ru' ? 'ru-RU' : language === 'ky' ? 'ky-KG' : 'en-GB';
-
-const formatPreviewDate = (value, language = 'en') =>
-    new Date(value).toLocaleDateString(getCertificatePreviewLocale(language), {
-        day: '2-digit',
-        month: 'long',
-        year: 'numeric',
-    });
-
-const normalizeExactPreviewHtml = (html) => {
-    if (!html || typeof html !== 'string') return '';
-
-    const fitStyles = `
-        <style id="edubot-preview-fit">
-            html, body {
-                margin: 0 !important;
-                padding: 0 !important;
-                width: 100% !important;
-                background: #ffffff !important;
-                overflow: hidden !important;
-            }
-            body > * {
-                margin-left: auto !important;
-                margin-right: auto !important;
-                max-width: none !important;
-                flex: 0 0 auto !important;
-            }
-        </style>
-    `;
-    const fitScript = `
-        <script id="edubot-preview-fit-script">
-            (function () {
-                function getRootNode() {
-                    if (!document.body) return null;
-                    var children = document.body.children || [];
-                    for (var index = 0; index < children.length; index += 1) {
-                        var tagName = children[index].tagName;
-                        if (!/^(STYLE|SCRIPT|META|LINK)$/i.test(tagName)) {
-                            return children[index];
-                        }
-                    }
-                    return null;
-                }
-
-                function fitPreview() {
-                    var root = getRootNode();
-                    if (!root) return;
-
-                    root.style.transform = 'none';
-                    root.style.transformOrigin = 'top center';
-                    root.style.position = 'absolute';
-                    root.style.left = '50%';
-                    root.style.top = '0';
-                    root.style.margin = '0';
-
-                    var baseWidth = root.scrollWidth || root.offsetWidth;
-                    var baseHeight = root.scrollHeight || root.offsetHeight;
-                    var availableWidth = Math.max(window.innerWidth - 24, 260);
-                    var availableHeight = Math.max(window.innerHeight - 24, 260);
-
-                    if (!baseWidth || !baseHeight) return;
-
-                    var isModalPreview = window.frameElement && window.frameElement.dataset.previewSurface === 'modal';
-                    var modalFitHeight = Math.max(window.innerHeight - 24, 260);
-                    var fitHeight = isModalPreview ? modalFitHeight : availableHeight;
-                    var scale = Math.min(availableWidth / baseWidth, fitHeight / baseHeight, 1);
-                    var scaledHeight = baseHeight * scale;
-                    var topOffset = isModalPreview ? Math.max((window.innerHeight - scaledHeight) / 2, 0) : 0;
-
-                    root.style.top = topOffset + 'px';
-                    root.style.transform = 'translateX(-50%) scale(' + scale + ')';
-                    document.documentElement.style.height = Math.ceil(isModalPreview ? window.innerHeight : scaledHeight) + 'px';
-                    document.body.style.height = Math.ceil(isModalPreview ? window.innerHeight : scaledHeight) + 'px';
-                }
-
-                window.addEventListener('load', fitPreview);
-                window.addEventListener('resize', fitPreview);
-                setTimeout(fitPreview, 0);
-                setTimeout(fitPreview, 120);
-            })();
-        </script>
-    `;
-
-    const withViewport = html.includes('name="viewport"')
-        ? html
-        : html.replace(
-              /<head([^>]*)>/i,
-              '<head$1><meta name="viewport" content="width=device-width, initial-scale=1" />'
-          );
-
-    if (/<head[^>]*>/i.test(withViewport)) {
-        return withViewport.replace(/<\/head>/i, `${fitStyles}${fitScript}</head>`);
-    }
-
-    return `${fitStyles}${fitScript}${withViewport}`;
-};
-
-const getPreviewRootNode = (doc) => {
-    if (!doc?.body) return null;
-    return Array.from(doc.body.children).find(
-        (child) => !['STYLE', 'SCRIPT', 'META', 'LINK'].includes(child.tagName)
-    );
-};
-
-const fitExactPreviewFrame = (iframe) => {
-    const fit = () => {
-        const doc = iframe?.contentDocument;
-        const root = getPreviewRootNode(doc);
-        if (!iframe || !doc || !root) return;
-
-        const availableWidth = Math.max(iframe.clientWidth - 24, 260);
-        const availableHeight = Math.max(iframe.clientHeight - 24, 260);
-
-        doc.documentElement.style.margin = '0';
-        doc.documentElement.style.padding = '0';
-        doc.documentElement.style.width = '100%';
-        doc.documentElement.style.overflow = 'hidden';
-        doc.body.style.margin = '0';
-        doc.body.style.padding = '0';
-        doc.body.style.width = '100%';
-        doc.body.style.overflow = 'hidden';
-        doc.body.style.background = '#ffffff';
-
-        root.style.transform = 'none';
-        root.style.transformOrigin = 'top left';
-        root.style.position = 'absolute';
-        root.style.left = '0';
-        root.style.top = '0';
-        root.style.margin = '0';
-        root.style.maxWidth = 'none';
-
-        const rect = root.getBoundingClientRect();
-        const baseWidth = Math.max(root.scrollWidth, root.offsetWidth, rect.width);
-        const baseHeight = Math.max(root.scrollHeight, root.offsetHeight, rect.height);
-        if (!baseWidth || !baseHeight) return;
-
-        const scale = Math.min(availableWidth / baseWidth, availableHeight / baseHeight, 1);
-        const scaledWidth = baseWidth * scale;
-        const scaledHeight = baseHeight * scale;
-        const leftOffset = Math.max((iframe.clientWidth - scaledWidth) / 2, 0);
-        const topOffset = Math.max((iframe.clientHeight - scaledHeight) / 2, 0);
-
-        root.style.left = `${leftOffset}px`;
-        root.style.top = `${topOffset}px`;
-        root.style.transform = `scale(${scale})`;
-        doc.documentElement.style.height = `${iframe.clientHeight}px`;
-        doc.body.style.height = `${iframe.clientHeight}px`;
-    };
-
-    const scheduleFit = () => window.requestAnimationFrame(fit);
-    const timeouts = [0, 80, 240].map((delay) => window.setTimeout(scheduleFit, delay));
-    const resizeObserver =
-        typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(scheduleFit);
-
-    resizeObserver?.observe(iframe);
-    if (iframe.parentElement) {
-        resizeObserver?.observe(iframe.parentElement);
-    }
-    window.addEventListener('resize', scheduleFit);
-    iframe.contentWindow?.addEventListener('resize', scheduleFit);
-
-    return () => {
-        timeouts.forEach((timeoutId) => window.clearTimeout(timeoutId));
-        resizeObserver?.disconnect();
-        window.removeEventListener('resize', scheduleFit);
-        iframe.contentWindow?.removeEventListener('resize', scheduleFit);
-    };
-};
-
-const getCertificateBadge = (status) => {
-    if (status === 'issued') {
-        return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300';
-    }
-    if (status === 'pending_approval') {
-        return 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300';
-    }
-    if (status === 'rejected') {
-        return 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300';
-    }
-    if (status === 'revoked') {
-        return 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
-    }
-    return 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300';
-};
-
-const getStudentCertificateStatusLabel = (status, t) =>
-    getCertificateStatusLabel(status, t);
-
-const isStudentEligibleForCertificate = (student) => {
-    const progress = Math.max(0, Math.min(100, Number(student?.progressPercent || 0)));
-    return (
-        Boolean(student?.certificateEligible) ||
-        Boolean(student?.completed) ||
-        progress >= 100
-    );
-};
-
-const getStudentCertificateState = (student, canIssueManually = true, t) => {
-    const progress = Math.max(0, Math.min(100, Number(student?.progressPercent || 0)));
-    const eligibility = student?.certificateEligibility;
-    const isComplete = isStudentEligibleForCertificate(student);
-
-    if (student?.certificateStatus === 'issued') {
-        return {
-            canIssue: false,
-            buttonLabel: t('adminCertificates.state.issued.button'),
-            helperText: t('adminCertificates.state.issued.helper'),
-            helperTone: 'text-emerald-600 dark:text-emerald-300',
-        };
-    }
-
-    if (student?.certificateStatus === 'pending_approval') {
-        return {
-            canIssue: false,
-            buttonLabel: t('adminCertificates.state.pending.button'),
-            helperText: t('adminCertificates.state.pending.helper'),
-            helperTone: 'text-amber-600 dark:text-amber-300',
-        };
-    }
-
-    if (!isComplete) {
-        const missing = Array.isArray(eligibility?.reasons) && eligibility.reasons.length
-            ? eligibility.reasons
-                  .map((reason) => {
-                      if (reason === 'sessions_missing') return t('adminCertificates.eligibilityReasons.sessionsMissing');
-                      if (reason === 'sessions_incomplete') return t('adminCertificates.eligibilityReasons.sessionsIncomplete');
-                      if (reason === 'attendance_below_threshold') return t('adminCertificates.eligibilityReasons.attendanceBelowThreshold');
-                      if (reason === 'homework_below_threshold') return t('adminCertificates.eligibilityReasons.homeworkBelowThreshold');
-                      if (reason === 'activities_below_threshold') return t('adminCertificates.eligibilityReasons.activitiesBelowThreshold');
-                      if (reason === 'lesson_progress_incomplete') return t('adminCertificates.eligibilityReasons.lessonProgressIncomplete');
-                      return null;
-                  })
-                  .filter(Boolean)
-                  .join(', ')
-            : '';
-        return {
-            canIssue: canIssueManually,
-            buttonLabel: canIssueManually
-                ? t('adminCertificates.actions.issue')
-                : t('adminCertificates.state.incomplete.requirementsButton'),
-            helperText: canIssueManually
-                ? missing
-                    ? t('adminCertificates.state.incomplete.manualWithMissing', { missing })
-                    : t('adminCertificates.state.incomplete.manualWithProgress', { progress })
-                : missing
-                  ? t('adminCertificates.state.incomplete.blockedWithMissing', { missing })
-                  : t('adminCertificates.state.incomplete.blockedWithProgress', { progress }),
-            helperTone: 'text-amber-600 dark:text-amber-300',
-        };
-    }
-
-    if (student?.certificateStatus === 'rejected') {
-        return {
-            canIssue: canIssueManually,
-            buttonLabel: canIssueManually
-                ? t('adminCertificates.actions.reissue')
-                : t('adminCertificates.status.rejected'),
-            helperText: canIssueManually
-                ? t('adminCertificates.state.rejected.manualHelper')
-                : t('adminCertificates.state.rejected.helper'),
-            helperTone: 'text-red-600 dark:text-red-300',
-        };
-    }
-
-    if (student?.certificateStatus === 'revoked') {
-        return {
-            canIssue: canIssueManually,
-            buttonLabel: canIssueManually
-                ? t('adminCertificates.actions.reissue')
-                : t('adminCertificates.status.revoked'),
-            helperText: canIssueManually
-                ? t('adminCertificates.state.revoked.manualHelper')
-                : t('adminCertificates.state.revoked.helper'),
-            helperTone: 'text-slate-600 dark:text-slate-300',
-        };
-    }
-
-    return {
-        canIssue: canIssueManually,
-        buttonLabel: canIssueManually
-            ? t('adminCertificates.actions.issue')
-            : t('adminCertificates.state.ready.button'),
-        helperText: canIssueManually
-            ? t('adminCertificates.state.ready.manualHelper')
-            : t('adminCertificates.state.ready.helper'),
-        helperTone: 'text-emerald-600 dark:text-emerald-300',
-    };
 };
 
 const SignaturePad = ({ disabled = false, onSave }) => {
@@ -504,47 +239,6 @@ const SignaturePad = ({ disabled = false, onSave }) => {
         </div>
     );
 };
-
-const getTemplatePayload = (settingsForm, isAdminMode, defaultCertificateTitle) => ({
-    certificateTitle: isAdminMode
-        ? settingsForm.certificateTitle.trim() || defaultCertificateTitle
-        : undefined,
-    secondaryBrandName: isAdminMode ? settingsForm.secondaryBrandName.trim() || null : undefined,
-    certificateLanguage: settingsForm.certificateLanguage,
-    issuerDisplayName: settingsForm.issuerDisplayName.trim() || null,
-    issuerTitle: settingsForm.issuerTitle.trim() || null,
-    pageOrientation: settingsForm.pageOrientation,
-    primaryColor: isAdminMode ? settingsForm.primaryColor : undefined,
-    accentColor: isAdminMode ? settingsForm.accentColor : undefined,
-    eligibilityAttendanceRequired: isAdminMode
-        ? Boolean(settingsForm.eligibilityAttendanceRequired)
-        : undefined,
-    eligibilityAttendancePercent: isAdminMode
-        ? Number(settingsForm.eligibilityAttendancePercent || 0)
-        : undefined,
-    eligibilityHomeworkRequired: isAdminMode
-        ? Boolean(settingsForm.eligibilityHomeworkRequired)
-        : undefined,
-    eligibilityHomeworkPercent: isAdminMode
-        ? Number(settingsForm.eligibilityHomeworkPercent || 0)
-        : undefined,
-    eligibilityActivitiesRequired: isAdminMode
-        ? Boolean(settingsForm.eligibilityActivitiesRequired)
-        : undefined,
-    eligibilityActivitiesPercent: isAdminMode
-        ? Number(settingsForm.eligibilityActivitiesPercent || 0)
-        : undefined,
-});
-
-const CERTIFICATE_LANGUAGE_OPTIONS = [
-    { value: 'en', labelKey: 'adminCertificates.page.template.languageOptions.en' },
-    { value: 'ru', labelKey: 'adminCertificates.page.template.languageOptions.ru' },
-    { value: 'ky', labelKey: 'adminCertificates.page.template.languageOptions.ky' },
-];
-
-const STUDENT_PAGE_SIZE_OPTIONS = [20, 50, 100];
-
-const DEFAULT_CERTIFICATE_LANGUAGE = 'en';
 
 const ReadOnlyField = ({ label, value, children, className = '' }) => (
     <div className={className}>
@@ -896,24 +590,15 @@ const CertificatesSection = ({
     const [downloadingCertificateKey, setDownloadingCertificateKey] = useState(null);
     const previewRequestIdRef = useRef(0);
     const previewFrameCleanupRef = useRef({});
-    const [settingsForm, setSettingsForm] = useState({
-        certificateTitle: defaultCertificateTitle,
-        certificateLanguage: DEFAULT_CERTIFICATE_LANGUAGE,
-        secondaryBrandName: '',
-        secondaryBrandLogoUrl: '',
-        issuerDisplayName: '',
-        issuerTitle: '',
-        signatureAssetUrl: '',
-        pageOrientation: 'landscape',
-        primaryColor: '#122144',
-        accentColor: '#F17E22',
-        eligibilityAttendanceRequired: true,
-        eligibilityAttendancePercent: 80,
-        eligibilityHomeworkRequired: false,
-        eligibilityHomeworkPercent: 100,
-        eligibilityActivitiesRequired: false,
-        eligibilityActivitiesPercent: 100,
-    });
+    const [settingsForm, setSettingsForm] = useState(() =>
+        buildCertificateSettingsForm({
+            certificateSettings: null,
+            defaultCertificateTitle,
+            defaultIssuerDisplayName: '',
+            defaultIssuerTitle: '',
+            isAdminMode,
+        })
+    );
 
     const selectedCourse = courses.find((course) => course.id === selectedCourseId) || null;
     const defaultIssuerDisplayName =
@@ -925,34 +610,15 @@ const CertificatesSection = ({
         : t('adminCertificates.previewCanvas.instructorIssuerTitle');
 
     useEffect(() => {
-        setSettingsForm({
-            certificateTitle: certificateSettings?.certificateTitle || defaultCertificateTitle,
-            certificateLanguage: certificateSettings?.certificateLanguage || DEFAULT_CERTIFICATE_LANGUAGE,
-            secondaryBrandName: certificateSettings?.secondaryBrandName || '',
-            secondaryBrandLogoUrl: certificateSettings?.secondaryBrandLogoUrl || '',
-            issuerDisplayName: isAdminMode
-                ? certificateSettings?.issuerDisplayName || defaultIssuerDisplayName
-                : defaultIssuerDisplayName,
-            issuerTitle: isAdminMode
-                ? certificateSettings?.issuerTitle || defaultIssuerTitle
-                : defaultIssuerTitle,
-            signatureAssetUrl: certificateSettings?.signatureAssetUrl || '',
-            pageOrientation: certificateSettings?.pageOrientation || 'landscape',
-            primaryColor: certificateSettings?.primaryColor || '#122144',
-            accentColor: certificateSettings?.accentColor || '#F17E22',
-            eligibilityAttendanceRequired:
-                certificateSettings?.eligibilityAttendanceRequired ?? true,
-            eligibilityAttendancePercent:
-                certificateSettings?.eligibilityAttendancePercent ?? 80,
-            eligibilityHomeworkRequired:
-                certificateSettings?.eligibilityHomeworkRequired ?? false,
-            eligibilityHomeworkPercent:
-                certificateSettings?.eligibilityHomeworkPercent ?? 100,
-            eligibilityActivitiesRequired:
-                certificateSettings?.eligibilityActivitiesRequired ?? false,
-            eligibilityActivitiesPercent:
-                certificateSettings?.eligibilityActivitiesPercent ?? 100,
-        });
+        setSettingsForm(
+            buildCertificateSettingsForm({
+                certificateSettings,
+                defaultCertificateTitle,
+                defaultIssuerDisplayName,
+                defaultIssuerTitle,
+                isAdminMode,
+            })
+        );
     }, [
         certificateSettings,
         defaultCertificateTitle,
@@ -982,135 +648,110 @@ const CertificatesSection = ({
         [onSaveCertificateAsset]
     );
 
-    const sortedStudents = (courseStudents || []).slice().sort((a, b) => {
-        const aDate = a.enrolledAt ? new Date(a.enrolledAt).getTime() : 0;
-        const bDate = b.enrolledAt ? new Date(b.enrolledAt).getTime() : 0;
-        return bDate - aDate;
+    const certificateStats = getCertificateStats(courseCertificates);
+    const {
+        averageProgress,
+        completedCount,
+        hasActiveFilters,
+        isPortraitPreview,
+        pageRangeEnd,
+        pageRangeStart,
+        previewCourseTitle,
+        previewDate,
+        previewIssuerName,
+        previewIssuerTitle,
+        previewStudentName,
+        selectedStudent,
+        selectedStudentExistsOnPage,
+        sortedStudents,
+        totalStudents,
+        visibleStudents,
+    } = buildCertificateWorkspaceViewModel({
+        courseMeta,
+        courseStudents,
+        pageSize,
+        progressMax,
+        progressMin,
+        search,
+        selectedCourse,
+        selectedStudentId,
+        settingsForm,
+        studentNameOverride,
+        studentsPage,
+        t,
     });
-    const averageProgress = sortedStudents.length
-        ? Math.round(
-              sortedStudents.reduce(
-                  (sum, student) =>
-                      sum + Math.max(0, Math.min(100, Number(student.progressPercent || 0))),
-                  0
-              ) / sortedStudents.length
-          )
-        : 0;
-    const completedCount = sortedStudents.filter((student) => student.completed).length;
-    const certificateStats = courseCertificates.reduce(
-        (acc, item) => {
-            if (item?.status === 'issued') acc.issued += 1;
-            else if (item?.status === 'pending_approval') acc.pending += 1;
-            else if (item?.status === 'revoked') acc.revoked += 1;
-            else if (item?.status === 'rejected') acc.rejected += 1;
-            return acc;
-        },
-        { issued: 0, pending: 0, revoked: 0, rejected: 0 }
-    );
-    const previewStudentFallback =
-        sortedStudents[0]?.fullName || t('adminCertificates.previewCanvas.sampleStudentName');
-    const previewCourseTitle =
-        courseMeta?.title || selectedCourse?.title || t('adminCertificates.previewCanvas.sampleCourseTitle');
-    const previewIssuerName =
-        settingsForm.issuerDisplayName.trim() ||
-        selectedCourse?.instructorName ||
-        t('adminCertificates.previewCanvas.sampleIssuerName');
-    const previewIssuerTitle =
-        settingsForm.issuerTitle.trim() || t('adminCertificates.previewCanvas.instructorIssuerTitle');
-    const visibleStudents = selectedStudentId
-        ? sortedStudents.filter((student) => String(student.id) === selectedStudentId)
-        : sortedStudents;
-    const selectedStudent = selectedStudentId
-        ? sortedStudents.find((student) => String(student.id) === selectedStudentId) || null
-        : null;
 
     useEffect(() => {
         setStudentNameOverride(selectedStudent?.fullName || '');
     }, [selectedStudent]);
 
+    const templatePayload = getTemplatePayload(settingsForm, isAdminMode, defaultCertificateTitle);
+    const savedTemplatePayload = getTemplatePayload(
+        buildCertificateSettingsForm({
+            certificateSettings,
+            defaultCertificateTitle,
+            defaultIssuerDisplayName,
+            defaultIssuerTitle,
+            isAdminMode,
+        }),
+        isAdminMode,
+        defaultCertificateTitle
+    );
+    const hasTemplateChanges = hasTemplatePayloadChanges(templatePayload, savedTemplatePayload);
+    const fieldEditDisabled = isAdminMode && !isTemplateEditMode;
+    const shouldShowExactPreview = Boolean(exactPreviewHtml);
+    const pageOrientationLabel = getPageOrientationLabel(settingsForm.pageOrientation, t);
+    const colorPresets = CERTIFICATE_COLOR_PRESETS;
+    const certificateDisplaySettings = useMemo(
+        () => ({
+            certificateLanguage: settingsForm.certificateLanguage,
+            pageOrientation: settingsForm.pageOrientation,
+        }),
+        [settingsForm.certificateLanguage, settingsForm.pageOrientation]
+    );
+    const exactPreviewSettings = useMemo(
+        () => ({
+            accentColor: settingsForm.accentColor,
+            certificateLanguage: settingsForm.certificateLanguage,
+            certificateTitle: settingsForm.certificateTitle,
+            issuerDisplayName: settingsForm.issuerDisplayName,
+            issuerTitle: settingsForm.issuerTitle,
+            pageOrientation: settingsForm.pageOrientation,
+            primaryColor: settingsForm.primaryColor,
+            secondaryBrandName: settingsForm.secondaryBrandName,
+        }),
+        [
+            settingsForm.accentColor,
+            settingsForm.certificateLanguage,
+            settingsForm.certificateTitle,
+            settingsForm.issuerDisplayName,
+            settingsForm.issuerTitle,
+            settingsForm.pageOrientation,
+            settingsForm.primaryColor,
+            settingsForm.secondaryBrandName,
+        ]
+    );
+
     const getCertificateDisplayPayload = useCallback(
-        (student) => {
-            const allowEligibilityOverride = Boolean(
-                eligibilityOverrideByStudentId[student.id]
-            );
-            return {
-                studentFullName:
-                    selectedStudent && String(selectedStudent.id) === String(student.id)
-                        ? studentNameOverride.trim() || student.fullName || undefined
-                        : student.fullName || undefined,
-                issuerDisplayName: previewIssuerName || undefined,
-                issuerTitle: previewIssuerTitle || undefined,
-                certificateLanguage: settingsForm.certificateLanguage,
-                pageOrientation: settingsForm.pageOrientation,
-                allowEligibilityOverride: allowEligibilityOverride || undefined,
-            };
-        },
+        (student) =>
+            buildCertificateDisplayPayload({
+                eligibilityOverrideByStudentId,
+                previewIssuerName,
+                previewIssuerTitle,
+                selectedStudent,
+                settingsForm: certificateDisplaySettings,
+                student,
+                studentNameOverride,
+            }),
         [
             eligibilityOverrideByStudentId,
             previewIssuerName,
             previewIssuerTitle,
             selectedStudent,
-            settingsForm.certificateLanguage,
-            settingsForm.pageOrientation,
+            certificateDisplaySettings,
             studentNameOverride,
         ]
     );
-    const previewDate = formatPreviewDate(new Date(), settingsForm.certificateLanguage);
-    const isPortraitPreview = settingsForm.pageOrientation === 'portrait';
-    const totalStudents = Number(courseMeta?.total || 0);
-    const shownStudents = visibleStudents.length;
-    const selectedStudentExistsOnPage = selectedStudentId
-        ? sortedStudents.some((student) => String(student.id) === selectedStudentId)
-        : false;
-    const pageRangeStart = totalStudents > 0 ? (studentsPage - 1) * pageSize + 1 : 0;
-    const pageRangeEnd = shownStudents > 0 ? pageRangeStart + shownStudents - 1 : 0;
-    const hasActiveFilters = Boolean(
-        search.trim() || progressMin !== '' || progressMax !== '' || selectedStudentId
-    );
-    const previewStudentName =
-        studentNameOverride.trim() ||
-        selectedStudent?.fullName ||
-        visibleStudents[0]?.fullName ||
-        previewStudentFallback;
-    const templatePayload = getTemplatePayload(settingsForm, isAdminMode, defaultCertificateTitle);
-    const savedTemplatePayload = getTemplatePayload(
-        {
-                certificateTitle: certificateSettings?.certificateTitle || defaultCertificateTitle,
-                certificateLanguage: certificateSettings?.certificateLanguage || DEFAULT_CERTIFICATE_LANGUAGE,
-                secondaryBrandName: certificateSettings?.secondaryBrandName || '',
-                issuerDisplayName:
-                    certificateSettings?.issuerDisplayName || defaultIssuerDisplayName,
-                issuerTitle: certificateSettings?.issuerTitle || defaultIssuerTitle,
-                pageOrientation: certificateSettings?.pageOrientation || 'landscape',
-                primaryColor: certificateSettings?.primaryColor || '#122144',
-                accentColor: certificateSettings?.accentColor || '#F17E22',
-                eligibilityAttendanceRequired:
-                    certificateSettings?.eligibilityAttendanceRequired ?? true,
-                eligibilityAttendancePercent:
-                    certificateSettings?.eligibilityAttendancePercent ?? 80,
-                eligibilityHomeworkRequired:
-                    certificateSettings?.eligibilityHomeworkRequired ?? false,
-                eligibilityHomeworkPercent:
-                    certificateSettings?.eligibilityHomeworkPercent ?? 100,
-                eligibilityActivitiesRequired:
-                    certificateSettings?.eligibilityActivitiesRequired ?? false,
-                eligibilityActivitiesPercent:
-                    certificateSettings?.eligibilityActivitiesPercent ?? 100,
-        },
-        isAdminMode,
-        defaultCertificateTitle
-    );
-    const hasTemplateChanges =
-        JSON.stringify(templatePayload) !== JSON.stringify(savedTemplatePayload);
-    const fieldEditDisabled = isAdminMode && !isTemplateEditMode;
-    const shouldShowExactPreview = Boolean(exactPreviewHtml);
-    const pageOrientationLabel = getPageOrientationLabel(settingsForm.pageOrientation, t);
-    const colorPresets = [
-        { label: 'EduBot', primary: '#122144', accent: '#F17E22' },
-        { label: 'Forest', primary: '#1F4D3D', accent: '#D6A85F' },
-        { label: 'Royal', primary: '#1E3A8A', accent: '#F59E0B' },
-        { label: 'Graphite', primary: '#1F2937', accent: '#14B8A6' },
-    ];
 
     const handlePreviewFrameLoad = useCallback((surface) => {
         return (event) => {
@@ -1148,25 +789,18 @@ const CertificatesSection = ({
         setExactPreviewLoading(true);
         setExactPreviewError('');
         try {
-            const html = await fetchCourseCertificatePreviewHtml(selectedCourseId, {
-                certificateTitle: isAdminMode
-                    ? settingsForm.certificateTitle.trim() || defaultCertificateTitle
-                    : undefined,
-                secondaryBrandName: isAdminMode
-                    ? settingsForm.secondaryBrandName.trim() || null
-                    : undefined,
-                issuerDisplayName: settingsForm.issuerDisplayName.trim() || null,
-                issuerTitle: settingsForm.issuerTitle.trim() || null,
-                certificateLanguage: settingsForm.certificateLanguage,
-                pageOrientation: settingsForm.pageOrientation,
-                primaryColor: isAdminMode ? settingsForm.primaryColor : undefined,
-                accentColor: isAdminMode ? settingsForm.accentColor : undefined,
-                previewStudentName: previewStudentName,
-                previewCourseTitle: previewCourseTitle,
-                previewIssuerName: previewIssuerName,
-                previewIssuerTitle: previewIssuerTitle,
-                previewIssuedAt: new Date().toISOString(),
-            });
+            const html = await fetchCourseCertificatePreviewHtml(
+                selectedCourseId,
+                getExactPreviewPayload({
+                    defaultCertificateTitle,
+                    isAdminMode,
+                    previewCourseTitle,
+                    previewIssuerName,
+                    previewIssuerTitle,
+                    previewStudentName,
+                    settingsForm: exactPreviewSettings,
+                })
+            );
             if (requestId !== previewRequestIdRef.current) return;
             setExactPreviewHtml(normalizeExactPreviewHtml(html || ''));
         } catch (err) {
@@ -1186,14 +820,7 @@ const CertificatesSection = ({
         previewStudentName,
         selectedCourseId,
         defaultCertificateTitle,
-        settingsForm.accentColor,
-        settingsForm.certificateTitle,
-        settingsForm.certificateLanguage,
-        settingsForm.issuerDisplayName,
-        settingsForm.issuerTitle,
-        settingsForm.pageOrientation,
-        settingsForm.primaryColor,
-        settingsForm.secondaryBrandName,
+        exactPreviewSettings,
         t,
     ]);
 

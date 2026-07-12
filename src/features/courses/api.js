@@ -5,7 +5,30 @@ import { COURSE_TYPE } from '@shared/contracts';
 import i18n from '../../i18n';
 import { parseApiError } from '@shared/api/error';
 
+// Compatibility re-exports for APIs that now have clearer domain owners.
+export {
+    fetchInstructorCourses,
+    fetchInstructorStudentCourses,
+} from './api/instructorCourses';
+export { fetchCourseStudents } from './api/courseStudents';
+export {
+    approveCertificate,
+    downloadCourseCertificatePdf,
+    fetchCertificateVerification,
+    fetchCourseCertificatePreviewHtml,
+    fetchCourseCertificates,
+    fetchCourseCertificateSettings,
+    issueCourseCertificate,
+    regenerateCourseCertificates,
+    rejectCertificate,
+    revokeCertificate,
+    saveCourseCertificateSignatureAsset,
+    updateCourseCertificateSettings,
+    uploadCourseCertificateSecondaryLogo,
+} from './api/courseCertificates';
+
 const VALID_COURSE_TYPES = new Set(Object.values(COURSE_TYPE));
+const LESSON_FILE_EXTENSIONS = new Set(['mp4', 'webm', 'avi', 'mov', 'mkv', 'pdf', 'zip']);
 const localizedError = (message) => Object.assign(new Error(message), { isLocalizedMessage: true });
 
 const withCourseType = (courseData = {}) => {
@@ -15,6 +38,28 @@ const withCourseType = (courseData = {}) => {
         throw new Error('courseType must be video, offline, or online_live');
     }
     return courseData;
+};
+
+const getLessonFileExtension = (file) => {
+    if (!file || typeof file.name !== 'string') {
+        throw new Error('No file provided');
+    }
+
+    const parts = file.name.split('.');
+    if (parts.length < 2) {
+        throw new Error('File name does not contain an extension');
+    }
+
+    const extension = parts.pop().toLowerCase();
+    if (!LESSON_FILE_EXTENSIONS.has(extension)) {
+        throw new Error(`Unsupported file type: .${extension}`);
+    }
+
+    return extension;
+};
+
+const getProgressPercent = ({ loaded, total }) => {
+    return Math.round((loaded * 100) / total);
 };
 
 export const fetchCourses = async ({ q = '', limit = 20, excludeIds = '' } = {}) => {
@@ -46,168 +91,6 @@ export const fetchCoursePreview = async (courseId) => {
 
 export const fetchTopReviews = async ({ courseId, limit = 3 }) => {
     const response = await api.get(`/courses/${courseId}/reviews/top`, { params: { limit } });
-    return response.data;
-};
-
-export const fetchInstructorStudentCourses = async () => {
-    const response = await api.get('/courses/instructor/my-students');
-    return response.data;
-};
-
-export const fetchInstructorCourses = async ({
-    page = 1,
-    limit = 20,
-    q = '',
-    status = 'all',
-    courseType = 'all'
-} = {}) => {
-    const params = clean({
-        page,
-        limit,
-        q: q || undefined,
-        status: status === 'all' ? undefined : status,
-        courseType: courseType === 'all' ? undefined : courseType
-    });
-    const response = await api.get('/courses/instructor/my-courses', { params });
-    return response.data;
-};
-
-export const fetchCourseStudents = async (
-    courseId,
-    { page = 1, limit = 20, q, progressGte, progressLte } = {}
-) => {
-    const response = await api.get(`/courses/${courseId}/students`, {
-        params: clean({ page, limit, q, progressGte, progressLte }),
-    });
-    return response.data;
-};
-
-export const fetchCourseCertificateSettings = async (courseId) => {
-    const response = await api.get(`/courses/${courseId}/certificate-settings`);
-    return response.data;
-};
-
-export const updateCourseCertificateSettings = async (courseId, payload) => {
-    const response = await api.patch(`/courses/${courseId}/certificate-settings`, payload);
-    return response.data;
-};
-
-export const saveCourseCertificateSignatureAsset = async (courseId, file) => {
-    const formData = new FormData();
-    formData.append('signature', file);
-    const response = await api.post(
-        `/courses/${courseId}/certificate-settings/upload-signature`,
-        formData,
-        {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            },
-        }
-    );
-    return response.data;
-};
-
-export const uploadCourseCertificateSecondaryLogo = async (courseId, file) => {
-    const formData = new FormData();
-    formData.append('logo', file);
-    const response = await api.post(
-        `/courses/${courseId}/certificate-settings/upload-secondary-logo`,
-        formData,
-        {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            },
-        }
-    );
-    return response.data;
-};
-
-export const fetchCourseCertificates = async (courseId) => {
-    const response = await api.get(`/courses/${courseId}/certificates`);
-    return response.data;
-};
-
-const getDownloadFilename = (contentDisposition, fallback = 'certificate.pdf') => {
-    if (!contentDisposition || typeof contentDisposition !== 'string') return fallback;
-
-    const utfMatch = contentDisposition.match(/filename\*\s*=\s*UTF-8''([^;]+)/i);
-    if (utfMatch?.[1]) {
-        try {
-            return decodeURIComponent(utfMatch[1]).replace(/["']/g, '');
-        } catch {
-            return utfMatch[1].replace(/["']/g, '');
-        }
-    }
-
-    const basicMatch = contentDisposition.match(/filename\s*=\s*"?([^";]+)"?/i);
-    return basicMatch?.[1] ? basicMatch[1].trim() : fallback;
-};
-
-export const downloadCourseCertificatePdf = async (
-    downloadUrl,
-    fallbackFilename = 'certificate.pdf',
-) => {
-    try {
-        const response = await api.get(downloadUrl, {
-            responseType: 'blob',
-        });
-        const blob =
-            response.data instanceof Blob
-                ? response.data
-                : new Blob([response.data], { type: 'application/pdf' });
-        const objectUrl = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = objectUrl;
-        link.download = getDownloadFilename(
-            response.headers?.['content-disposition'],
-            fallbackFilename,
-        );
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        window.setTimeout(() => window.URL.revokeObjectURL(objectUrl), 60_000);
-        return true;
-    } catch (error) {
-        console.error('Error downloading certificate PDF:', error);
-        toast.error(i18n.t('courseApi.toasts.certificatePdfDownloadFailed'));
-        throw error;
-    }
-};
-
-export const issueCourseCertificate = async (courseId, payload) => {
-    const response = await api.post(`/courses/${courseId}/certificates/issue`, payload);
-    return response.data;
-};
-
-export const approveCertificate = async (certificateId, payload = {}) => {
-    const response = await api.post(`/certificates/${certificateId}/approve`, payload);
-    return response.data;
-};
-
-export const rejectCertificate = async (certificateId, payload = {}) => {
-    const response = await api.post(`/certificates/${certificateId}/reject`, payload);
-    return response.data;
-};
-
-export const revokeCertificate = async (certificateId, payload = {}) => {
-    const response = await api.post(`/certificates/${certificateId}/revoke`, payload);
-    return response.data;
-};
-
-export const fetchCertificateVerification = async (publicId) => {
-    const response = await api.get(`/certificates/${publicId}/verify`);
-    return response.data;
-};
-
-export const regenerateCourseCertificates = async (courseId, payload = {}) => {
-    const response = await api.post(`/courses/${courseId}/certificates/regenerate`, payload);
-    return response.data;
-};
-
-export const fetchCourseCertificatePreviewHtml = async (courseId, payload = {}) => {
-    const response = await api.post(`/courses/${courseId}/certificate-preview`, payload, {
-        responseType: 'text',
-    });
     return response.data;
 };
 
@@ -424,20 +307,7 @@ export async function submitLessonChallenge(courseId, sectionId, lessonId, paylo
 }
 
 export async function uploadLessonFile(courseId, sectionId, type, file, lessonOrder, onProgress) {
-    if (!file || typeof file.name !== 'string') {
-        throw new Error('No file provided');
-    }
-
-    const parts = file.name.split('.');
-    if (parts.length < 2) {
-        throw new Error('File name does not contain an extension');
-    }
-
-    const extension = parts.pop().toLowerCase();
-    const allowed = ['mp4', 'webm', 'avi', 'mov', 'mkv', 'pdf', 'zip'];
-    if (!allowed.includes(extension)) {
-        throw new Error(`Unsupported file type: .${extension}`);
-    }
+    const extension = getLessonFileExtension(file);
 
     let presign;
     try {
@@ -459,10 +329,7 @@ export async function uploadLessonFile(courseId, sectionId, type, file, lessonOr
             headers: { 'Content-Type': file.type },
             maxBodyLength: Infinity,
             onUploadProgress: (progressEvent) => {
-                if (onProgress) {
-                    const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-                    onProgress(percent);
-                }
+                if (onProgress) onProgress(getProgressPercent(progressEvent));
             },
         });
     } catch (err) {
@@ -484,8 +351,7 @@ export const uploadLessonVideo = async (courseId, sectionId, file, onProgress) =
         },
         onUploadProgress: (progressEvent) => {
             if (!onProgress || !progressEvent.total) return;
-            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-            onProgress(percentCompleted);
+            onProgress(getProgressPercent(progressEvent));
         },
     });
 

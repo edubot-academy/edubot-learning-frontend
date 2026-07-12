@@ -2,6 +2,34 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.18.7] - 2026-07-13
+
+### Added
+
+- Course API coverage: added focused tests for instructor course queries, course student queries, certificate API actions/downloads, and lesson file upload validation/progress handling.
+- Instructor dashboard coverage: added focused tests for shared instructor course loading, certificate preview/template/student display/view-model helpers, and the instructor homework page model.
+
+### Changed
+
+- Course API boundaries: moved instructor course, course student, and course certificate APIs into domain-owned modules while keeping compatibility re-exports from the legacy course API.
+- Instructor course loading: centralized instructor course fetch state, stale-response protection, and response normalization in a shared query hook used by list/dashboard flows.
+- Instructor homework architecture: moved loading, filtering, queue prioritization, stats, navigation helpers, and display-state derivation out of the page component into a focused page model.
+- Certificate workspace architecture: extracted preview fitting, certificate student display rules, template payload/default handling, and workspace view-model derivation from `CertificatesSection` into focused utilities.
+
+### Fixed
+
+- Certificate workspace robustness: clamped malformed progress values and invalid enrollment dates so certificate averages, eligibility helpers, and student sorting cannot produce `NaN`.
+- Certificate preview loading: narrowed preview/action callback dependencies so unrelated certificate form edits do not trigger avoidable exact-preview reloads.
+- Lesson upload maintainability: centralized lesson file extension validation and upload progress calculation without changing upload behavior.
+
+### Verification
+
+- `npm test`
+- `npm run lint`
+- `npm run build`
+
+---
+
 ## [1.18.6] - 2026-07-13
 
 ### Added

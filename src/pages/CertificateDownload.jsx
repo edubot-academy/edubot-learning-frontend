@@ -9,7 +9,7 @@ import {
     FiRefreshCw,
     FiShield,
 } from 'react-icons/fi';
-import { downloadCourseCertificatePdf } from '@features/courses/api';
+import { downloadCourseCertificatePdf } from '@features/courses/api/courseCertificates';
 
 const CertificateDownloadPage = () => {
     const { t } = useTranslation();

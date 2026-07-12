@@ -5,7 +5,6 @@ import {
     approveCertificate,
     fetchCourseCertificates,
     fetchCourseCertificateSettings,
-    fetchCourseStudents,
     issueCourseCertificate,
     regenerateCourseCertificates,
     rejectCertificate,
@@ -13,7 +12,8 @@ import {
     saveCourseCertificateSignatureAsset,
     updateCourseCertificateSettings,
     uploadCourseCertificateSecondaryLogo,
-} from '@features/courses/api';
+} from '@features/courses/api/courseCertificates';
+import { fetchCourseStudents } from '@features/courses/api/courseStudents';
 import { parseApiError } from '@shared/api/error';
 
 export const useAdminCertificatesDomain = ({ activeTab }) => {

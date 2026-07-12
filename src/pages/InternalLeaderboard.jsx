@@ -1,10 +1,8 @@
 import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import {
-    fetchCourses,
-    fetchInstructorCourses,
-} from '@features/courses/api';
+import { fetchCourses } from '@features/courses/api';
+import { fetchInstructorCourses } from '@features/courses/api/instructorCourses';
 import {
     fetchInternalCourseLeaderboard,
     fetchInternalHomepageLeaderboard,

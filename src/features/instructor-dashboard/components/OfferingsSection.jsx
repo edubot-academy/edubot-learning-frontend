@@ -24,7 +24,7 @@ import {
     createOffering,
     updateOffering,
 } from '@features/offerings/api';
-import { fetchCourseStudents } from '@features/courses/api';
+import { fetchCourseStudents } from '@features/courses/api/courseStudents';
 import { enrollUserInCourse } from '@features/enrollments/api';
 import { fetchUsers } from '@features/users/api';
 import OfferingCard from './OfferingCard.jsx';
