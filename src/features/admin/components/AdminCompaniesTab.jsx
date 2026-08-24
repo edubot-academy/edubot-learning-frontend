@@ -22,14 +22,12 @@ import {
 import { fetchUsers } from '@features/users/api';
 import { LOCALE_OPTIONS, normalizeLocale } from '../../../i18n/locale';
 import { useTranslation } from 'react-i18next';
-
-const COMPANY_STATUSES = [
-    { value: 'trial', labelKey: 'company.platformTenant.status.trial' },
-    { value: 'active', labelKey: 'company.platformTenant.status.active' },
-    { value: 'inactive', labelKey: 'company.platformTenant.status.inactive' },
-    { value: 'suspended', labelKey: 'company.platformTenant.status.suspended' },
-    { value: 'archived', labelKey: 'company.platformTenant.status.archived' },
-];
+import {
+    COMPANY_STATUS_OPTIONS,
+    getCompanyStatusLabel,
+    getCompanyStatusToneClass,
+    getTenantDomain,
+} from '../utils/tenantPresentation';
 
 const BILLING_STATUSES = [
     { value: '', labelKey: 'company.platformTenant.fields.billingStatus' },
@@ -66,28 +64,6 @@ const defaultTenantForm = {
     timezone: 'Asia/Bishkek',
     locale: 'ky',
 };
-
-const statusTone = {
-    trial: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-200 dark:border-amber-800',
-    active: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-200 dark:border-emerald-800',
-    inactive:
-        'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700',
-    suspended:
-        'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-200 dark:border-red-800',
-    archived:
-        'bg-zinc-100 text-zinc-700 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700',
-};
-
-const tenantDomain = (company) => {
-    if (company.customDomain) return company.customDomain;
-    if (company.subdomain) return `${company.subdomain}.lms.edubot.it.com`;
-    return '';
-};
-
-const companyStatusLabel = (status, t) =>
-    t(`company.platformTenant.status.${String(status || 'active').toLowerCase()}`, {
-        defaultValue: status || 'active',
-    });
 
 const toTenantForm = (company = {}) =>
     TENANT_FIELDS.reduce(
@@ -316,7 +292,7 @@ const AdminCompaniesTab = ({
                         <div className="space-y-4">
                             {companies.map((company) => {
                                 const isEditing = editingCompanyId === company.id;
-                                const domain = tenantDomain(company);
+                                const domain = getTenantDomain(company);
                                 const companyCourseCount = courses.filter(
                                     (course) => course.company?.id === company.id
                                 ).length;
@@ -355,7 +331,7 @@ const AdminCompaniesTab = ({
                                                             }
                                                             className="dashboard-select w-full"
                                                         >
-                                                            {COMPANY_STATUSES.map((status) => (
+                                                            {COMPANY_STATUS_OPTIONS.map((status) => (
                                                                 <option
                                                                     key={status.value}
                                                                     value={status.value}
@@ -546,9 +522,9 @@ const AdminCompaniesTab = ({
                                                             {company.name}
                                                         </h3>
                                                         <span
-                                                            className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${statusTone[company.status] || statusTone.inactive}`}
+                                                            className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${getCompanyStatusToneClass(company.status)}`}
                                                         >
-                                                            {companyStatusLabel(company.status, t)}
+                                                            {getCompanyStatusLabel(company.status, t)}
                                                         </span>
                                                     </div>
                                                     <div className="grid gap-2 text-sm text-edubot-muted dark:text-slate-400 md:grid-cols-2">
@@ -836,7 +812,7 @@ const AdminCompaniesTab = ({
                             }
                             className="dashboard-select w-full"
                         >
-                            {COMPANY_STATUSES.map((status) => (
+                            {COMPANY_STATUS_OPTIONS.map((status) => (
                                 <option key={status.value} value={status.value}>
                                     {t(status.labelKey)}
                                 </option>

@@ -1,5 +1,36 @@
 import i18n from '../i18n';
 
+export function formatDate(value, language = i18n.language, options = {}) {
+    if (!value) return '—';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '—';
+
+    return date.toLocaleDateString(language || undefined, options);
+}
+
+export function getDateLocale(language = i18n.language) {
+    if (language === 'ru') return 'ru-RU';
+    if (language === 'en') return 'en-US';
+    if (!language || language === 'ky') return 'ky-KG';
+    return language;
+}
+
+export function formatShortDate(value, language = i18n.language) {
+    return formatDate(value, getDateLocale(language), {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+    });
+}
+
+export function formatDateTime(value, language = i18n.language, options = {}, fallback = '') {
+    if (!value) return fallback;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return fallback;
+
+    return date.toLocaleString(language || undefined, options);
+}
+
 export function formatDuration(seconds) {
     if (!seconds || isNaN(seconds)) return null;
 

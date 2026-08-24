@@ -18,23 +18,10 @@ import { isPlatformAdmin } from '@shared/utils/roles';
 import { useTranslation } from 'react-i18next';
 import { parseApiError } from '@shared/api/error';
 import { getCourseTypeLabel } from '@shared/i18n/enumLabels';
+import { getCourseStatusLabel } from '@features/courses/utils/coursePresentation';
 
 const PAGE_SIZE = 20;
 const ATTACH_SEARCH_LIMIT = 25;
-
-const getCourseStatusLabel = (course, t) => {
-    if (course?.status) {
-        const status = String(course.status).toLowerCase();
-        const fallback = status.replace(/_/g, ' ');
-        return t(`company.courses.status.${status}`, { defaultValue: fallback });
-    }
-    if (typeof course?.isPublished === 'boolean') {
-        return course.isPublished
-            ? t('company.courses.status.published')
-            : t('company.courses.status.draft');
-    }
-    return t('company.courses.status.unknown');
-};
 
 const getCoursePriceLabel = (course, t, language) => {
     if (course?.isPaid === false) return t('company.courses.price.free');

@@ -3,12 +3,7 @@ import AdvancedModal from '@shared/ui/AdvancedModal';
 import { FiBookOpen, FiClock, FiLayers, FiMapPin, FiUser } from 'react-icons/fi';
 import { useTranslation } from 'react-i18next';
 import { getCourseTypeLabel } from '@shared/i18n/enumLabels';
-
-const formatDate = (value, locale) => {
-    if (!value) return '—';
-    const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString(locale);
-};
+import { formatDate } from '@utils/timeUtils';
 
 const DeliveryCourseDetailsModal = ({ course, isOpen, onClose }) => {
     const { i18n, t } = useTranslation();

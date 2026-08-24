@@ -10,6 +10,12 @@ import {
 } from '@features/instructorChat/api';
 import { fetchCourseDetails } from '@features/courses/api';
 import { fetchStudentCourses } from '@features/student/api';
+import {
+    formatChatMessageTime,
+    getChatStatusTone,
+    getUnreadMessageCount,
+    normalizeChatList,
+} from '@features/instructorChat/utils/chatPresentation';
 import Loader from '@shared/ui/Loader';
 import { API_ERROR_CODES, getApiErrorCode, parseApiError } from '@shared/api/error';
 import { toArray as toResponseArray } from '@shared/api/response';
@@ -71,7 +77,7 @@ const ChatTab = () => {
             try {
                 setLoading(true);
                 const res = await fetchInstructorChats({ role: user.role });
-                const nextChats = toArray(res);
+                const nextChats = normalizeChatList(res);
                 setChats(nextChats);
                 setActiveChat(nextChats[0] ?? null);
             } catch (error) {
@@ -136,7 +142,7 @@ const ChatTab = () => {
                         instructorId: activeChatCompanion?.id,
                     });
 
-                    const refreshedChats = toArray(await fetchInstructorChats({ role: user.role }));
+                    const refreshedChats = normalizeChatList(await fetchInstructorChats({ role: user.role }));
                     setChats(refreshedChats);
 
                     let newChat = refreshedChats?.find(
@@ -213,7 +219,7 @@ const ChatTab = () => {
                         instructorId: activeChatCompanion?.id,
                     });
 
-                    const refreshedChats = toArray(await fetchInstructorChats({ role: user.role }));
+                    const refreshedChats = normalizeChatList(await fetchInstructorChats({ role: user.role }));
                     setChats(refreshedChats);
 
                     let newChat = refreshedChats?.find(
@@ -259,24 +265,10 @@ const ChatTab = () => {
     };
 
     const formatMessageTime = useCallback((createdAt) => {
-        if (!createdAt) return '';
-        const date = new Date(createdAt);
-        const now = new Date();
-        const diffMs = now - date;
-        const diffMins = Math.floor(diffMs / 60000);
-        const diffHours = Math.floor(diffMs / 3600000);
-        const diffDays = Math.floor(diffMs / 86400000);
-
-        if (diffMins < 1) return t('studentDashboard.chat.time.now');
-        if (diffMins < 60) return t('studentDashboard.chat.time.minutesAgo', { count: diffMins });
-        if (diffHours < 24) return t('studentDashboard.chat.time.hoursAgo', { count: diffHours });
-        if (diffDays < 7) return t('studentDashboard.chat.time.daysAgo', { count: diffDays });
-
-        return date.toLocaleDateString(i18n.language, {
-            day: 'numeric',
-            month: 'short',
-            hour: '2-digit',
-            minute: '2-digit',
+        return formatChatMessageTime(createdAt, {
+            language: i18n.language,
+            t,
+            translationBase: 'studentDashboard.chat',
         });
     }, [i18n.language, t]);
 
@@ -335,7 +327,7 @@ const ChatTab = () => {
                 courseId,
                 instructorId,
             });
-            const refreshed = toArray(await fetchInstructorChats({ role: user.role }));
+            const refreshed = normalizeChatList(await fetchInstructorChats({ role: user.role }));
             setChats(refreshed);
             const newId = res?.chat?.id || res?.chatId;
             const found = refreshed.find((c) => c.id === newId);
@@ -356,7 +348,7 @@ const ChatTab = () => {
 
     const filteredChats = useMemo(() => {
         const normalized = query.trim().toLowerCase();
-        return toArray(chats).filter((chat) => {
+        return normalizeChatList(chats).filter((chat) => {
             if (!normalized) return true;
             return [chat.instructor?.fullName, chat.course?.title, chat.status]
                 .filter(Boolean)
@@ -374,7 +366,7 @@ const ChatTab = () => {
                 statusLabel: chat.status
                     ? t(`studentDashboard.chat.statuses.${chat.status}`, { defaultValue: chat.status })
                     : t('studentDashboard.chat.statuses.unknown'),
-                statusTone: chat.status === 'active' ? 'active' : 'default',
+                statusTone: getChatStatusTone(chat.status),
                 avatarText: chat.instructor?.fullName?.[0]?.toUpperCase(),
                 ariaLabel: t('studentDashboard.chat.chatAriaLabel', {
                     instructor: chat.instructor?.fullName || t('studentDashboard.chat.fallbacks.instructor'),
@@ -385,7 +377,7 @@ const ChatTab = () => {
     );
 
     const stats = useMemo(() => {
-        const pending = messages.filter((item) => item.role !== user?.role && !item.isRead).length;
+        const pending = getUnreadMessageCount(messages, user?.role);
         return [
             { label: t('studentDashboard.chat.stats.chats'), value: chats.length, icon: FiMessageCircle },
             { label: t('studentDashboard.chat.stats.messages'), value: messages.length, icon: FiSend, tone: 'blue' },
@@ -422,7 +414,7 @@ const ChatTab = () => {
                     onQueryChange={setQuery}
                     chatItems={chatItems}
                     activeChatId={activeChat?.id || null}
-                    onSelectChat={(chatId) => setActiveChat(toArray(chats).find((item) => item.id === chatId) || null)}
+                    onSelectChat={(chatId) => setActiveChat(normalizeChatList(chats).find((item) => item.id === chatId) || null)}
                     noChatsTitle={t('studentDashboard.chat.empty.noChatsTitle')}
                     noChatsSubtitle={t('studentDashboard.chat.empty.noChatsSubtitle')}
                     activeChatTitle={activeChatCompanion?.fullName || t('studentDashboard.chat.fallbacks.instructor')}
@@ -434,7 +426,7 @@ const ChatTab = () => {
                               })
                             : t('studentDashboard.chat.statuses.unknown')
                     }
-                    activeStatusTone={activeChat?.status === 'active' ? 'active' : 'default'}
+                    activeStatusTone={getChatStatusTone(activeChat?.status)}
                     onBack={() => setActiveChat(null)}
                     emptySelectionTitle={t('studentDashboard.chat.empty.selectionTitle')}
                     emptySelectionSubtitle={t('studentDashboard.chat.empty.selectionSubtitle')}

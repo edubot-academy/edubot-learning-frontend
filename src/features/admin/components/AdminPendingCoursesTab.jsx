@@ -11,6 +11,7 @@ import {
 import { FiBookOpen, FiCheckCircle, FiClock, FiEye, FiUser, FiXCircle } from 'react-icons/fi';
 import DeliveryCourseDetailsModal from './DeliveryCourseDetailsModal';
 import { getCourseTypeLabel } from '@shared/i18n/enumLabels';
+import { formatDate } from '@utils/timeUtils';
 
 const AdminPendingCoursesTab = ({ pendingCourses, onApprove, onReject }) => {
     const { i18n, t } = useTranslation();
@@ -19,9 +20,7 @@ const AdminPendingCoursesTab = ({ pendingCourses, onApprove, onReject }) => {
         (course) => course.courseType === 'offline' || course.courseType === 'online_live'
     ).length;
     const paidCount = pendingCourses.filter((course) => Number(course.price || 0) > 0).length;
-    const newestDate = pendingCourses[0]?.createdAt
-        ? new Date(pendingCourses[0].createdAt).toLocaleDateString(i18n.language)
-        : '—';
+    const newestDate = formatDate(pendingCourses[0]?.createdAt, i18n.language);
 
     return (
         <div className="space-y-6">
@@ -157,7 +156,7 @@ const AdminPendingCoursesTab = ({ pendingCourses, onApprove, onReject }) => {
                                                 {t('adminPendingCourses.fields.createdAt')}
                                             </p>
                                             <p className="mt-2 text-sm font-semibold text-edubot-ink dark:text-white">
-                                                {course.createdAt ? new Date(course.createdAt).toLocaleDateString(i18n.language) : '—'}
+                                                {formatDate(course.createdAt, i18n.language)}
                                             </p>
                                         </div>
                                         <div className="rounded-2xl border border-edubot-line/70 bg-edubot-surfaceAlt/40 px-4 py-3 dark:border-slate-700 dark:bg-slate-900/60">

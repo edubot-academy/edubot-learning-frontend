@@ -12,6 +12,7 @@ import {
 } from '@components/ui/dashboard';
 import { FiBell, FiCheckCircle } from 'react-icons/fi';
 import { useTranslation } from 'react-i18next';
+import { formatDateTime } from '@utils/timeUtils';
 
 const NotificationsWidget = ({ title, limit = 5, link = '/notifications' }) => {
     const { i18n, t } = useTranslation();
@@ -92,7 +93,7 @@ const NotificationsWidget = ({ title, limit = 5, link = '/notifications' }) => {
                                 {item.message || item.subject}
                             </p>
                             <p className="text-xs text-edubot-muted dark:text-[#a6adba] mt-1">
-                                {item.createdAt ? new Date(item.createdAt).toLocaleString(i18n.language) : ''}
+                                {formatDateTime(item.createdAt, i18n.language)}
                             </p>
                         </li>
                     ))}

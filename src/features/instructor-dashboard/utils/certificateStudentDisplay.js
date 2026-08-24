@@ -1,10 +1,9 @@
 import { getCertificateStatusLabel } from '@shared/i18n/enumLabels';
-
-const clampProgress = (value) => {
-    const progress = Number(value || 0);
-    if (!Number.isFinite(progress)) return 0;
-    return Math.max(0, Math.min(100, progress));
-};
+import {
+    CERTIFICATE_STATUS,
+    clampCertificateProgress,
+    getCertificateStats,
+} from '@features/courses/utils/certificatePresentation';
 
 const ELIGIBILITY_REASON_LABEL_KEYS = {
     activities_below_threshold: 'adminCertificates.eligibilityReasons.activitiesBelowThreshold',
@@ -16,16 +15,16 @@ const ELIGIBILITY_REASON_LABEL_KEYS = {
 };
 
 export const getCertificateBadge = (status) => {
-    if (status === 'issued') {
+    if (status === CERTIFICATE_STATUS.ISSUED) {
         return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300';
     }
-    if (status === 'pending_approval') {
+    if (status === CERTIFICATE_STATUS.PENDING_APPROVAL) {
         return 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300';
     }
-    if (status === 'rejected') {
+    if (status === CERTIFICATE_STATUS.REJECTED) {
         return 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300';
     }
-    if (status === 'revoked') {
+    if (status === CERTIFICATE_STATUS.REVOKED) {
         return 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
     }
     return 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300';
@@ -35,21 +34,9 @@ export const getStudentCertificateStatusLabel = (status, t) =>
     getCertificateStatusLabel(status, t);
 
 export const isStudentEligibleForCertificate = (student) => {
-    const progress = clampProgress(student?.progressPercent);
+    const progress = clampCertificateProgress(student?.progressPercent);
     return Boolean(student?.certificateEligible) || Boolean(student?.completed) || progress >= 100;
 };
-
-export const getCertificateStats = (courseCertificates = []) =>
-    courseCertificates.reduce(
-        (acc, item) => {
-            if (item?.status === 'issued') acc.issued += 1;
-            else if (item?.status === 'pending_approval') acc.pending += 1;
-            else if (item?.status === 'revoked') acc.revoked += 1;
-            else if (item?.status === 'rejected') acc.rejected += 1;
-            return acc;
-        },
-        { issued: 0, pending: 0, revoked: 0, rejected: 0 }
-    );
 
 const getMissingEligibilityText = (reasons, t) => {
     if (!Array.isArray(reasons) || !reasons.length) return '';
@@ -63,11 +50,11 @@ const getMissingEligibilityText = (reasons, t) => {
 };
 
 export const getStudentCertificateState = (student, canIssueManually = true, t) => {
-    const progress = clampProgress(student?.progressPercent);
+    const progress = clampCertificateProgress(student?.progressPercent);
     const eligibility = student?.certificateEligibility;
     const isComplete = isStudentEligibleForCertificate(student);
 
-    if (student?.certificateStatus === 'issued') {
+    if (student?.certificateStatus === CERTIFICATE_STATUS.ISSUED) {
         return {
             canIssue: false,
             buttonLabel: t('adminCertificates.state.issued.button'),
@@ -76,7 +63,7 @@ export const getStudentCertificateState = (student, canIssueManually = true, t) 
         };
     }
 
-    if (student?.certificateStatus === 'pending_approval') {
+    if (student?.certificateStatus === CERTIFICATE_STATUS.PENDING_APPROVAL) {
         return {
             canIssue: false,
             buttonLabel: t('adminCertificates.state.pending.button'),
@@ -103,7 +90,7 @@ export const getStudentCertificateState = (student, canIssueManually = true, t) 
         };
     }
 
-    if (student?.certificateStatus === 'rejected') {
+    if (student?.certificateStatus === CERTIFICATE_STATUS.REJECTED) {
         return {
             canIssue: canIssueManually,
             buttonLabel: canIssueManually
@@ -116,7 +103,7 @@ export const getStudentCertificateState = (student, canIssueManually = true, t) 
         };
     }
 
-    if (student?.certificateStatus === 'revoked') {
+    if (student?.certificateStatus === CERTIFICATE_STATUS.REVOKED) {
         return {
             canIssue: canIssueManually,
             buttonLabel: canIssueManually
@@ -140,3 +127,5 @@ export const getStudentCertificateState = (student, canIssueManually = true, t) 
         helperTone: 'text-emerald-600 dark:text-emerald-300',
     };
 };
+
+export { getCertificateStats };

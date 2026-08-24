@@ -1,10 +1,5 @@
 import { formatPreviewDate } from './certificatePreview';
-
-const clampProgress = (value) => {
-    const progress = Number(value || 0);
-    if (!Number.isFinite(progress)) return 0;
-    return Math.max(0, Math.min(100, progress));
-};
+import { clampCertificateProgress } from '@features/courses/utils/certificatePresentation';
 
 const getTimestamp = (value) => {
     if (!value) return 0;
@@ -22,8 +17,10 @@ export const sortCertificateStudents = (students = []) =>
 export const getAverageProgress = (students = []) =>
     students.length
         ? Math.round(
-              students.reduce((sum, student) => sum + clampProgress(student?.progressPercent), 0) /
-                  students.length
+              students.reduce(
+                  (sum, student) => sum + clampCertificateProgress(student?.progressPercent),
+                  0
+              ) / students.length
           )
         : 0;
 

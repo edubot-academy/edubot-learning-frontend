@@ -8,6 +8,12 @@ import {
     replyInstructorChatMessage,
     sendInstructorChatMessage,
 } from '@features/instructorChat/api';
+import {
+    formatChatMessageTime,
+    getChatStatusTone,
+    getUnreadMessageCount,
+    normalizeChatList,
+} from '@features/instructorChat/utils/chatPresentation';
 import Loader from '@shared/ui/Loader';
 import { AuthContext } from '../../../context/AuthContext';
 import { API_ERROR_CODES, getApiErrorCode, parseApiError } from '@shared/api/error';
@@ -43,7 +49,7 @@ const ChatTab = () => {
             try {
                 setLoading(true);
                 const res = await fetchInstructorChats({ role: user.role });
-                const nextChats = Array.isArray(res) ? res : [];
+                const nextChats = normalizeChatList(res);
                 setChats(nextChats);
                 setActiveChat(nextChats[0] ?? null);
             } catch (error) {
@@ -109,7 +115,7 @@ const ChatTab = () => {
                     });
 
                     const refreshedChats = await fetchInstructorChats({ role: user.role });
-                    const normalizedChats = Array.isArray(refreshedChats) ? refreshedChats : [];
+                    const normalizedChats = normalizeChatList(refreshedChats);
                     setChats(normalizedChats);
 
                     const newChat = normalizedChats.find(
@@ -180,7 +186,7 @@ const ChatTab = () => {
                     });
 
                     const refreshedChats = await fetchInstructorChats({ role: user.role });
-                    const normalizedChats = Array.isArray(refreshedChats) ? refreshedChats : [];
+                    const normalizedChats = normalizeChatList(refreshedChats);
                     setChats(normalizedChats);
 
                     const newChat = normalizedChats.find(
@@ -224,24 +230,10 @@ const ChatTab = () => {
     };
 
     const formatMessageTime = useCallback((createdAt) => {
-        if (!createdAt) return '';
-        const date = new Date(createdAt);
-        const now = new Date();
-        const diffMs = now - date;
-        const diffMins = Math.floor(diffMs / 60000);
-        const diffHours = Math.floor(diffMs / 3600000);
-        const diffDays = Math.floor(diffMs / 86400000);
-
-        if (diffMins < 1) return t('instructorDashboard.chat.time.now');
-        if (diffMins < 60) return t('instructorDashboard.chat.time.minutesAgo', { count: diffMins });
-        if (diffHours < 24) return t('instructorDashboard.chat.time.hoursAgo', { count: diffHours });
-        if (diffDays < 7) return t('instructorDashboard.chat.time.daysAgo', { count: diffDays });
-
-        return date.toLocaleDateString(i18n.language || undefined, {
-            day: 'numeric',
-            month: 'short',
-            hour: '2-digit',
-            minute: '2-digit',
+        return formatChatMessageTime(createdAt, {
+            language: i18n.language,
+            t,
+            translationBase: 'instructorDashboard.chat',
         });
     }, [i18n.language, t]);
 
@@ -265,7 +257,7 @@ const ChatTab = () => {
                 statusLabel: chat.status
                     ? t(`instructorDashboard.chat.statuses.${chat.status}`, { defaultValue: chat.status })
                     : t('instructorDashboard.chat.statuses.unknown'),
-                statusTone: chat.status === 'active' ? 'active' : 'default',
+                statusTone: getChatStatusTone(chat.status),
                 avatarText: chat.student?.fullName?.[0]?.toUpperCase(),
                 ariaLabel: t('instructorDashboard.chat.chatAriaLabel', {
                     student: chat.student?.fullName || t('instructorDashboard.chat.fallbacks.student'),
@@ -276,7 +268,7 @@ const ChatTab = () => {
     );
 
     const stats = useMemo(() => {
-        const pending = messages.filter((item) => item.role !== user?.role && !item.isRead).length;
+        const pending = getUnreadMessageCount(messages, user?.role);
         return [
             { label: t('instructorDashboard.chat.stats.chats'), value: chats.length, icon: FiMessageCircle },
             { label: t('instructorDashboard.chat.stats.messages'), value: messages.length, icon: FiSend, tone: 'blue' },
@@ -314,7 +306,7 @@ const ChatTab = () => {
                         })
                         : t('instructorDashboard.chat.statuses.unknown')
                 }
-                activeStatusTone={activeChat?.status === 'active' ? 'active' : 'default'}
+                activeStatusTone={getChatStatusTone(activeChat?.status)}
                 onBack={() => setActiveChat(null)}
                 emptySelectionTitle={t('instructorDashboard.chat.empty.selectionTitle')}
                 emptySelectionSubtitle={t('instructorDashboard.chat.empty.selectionSubtitle')}

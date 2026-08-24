@@ -50,6 +50,18 @@ import { LOCALE_OPTIONS, getLocaleLabel, normalizeLocale } from '../../../i18n/l
 import { useTranslation } from 'react-i18next';
 import { parseApiError } from '@shared/api/error';
 import { getCourseTypeLabel } from '@shared/i18n/enumLabels';
+import {
+    COMPANY_STATUS_VALUES,
+    getCompanyStatusLabel,
+    getTenantDomain,
+} from '../utils/tenantPresentation';
+import { formatDateTime } from '@utils/timeUtils';
+import {
+    COURSE_STATUS_STRATEGY,
+    COURSE_VISIBILITY_OPTIONS,
+    getCourseStatusLabel,
+    getCourseVisibilityLabel,
+} from '@features/courses/utils/coursePresentation';
 
 const TABS = [
     {
@@ -132,9 +144,6 @@ const TABS = [
 ];
 
 const adminCompaniesPath = getDashboardPath('admin', 'companies');
-
-const COMPANY_STATUSES = ['trial', 'active', 'inactive', 'suspended', 'archived'];
-const COURSE_VISIBILITY_OPTIONS = ['PUBLIC', 'PRIVATE', 'TENANT_ONLY'];
 
 const DEFAULT_BRANDING = {
     displayName: '',
@@ -221,12 +230,6 @@ const splitTenantPayload = (payload = {}) => {
     return { tenantPatch, crmPatch };
 };
 
-const tenantDomain = (company, t) => {
-    if (company?.customDomain) return company.customDomain;
-    if (company?.subdomain) return `${company.subdomain}.lms.edubot.it.com`;
-    return t('company.platformTenant.notConfigured');
-};
-
 const buildForm = (company) => ({
     name: company?.name ?? '',
     logoUrl: company?.logoUrl ?? '',
@@ -295,19 +298,6 @@ const normalizePagedItems = (response) => {
     return response?.items ?? response?.courses ?? response?.data ?? [];
 };
 
-const courseStatusLabel = (course, t) => {
-    const status = course?.status
-        ? String(course.status).toLowerCase()
-        : course?.isPublished || course?.published
-          ? 'published'
-          : course?.approved
-            ? 'approved'
-            : 'draft';
-    return t(`company.courses.status.${status}`, {
-        defaultValue: status.replace(/_/g, ' '),
-    });
-};
-
 const disabledCourseTypeMessage = (courseType, t) => {
     const type = String(courseType || '').toLowerCase();
     if (type === 'offline') return t('company.courses.disabled.offline');
@@ -319,20 +309,6 @@ const disabledCourseTypeMessage = (courseType, t) => {
 
 const courseFallbackTitle = (course, t) =>
     course?.title || t('company.courses.platform.courseNumber', { id: course?.id });
-
-const companyStatusLabel = (status, t) => {
-    const normalizedStatus = String(status || 'active').toLowerCase();
-    return t(`company.platformTenant.status.${normalizedStatus}`, {
-        defaultValue: normalizedStatus.replace(/_/g, ' '),
-    });
-};
-
-const courseVisibilityLabel = (visibility, t) => {
-    const normalizedVisibility = String(visibility || 'PUBLIC').toUpperCase();
-    return t(`company.platformTenant.courseVisibility.${normalizedVisibility}`, {
-        defaultValue: normalizedVisibility.replace(/_/g, ' '),
-    });
-};
 
 const ACTIVITY_LABELS = {
     'tenant.created': 'company.platformTenant.activity.actions.tenantCreated',
@@ -722,7 +698,7 @@ export default function PlatformTenantDetail() {
         setConfirmation({
             title: t('company.platformTenant.lifecycle.changeTitle'),
             message: t('company.platformTenant.lifecycle.changeMessage', {
-                status: companyStatusLabel(status, t),
+                status: getCompanyStatusLabel(status, t),
             }),
             confirmLabel: t('company.platformTenant.lifecycle.changeConfirm'),
             confirmVariant: status === 'active' ? 'primary' : 'danger',
@@ -877,7 +853,7 @@ export default function PlatformTenantDetail() {
                     <DashboardSectionHeader
                         eyebrow={t('company.platformTenant.eyebrow')}
                         title={company.name}
-                        description={`${companyStatusLabel(company.status, t)} · ${tenantDomain(company, t)}`}
+                        description={`${getCompanyStatusLabel(company.status, t)} · ${getTenantDomain(company, t('company.platformTenant.notConfigured'))}`}
                     />
                     <Link to={adminCompaniesPath} className="dashboard-button-secondary self-start">
                         <FiArrowLeft className="h-4 w-4" />
@@ -890,7 +866,7 @@ export default function PlatformTenantDetail() {
                         <div className="grid gap-4 md:grid-cols-4">
                             <DashboardMetricCard
                                 label={t('company.platformTenant.metrics.status')}
-                                value={companyStatusLabel(company.status, t)}
+                                value={getCompanyStatusLabel(company.status, t)}
                                 icon={FiBriefcase}
                             />
                             <DashboardMetricCard
@@ -970,7 +946,7 @@ export default function PlatformTenantDetail() {
                                 </p>
                                 <p>
                                     {t('company.platformTenant.snapshot.domain')}:{' '}
-                                    {tenantDomain(company, t)}
+                                    {getTenantDomain(company, t('company.platformTenant.notConfigured'))}
                                 </p>
                                 <p>
                                     {t('company.platformTenant.snapshot.ownerAdminRows')}:{' '}
@@ -985,7 +961,7 @@ export default function PlatformTenantDetail() {
                             <div className="mt-4 flex flex-wrap items-center gap-3">
                                 <span className="rounded-full border border-edubot-line px-3 py-1 text-sm font-semibold text-edubot-ink dark:border-slate-700 dark:text-white">
                                     {t('company.platformTenant.lifecycle.current', {
-                                        status: companyStatusLabel(company.status, t),
+                                        status: getCompanyStatusLabel(company.status, t),
                                     })}
                                 </span>
                                 <button
@@ -1276,7 +1252,7 @@ export default function PlatformTenantDetail() {
                                 />
                                 <ReadField
                                     label={t('company.platformTenant.fields.effectiveDomain')}
-                                    value={tenantDomain(company, t)}
+                                    value={getTenantDomain(company, t('company.platformTenant.notConfigured'))}
                                 />
                                 <ReadField
                                     label={t('company.platformTenant.fields.timezone')}
@@ -1314,9 +1290,9 @@ export default function PlatformTenantDetail() {
                                     value={form.status}
                                     onChange={(value) => updateField('status', value)}
                                 >
-                                    {COMPANY_STATUSES.map((status) => (
+                                    {COMPANY_STATUS_VALUES.map((status) => (
                                         <option key={status} value={status}>
-                                            {companyStatusLabel(status, t)}
+                                            {getCompanyStatusLabel(status, t)}
                                         </option>
                                     ))}
                                 </SelectField>
@@ -1335,7 +1311,7 @@ export default function PlatformTenantDetail() {
                             <div className="mt-4 grid gap-4 md:grid-cols-3">
                                 <ReadField
                                     label={t('company.platformTenant.fields.status')}
-                                    value={companyStatusLabel(company.status, t)}
+                                    value={getCompanyStatusLabel(company.status, t)}
                                 />
                                 <ReadField
                                     label={t('company.platformTenant.fields.plan')}
@@ -1583,7 +1559,10 @@ export default function PlatformTenantDetail() {
                                                     </td>
                                                     <td className="px-4 py-3">
                                                         <span className="rounded-full border border-edubot-line px-2.5 py-1 text-xs font-semibold text-edubot-ink dark:border-slate-700 dark:text-white">
-                                                            {courseStatusLabel(course, t)}
+                                                            {getCourseStatusLabel(course, t, {
+                                                                strategy:
+                                                                    COURSE_STATUS_STRATEGY.TENANT_DETAIL,
+                                                            })}
                                                         </span>
                                                     </td>
                                                     <td className="px-4 py-3">
@@ -1709,7 +1688,7 @@ export default function PlatformTenantDetail() {
                                 >
                                     {COURSE_VISIBILITY_OPTIONS.map((option) => (
                                         <option key={option} value={option}>
-                                            {courseVisibilityLabel(option, t)}
+                                            {getCourseVisibilityLabel(option, t)}
                                         </option>
                                     ))}
                                 </SelectField>
@@ -1745,7 +1724,7 @@ export default function PlatformTenantDetail() {
                                 />
                                 <ReadField
                                     label={t('company.platformTenant.settings.defaultCourseVisibility')}
-                                    value={courseVisibilityLabel(
+                                    value={getCourseVisibilityLabel(
                                         company.settings?.defaultCourseVisibility,
                                         t
                                     )}
@@ -1997,11 +1976,12 @@ export default function PlatformTenantDetail() {
                                                               ))}
                                                 </td>
                                                 <td className="px-4 py-3 text-edubot-muted dark:text-slate-400">
-                                                    {activity.createdAt
-                                                        ? new Date(
-                                                              activity.createdAt
-                                                          ).toLocaleString()
-                                                        : t('company.detail.notSet')}
+                                                    {formatDateTime(
+                                                        activity.createdAt,
+                                                        null,
+                                                        {},
+                                                        t('company.detail.notSet')
+                                                    )}
                                                 </td>
                                             </tr>
                                         ))

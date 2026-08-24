@@ -7,16 +7,12 @@ import {
 } from '@components/ui/dashboard';
 import { FiCheck, FiClock, FiMail, FiTrash2 } from 'react-icons/fi';
 import { useTranslation } from 'react-i18next';
+import { formatDateTime } from '@utils/timeUtils';
 
 const formatContactDateTime = (contact, language) => {
     const rawValue =
         contact?.createdAt || contact?.submittedAt || contact?.updatedAt || contact?.readAt || null;
-    if (!rawValue) return '';
-
-    const parsed = new Date(rawValue);
-    if (Number.isNaN(parsed.getTime())) return '';
-
-    return parsed.toLocaleString(language || undefined, {
+    return formatDateTime(rawValue, language, {
         year: 'numeric',
         month: 'short',
         day: '2-digit',

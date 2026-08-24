@@ -23,6 +23,11 @@ import StudentMiniStat from '../shared/StudentMiniStat.jsx';
 import StudentPanelEmpty from '../shared/StudentPanelEmpty.jsx';
 import { downloadCourseCertificatePdf } from '../../../courses/api/courseCertificates.js';
 import {
+    CERTIFICATE_STATUS,
+    getStudentCertificateReadinessMeta,
+    getStudentCertificateStatusMeta,
+} from '../../../courses/utils/certificatePresentation.js';
+import {
     resolveCourseType,
 } from '../../utils/studentDashboard.helpers.js';
 import { getCourseTypeLabel } from '@shared/i18n/enumLabels';
@@ -47,38 +52,6 @@ const getProgressLabel = (value, t) => {
     if (value >= 80) return t('studentDashboard.progress.progressLabels.nearFinish');
     if (value >= 40) return t('studentDashboard.progress.progressLabels.steady');
     return t('studentDashboard.progress.progressLabels.needsAttention');
-};
-
-const getCertificateBadge = (status) => {
-    if (status === 'issued') {
-        return {
-            labelKey: 'studentDashboard.progress.certificateBadges.ready',
-            className:
-                'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300',
-        };
-    }
-    if (status === 'pending_approval') {
-        return {
-            labelKey: 'studentDashboard.progress.certificateBadges.pending',
-            className:
-                'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300',
-        };
-    }
-    if (status === 'rejected') {
-        return {
-            labelKey: 'studentDashboard.progress.certificateBadges.rejected',
-            className:
-                'border-red-200 bg-red-50 text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300',
-        };
-    }
-    if (status === 'revoked') {
-        return {
-            labelKey: 'studentDashboard.progress.certificateBadges.revoked',
-            className:
-                'border-slate-200 bg-slate-100 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300',
-        };
-    }
-    return null;
 };
 
 const getLessonKindLabel = (kind, t) => {
@@ -224,7 +197,10 @@ const ProgressTab = ({
                         const isExpanded =
                             expandedCourseId === itemKey || (!expandedCourseId && index === 0);
                         const progressTone = getProgressTone(item.progressPercent);
-                        const certificateBadge = getCertificateBadge(item.certificateStatus);
+                        const certificateBadge = getStudentCertificateStatusMeta(
+                            item.certificateStatus,
+                            'progress'
+                        );
                         const remainingLessons = Math.max(
                             0,
                             Number(item.lessonsTotal || 0) - Number(item.lessonsCompleted || 0)
@@ -335,7 +311,9 @@ const ProgressTab = ({
                                                             {t('studentDashboard.progress.nextAction.noResumeLesson')}
                                                         </div>
                                                     )}
-                                                    {item.certificateStatus === 'issued' && item.certificateDownloadUrl ? (
+                                                    {item.certificateStatus ===
+                                                        CERTIFICATE_STATUS.ISSUED &&
+                                                    item.certificateDownloadUrl ? (
                                                         <div className="grid gap-2 sm:grid-cols-2">
                                                             <button
                                                                 type="button"
@@ -538,42 +516,33 @@ const ProgressTab = ({
                         description={t('studentDashboard.progress.certificateReadiness.description')}
                     >
                         <div className="space-y-2">
-                            {items.map((item, index) => (
-                                <div
-                                    key={item.courseId || item.courseTitle || index}
-                                    className="flex items-center justify-between gap-3 rounded-2xl border border-edubot-line/70 bg-white/80 px-4 py-3 dark:border-slate-700 dark:bg-slate-900"
-                                >
-                                    <div className="min-w-0">
-                                        <p className="truncate text-sm font-medium text-edubot-ink dark:text-white">
-                                            {item.courseTitle}
-                                        </p>
-                                        <p className="mt-1 text-xs text-edubot-muted dark:text-slate-400">
-                                            {t('studentDashboard.progress.certificateReadiness.percentComplete', {
-                                                progress: item.progressPercent,
-                                            })}
-                                        </p>
-                                    </div>
-                                    <span
-                                        className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                                            item.certificateStatus === 'issued'
-                                                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300'
-                                                : item.certificateStatus === 'pending_approval'
-                                                    ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300'
-                                                    : item.certificateStatus === 'rejected'
-                                                        ? 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-300'
-                                                        : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
-                                        }`}
+                            {items.map((item, index) => {
+                                const readiness = getStudentCertificateReadinessMeta(
+                                    item.certificateStatus
+                                );
+                                return (
+                                    <div
+                                        key={item.courseId || item.courseTitle || index}
+                                        className="flex items-center justify-between gap-3 rounded-2xl border border-edubot-line/70 bg-white/80 px-4 py-3 dark:border-slate-700 dark:bg-slate-900"
                                     >
-                                        {item.certificateStatus === 'issued'
-                                            ? t('studentDashboard.progress.certificateReadiness.ready')
-                                            : item.certificateStatus === 'pending_approval'
-                                                ? t('studentDashboard.progress.certificateReadiness.pending')
-                                                : item.certificateStatus === 'rejected'
-                                                    ? t('studentDashboard.progress.certificateReadiness.rejected')
-                                                    : t('studentDashboard.progress.certificateReadiness.notReady')}
-                                    </span>
-                                </div>
-                            ))}
+                                        <div className="min-w-0">
+                                            <p className="truncate text-sm font-medium text-edubot-ink dark:text-white">
+                                                {item.courseTitle}
+                                            </p>
+                                            <p className="mt-1 text-xs text-edubot-muted dark:text-slate-400">
+                                                {t('studentDashboard.progress.certificateReadiness.percentComplete', {
+                                                    progress: item.progressPercent,
+                                                })}
+                                            </p>
+                                        </div>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${readiness.className}`}
+                                        >
+                                            {t(readiness.labelKey)}
+                                        </span>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </DashboardInsetPanel>
 

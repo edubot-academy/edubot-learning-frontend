@@ -9,69 +9,35 @@ import {
 } from '../../../../components/ui/dashboard';
 import StudentPanelEmpty from '../shared/StudentPanelEmpty.jsx';
 import { downloadCourseCertificatePdf } from '../../../courses/api/courseCertificates.js';
-
-const formatDate = (value, language) => {
-    if (!value) return '—';
-    const date = new Date(value);
-    return Number.isNaN(date.getTime())
-        ? '—'
-        : date.toLocaleDateString(language || undefined, {
-              day: '2-digit',
-              month: 'short',
-              year: 'numeric',
-          });
-};
-
-const getStatusMeta = (status) => {
-    if (status === 'issued') {
-        return {
-            labelKey: 'studentDashboard.certificates.statuses.issued',
-            className:
-                'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300',
-        };
-    }
-    if (status === 'pending_approval') {
-        return {
-            labelKey: 'studentDashboard.certificates.statuses.pending',
-            className:
-                'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300',
-        };
-    }
-    if (status === 'revoked') {
-        return {
-            labelKey: 'studentDashboard.certificates.statuses.revoked',
-            className:
-                'border-slate-200 bg-slate-100 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300',
-        };
-    }
-    if (status === 'rejected') {
-        return {
-            labelKey: 'studentDashboard.certificates.statuses.rejected',
-            className:
-                'border-red-200 bg-red-50 text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300',
-        };
-    }
-    return {
-        labelKey: 'studentDashboard.certificates.statuses.unknown',
-        className:
-            'border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300',
-    };
-};
+import {
+    CERTIFICATE_STATUS,
+    formatCertificateDate,
+    getCertificateDownloadKey,
+    getCertificatePdfFilename,
+    getStudentCertificateStatusMeta,
+} from '../../../courses/utils/certificatePresentation.js';
 
 const CertificatesTab = ({ certificates }) => {
     const { i18n, t } = useTranslation();
     const [downloadingKey, setDownloadingKey] = useState(null);
-    const issuedCount = certificates.filter((item) => item.status === 'issued').length;
-    const pendingCount = certificates.filter((item) => item.status === 'pending_approval').length;
+    const issuedCount = certificates.filter(
+        (item) => item.status === CERTIFICATE_STATUS.ISSUED
+    ).length;
+    const pendingCount = certificates.filter(
+        (item) => item.status === CERTIFICATE_STATUS.PENDING_APPROVAL
+    ).length;
 
     const handleDownload = async (certificate) => {
         if (!certificate.downloadUrl) return;
-        const key = certificate.publicId || certificate.id || certificate.courseId;
+        const key = getCertificateDownloadKey(certificate);
         setDownloadingKey(key);
         try {
             await downloadCourseCertificatePdf(
                 certificate.downloadUrl,
-                `certificate-${certificate.publicId || certificate.courseId || 'student'}.pdf`,
+                getCertificatePdfFilename({
+                    courseId: certificate.courseId,
+                    publicId: certificate.publicId,
+                }),
             );
         } finally {
             setDownloadingKey(null);
@@ -108,9 +74,8 @@ const CertificatesTab = ({ certificates }) => {
             >
                 <div className="mt-4 grid gap-4 lg:grid-cols-2">
                     {certificates.map((certificate) => {
-                        const statusMeta = getStatusMeta(certificate.status);
-                        const downloadKey =
-                            certificate.publicId || certificate.id || certificate.courseId;
+                        const statusMeta = getStudentCertificateStatusMeta(certificate.status);
+                        const downloadKey = getCertificateDownloadKey(certificate);
                         const isDownloading = downloadingKey === downloadKey;
                         return (
                             <article
@@ -123,7 +88,7 @@ const CertificatesTab = ({ certificates }) => {
                                             {certificate.courseTitle || t('studentDashboard.certificates.fallbackCourseTitle')}
                                         </p>
                                         <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                            {certificate.publicId || '—'} · {formatDate(certificate.issuedAt, i18n.language)}
+                                            {certificate.publicId || '—'} · {formatCertificateDate(certificate.issuedAt, i18n.language)}
                                         </p>
                                     </div>
                                     <span

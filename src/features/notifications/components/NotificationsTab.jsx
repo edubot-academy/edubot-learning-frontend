@@ -16,6 +16,7 @@ import {
 import { FiBell, FiCheckCircle, FiInbox, FiLink2 } from 'react-icons/fi';
 import { useTranslation } from 'react-i18next';
 import { toArray } from '@shared/api/response';
+import { formatDate, formatDateTime } from '@utils/timeUtils';
 
 const NotificationsTab = () => {
     const { i18n, t } = useTranslation();
@@ -28,8 +29,7 @@ const NotificationsTab = () => {
     const grouped = useMemo(() => {
         const groups = {};
         items.forEach((notif) => {
-            const date = notif.createdAt ? new Date(notif.createdAt) : new Date();
-            const label = date.toLocaleDateString(i18n.language);
+            const label = formatDate(notif.createdAt || new Date(), i18n.language);
             if (!groups[label]) groups[label] = [];
             groups[label].push(notif);
         });
@@ -185,9 +185,7 @@ const NotificationsTab = () => {
 
                                                             <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-edubot-muted dark:text-slate-400">
                                                                 <span>
-                                                                    {notif.createdAt
-                                                                        ? new Date(notif.createdAt).toLocaleString(i18n.language)
-                                                                        : ''}
+                                                                    {formatDateTime(notif.createdAt, i18n.language)}
                                                                 </span>
                                                                 {notif.link ? (
                                                                     <Link

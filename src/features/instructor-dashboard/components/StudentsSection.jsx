@@ -21,19 +21,17 @@ import {
     EmptyState,
 } from '@components/ui/dashboard';
 import { downloadCourseCertificatePdf } from '@features/courses/api/courseCertificates';
-
-const formatDate = (value, language = 'ky') => {
-    if (!value) return '—';
-    const date = new Date(value);
-    const locale = language === 'ru' ? 'ru-RU' : language === 'en' ? 'en-US' : 'ky-KG';
-    return Number.isNaN(date.getTime())
-        ? '—'
-        : date.toLocaleDateString(locale, {
-              day: '2-digit',
-              month: 'short',
-              year: 'numeric',
-          });
-};
+import {
+    CERTIFICATE_STATUS,
+    clampCertificateProgress,
+    getAdminCertificateStatusMeta,
+    getCertificatePdfFilename,
+} from '@features/courses/utils/certificatePresentation';
+import {
+    COURSE_STATUS_STRATEGY,
+    getCourseStatusLabel,
+} from '@features/courses/utils/coursePresentation';
+import { formatShortDate } from '@utils/timeUtils';
 
 const formatLastViewed = (student, t) => {
     if (!student.lastViewedLessonId) return '—';
@@ -48,22 +46,6 @@ const formatLastViewed = (student, t) => {
         id: student.lastViewedLessonId,
         time: timeText,
     });
-};
-
-const getCourseStatusLabel = (course, t) => {
-    if (course.isPublished) return t('instructorDashboard.studentsSection.courseStatus.published');
-    if (course.status === 'approved') return t('instructorDashboard.studentsSection.courseStatus.approved');
-    if (course.status === 'rejected') return t('instructorDashboard.studentsSection.courseStatus.rejected');
-    if (course.status === 'draft') return t('instructorDashboard.studentsSection.courseStatus.draft');
-    return t('instructorDashboard.studentsSection.courseStatus.pending');
-};
-
-const getCertificateStatusLabel = (status, t) => {
-    if (status === 'issued') return t('adminCertificates.status.issued');
-    if (status === 'pending_approval') return t('adminCertificates.status.pending_approval');
-    if (status === 'rejected') return t('adminCertificates.status.rejected');
-    if (status === 'revoked') return t('adminCertificates.status.revoked');
-    return t('adminCertificates.status.none');
 };
 
 const StudentsSection = ({
@@ -99,7 +81,7 @@ const StudentsSection = ({
     const averageProgress = sortedStudents.length
         ? Math.round(
               sortedStudents.reduce(
-                  (sum, student) => sum + Math.max(0, Math.min(100, Number(student.progressPercent || 0))),
+                  (sum, student) => sum + clampCertificateProgress(student.progressPercent),
                   0
               ) / sortedStudents.length
           )
@@ -204,7 +186,12 @@ const StudentsSection = ({
                                                         : 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300'
                                                 }`}
                                             >
-                                                {getCourseStatusLabel(course, t)}
+                                                {getCourseStatusLabel(course, t, {
+                                                    namespace:
+                                                        'instructorDashboard.studentsSection.courseStatus',
+                                                    strategy:
+                                                        COURSE_STATUS_STRATEGY.INSTRUCTOR_STUDENTS,
+                                                })}
                                             </span>
                                         </div>
 
@@ -218,7 +205,7 @@ const StudentsSection = ({
                                             <div className="flex items-center justify-between gap-2">
                                                 <span>{t('instructorDashboard.studentsSection.courseSelection.created')}</span>
                                                 <span className="font-semibold text-edubot-ink dark:text-white">
-                                                    {formatDate(course.createdAt, i18n.language)}
+                                                    {formatShortDate(course.createdAt, i18n.language)}
                                                 </span>
                                             </div>
                                         </div>
@@ -356,9 +343,9 @@ const StudentsSection = ({
                         >
                             <div className="mt-4 grid gap-4 xl:grid-cols-2">
                                 {sortedStudents.map((student) => {
-                                    const progress = Math.max(
-                                        0,
-                                        Math.min(100, Number(student.progressPercent || 0))
+                                    const progress = clampCertificateProgress(student.progressPercent);
+                                    const certificateStatusMeta = getAdminCertificateStatusMeta(
+                                        student.certificateStatus
                                     );
                                     const tests = Array.isArray(student.tests) ? student.tests : [];
 
@@ -398,19 +385,11 @@ const StudentsSection = ({
 
                                             <div className="mt-4 flex flex-wrap items-center gap-2">
                                                 <span
-                                                    className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                                                        student.certificateStatus === 'issued'
-                                                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300'
-                                                            : student.certificateStatus === 'pending_approval'
-                                                                ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300'
-                                                                : student.certificateStatus === 'rejected'
-                                                                    ? 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300'
-                                                                    : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
-                                                    }`}
+                                                    className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${certificateStatusMeta.className}`}
                                                 >
-                                                    {getCertificateStatusLabel(student.certificateStatus, t)}
+                                                    {t(certificateStatusMeta.labelKey)}
                                                 </span>
-                                                {student.certificateStatus === 'issued' ? (
+                                                {student.certificateStatus === CERTIFICATE_STATUS.ISSUED ? (
                                                     <>
                                                         {student.certificateDownloadUrl ? (
                                                             <>
@@ -419,7 +398,11 @@ const StudentsSection = ({
                                                                     onClick={() =>
                                                                         downloadCourseCertificatePdf(
                                                                             student.certificateDownloadUrl,
-                                                                            `certificate-${student.certificatePublicId || student.id}.pdf`,
+                                                                            getCertificatePdfFilename({
+                                                                                id: student.id,
+                                                                                publicId:
+                                                                                    student.certificatePublicId,
+                                                                            }),
                                                                         )
                                                                     }
                                                                     className="dashboard-button-secondary"
@@ -446,7 +429,7 @@ const StudentsSection = ({
                                                         {t('instructorDashboard.studentsSection.studentCard.enrolled')}
                                                     </div>
                                                     <div className="mt-2 text-sm font-semibold text-edubot-ink dark:text-white">
-                                                        {formatDate(student.enrolledAt, i18n.language)}
+                                                        {formatShortDate(student.enrolledAt, i18n.language)}
                                                     </div>
                                                 </div>
                                                 <div className="dashboard-panel rounded-2xl border border-edubot-line/70 px-4 py-3 dark:border-slate-700">

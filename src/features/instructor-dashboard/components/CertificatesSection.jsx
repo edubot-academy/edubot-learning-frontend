@@ -29,6 +29,11 @@ import {
     fetchCourseCertificatePreviewHtml,
 } from '@features/courses/api/courseCertificates';
 import {
+    CERTIFICATE_STATUS,
+    clampCertificateProgress,
+    formatCertificateDate,
+} from '@features/courses/utils/certificatePresentation';
+import {
     PreviewCornerOrnament,
     PreviewOrnamentBand,
     PreviewTundukSeal,
@@ -60,19 +65,6 @@ import {
     buildCertificateDisplayPayload,
     buildCertificateWorkspaceViewModel,
 } from '../utils/certificateWorkspaceViewModel';
-
-const formatDate = (value, language = 'ky') => {
-    if (!value) return '—';
-    const date = new Date(value);
-    const locale = language === 'ru' ? 'ru-RU' : language === 'en' ? 'en-US' : 'ky-KG';
-    return Number.isNaN(date.getTime())
-        ? '—'
-        : date.toLocaleDateString(locale, {
-              day: '2-digit',
-              month: 'short',
-              year: 'numeric',
-          });
-};
 
 const SignaturePad = ({ disabled = false, onSave }) => {
     const { t } = useTranslation();
@@ -648,7 +640,10 @@ const CertificatesSection = ({
         [onSaveCertificateAsset]
     );
 
-    const certificateStats = getCertificateStats(courseCertificates);
+    const certificateStats = useMemo(
+        () => getCertificateStats(courseCertificates),
+        [courseCertificates]
+    );
     const {
         averageProgress,
         completedCount,
@@ -666,38 +661,71 @@ const CertificatesSection = ({
         sortedStudents,
         totalStudents,
         visibleStudents,
-    } = buildCertificateWorkspaceViewModel({
-        courseMeta,
-        courseStudents,
-        pageSize,
-        progressMax,
-        progressMin,
-        search,
-        selectedCourse,
-        selectedStudentId,
-        settingsForm,
-        studentNameOverride,
-        studentsPage,
-        t,
-    });
+    } = useMemo(
+        () =>
+            buildCertificateWorkspaceViewModel({
+                courseMeta,
+                courseStudents,
+                pageSize,
+                progressMax,
+                progressMin,
+                search,
+                selectedCourse,
+                selectedStudentId,
+                settingsForm,
+                studentNameOverride,
+                studentsPage,
+                t,
+            }),
+        [
+            courseMeta,
+            courseStudents,
+            pageSize,
+            progressMax,
+            progressMin,
+            search,
+            selectedCourse,
+            selectedStudentId,
+            settingsForm,
+            studentNameOverride,
+            studentsPage,
+            t,
+        ]
+    );
 
     useEffect(() => {
         setStudentNameOverride(selectedStudent?.fullName || '');
     }, [selectedStudent]);
 
-    const templatePayload = getTemplatePayload(settingsForm, isAdminMode, defaultCertificateTitle);
-    const savedTemplatePayload = getTemplatePayload(
-        buildCertificateSettingsForm({
+    const templatePayload = useMemo(
+        () => getTemplatePayload(settingsForm, isAdminMode, defaultCertificateTitle),
+        [defaultCertificateTitle, isAdminMode, settingsForm]
+    );
+    const savedTemplatePayload = useMemo(
+        () =>
+            getTemplatePayload(
+                buildCertificateSettingsForm({
+                    certificateSettings,
+                    defaultCertificateTitle,
+                    defaultIssuerDisplayName,
+                    defaultIssuerTitle,
+                    isAdminMode,
+                }),
+                isAdminMode,
+                defaultCertificateTitle
+            ),
+        [
             certificateSettings,
             defaultCertificateTitle,
             defaultIssuerDisplayName,
             defaultIssuerTitle,
             isAdminMode,
-        }),
-        isAdminMode,
-        defaultCertificateTitle
+        ]
     );
-    const hasTemplateChanges = hasTemplatePayloadChanges(templatePayload, savedTemplatePayload);
+    const hasTemplateChanges = useMemo(
+        () => hasTemplatePayloadChanges(templatePayload, savedTemplatePayload),
+        [savedTemplatePayload, templatePayload]
+    );
     const fieldEditDisabled = isAdminMode && !isTemplateEditMode;
     const shouldShowExactPreview = Boolean(exactPreviewHtml);
     const pageOrientationLabel = getPageOrientationLabel(settingsForm.pageOrientation, t);
@@ -2174,8 +2202,9 @@ const CertificatesSection = ({
                                     const requiresEligibilityOverride =
                                         canIssueCertificates &&
                                         !isStudentEligibleForCertificate(student) &&
-                                        student.certificateStatus !== 'issued' &&
-                                        student.certificateStatus !== 'pending_approval';
+                                        student.certificateStatus !== CERTIFICATE_STATUS.ISSUED &&
+                                        student.certificateStatus !==
+                                            CERTIFICATE_STATUS.PENDING_APPROVAL;
                                     const eligibilityOverrideEnabled = Boolean(
                                         eligibilityOverrideByStudentId[student.id]
                                     );
@@ -2258,7 +2287,7 @@ const CertificatesSection = ({
                                                 ) : null}
                                                 {canApproveCertificates &&
                                                 student.certificateStatus ===
-                                                    'pending_approval' ? (
+                                                    CERTIFICATE_STATUS.PENDING_APPROVAL ? (
                                                     <>
                                                         <button
                                                             type="button"
@@ -2295,7 +2324,8 @@ const CertificatesSection = ({
                                                         </button>
                                                     </>
                                                 ) : null}
-                                                {student.certificateStatus === 'issued' ? (
+                                                {student.certificateStatus ===
+                                                CERTIFICATE_STATUS.ISSUED ? (
                                                     <>
                                                         {student.certificateDownloadUrl ? (
                                                             <button
@@ -2384,7 +2414,7 @@ const CertificatesSection = ({
                                                         {t('adminCertificates.studentCard.enrolledAt')}
                                                     </div>
                                                     <div className="mt-2 text-sm font-semibold text-edubot-ink dark:text-white">
-                                                        {formatDate(student.enrolledAt, i18n.language)}
+                                                        {formatCertificateDate(student.enrolledAt, i18n.language)}
                                                     </div>
                                                 </div>
                                                 <div className="dashboard-panel rounded-2xl border border-edubot-line/70 px-4 py-3 dark:border-slate-700">
@@ -2394,12 +2424,8 @@ const CertificatesSection = ({
                                                             : t('common.progress')}
                                                     </div>
                                                     <div className="mt-2 text-sm font-semibold text-edubot-ink dark:text-white">
-                                                        {Math.max(
-                                                            0,
-                                                            Math.min(
-                                                                100,
-                                                                Number(student.progressPercent || 0)
-                                                            )
+                                                        {clampCertificateProgress(
+                                                            student.progressPercent
                                                         )}
                                                         %
                                                     </div>
